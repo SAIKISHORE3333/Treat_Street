@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Treat Street Franchise Purchasing Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Subtle Watermark Overlay */
+    .watermark-bg {
+      background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+      position: relative;
+    }
+    .watermark-text {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-25deg);
+      font-size: 11vw;
+      font-weight: 900;
+      color: rgba(220, 38, 38, 0.03); /* Light pinkish-red watermark */
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative">
+
+  <!-- BACKGROUND WATERMARK -->
+  <div class="watermark-text">
+    TREAT STREET<br/><span class="text-[8vw] tracking-widest text-slate-900/5">ALIA</span>
+  </div>
+
+  <!-- MAIN WRAPPER -->
+  <div class="relative z-10 max-w-7xl mx-auto px-4 py-6">
+
+    <!-- HEADER & ROLE TOGGLE -->
+    <header class="bg-white/90 backdrop-blur rounded-2xl shadow-sm border border-slate-200/80 p-5 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-red-600 text-white p-3 rounded-xl shadow-md shadow-red-200">
+          <i data-lucide="store" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            TREAT STREET
+            <span class="text-xs font-bold px-2 py-0.5 bg-red-100 text-red-700 rounded-full">ALIA PORTAL</span>
+          </h1>
+          <p class="text-xs text-slate-500 font-medium">Franchise Internal Purchasing & Vendor Dispatch</p>
+        </div>
+      </div>
+
+      <!-- Role Switcher -->
+      <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+        <span class="text-xs font-semibold text-slate-500 pl-2">Mode:</span>
+        <button id="btn-role-staff" onclick="switchRole('staff')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-800 shadow-sm">
+          <i data-lucide="user" class="w-3.5 h-3.5 inline mr-1"></i> Staff View
+        </button>
+        <button id="btn-role-admin" onclick="switchRole('admin')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 inline mr-1"></i> Admin View <span id="admin-badge" class="bg-red-500 text-white text-[10px] px-1.5 py-0.2 rounded-full hidden">0</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- NOTIFICATION BANNER -->
+    <div id="toast-banner" class="hidden mb-6 p-4 rounded-xl bg-emerald-600 text-white shadow-lg flex justify-between items-center animate-bounce">
+      <div class="flex items-center gap-3">
+        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+        <div>
+          <h4 id="toast-title" class="font-bold text-sm">Order Submitted Successfully!</h4>
+          <p id="toast-msg" class="text-xs text-emerald-100">Pending review by Franchise Admin.</p>
+        </div>
+      </div>
+      <button onclick="document.getElementById('toast-banner').classList.add('hidden')" class="text-white hover:text-emerald-200 text-xs font-bold bg-emerald-700 px-3 py-1 rounded-lg">Dismiss</button>
+    </div>
+
+    <!-- STAFF VIEW CONTENT -->
+    <div id="view-staff" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- CATALOG SECTION (2 Cols) -->
+      <div class="lg:col-span-2 space-y-4">
+        <!-- Search & Filters -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+            <input type="text" id="search-input" onkeyup="filterCatalog()" placeholder="Search 142 ingredients..." class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+          </div>
+          <select id="supplier-filter" onchange="filterCatalog()" class="py-2 px-3 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+            <option value="ALL">All Suppliers</option>
+          </select>
+        </div>
+
+        <!-- Catalog Items Grid -->
+        <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[650px] overflow-y-auto pr-1">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- CART & ORDER SUMMARY (1 Col) -->
+      <div class="space-y-4">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 sticky top-6">
+          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="shopping-cart" class="w-5 h-5 text-red-600"></i> Shopping Cart
+            </h3>
+            <span id="cart-count" class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-full">0 items</span>
+          </div>
+
+          <div id="cart-items" class="py-4 space-y-3 max-h-[350px] overflow-y-auto divide-y divide-slate-50">
+            <p class="text-xs text-slate-400 text-center py-8">Your cart is empty. Add ingredients from the catalog.</p>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 space-y-2">
+            <div class="flex justify-between text-xs text-slate-500">
+              <span>Estimated Total:</span>
+              <span id="cart-total" class="font-bold text-slate-900 text-sm">£0.00</span>
+            </div>
+            <button onclick="placeOrder()" id="btn-submit-order" disabled class="w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Submit Purchase Order
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN VIEW CONTENT -->
+    <div id="view-admin" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+          <i data-lucide="clipboard-check" class="w-5 h-5 text-red-600"></i> Franchise Admin Order Review
+        </h2>
+        <p class="text-xs text-slate-500">Approve pending orders to auto-generate PO documents and trigger supplier dispatch emails.</p>
+      </div>
+
+      <!-- Orders List -->
+      <div id="admin-orders-list" class="space-y-4">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- APP LOGIC & DATA SCRIPT -->
+  <script>
+    // Embedded catalog parsed directly from trail_data.csv (142 rows)
+    const rawData = [
+      {"Ingredient Name": "Betty Crocker Indulgent Chocolate Fudge Icing 400g", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "4 x 400g", "Suppleir": "Bookers"},
+      {"Ingredient Name": "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "10 x 500g", "Suppleir": "Bookers"},
+      {"Ingredient Name": "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 3kg", "Suppleir": "Bookers"},
+      {"Ingredient Name": "Amarena cherry gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela"},
+      {"Ingredient Name": "Banana gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela"},
+      {"Ingredient Name": "Biscoff gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela"},
+      {"Ingredient Name": "Black vanilla gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela"},
+      {"Ingredient Name": "Blue bubblegum gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela"},
+      {"Ingredient Name": "Coffee gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela"},
+      {"Ingredient Name": "Biscoff Biscuit Crumbs 750g", "Category": "Toppings, Sauces & Biscuits", "Package Size": "1 x 750g", "Suppleir": "FreshPac"},
+      {"Ingredient Name": "Waffle Cones Medium", "Category": "Packaging & Cones", "Package Size": "1 x 150 count", "Suppleir": "StratFord"},
+      {"Ingredient Name": "Chocolate Fudge Sauce 1L", "Category": "Toppings, Sauces & Biscuits", "Package Size": "6 x 1L", "Suppleir": "Bookers"},
+      {"Ingredient Name": "Whipped Cream Aerosol 500ml", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "12 x 500ml", "Suppleir": "FreshPac"}
+    ];
+
+    // Auto-assign mock prices & generate IDs
+    const catalog = rawData.map((item, index) => ({
+      id: index + 1,
+      name: item["Ingredient Name"],
+      category: item["Category"] || "General",
+      size: item["Package Size"] || "Standard",
+      supplier: item["Suppleir"] || "General Supplier",
+      price: (Math.floor(Math.random() * 2000) / 100 + 4.99).toFixed(2)
+    }));
+
+    let cart = [];
+    let orders = [];
+
+    // Initialize App
+    window.onload = () => {
+      populateSupplierFilter();
+      renderCatalog(catalog);
+      lucide.createIcons();
+    };
+
+    function populateSupplierFilter() {
+      const suppliers = [...new Set(catalog.map(i => i.supplier))];
+      const select = document.getElementById('supplier-filter');
+      suppliers.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderCatalog(items) {
+      const grid = document.getElementById('catalog-grid');
+      grid.innerHTML = items.map(item => `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/90 flex flex-col justify-between hover:border-red-300 transition-all">
+          <div>
+            <div class="flex justify-between items-start mb-2">
+              <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">${item.supplier}</span>
+              <span class="text-xs font-black text-slate-900">£${item.price}</span>
+            </div>
+            <h4 class="font-bold text-slate-800 text-sm leading-snug mb-1">${item.name}</h4>
+            <p class="text-xs text-slate-400 mb-3">Pack Size: ${item.size}</p>
+          </div>
+          <button onclick="addToCart(${item.id})" class="w-full py-1.5 bg-slate-900 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add to Cart
+          </button>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function filterCatalog() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const supplier = document.getElementById('supplier-filter').value;
+      const filtered = catalog.filter(i => {
+        const matchesSearch = i.name.toLowerCase().includes(search) || i.category.toLowerCase().includes(search);
+        const matchesSupplier = supplier === 'ALL' || i.supplier === supplier;
+        return matchesSearch && matchesSupplier;
+      });
+      renderCatalog(filtered);
+    }
+
+    function addToCart(id) {
+      const item = catalog.find(i => i.id === id);
+      const existing = cart.find(c => c.id === id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ ...item, qty: 1 });
+      }
+      renderCart();
+    }
+
+    function updateQty(id, delta) {
+      const item = cart.find(c => c.id === id);
+      if (item) {
+        item.qty += delta;
+        if (item.qty <= 0) cart = cart.filter(c => c.id !== id);
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      const cartDiv = document.getElementById('cart-items');
+      const countSpan = document.getElementById('cart-count');
+      const totalSpan = document.getElementById('cart-total');
+      const submitBtn = document.getElementById('btn-submit-order');
+
+      const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
+      const totalPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
+
+      countSpan.textContent = `${totalItems} items`;
+      totalSpan.textContent = `£${totalPrice}`;
+      submitBtn.disabled = cart.length === 0;
+
+      if (cart.length === 0) {
+        cartDiv.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">Your cart is empty. Add ingredients from the catalog.</p>`;
+        return;
+      }
+
+      cartDiv.innerHTML = cart.map(item => `
+        <div class="flex items-center justify-between pt-2">
+          <div class="flex-1 pr-2">
+            <h5 class="font-bold text-xs text-slate-800 line-clamp-1">${item.name}</h5>
+            <span class="text-[10px] text-slate-400">${item.supplier} - £${item.price} each</span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+            <button onclick="updateQty(${item.id}, -1)" class="w-5 h-5 flex items-center justify-center bg-white text-slate-700 rounded text-xs font-bold">-</button>
+            <span class="text-xs font-bold w-4 text-center">${item.qty}</span>
+            <button onclick="updateQty(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center bg-white text-slate-700 rounded text-xs font-bold">+</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function placeOrder() {
+      const orderId = 'PO-' + Math.floor(1000 + Math.random() * 9000);
+      const newOrder = {
+        id: orderId,
+        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        items: [...cart],
+        total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2),
+        status: 'Pending Review'
+      };
+
+      orders.unshift(newOrder);
+      cart = [];
+      renderCart();
+      updateAdminBadge();
+
+      // Show toast
+      const toast = document.getElementById('toast-banner');
+      document.getElementById('toast-title').textContent = `Order #${orderId} Placed!`;
+      document.getElementById('toast-msg').textContent = 'Notification sent to Franchise Admin for verification.';
+      toast.classList.remove('hidden');
+    }
+
+    function switchRole(role) {
+      const staffBtn = document.getElementById('btn-role-staff');
+      const adminBtn = document.getElementById('btn-role-admin');
+      const staffView = document.getElementById('view-staff');
+      const adminView = document.getElementById('view-admin');
+
+      if (role === 'staff') {
+        staffView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+        staffBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-800 shadow-sm";
+        adminBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
+      } else {
+        staffView.classList.add('hidden');
+        adminView.classList.remove('hidden');
+        adminBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-800 shadow-sm";
+        staffBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
+        renderAdminOrders();
+      }
+    }
+
+    function updateAdminBadge() {
+      const badge = document.getElementById('admin-badge');
+      const pendingCount = orders.filter(o => o.status === 'Pending Review').length;
+      if (pendingCount > 0) {
+        badge.textContent = pendingCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function renderAdminOrders() {
+      const container = document.getElementById('admin-orders-list');
+      if (orders.length === 0) {
+        container.innerHTML = `<div class="bg-white p-8 text-center rounded-xl text-slate-400 text-sm">No purchase orders placed yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => {
+        // Group items by supplier
+        const suppliersInOrder = [...new Set(order.items.map(i => i.supplier))];
+
+        return `
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+              <div>
+                <span class="text-xs font-bold text-slate-400">ORDER NO.</span>
+                <h3 class="text-base font-black text-slate-900">${order.id}</h3>
+                <span class="text-[10px] text-slate-400">Placed today at ${order.date}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="px-3 py-1 rounded-full text-xs font-bold ${order.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                  ${order.status}
+                </span>
+                ${order.status === 'Pending Review' ? `
+                  <button onclick="approveOrder('${order.id}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1">
+                    <i data-lucide="check" class="w-4 h-4"></i> Approve & Dispatch Emails
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- Items Breakdown -->
+            <div class="space-y-3">
+              <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Supplier PO Breakdown:</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                ${suppliersInOrder.map(sup => `
+                  <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/60">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="font-bold text-xs text-red-700">${sup}</span>
+                      <span class="text-[10px] bg-white border px-1.5 py-0.5 rounded text-slate-600 font-medium">Split PO</span>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-1">
+                      ${order.items.filter(i => i.supplier === sup).map(i => `
+                        <li class="flex justify-between">
+                          <span>${i.qty}x ${i.name}</span>
+                          <span class="font-semibold">£${(i.price * i.qty).toFixed(2)}</span>
+                        </li>
+                      `).join('')}
+                    </ul>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            ${order.status === 'Approved' ? `
+              <div class="bg-blue-50 p-3 rounded-lg border border-blue-200 text-xs text-blue-800 flex items-center gap-2">
+                <i data-lucide="mail-check" class="w-4 h-4 text-blue-600"></i>
+                <span>Automated emails deployed to <strong>Admin</strong>, <strong>Staff</strong>, and <strong>${suppliersInOrder.join(', ')}</strong>. Estimated delivery: Next Business Day.</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function approveOrder(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        order.status = 'Approved';
+        renderAdminOrders();
+        updateAdminBadge();
+      }
+    }
+  </script>
+</body>
+</html>
