@@ -310,7 +310,47 @@
       {"Ingredient Name": "Centerfeed Hand Towel Blue 6 Roll", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 6 rolls", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
       {"Ingredient Name": "Catering Aprons Black Waterproof", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 5 pack", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"}
     ];
+// Opens the modal and creates buttons dynamically
+function openSupplierSelection(suppliers) {
+    const container = document.getElementById('supplier-buttons-container');
+    container.innerHTML = '';
+    
+    // Create a button for each supplier in the order
+    suppliers.forEach(sup => {
+        const btn = document.createElement('button');
+        btn.textContent = `Download ${sup} PO`;
+        btn.className = "w-full py-2 bg-blue-600 text-white rounded-lg font-bold";
+        btn.onclick = () => processPDF(sup);
+        container.appendChild(btn);
+    });
+    
+    // Show the modal
+    document.getElementById('supplier-selection-modal').classList.remove('hidden');
+}
 
+// Generates the PDF
+async function processPDF(supplierName) {
+    // 1. Fill data into the template
+    document.getElementById('pdf-supplier-name').textContent = supplierName;
+    document.getElementById('pdf-date').textContent = new Date().toLocaleDateString();
+    
+    // Generate PO Number: TSMK-SUPPLIER-DATE-001
+    const d = new Date();
+    const dateCode = `${d.getDate()}${d.getMonth() + 1}${d.getFullYear().toString().slice(-2)}`;
+    document.getElementById('pdf-po-number').textContent = `TSMK-${supplierName.toUpperCase()}-${dateCode}-001`;
+
+    // 2. Logic to show the hidden template, capture it as an image, and save
+    document.getElementById('pdf-template').style.display = 'block';
+    
+    const canvas = await html2canvas(document.getElementById('pdf-template'));
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0);
+    pdf.save(`PO_${supplierName}.pdf`);
+    
+    // 3. Hide the template and modal again
+    document.getElementById('pdf-template').style.display = 'none';
+    document.getElementById('supplier-selection-modal').classList.add('hidden');
+}
     const catalog = rawData.map((item, index) => ({
       id: index + 1,
       name: item["Ingredient Name"],
@@ -514,11 +554,11 @@
                 <span class="px-3 py-1 rounded-full text-xs font-bold ${order.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
                   ${order.status}
                 </span>
-                ${order.status === 'Pending Review' ? `
-                  <button onclick="approveOrder('${order.id}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1">
-                    <i data-lucide="check" class="w-4 h-4"></i> Approve & Split PO Emails
-                  </button>
-                ` : ''}
+               ${order.status === 'Pending Review' ? `
+  <button onclick="openSupplierSelection(${JSON.stringify(suppliersInOrder).replace(/"/g, "'")})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1">
+    <i data-lucide="check" class="w-4 h-4"></i> Approve Order
+  </button>
+` : ''}
               </div>
             </div>
 
@@ -627,5 +667,39 @@
   buttons.forEach(b => b.style.display = 'block');
 }
   </script>
+  <!-- Selection Modal -->
+<div id="supplier-selection-modal" class="hidden fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
+  <div class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+    <h3 class="font-bold text-lg mb-4">Select Supplier to Generate PO</h3>
+    <!-- The buttons will be added here automatically by JavaScript -->
+    <div id="supplier-buttons-container" class="space-y-2"></div>
+    <button onclick="document.getElementById('supplier-selection-modal').classList.add('hidden')" class="w-full py-2 bg-gray-200 mt-4 rounded-lg">Cancel</button>
+  </div>
+</div>
+  <div id="pdf-template" style="display: none; padding: 40px; font-family: sans-serif;">
+  <div style="border-bottom: 2px solid #000; padding-bottom: 20px;">
+    <h1 style="margin: 0;">TREAT STREET - PURCHASE ORDER</h1>
+    <p>Franchise: Milton Keynes (TSMK)</p>
+  </div>
+  <div style="margin: 20px 0; display: flex; justify-content: space-between;">
+    <div>
+      <p><strong>PO Number:</strong> <span id="pdf-po-number"></span></p>
+      <p><strong>Date:</strong> <span id="pdf-date"></span></p>
+    </div>
+    <div style="text-align: right;">
+      <p><strong>Supplier:</strong> <span id="pdf-supplier-name"></span></p>
+    </div>
+  </div>
+  <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+    <thead>
+      <tr style="background: #f4f4f4;">
+        <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
+        <th style="padding: 10px; border: 1px solid #ddd;">Item Name</th>
+        <th style="padding: 10px; border: 1px solid #ddd;">Qty</th>
+      </tr>
+    </thead>
+    <tbody id="pdf-table-body"></tbody>
+  </table>
+</div>
 </body>
 </html>
