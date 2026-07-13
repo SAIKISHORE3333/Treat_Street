@@ -158,11 +158,42 @@
         </div>
       </div>
       <button onclick="closeModal()" class="w-full py-2 bg-slate-900 text-white font-bold text-xs rounded-xl">Close Preview</button>
-      <button onclick="downloadPDF()" class="w-full py-2 bg-red-600 text-white font-bold text-xs rounded-xl shadow-sm hover:bg-red-700 mt-2">
-        Download PDF
-      </button>
+     <div id="pdf-template" style="display: none; padding: 40px; font-family: Arial, sans-serif; position: relative;">
+  <div style="position: absolute; top: 40%; left: 20%; font-size: 100px; color: rgba(200, 200, 200, 0.2); transform: rotate(-45deg); z-index: 0; pointer-events: none;">AIRELA</div>
+  
+  <div style="position: relative; z-index: 1;">
+    <div style="text-align: center; border-bottom: 2px solid #000; margin-bottom: 20px;">
+      <h1 style="margin: 0;">TREAT STREET</h1>
+      <p style="margin: 5px 0;">Purchase Order | Franchise: Milton Keynes (TSMK)</p>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+      <div>
+        <p><strong>PO Number:</strong> <span id="pdf-po-number"></span></p>
+        <p><strong>Date:</strong> <span id="pdf-date"></span></p>
+      </div>
+      <div style="text-align: right;">
+        <p><strong>Supplier:</strong> <span id="pdf-supplier-name"></span></p>
+      </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
+      <thead>
+        <tr style="background: #eee;">
+          <th style="padding: 8px; border: 1px solid #000;">ID</th>
+          <th style="padding: 8px; border: 1px solid #000;">Item Name</th>
+          <th style="padding: 8px; border: 1px solid #000;">Qty</th>
+          <th style="padding: 8px; border: 1px solid #000;">Price</th>
+          <th style="padding: 8px; border: 1px solid #000;">Total</th>
+        </tr>
+      </thead>
+      <tbody id="pdf-table-body"></tbody>
+    </table>
+    <div style="text-align: right; margin-top: 10px;">
+        <h3>Grand Total: <span id="pdf-grand-total"></span></h3>
     </div>
   </div>
+</div>
 
   <script>
     // FULL 142 ITEMS FROM TRAIL_DATA.CSV
@@ -330,21 +361,43 @@ function openSupplierSelection(suppliers) {
 
 // Generates the PDF
 async function processPDF(supplierName) {
-    // 1. Fill data into the template
+    // 1. Set Header Data
     document.getElementById('pdf-supplier-name').textContent = supplierName;
     document.getElementById('pdf-date').textContent = new Date().toLocaleDateString();
-    
-    // Generate PO Number: TSMK-SUPPLIER-DATE-001
-    const d = new Date();
-    const dateCode = `${d.getDate()}${d.getMonth() + 1}${d.getFullYear().toString().slice(-2)}`;
-    document.getElementById('pdf-po-number').textContent = `TSMK-${supplierName.toUpperCase()}-${dateCode}-001`;
+    document.getElementById('pdf-po-number').textContent = `TSMK-${supplierName.toUpperCase()}-${Math.floor(Math.random()*10000)}`;
 
-    // 2. Logic to show the hidden template, capture it as an image, and save
-    document.getElementById('pdf-template').style.display = 'block';
+    // 2. Filter items and calculate totals
+    const items = order.items.filter(i => i.supplier === supplierName);
+    const tbody = document.getElementById('pdf-table-body');
+    tbody.innerHTML = '';
     
+    let grandTotal = 0;
+    items.forEach((item, index) => {
+        const lineTotal = (item.price * item.qty);
+        grandTotal += lineTotal;
+        tbody.innerHTML += `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #000;">${index + 1}</td>
+                <td style="padding: 8px; border: 1px solid #000;">${item.name}</td>
+                <td style="padding: 8px; border: 1px solid #000;">${item.qty}</td>
+                <td style="padding: 8px; border: 1px solid #000;">£${item.price.toFixed(2)}</td>
+                <td style="padding: 8px; border: 1px solid #000;">£${lineTotal.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+    
+    document.getElementById('pdf-grand-total').textContent = `£${grandTotal.toFixed(2)}`;
+
+    // 3. Render and Save
+    document.getElementById('pdf-template').style.display = 'block';
     const canvas = await html2canvas(document.getElementById('pdf-template'));
     const pdf = new jsPDF('p', 'mm', 'a4');
     pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0);
+    pdf.save(`PO_${supplierName}.pdf`);
+    
+    document.getElementById('pdf-template').style.display = 'none';
+    document.getElementById('supplier-selection-modal').classList.add('hidden');
+}
     pdf.save(`PO_${supplierName}.pdf`);
     
     // 3. Hide the template and modal again
