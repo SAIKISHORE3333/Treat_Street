@@ -351,7 +351,7 @@ function openSupplierSelection(suppliers) {
         const btn = document.createElement('button');
         btn.textContent = `Download ${sup} PO`;
         btn.className = "w-full py-2 bg-blue-600 text-white rounded-lg font-bold";
-        btn.onclick = () => processPDF(sup);
+        btn.onclick = () => processPDF(sup, order);
         container.appendChild(btn);
     });
     
@@ -360,14 +360,17 @@ function openSupplierSelection(suppliers) {
 }
 
 // Generates the PDF
-async function processPDF(supplierName) {
-    // 1. Set Header Data
+async function processPDF(supplierName, orderData) {
+    // 1. Get the order data (This assumes 'order' is available in your scope)
+    // If you get an error that 'order' is not defined, please tell me!
+    const items = orderData.items.filter(i => i.supplier === supplierName);
+    
+    // 2. Set Header Data
     document.getElementById('pdf-supplier-name').textContent = supplierName;
     document.getElementById('pdf-date').textContent = new Date().toLocaleDateString();
     document.getElementById('pdf-po-number').textContent = `TSMK-${supplierName.toUpperCase()}-${Math.floor(Math.random()*10000)}`;
 
-    // 2. Filter items and calculate totals
-    const items = order.items.filter(i => i.supplier === supplierName);
+    // 3. Filter items and calculate totals
     const tbody = document.getElementById('pdf-table-body');
     tbody.innerHTML = '';
     
@@ -376,6 +379,31 @@ async function processPDF(supplierName) {
         const lineTotal = (item.price * item.qty);
         grandTotal += lineTotal;
         tbody.innerHTML += `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #000;">${index + 1}</td>
+                <td style="padding: 8px; border: 1px solid #000;">${item.name}</td>
+                <td style="padding: 8px; border: 1px solid #000;">${item.qty}</td>
+                <td style="padding: 8px; border: 1px solid #000;">£${item.price.toFixed(2)}</td>
+                <td style="padding: 8px; border: 1px solid #000;">£${lineTotal.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+    
+    document.getElementById('pdf-grand-total').textContent = `£${grandTotal.toFixed(2)}`;
+
+    // 4. Render and Save
+    document.getElementById('pdf-template').style.display = 'block';
+    
+    // Note: ensure you have html2canvas and jspdf loaded in your HTML
+    const canvas = await html2canvas(document.getElementById('pdf-template'));
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0);
+    pdf.save(`PO_${supplierName}.pdf`);
+    
+    document.getElementById('pdf-template').style.display = 'none';
+    document.getElementById('supplier-selection-modal').classList.add('hidden');
+}
             <tr>
                 <td style="padding: 8px; border: 1px solid #000;">${index + 1}</td>
                 <td style="padding: 8px; border: 1px solid #000;">${item.name}</td>
@@ -608,7 +636,7 @@ async function processPDF(supplierName) {
                   ${order.status}
                 </span>
                ${order.status === 'Pending Review' ? `
-  <button onclick="openSupplierSelection(${JSON.stringify(suppliersInOrder).replace(/"/g, "'")})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1">
+  <button onclick="openSupplierSelection(${JSON.stringify(suppliersInOrder).replace(/"/g, "'")})"" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1">
     <i data-lucide="check" class="w-4 h-4"></i> Approve Order
   </button>
 ` : ''}
