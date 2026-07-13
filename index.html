@@ -6,6 +6,9 @@
   <title>Treat Street Purchase Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PDF Generation Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     .watermark-bg {
       background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -155,6 +158,9 @@
         </div>
       </div>
       <button onclick="closeModal()" class="w-full py-2 bg-slate-900 text-white font-bold text-xs rounded-xl">Close Preview</button>
+      <button onclick="downloadPDF()" class="w-full py-2 bg-red-600 text-white font-bold text-xs rounded-xl shadow-sm hover:bg-red-700 mt-2">
+        Download PDF
+      </button>
     </div>
   </div>
 
@@ -599,6 +605,27 @@
     function closeModal() {
       document.getElementById('email-modal').classList.add('hidden');
     }
+    async function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const element = document.getElementById('email-modal').querySelector('.bg-white');
+
+  // Hide buttons so they don't show up in the PDF
+  const buttons = element.querySelectorAll('button');
+  buttons.forEach(b => b.style.display = 'none');
+
+  const canvas = await html2canvas(element, { scale: 2 });
+  const imgData = canvas.toDataURL('image/png');
+  
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const imgWidth = 190;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  
+  pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+  pdf.save("Purchase_Order.pdf");
+
+  // Show the buttons again after download
+  buttons.forEach(b => b.style.display = 'block');
+}
   </script>
 </body>
 </html>
