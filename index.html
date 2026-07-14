@@ -298,6 +298,9 @@
   <script>
     // FULL DATASET FROM Trial_csv.csv
     let isAdminUnlocked = false;
+    let currentPage = 1;
+  const itemsPerPage = 12;
+  let currentFilteredCatalog = []; // MUST BE DECLARED
     let catalog = [
       { id: 1, name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", category: "Dairy, Oils & Baking Essentials", size: "4 x 400g", supplier: "Bookers", price: 8.50 },
       { id: 2, name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", category: "Dairy, Oils & Baking Essentials", size: "10 x 500g", supplier: "Bookers", price: 12.00 },
@@ -454,6 +457,7 @@
       { id: 141, name: "Vegan waffle mix powder", category: "Bakery, Desserts & Breakfast Staples", size: "2.3kg*6", supplier: "JM Posner", price: 31.00 },
       { id: 142, name: "Coffee Beans", category: "Coffee, Tea & Syrups", size: "kg", supplier: "Milk and Beans", price: 16.50 }
     ];
+    currentFilteredCatalog = [...catalog];
 
     let suppliersList = [];
     let cart = [];
@@ -515,43 +519,82 @@
     }
 
    // RENDER CATALOG (INCLUDES ADMIN EDIT PRICE BUTTON)
-    function renderCatalog() {
+   function renderCatalog() {
       const grid = document.getElementById('catalog-grid');
-      const filtered = getFilteredCatalog();
+      const countLabel = document.getElementById('items-count-label');
+      const prevBtn = document.getElementById('btn-prev');
+      const nextBtn = document.getElementById('btn-next');
 
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-sm">No ingredients found.</div>`;
-        return;
+      // 1. Ensure currentFilteredCatalog is populated; fallback to full catalog if empty
+      if (typeof currentFilteredCatalog === 'undefined' || currentFilteredCatalog.length === 0) {
+        if (typeof catalog !== 'undefined' && catalog.length > 0) {
+          currentFilteredCatalog = [...catalog];
+        } else {
+          currentFilteredCatalog = [];
+        }
       }
 
-      grid.innerHTML = filtered.map(item => `
-        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
-          <div>
-            <div class="flex justify-between items-start gap-2 mb-2">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">${item.category}</span>
-              <span class="text-[10px] font-extrabold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">${item.supplier}</span>
-            </div>
-            <h3 class="font-bold text-slate-800 text-sm leading-snug group-hover:text-red-600 transition-colors">${item.name}</h3>
-            <p class="text-xs text-slate-400 mt-1">Pack Size: <span class="font-semibold text-slate-600">${item.size || 'N/A'}</span></p>
-          </div>
+      const perPage = (typeof itemsPerPage !== 'undefined') ? itemsPerPage : 12;
+      let cPage = (typeof currentPage !== 'undefined') ? currentPage : 1;
 
-          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-1.5">
-              <span class="text-base font-black text-slate-900">£${item.price.toFixed(2)}</span>
-              ${isAdminUnlocked ? `
-                <button onclick="openEditPriceModal(${item.id})" title="Edit Price (Admin Only)" class="p-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg transition-colors">
-                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                </button>
-              ` : ''}
-            </div>
-            <button onclick="addToCart(${item.id})" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition-colors">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
-            </button>
-          </div>
-        </div>
-      `).join('');
+      const totalPages = Math.ceil(currentFilteredCatalog.length / perPage) || 1;
+      
+      if (cPage > totalPages) cPage = totalPages;
+      if (cPage < 1) cPage = 1;
 
-      lucide.createIcons();
+      const start = (cPage - 1) * perPage;
+      const end = start + perPage;
+      const paginatedItems = currentFilteredCatalog.slice(start, end);
+
+      // 2. Update count text safely
+      if (countLabel) {
+        if (currentFilteredCatalog.length === 0) {
+          countLabel.textContent = `Showing 0 items`;
+        } else {
+          countLabel.textContent = `Showing ${start + 1}-${Math.min(end, currentFilteredCatalog.length)} of ${currentFilteredCatalog.length} items (Page ${cPage}/${totalPages})`;
+        }
+      }
+
+      if (!grid) return;
+
+      // 3. Render grid cards
+      if (paginatedItems.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-sm">No ingredients found.</div>`;
+      } else {
+        grid.innerHTML = paginatedItems.map(item => `
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+            <div>
+              <div class="flex justify-between items-start gap-2 mb-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">${item.category}</span>
+                <span class="text-[10px] font-extrabold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">${item.supplier}</span>
+              </div>
+              <h3 class="font-bold text-slate-800 text-sm leading-snug group-hover:text-red-600 transition-colors">${item.name}</h3>
+              <p class="text-xs text-slate-400 mt-1">Pack Size: <span class="font-semibold text-slate-600">${item.size || 'N/A'}</span></p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-base font-black text-slate-900">£${item.price.toFixed(2)}</span>
+                ${(typeof isAdminUnlocked !== 'undefined' && isAdminUnlocked) ? `
+                  <button onclick="openEditPriceModal(${item.id})" title="Edit Price (Admin Only)" class="p-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg transition-colors">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                  </button>
+                ` : ''}
+              </div>
+              <button onclick="addToCart(${item.id})" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition-colors">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      if (prevBtn) prevBtn.disabled = cPage === 1;
+      if (nextBtn) nextBtn.disabled = cPage >= totalPages;
+
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+      }
     }
 
     // EDIT PRICE FUNCTIONS (ADMIN ONLY)
