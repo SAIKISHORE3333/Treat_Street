@@ -87,11 +87,23 @@
         </div>
 
         <div class="flex justify-between items-center text-xs text-slate-500 px-1">
-          <span id="items-count-label">Showing 142 items</span>
+          <span id="items-count-label">Showing items...</span>
         </div>
 
-        <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[650px] overflow-y-auto pr-1">
-          </div>
+        <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-1">
+        </div>
+
+        <div id="pagination-controls" class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 mt-4">
+          <button id="btn-prev-page" onclick="changePage(-1)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
+          </button>
+          
+          <div id="page-numbers" class="flex gap-1 overflow-x-auto"></div>
+
+          <button id="btn-next-page" onclick="changePage(1)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+            Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
       </div>
 
       <div class="space-y-4">
@@ -129,7 +141,7 @@
       </div>
 
       <div id="admin-orders-list" class="space-y-4">
-        </div>
+      </div>
     </div>
 
   </div>
@@ -315,12 +327,17 @@
       price: (Math.floor(Math.random() * 2000) / 100 + 4.99).toFixed(2)
     }));
 
+    // PAGINATION GLOBALS
+    let currentPage = 1;
+    const itemsPerPage = 16;
+    let filteredItems = [...catalog];
+
     let cart = [];
     let orders = [];
 
     window.onload = () => {
       populateSupplierFilter();
-      renderCatalog(catalog);
+      filterCatalog();
       lucide.createIcons();
     };
 
@@ -335,47 +352,96 @@
       });
     }
 
-    function renderCatalog(items) {
-      const grid = document.getElementById('catalog-grid');
-      const countLabel = document.getElementById('items-count-label');
-      countLabel.textContent = `Showing ${items.length} of ${catalog.length} items`;
-
-      grid.innerHTML = items.map(item => `
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/90 flex flex-col justify-between hover:border-red-300 transition-all">
-          <div>
-            <div class="flex justify-between items-start mb-2">
-              <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">${item.supplier}</span>
-              <span class="text-xs font-black text-slate-900">£${item.price}</span>
-            </div>
-            <h4 class="font-bold text-slate-800 text-sm leading-snug mb-1">${item.name}</h4>
-            <p class="text-xs text-slate-400 mb-3">Pack Size: ${item.size}</p>
-          </div>
-
-          <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
-            <div class="flex items-center gap-1">
-              <label for="qty-${item.id}" class="text-[10px] font-bold text-slate-400">Qty:</label>
-              <select id="qty-${item.id}" class="py-1 px-2 text-xs bg-slate-100 font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500">
-                ${[1,2,3,4,5,6,7,8,9,10].map(q => `<option value="${q}">${q}</option>`).join('')}
-              </select>
-            </div>
-            <button onclick="addToCart(${item.id})" class="flex-1 py-1.5 bg-slate-900 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
-            </button>
-          </div>
-        </div>
-      `).join('');
-      lucide.createIcons();
-    }
-
     function filterCatalog() {
       const search = document.getElementById('search-input').value.toLowerCase();
       const supplier = document.getElementById('supplier-filter').value;
-      const filtered = catalog.filter(i => {
+      
+      filteredItems = catalog.filter(i => {
         const matchesSearch = i.name.toLowerCase().includes(search) || i.category.toLowerCase().includes(search);
         const matchesSupplier = supplier === 'ALL' || i.supplier === supplier;
         return matchesSearch && matchesSupplier;
       });
-      renderCatalog(filtered);
+
+      currentPage = 1; // reset to page 1 when filtering
+      renderCatalog();
+    }
+
+    function renderCatalog() {
+      const grid = document.getElementById('catalog-grid');
+      const countLabel = document.getElementById('items-count-label');
+      
+      const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const paginatedData = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+      const startCount = filteredItems.length === 0 ? 0 : startIndex + 1;
+      const endCount = Math.min(startIndex + itemsPerPage, filteredItems.length);
+
+      countLabel.textContent = `Showing ${startCount}-${endCount} of ${filteredItems.length} items (Page ${currentPage} of ${totalPages})`;
+
+      if (paginatedData.length === 0) {
+        grid.innerHTML = `<div class="col-span-2 p-8 text-center bg-white rounded-xl text-slate-400 text-sm">No items found matching your filters.</div>`;
+      } else {
+        grid.innerHTML = paginatedData.map(item => `
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/90 flex flex-col justify-between hover:border-red-300 transition-all">
+            <div>
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">${item.supplier}</span>
+                <span class="text-xs font-black text-slate-900">£${item.price}</span>
+              </div>
+              <h4 class="font-bold text-slate-800 text-sm leading-snug mb-1">${item.name}</h4>
+              <p class="text-xs text-slate-400 mb-3">Pack Size: ${item.size}</p>
+            </div>
+
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+              <div class="flex items-center gap-1">
+                <label for="qty-${item.id}" class="text-[10px] font-bold text-slate-400">Qty:</label>
+                <select id="qty-${item.id}" class="py-1 px-2 text-xs bg-slate-100 font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500">
+                  ${[1,2,3,4,5,6,7,8,9,10].map(q => `<option value="${q}">${q}</option>`).join('')}
+                </select>
+              </div>
+              <button onclick="addToCart(${item.id})" class="flex-1 py-1.5 bg-slate-900 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      renderPaginationControls(totalPages);
+      lucide.createIcons();
+    }
+
+    function renderPaginationControls(totalPages) {
+      const prevBtn = document.getElementById('btn-prev-page');
+      const nextBtn = document.getElementById('btn-next-page');
+      const numbersContainer = document.getElementById('page-numbers');
+
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+
+      let pagesHTML = '';
+      for (let i = 1; i <= totalPages; i++) {
+        const isActive = i === currentPage;
+        pagesHTML += `
+          <button onclick="goToPage(${i})" class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${isActive ? 'bg-red-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}">
+            ${i}
+          </button>
+        `;
+      }
+      numbersContainer.innerHTML = pagesHTML;
+    }
+
+    function changePage(delta) {
+      currentPage += delta;
+      renderCatalog();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderCatalog();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function addToCart(id) {
