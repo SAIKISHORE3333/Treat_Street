@@ -6,9 +6,6 @@
   <title>Treat Street Purchase Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- PDF Generation Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     .watermark-bg {
       background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -158,172 +155,450 @@
         </div>
       </div>
       <button onclick="closeModal()" class="w-full py-2 bg-slate-900 text-white font-bold text-xs rounded-xl">Close Preview</button>
-     <div id="pdf-template" style="display: none; padding: 40px; font-family: Arial, sans-serif; position: relative;">
-  <div style="position: absolute; top: 40%; left: 20%; font-size: 100px; color: rgba(200, 200, 200, 0.2); transform: rotate(-45deg); z-index: 0; pointer-events: none;">AIRELA</div>
-  
-  <div style="position: relative; z-index: 1;">
-    <div style="text-align: center; border-bottom: 2px solid #000; margin-bottom: 20px;">
-      <h1 style="margin: 0;">TREAT STREET</h1>
-      <p style="margin: 5px 0;">Purchase Order | Franchise: Milton Keynes (TSMK)</p>
-    </div>
-    
-    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-      <div>
-        <p><strong>PO Number:</strong> <span id="pdf-po-number"></span></p>
-        <p><strong>Date:</strong> <span id="pdf-date"></span></p>
-      </div>
-      <div style="text-align: right;">
-        <p><strong>Supplier:</strong> <span id="pdf-supplier-name"></span></p>
-      </div>
-    </div>
-
-    <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
-      <thead>
-        <tr style="background: #eee;">
-          <th style="padding: 8px; border: 1px solid #000;">ID</th>
-          <th style="padding: 8px; border: 1px solid #000;">Item Name</th>
-          <th style="padding: 8px; border: 1px solid #000;">Qty</th>
-          <th style="padding: 8px; border: 1px solid #000;">Price</th>
-          <th style="padding: 8px; border: 1px solid #000;">Total</th>
-        </tr>
-      </thead>
-      <tbody id="pdf-table-body"></tbody>
-    </table>
-    <div style="text-align: right; margin-top: 10px;">
-        <h3>Grand Total: <span id="pdf-grand-total"></span></h3>
     </div>
   </div>
-</div>
 
-    <script>
-    // 1. DATA (Freshly mapped from your CSV)
-    const catalog = [
-      {"Ingredient Name": "Betty Crocker Indulgent Chocolate Fudge Icing 400g", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "4 x 400g", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      {"Ingredient Name": "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "10 x 500g", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      {"Ingredient Name": "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 3kg", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      {"Ingredient Name": "Billington's Light Brown Soft Natural Unrefined Cane Sugar 500g", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "10 x 500g", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      {"Ingredient Name": "Biscoff Biscuit Crumbs 750g", "Category": "Sweets, Toppings & Biscuits", "Package Size": "8 x 750g", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      {"Ingredient Name": "Cadbury Drinking Hot Chocolate Large Tub 2KG", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 2kg", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      {"Ingredient Name": "CaterPro 100 Wooden Dessert Spoons", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100s", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      {"Ingredient Name": "CaterPro 100 Wooden Forks", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100s", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      {"Ingredient Name": "Chef's Essentials Chopped Tomatoes in Tomato Juice 2.5kg", "Category": "Sauces, Condiments & Savory Staples", "Package Size": "6 x 2.5kg", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      {"Ingredient Name": "Chef's Larder Lightly Salted Tortilla Chips 454g", "Category": "Sauces, Condiments & Savory Staples", "Package Size": "6 x 454g", "Supplier": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
-      // ... [Insert the rest of the 140+ items from the processed CSV here to keep this compact] ...
-      {"Ingredient Name": "Coffee Beans", "Category": "Coffee, Tea & Syrups", "Package Size": "kg", "Supplier": "Milk and Beans", "Supplier Email": "jsaikishore80@gmail.com"}
-    ].map((item, index) => ({ ...item, id: index + 1, price: (Math.random() * 10 + 2).toFixed(2) }));
+  <script>
+    // FULL 142 ITEMS FROM TRAIL_DATA.CSV
+    const rawData = [
+      {"Ingredient Name": "Betty Crocker Indulgent Chocolate Fudge Icing 400g", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "4 x 400g", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "10 x 500g", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 3kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Billington's Light Brown Soft Natural Unrefined Cane Sugar 500g", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "10 x 500g", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Biscoff Biscuit Crumbs 750g", "Category": "Sweets, Toppings & Biscuits", "Package Size": "8 x 750g", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Cadbury Drinking Hot Chocolate Large Tub 2KG", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 2kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "CaterPro 100 Wooden Dessert Spoons", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100s", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "CaterPro 100 Wooden Forks", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100s", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Chef's Essentials Chopped Tomatoes in Tomato Juice 2.5kg", "Category": "Sauces, Condiments & Savory Staples", "Package Size": "6 x 2.5kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Chef's Larder Lightly Salted Tortilla Chips 454g", "Category": "Sauces, Condiments & Savory Staples", "Package Size": "6 x 454g", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Amarena cherry gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Banana gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Biscoff gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Black vanilla gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Bubblegum gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Coconut gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Kinder bueno gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Lemon sorbet 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Mango sorbet 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Mint chocolate chip gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Nutella gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Oreo gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Passion fruit sorbet 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Pistachio gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Raspberry sorbet 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Salted caramel gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Snickers gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Strawberry gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Vanilla gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "White chocolate gelato 4.5l", "Category": "Gelato & Ice Creams", "Package Size": "1 x 4.5l", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Waffle Cones Medium", "Category": "Packaging & Cones", "Package Size": "1 x 150 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Large Waffle Cones", "Category": "Packaging & Cones", "Package Size": "1 x 120 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Chocolate Dipped Cones", "Category": "Packaging & Cones", "Package Size": "1 x 100 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Whipped Cream Aerosol 500ml", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "12 x 500ml", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Whole Milk 2L Tubs", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "6 x 2L", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Semi-Skimmed Milk 2L", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "6 x 2L", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Double Cream 2L Tubs", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "4 x 2L", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Kirkland Pure Honey 1.5kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 1.5kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Kirkland Chocolate Chips 2kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 2kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Kirkland Maple Syrup 1L", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 1L", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Nutella Foodservice Bucket 3kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 3kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Lotus Biscoff Spread 1.6kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1.6kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Monin Vanilla Syrup 1L", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 1L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Monin Caramel Syrup 1L", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 1L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Monin Hazelnut Syrup 1L", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 1L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Monin Strawberry Syrup 1L", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 1L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Monin Salted Caramel Syrup 1L", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 1L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Oreo Biscuit Crumbs 400g", "Category": "Sweets, Toppings & Biscuits", "Package Size": "12 x 400g", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Smarties Topping Tub 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "KitKat Mini Pieces 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Marshmallows Mini Pink & White 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Rainbow Sprinkles 1kg Tub", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Chocolate Vermicelli Sprinkles 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Fudge Cubes Topping 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Honeycomb Pieces 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Hershey's Chocolate Sauce 1.36kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1.36kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Hershey's Strawberry Sauce 1.36kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1.36kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Ghirardelli Dark Chocolate Sauce 2.5kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 2.5kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Ghirardelli Caramel Sauce 2.5kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 2.5kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Ghirardelli White Chocolate Sauce 2.5kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 2.5kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Takeaway Dessert Boxes 8x8", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Waffle Trays Bio 100s", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Clear Milkshake Cups 16oz", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 500 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Dome Lids for Milkshake Cups", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 500 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Paper Straws Jumbo 250s", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 250 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Coffee Cups 12oz Double Wall", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 500 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Sip Lids for 12oz Coffee Cups", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 500 count", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Napkins 2-Ply White 2000s", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 2000", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Blue Roll Hygiene Wipes 6 Pack", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 6 rolls", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Antibacterial Surface Cleaner 5L", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 5L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Washing Up Liquid Concentrated 5L", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 5L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Food Grade Sanitiser Spray 750ml", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "6 x 750ml", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Clear Disposable Gloves Medium", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100 count", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Clear Disposable Gloves Large", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100 count", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Black Heavy Duty Bin Liners 100s", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100 count", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Self Raising Flour 15kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 15kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Plain Flour 15kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 15kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Caster Sugar 25kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 25kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Icing Sugar 10kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 10kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Unsalted Butter 40x250g", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 10kg", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Free Range Medium Eggs 15 Dozen", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 180 eggs", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Vegetable Oil 15L Drum", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 15L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Baking Powder 1kg Tub", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Bicarbonate of Soda 1kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Vanilla Extract Natural 1L", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 1L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Cocoa Powder Dark 2kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 2kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Belgian Dark Chocolate Buttons 2.5kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 2.5kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Belgian Milk Chocolate Buttons 2.5kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 2.5kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Belgian White Chocolate Buttons 2.5kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 2.5kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Ferrero Rocher 16 Pack Boxes", "Category": "Sweets, Toppings & Biscuits", "Package Size": "8 x 16s", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Kinder Bueno Milk Bars 30 Pack", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 30s", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Kinder Bueno White Bars 30 Pack", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 30s", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "M&M's Peanut Crisp 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "M&M's Chocolate 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Maltesers Teasers Crushed 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Reese's Peanut Butter Cups 36 Pack", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 36s", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Terry's Chocolate Orange Mini Segments 1kg", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Flake 99 Minis Box 144", "Category": "Sweets, Toppings & Biscuits", "Package Size": "1 x 144s", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Strawberries Fresh 400g Punnet", "Category": "Fresh Produce", "Package Size": "10 x 400g", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Bananas Fresh Box 18kg", "Category": "Fresh Produce", "Package Size": "1 x 18kg", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Raspberries Fresh 125g", "Category": "Fresh Produce", "Package Size": "12 x 125g", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Blueberries Fresh 125g", "Category": "Fresh Produce", "Package Size": "12 x 125g", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Fresh Mint Leaves Bunch 100g", "Category": "Fresh Produce", "Package Size": "5 x 100g", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Lemons Fresh Box 30s", "Category": "Fresh Produce", "Package Size": "1 x 30 count", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Limes Fresh Box 30s", "Category": "Fresh Produce", "Package Size": "1 x 30 count", "Suppleir": "FreshPac", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Espresso Coffee Beans Dark Roast 1kg", "Category": "Coffee, Tea & Syrups", "Package Size": "6 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Decaf Espresso Beans 1kg", "Category": "Coffee, Tea & Syrups", "Package Size": "2 x 1kg", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "English Breakfast Tea Bags 1100s", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 1100s", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Earl Grey Tea Bags 100s", "Category": "Coffee, Tea & Syrups", "Package Size": "6 x 100s", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Green Tea Bags 100s", "Category": "Coffee, Tea & Syrups", "Package Size": "6 x 100s", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Chai Tea Latte Concentrate 1L", "Category": "Coffee, Tea & Syrups", "Package Size": "6 x 1L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Matcha Green Tea Powder 500g", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 500g", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Biscoff Cookie Dough Base 5kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 5kg", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Chocolate Chip Cookie Dough 5kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 5kg", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Red Velvet Cookie Dough 5kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 5kg", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "White Chocolate Raspberry Cookie Dough 5kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 5kg", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Crepe Mix Traditional 10kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 10kg", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "American Waffle Mix 10kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 10kg", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Bubble Waffle Mix 10kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 10kg", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Pancake Batter Mix 10kg", "Category": "Dairy, Oils & Baking Essentials", "Package Size": "1 x 10kg", "Suppleir": "Airela", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "San Pellegrino Aranciata 24x330ml", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 24 cans", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "San Pellegrino Limonata 24x330ml", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 24 cans", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Coca Cola Original Glass Bottles 24x330ml", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 24 bottles", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Diet Coke Glass Bottles 24x330ml", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 24 bottles", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Sprite Zero Glass Bottles 24x330ml", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 24 bottles", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Fanta Orange Glass Bottles 24x330ml", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 24 bottles", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Still Mineral Water Glass 24x330ml", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 24 bottles", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Sparkling Water Glass 24x330ml", "Category": "Coffee, Tea & Syrups", "Package Size": "1 x 24 bottles", "Suppleir": "Costco", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Thermal Till Roll Paper 80x80 20s", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 20 rolls", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "PDQ Card Machine Rolls 57x40 20s", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 20 rolls", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Cling Film Wrap 450mm x 300m", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 1 roll", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Aluminum Foil Catering 450mm x 75m", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 1 roll", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Greaseproof Baking Paper Sheets 500s", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 500 sheets", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Piping Bags Disposable 100s", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 100 count", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Ice Cream Scoops Stainless Steel 60mm", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 1 unit", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Crepe Spatula Wooden 40cm", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 2 units", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Waffle Tongs Stainless Steel 10 inch", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 2 units", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Squeeze Bottles Clear 24oz 6 Pack", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 6 pack", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Syrup Pump Dispensers 10ml", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 6 pack", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Hand Soap Refill Antibacterial 5L", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 5L", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Centerfeed Hand Towel Blue 6 Roll", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 6 rolls", "Suppleir": "Bookers", "Supplier Email": "jsaikishore80@gmail.com"},
+      {"Ingredient Name": "Catering Aprons Black Waterproof", "Category": "Non-Food, Cleaning & Packaging", "Package Size": "1 x 5 pack", "Suppleir": "StratFord", "Supplier Email": "jsaikishore80@gmail.com"}
+    ];
+
+    const catalog = rawData.map((item, index) => ({
+      id: index + 1,
+      name: item["Ingredient Name"],
+      category: item["Category"] || "General",
+      size: item["Package Size"] || "Standard",
+      supplier: item["Suppleir"] || "General Supplier",
+      supplierEmail: item["Supplier Email"] || "jsaikishore80@gmail.com",
+      price: (Math.floor(Math.random() * 2000) / 100 + 4.99).toFixed(2)
+    }));
 
     let cart = [];
     let orders = [];
 
-    // 2. CORE FUNCTIONS
+    window.onload = () => {
+      populateSupplierFilter();
+      renderCatalog(catalog);
+      lucide.createIcons();
+    };
+
+    function populateSupplierFilter() {
+      const suppliers = [...new Set(catalog.map(i => i.supplier))];
+      const select = document.getElementById('supplier-filter');
+      suppliers.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        select.appendChild(opt);
+      });
+    }
+
     function renderCatalog(items) {
       const grid = document.getElementById('catalog-grid');
+      const countLabel = document.getElementById('items-count-label');
+      countLabel.textContent = `Showing ${items.length} of ${catalog.length} items`;
+
       grid.innerHTML = items.map(item => `
-        <div class="bg-white p-4 rounded-xl border border-slate-200">
-          <h4 class="font-bold text-sm">${item["Ingredient Name"]}</h4>
-          <p class="text-xs text-slate-500">${item.Supplier}</p>
-          <button onclick="addToCart(${item.id})" class="mt-2 w-full bg-slate-900 text-white text-xs py-1 rounded">Add</button>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/90 flex flex-col justify-between hover:border-red-300 transition-all">
+          <div>
+            <div class="flex justify-between items-start mb-2">
+              <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">${item.supplier}</span>
+              <span class="text-xs font-black text-slate-900">£${item.price}</span>
+            </div>
+            <h4 class="font-bold text-slate-800 text-sm leading-snug mb-1">${item.name}</h4>
+            <p class="text-xs text-slate-400 mb-3">Pack Size: ${item.size}</p>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-1">
+              <label for="qty-${item.id}" class="text-[10px] font-bold text-slate-400">Qty:</label>
+              <select id="qty-${item.id}" class="py-1 px-2 text-xs bg-slate-100 font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500">
+                ${[1,2,3,4,5,6,7,8,9,10].map(q => `<option value="${q}">${q}</option>`).join('')}
+              </select>
+            </div>
+            <button onclick="addToCart(${item.id})" class="flex-1 py-1.5 bg-slate-900 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+            </button>
+          </div>
         </div>
       `).join('');
+      lucide.createIcons();
+    }
+
+    function filterCatalog() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const supplier = document.getElementById('supplier-filter').value;
+      const filtered = catalog.filter(i => {
+        const matchesSearch = i.name.toLowerCase().includes(search) || i.category.toLowerCase().includes(search);
+        const matchesSupplier = supplier === 'ALL' || i.supplier === supplier;
+        return matchesSearch && matchesSupplier;
+      });
+      renderCatalog(filtered);
     }
 
     function addToCart(id) {
+      const selectEl = document.getElementById(`qty-${id}`);
+      const selectedQty = parseInt(selectEl ? selectEl.value : 1, 10);
       const item = catalog.find(i => i.id === id);
       const existing = cart.find(c => c.id === id);
-      if (existing) existing.qty += 1;
-      else cart.push({ ...item, qty: 1 });
+
+      if (existing) {
+        existing.qty += selectedQty;
+      } else {
+        cart.push({ ...item, qty: selectedQty });
+      }
+      renderCart();
+    }
+
+    function updateQty(id, delta) {
+      const item = cart.find(c => c.id === id);
+      if (item) {
+        item.qty += delta;
+        if (item.qty <= 0) cart = cart.filter(c => c.id !== id);
+      }
       renderCart();
     }
 
     function renderCart() {
       const cartDiv = document.getElementById('cart-items');
-      cartDiv.innerHTML = cart.map(item => `<div>${item["Ingredient Name"]} (x${item.qty})</div>`).join('');
+      const countSpan = document.getElementById('cart-count');
+      const totalSpan = document.getElementById('cart-total');
+      const submitBtn = document.getElementById('btn-submit-order');
+
+      const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
+      const totalPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
+
+      countSpan.textContent = `${totalItems} items`;
+      totalSpan.textContent = `£${totalPrice}`;
+      submitBtn.disabled = cart.length === 0;
+
+      if (cart.length === 0) {
+        cartDiv.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">Your cart is empty. Add ingredients from the catalog.</p>`;
+        return;
+      }
+
+      cartDiv.innerHTML = cart.map(item => `
+        <div class="flex items-center justify-between pt-2">
+          <div class="flex-1 pr-2">
+            <h5 class="font-bold text-xs text-slate-800 line-clamp-1">${item.name}</h5>
+            <span class="text-[10px] text-slate-400">${item.supplier} - £${item.price} each</span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+            <button onclick="updateQty(${item.id}, -1)" class="w-5 h-5 flex items-center justify-center bg-white text-slate-700 rounded text-xs font-bold">-</button>
+            <span class="text-xs font-bold w-5 text-center">${item.qty}</span>
+            <button onclick="updateQty(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center bg-white text-slate-700 rounded text-xs font-bold">+</button>
+          </div>
+        </div>
+      `).join('');
     }
 
     function placeOrder() {
-      const newOrder = { id: 'PO-' + Date.now(), items: [...cart], status: 'Pending Review' };
+      const orderId = 'PO-' + Math.floor(1000 + Math.random() * 9000);
+      const newOrder = {
+        id: orderId,
+        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        items: [...cart],
+        total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2),
+        status: 'Pending Review'
+      };
+
       orders.unshift(newOrder);
       cart = [];
-      renderAdminOrders();
+      renderCart();
+      updateAdminBadge();
+
+      const toast = document.getElementById('toast-banner');
+      document.getElementById('toast-title').textContent = `Master Order #${orderId} Placed!`;
+      document.getElementById('toast-msg').textContent = 'Order submitted. Admin will dispatch separate POs to each supplier.';
+      toast.classList.remove('hidden');
     }
 
-    // 3. THE FIXED FLOW: Approve -> Supplier Selection -> Generate PDF
+    function switchRole(role) {
+      const staffBtn = document.getElementById('btn-role-staff');
+      const adminBtn = document.getElementById('btn-role-admin');
+      const staffView = document.getElementById('view-staff');
+      const adminView = document.getElementById('view-admin');
+
+      if (role === 'staff') {
+        staffView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+        staffBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-800 shadow-sm";
+        adminBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
+      } else {
+        staffView.classList.add('hidden');
+        adminView.classList.remove('hidden');
+        adminBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-800 shadow-sm";
+        staffBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
+        renderAdminOrders();
+      }
+    }
+
+    function updateAdminBadge() {
+      const badge = document.getElementById('admin-badge');
+      const pendingCount = orders.filter(o => o.status === 'Pending Review').length;
+      if (pendingCount > 0) {
+        badge.textContent = pendingCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
     function renderAdminOrders() {
-      const list = document.getElementById('admin-orders-list');
-      list.innerHTML = orders.map(order => {
-        const suppliers = [...new Set(order.items.map(i => i.Supplier))];
+      const container = document.getElementById('admin-orders-list');
+      if (orders.length === 0) {
+        container.innerHTML = `<div class="bg-white p-8 text-center rounded-xl text-slate-400 text-sm">No master purchase orders placed yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => {
+        const suppliersInOrder = [...new Set(order.items.map(i => i.supplier))];
+
         return `
-          <div class="bg-white p-4 mb-4 rounded shadow">
-            <h3>${order.id}</h3>
-            <button onclick="openSupplierSelection(${JSON.stringify(suppliers).replace(/"/g, "'")}, ${JSON.stringify(order).replace(/"/g, "'")})">
-              Approve Order
-            </button>
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+              <div>
+                <span class="text-xs font-bold text-slate-400">MASTER ORDER NO.</span>
+                <h3 class="text-base font-black text-slate-900">${order.id}</h3>
+                <span class="text-[10px] text-slate-400">Placed today at ${order.date} • Splitting across ${suppliersInOrder.length} supplier(s)</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="px-3 py-1 rounded-full text-xs font-bold ${order.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                  ${order.status}
+                </span>
+                ${order.status === 'Pending Review' ? `
+                  <button onclick="approveOrder('${order.id}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1">
+                    <i data-lucide="check" class="w-4 h-4"></i> Approve & Split PO Emails
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Itemized Breakdown by Supplier:</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                ${suppliersInOrder.map(sup => {
+                  const itemsForSup = order.items.filter(i => i.supplier === sup);
+                  const totalItems = itemsForSup.reduce((acc, i) => acc + i.qty, 0);
+                  const subTotal = itemsForSup.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
+                  const supEmail = itemsForSup[0]?.supplierEmail || 'jsaikishore80@gmail.com';
+
+                  return `
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between space-y-3">
+                      <div>
+                        <div class="flex justify-between items-center mb-1">
+                          <span class="font-bold text-sm text-red-700">${sup}</span>
+                          <span class="text-[10px] bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded-full">${totalItems} item(s)</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mb-2 flex items-center gap-1">
+                          <i data-lucide="mail" class="w-3 h-3 text-slate-400"></i> ${supEmail}
+                        </p>
+                        <ul class="text-xs text-slate-600 space-y-1 my-2">
+                          ${itemsForSup.map(i => `
+                            <li class="flex justify-between">
+                              <span>${i.qty}x ${i.name}</span>
+                              <span class="font-semibold text-slate-800">£${(i.price * i.qty).toFixed(2)}</span>
+                            </li>
+                          `).join('')}
+                        </ul>
+                      </div>
+                      <div class="pt-2 border-t border-slate-200 flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-900">Subtotal: £${subTotal}</span>
+                        <button onclick="previewSupplierEmail('${order.id}', '${sup}')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-bold flex items-center gap-1">
+                          <i data-lucide="eye" class="w-3 h-3"></i> View PO Email
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
           </div>
         `;
       }).join('');
+      lucide.createIcons();
     }
 
-    function openSupplierSelection(suppliers, orderData) {
-      const container = document.getElementById('supplier-buttons-container');
-      container.innerHTML = '';
-      suppliers.forEach(sup => {
-        const btn = document.createElement('button');
-        btn.textContent = `Download ${sup} PO`;
-        btn.onclick = () => processPDF(sup, orderData);
-        container.appendChild(btn);
-      });
-      document.getElementById('supplier-selection-modal').classList.remove('hidden');
+    function approveOrder(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        order.status = 'Approved';
+        renderAdminOrders();
+        updateAdminBadge();
+      }
     }
 
-    async function processPDF(supplierName, orderData) {
-      // Correctly filters the items for this specific supplier
-      const items = orderData.items.filter(i => i.Supplier === supplierName);
+    function previewSupplierEmail(orderId, supplierName) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const items = order.items.filter(i => i.supplier === supplierName);
+      const total = items.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
+      const email = items[0]?.supplierEmail || 'jsaikishore80@gmail.com';
+
+      document.getElementById('modal-supplier-name').textContent = `Purchase Order for ${supplierName}`;
+      document.getElementById('modal-email').textContent = email;
+      document.getElementById('modal-subject').textContent = `PO #${orderId}-${supplierName.toUpperCase()} - Treat Street Alia`;
       
-      // Update your PO Template elements here
-      document.getElementById('pdf-supplier-name').textContent = supplierName;
-      // ... fill table rows with `items` ...
+      document.getElementById('modal-items-list').innerHTML = items.map(i => `
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <div>
+            <p class="font-bold text-slate-800">${i.name}</p>
+            <p class="text-[10px] text-slate-400">Pack Size: ${i.size} | Qty: ${i.qty}</p>
+          </div>
+          <span class="font-bold text-slate-900">£${(i.price * i.qty).toFixed(2)}</span>
+        </div>
+      `).join('');
 
-      // Trigger Print/Save
-      console.log("Generating PDF for:", supplierName, items);
-      // html2canvas... jspdf...
+      document.getElementById('modal-total').textContent = `£${total}`;
+      document.getElementById('email-modal').classList.remove('hidden');
     }
 
-    window.onload = () => renderCatalog(catalog);
-
+    function closeModal() {
+      document.getElementById('email-modal').classList.add('hidden');
+    }
   </script>
-  <!-- Selection Modal -->
-<div id="supplier-selection-modal" class="hidden fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
-  <div class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-    <h3 class="font-bold text-lg mb-4">Select Supplier to Generate PO</h3>
-    <!-- The buttons will be added here automatically by JavaScript -->
-    <div id="supplier-buttons-container" class="space-y-2"></div>
-    <button onclick="document.getElementById('supplier-selection-modal').classList.add('hidden')" class="w-full py-2 bg-gray-200 mt-4 rounded-lg">Cancel</button>
-  </div>
-</div>
-  <div id="pdf-template" style="display: none; padding: 40px; font-family: sans-serif;">
-  <div style="border-bottom: 2px solid #000; padding-bottom: 20px;">
-    <h1 style="margin: 0;">TREAT STREET - PURCHASE ORDER</h1>
-    <p>Franchise: Milton Keynes (TSMK)</p>
-  </div>
-  <div style="margin: 20px 0; display: flex; justify-content: space-between;">
-    <div>
-      <p><strong>PO Number:</strong> <span id="pdf-po-number"></span></p>
-      <p><strong>Date:</strong> <span id="pdf-date"></span></p>
-    </div>
-    <div style="text-align: right;">
-      <p><strong>Supplier:</strong> <span id="pdf-supplier-name"></span></p>
-    </div>
-  </div>
-  <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
-    <thead>
-      <tr style="background: #f4f4f4;">
-        <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
-        <th style="padding: 10px; border: 1px solid #ddd;">Item Name</th>
-        <th style="padding: 10px; border: 1px solid #ddd;">Qty</th>
-      </tr>
-    </thead>
-    <tbody id="pdf-table-body"></tbody>
-  </table>
-</div>
 </body>
 </html>
