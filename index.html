@@ -295,12 +295,12 @@
       </form>
     </div>
   </div>
-  <script>
+ <script>
     // FULL DATASET FROM Trial_csv.csv
     let isAdminUnlocked = false;
-  let currentPage = 1;
-  const itemsPerPage = 12;
-  let currentFilteredCatalog = [];
+    let currentPage = 1;
+    const itemsPerPage = 12;
+    let currentFilteredCatalog = [];
     let catalog = [
       { id: 1, name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", category: "Dairy, Oils & Baking Essentials", size: "4 x 400g", supplier: "Bookers", price: 8.50 },
       { id: 2, name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", category: "Dairy, Oils & Baking Essentials", size: "10 x 500g", supplier: "Bookers", price: 12.00 },
@@ -380,8 +380,6 @@
       { id: 76, name: "Strathmore Sparkling Spring Water 330ml", category: "Beverages", size: "24 x 330ml", supplier: "Bookers", price: 8.50 },
       { id: 77, name: "Strathmore Still Spring Water 330ml / 750ml", category: "Beverages", size: "24 x 330ml", supplier: "Bookers", price: 8.50 },
       { id: 78, name: "Sweetex Calorie Free Sweeteners 1200 Tablets", category: "Dairy, Oils & Baking Essentials", size: "12 x 1200pk", supplier: "Bookers", price: 18.00 },
-      
-      // COSTCO ITEMS
       { id: 79, name: "Kinder bueno", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 18.50 },
       { id: 80, name: "Ferrero rocher", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 12.00 },
       { id: 81, name: "Skittles", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 7.50 },
@@ -392,130 +390,31 @@
       { id: 86, name: "Fuel granola", category: "Bakery, Desserts & Breakfast Staples", size: "KG", supplier: "Costco", price: 4.50 },
       { id: 87, name: "Seeds and fruit mix", category: "Bakery, Desserts & Breakfast Staples", size: "PCKT", supplier: "Costco", price: 3.80 },
       { id: 88, name: "Frozen mixed berries", category: "Bakery, Desserts & Breakfast Staples", size: "1.8KG", supplier: "Costco", price: 6.50 },
-      { id: 89, name: "St Pierre Brioche buns", category: "Bakery, Desserts & Breakfast Staples", size: "8PCS*2", supplier: "Costco", price: 4.20 },
-      { id: 90, name: "KTC vegetable oil", category: "Dairy, Oils & Baking Essentials", size: "20LTRS", supplier: "Costco", price: 25.00 },
-      { id: 91, name: "Nacho cheese", category: "Sauces, Condiments & Savory Staples", size: "3KG", supplier: "Costco", price: 12.50 },
-      { id: 92, name: "Mayonnaise", category: "Sauces, Condiments & Savory Staples", size: "5KG", supplier: "Costco", price: 11.00 },
-      { id: 93, name: "Eggs", category: "Dairy, Oils & Baking Essentials", size: "1 BOX *60", supplier: "Costco", price: 9.50 },
-
-      // SOUTHLINCS ITEMS
-      { id: 94, name: "Apple pie filling", category: "Bakery, Desserts & Breakfast Staples", size: "2KG", supplier: "SouthLincs", price: 6.50 },
-      { id: 95, name: "Red cherry pie filling", category: "Bakery, Desserts & Breakfast Staples", size: "2KG", supplier: "SouthLincs", price: 7.20 },
-      { id: 96, name: "New york style cheesecake", category: "Bakery, Desserts & Breakfast Staples", size: "16PORTIONS /BOX", supplier: "SouthLincs", price: 16.00 },
-      { id: 97, name: "All butter croissant", category: "Bakery, Desserts & Breakfast Staples", size: "1 Box X 48", supplier: "SouthLincs", price: 18.00 },
-      { id: 98, name: "Pash’n’shoot smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 22.00 },
-      { id: 99, name: "Melon refresher smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 22.00 },
-      { id: 100, name: "Avo go go smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 22.00 },
-      { id: 101, name: "Detox zing smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 22.00 },
-      { id: 102, name: "Triple chocolate brownie", category: "Bakery, Desserts & Breakfast Staples", size: "16 portions / Box", supplier: "SouthLincs", price: 15.00 },
-      { id: 103, name: "James Brown cornflour", category: "Dairy, Oils & Baking Essentials", size: "3.5kg", supplier: "SouthLincs", price: 5.80 },
-
-      // AIRELA ITEMS
-      { id: 104, name: "Raspberry sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 13.50 },
-      { id: 105, name: "Mango sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 13.50 },
-      { id: 106, name: "Passionfruit sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 13.50 },
-      { id: 107, name: "Biscoff gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
-      { id: 108, name: "Cherry yoghurt gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
-      { id: 109, name: "Rum’n’raisin gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
-      { id: 110, name: "Coffee gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
-      { id: 111, name: "Honeycomb gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
-      { id: 112, name: "Bubblegum gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
-      { id: 113, name: "Coconut gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
-      { id: 114, name: "Eton mess gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 15.00 },
-      { id: 115, name: "Cinnamon gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
-      { id: 116, name: "Salted caramel gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
-      { id: 117, name: "S’mores gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 15.00 },
-      { id: 118, name: "Oreo gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
-      { id: 119, name: "Strawberry gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
-      { id: 120, name: "Pistachio gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 18.00 },
-      { id: 121, name: "Peanutella gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 15.50 },
-      { id: 122, name: "Ambassador gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 16.00 },
-      { id: 123, name: "Waffle cones", category: "Ice Creams", size: "Pack", supplier: "Airela", price: 15.00 },
-      { id: 124, name: "Cone tissues", category: "Ice Creams", size: "Pack", supplier: "Airela", price: 4.00 },
-
-      // STRATFORD ITEMS
-      { id: 125, name: "Vanilla gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 22.00 },
-      { id: 126, name: "Dulce de leche gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 25.00 },
-      { id: 127, name: "Cherries and custard gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 26.00 },
-      { id: 128, name: "Mascarpone gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 26.00 },
-      { id: 129, name: "Ciokamenta gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 25.00 },
-      { id: 130, name: "Vegan vanilla gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 27.00 },
-      { id: 131, name: "Scoopable acai", category: "Gelato, Sorbet & Ice Cream Mixes", size: "3.6l*2", supplier: "StratFord", price: 38.00 },
-      { id: 132, name: "Vegan chocolate gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 27.00 },
-      { id: 133, name: "Vegan salted caramel gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 27.00 },
-
-      // FRESHPAC ITEMS
-      { id: 134, name: "Lemon and elderflower tea", category: "Coffee, Tea & Syrups", size: "500g", supplier: "FreshPac", price: 8.00 },
-      { id: 135, name: "Green tea", category: "Coffee, Tea & Syrups", size: "500g", supplier: "FreshPac", price: 7.50 },
-      { id: 136, name: "Earl grey tea", category: "Coffee, Tea & Syrups", size: "500g", supplier: "FreshPac", price: 7.50 },
-      { id: 137, name: "Vanilla chai latte powder", category: "Coffee, Tea & Syrups", size: "1kg", supplier: "FreshPac", price: 12.00 },
-      { id: 138, name: "Spice chai latte powder", category: "Coffee, Tea & Syrups", size: "1kg", supplier: "FreshPac", price: 12.00 },
-
-      // BIDFOOD, JM POSNER & MILK AND BEANS
-      { id: 139, name: "Frozen waffles", category: "Bakery, Desserts & Breakfast Staples", size: "130*130g", supplier: "Bidfood", price: 24.00 },
-      { id: 140, name: "Waffle mix powder", category: "Bakery, Desserts & Breakfast Staples", size: "2.3kg*6", supplier: "JM Posner", price: 29.00 },
-      { id: 141, name: "Vegan waffle mix powder", category: "Bakery, Desserts & Breakfast Staples", size: "2.3kg*6", supplier: "JM Posner", price: 31.00 },
-      { id: 142, name: "Coffee Beans", category: "Coffee, Tea & Syrups", size: "kg", supplier: "Milk and Beans", price: 16.50 }
+      { id: 89, name: "St Pierre Brioche buns", category: "Bakery, Desserts & Breakfast Staples", size: "8PCS*2", supplier: "Costco", price: 4.20 }
     ];
-    currentFilteredCatalog = [...catalog];
 
-    let suppliersList = [];
     let cart = [];
-    let orders = [];
-    let currentPage = 1;
-    const itemsPerPage = 20;
-    let currentFilteredCatalog = [];
+    let ordersList = [];
+    let suppliersList = ["Bookers", "Costco"];
 
-    window.onload = () => {
-      syncSuppliersList();
-      populateSupplierDropdowns();
+    window.addEventListener('DOMContentLoaded', () => {
       currentFilteredCatalog = [...catalog];
+      populateSupplierDropdowns();
       renderCatalog();
-      updateCartUI();
-      lucide.createIcons();
-    };
-
-    function syncSuppliersList() {
-      suppliersList = [...new Set(catalog.map(i => i.supplier))];
-    }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
 
     function populateSupplierDropdowns() {
       const filterSelect = document.getElementById('supplier-filter');
-      const addFormSelect = document.getElementById('new-item-supplier');
-
-      filterSelect.innerHTML = `<option value="ALL">All Suppliers</option>`;
-      addFormSelect.innerHTML = ``;
-
-      suppliersList.forEach(s => {
-        const opt1 = document.createElement('option');
-        opt1.value = s;
-        opt1.textContent = s;
-        filterSelect.appendChild(opt1);
-
-        const opt2 = document.createElement('option');
-        opt2.value = s;
-        opt2.textContent = s;
-        addFormSelect.appendChild(opt2);
-      });
-    }
-
-    function filterCatalog() {
-      const search = document.getElementById('search-input').value.toLowerCase();
-      const supplier = document.getElementById('supplier-filter').value;
-
-      currentFilteredCatalog = catalog.filter(i => {
-        const matchesSearch = i.name.toLowerCase().includes(search) || i.category.toLowerCase().includes(search);
-        const matchesSupplier = supplier === 'ALL' || i.supplier === supplier;
-        return matchesSearch && matchesSupplier;
-      });
-
-      currentPage = 1;
-      renderCatalog();
-    }
-
-    function changePage(direction) {
-      currentPage += direction;
-      renderCatalog();
+      const formSelect = document.getElementById('new-item-supplier');
+      
+      if (filterSelect) {
+        filterSelect.innerHTML = '<option value="ALL">All Suppliers</option>' + 
+          suppliersList.map(s => `<option value="${s}">${s}</option>`).join('');
+      }
+      if (formSelect) {
+        formSelect.innerHTML = suppliersList.map(s => `<option value="${s}">${s}</option>`).join('');
+      }
     }
 
     function renderCatalog() {
@@ -524,37 +423,29 @@
       const prevBtn = document.getElementById('btn-prev');
       const nextBtn = document.getElementById('btn-next');
 
-      // Safeguard initialization states automatically
-      if (typeof currentFilteredCatalog === 'undefined' || !currentFilteredCatalog || currentFilteredCatalog.length === 0) {
-        if (typeof catalog !== 'undefined' && catalog && catalog.length > 0) {
-          currentFilteredCatalog = [...catalog];
-        } else {
-          currentFilteredCatalog = [];
-        }
+      if (!currentFilteredCatalog || currentFilteredCatalog.length === 0) {
+        currentFilteredCatalog = [...catalog];
       }
 
-      const perPage = (typeof itemsPerPage !== 'undefined') ? itemsPerPage : 12;
-      let cPage = (typeof currentPage !== 'undefined') ? currentPage : 1;
-      const totalPages = Math.ceil(currentFilteredCatalog.length / perPage) || 1;
+      const totalPages = Math.ceil(currentFilteredCatalog.length / itemsPerPage) || 1;
 
-      if (cPage > totalPages) cPage = totalPages;
-      if (cPage < 1) cPage = 1;
-      currentPage = cPage; // Sync global state back safely
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
 
-      const start = (cPage - 1) * perPage;
-      const end = start + perPage;
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
       const paginatedItems = currentFilteredCatalog.slice(start, end);
 
       if (countLabel) {
         if (currentFilteredCatalog.length === 0) {
           countLabel.textContent = `Showing 0 items`;
         } else {
-          countLabel.textContent = `Showing ${start + 1}-${Math.min(end, currentFilteredCatalog.length)} of ${currentFilteredCatalog.length} items (Page ${cPage}/${totalPages})`;
+          countLabel.textContent = `Showing ${start + 1}-${Math.min(end, currentFilteredCatalog.length)} of ${currentFilteredCatalog.length} items (Page ${currentPage}/${totalPages})`;
         }
       }
 
-      if (prevBtn) prevBtn.disabled = cPage === 1;
-      if (nextBtn) nextBtn.disabled = cPage === totalPages || currentFilteredCatalog.length === 0;
+      if (prevBtn) prevBtn.disabled = currentPage === 1;
+      if (nextBtn) nextBtn.disabled = currentPage === totalPages || currentFilteredCatalog.length === 0;
 
       if (!grid) return;
 
@@ -570,9 +461,9 @@
               <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md truncate max-w-[120px]">${item.supplier}</span>
               <div class="flex items-center gap-1">
                 <span class="text-xs font-black text-slate-900">£${item.price.toFixed(2)}</span>
-                ${(typeof isAdminUnlocked !== 'undefined' && isAdminUnlocked) ? `
+                ${isAdminUnlocked ? `
                   <button onclick="openEditPriceModal(${item.id})" title="Edit Price (Admin Only)" class="p-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-md transition-colors">
-                    <i data-lucide="edit-3" class="w-3 h-3"></i>
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                   </button>
                 ` : ''}
               </div>
@@ -600,49 +491,36 @@
       }
     }
 
-    function openEditPriceModal(itemId) {
-      if (!isAdminUnlocked) {
-        alert("Access denied! Please authenticate first.");
-        return;
-      }
-      const item = catalog.find(i => i.id === itemId);
-      if (!item) return;
+    function filterCatalog() {
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      const supplierFilter = document.getElementById('supplier-filter').value;
 
-      document.getElementById('edit-item-id').value = item.id;
-      document.getElementById('edit-item-name').textContent = item.name;
-      document.getElementById('edit-item-price').value = item.price.toFixed(2);
-      document.getElementById('edit-price-modal').classList.remove('hidden');
+      currentFilteredCatalog = catalog.filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(query) || 
+                              item.category.toLowerCase().includes(query);
+        const matchesSupplier = supplierFilter === 'ALL' || item.supplier === supplierFilter;
+        return matchesSearch && matchesSupplier;
+      });
+
+      currentPage = 1;
+      renderCatalog();
     }
 
-    function closeEditPriceModal() {
-      document.getElementById('edit-price-modal').classList.add('hidden');
+    function changePage(amount) {
+      currentPage += amount;
+      renderCatalog();
     }
 
-    function saveNewPrice(e) {
-      e.preventDefault();
-      const itemId = parseInt(document.getElementById('edit-item-id').value);
-      const newPrice = parseFloat(document.getElementById('edit-item-price').value);
-
-      if (isNaN(newPrice) || newPrice < 0) {
-        alert("Please input a valid price validation rate.");
+    function switchTab(tabId) {
+      if (tabId === 'admin' && !isAdminUnlocked) {
+        document.getElementById('passcode-modal').classList.remove('hidden');
         return;
       }
-
-      const item = catalog.find(i => i.id === itemId);
-      if (item) {
-        item.price = newPrice;
-        
-        if (typeof cart !== 'undefined' && cart) {
-          cart.forEach(cItem => {
-            if (cItem.id === itemId) cItem.price = newPrice;
-          });
-        }
-
-        renderCatalog();
-        if (typeof updateCartUI === 'function') updateCartUI();
-        closeEditPriceModal();
-        alert(`Price updated successfully for "${item.name}"!`);
-      }
+      
+      document.getElementById('tab-catalog').classList.add('hidden');
+      document.getElementById('tab-admin').classList.add('hidden');
+      
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
     }
 
     function verifyPasscode() {
@@ -677,11 +555,121 @@
       alert("You have been logged out of Admin mode.");
     }
 
-    
-    // ORDER SUBMISSION WITH PERSON / ROLE / BRANCH DETAILS
+    function openEditPriceModal(itemId) {
+      if (!isAdminUnlocked) {
+        alert("Access denied! Please authenticate first.");
+        return;
+      }
+      const item = catalog.find(i => i.id === itemId);
+      if (!item) return;
+
+      document.getElementById('edit-item-id').value = item.id;
+      document.getElementById('edit-item-name').textContent = item.name;
+      document.getElementById('edit-item-price').value = item.price.toFixed(2);
+      document.getElementById('edit-price-modal').classList.remove('hidden');
+    }
+
+    function closeEditPriceModal() {
+      document.getElementById('edit-price-modal').classList.add('hidden');
+    }
+
+    function saveNewPrice(e) {
+      e.preventDefault();
+      const itemId = parseInt(document.getElementById('edit-item-id').value);
+      const newPrice = parseFloat(document.getElementById('edit-item-price').value);
+
+      if (isNaN(newPrice) || newPrice < 0) {
+        alert("Please input a valid price rate.");
+        return;
+      }
+
+      const item = catalog.find(i => i.id === itemId);
+      if (item) {
+        item.price = newPrice;
+        
+        cart.forEach(cItem => {
+          if (cItem.id === itemId) cItem.price = newPrice;
+        });
+
+        renderCatalog();
+        updateCartUI();
+        closeEditPriceModal();
+        alert(`Price updated successfully for "${item.name}"!`);
+      }
+    }
+
+    function addToCart(itemId) {
+      const item = catalog.find(i => i.id === itemId);
+      if (!item) return;
+
+      const qtySelect = document.getElementById(`qty-${itemId}`);
+      const quantity = parseInt(qtySelect ? qtySelect.value : 1);
+
+      const existing = cart.find(c => c.id === itemId);
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        cart.push({ ...item, quantity });
+      }
+
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const cartContainer = document.getElementById('quick-cart-items');
+      const badge = document.getElementById('cart-badge');
+      const countLabel = document.getElementById('cart-item-count');
+      const summary = document.getElementById('quick-cart-summary');
+      const totalLabel = document.getElementById('cart-total-price');
+
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      if (totalItems > 0) {
+        badge.textContent = totalItems;
+        badge.classList.remove('hidden');
+        summary.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+        summary.classList.add('hidden');
+      }
+
+      countLabel.textContent = `${totalItems} item${totalItems === 1 ? '' : 's'}`;
+
+      if (cart.length === 0) {
+        cartContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Your cart is currently empty.</p>`;
+        return;
+      }
+
+      cartContainer.innerHTML = cart.map(item => `
+        <div class="flex items-center justify-between text-xs p-2 bg-slate-50 border border-slate-100 rounded-xl gap-2">
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-slate-800 truncate" title="${item.name}">${item.name}</p>
+            <p class="text-[10px] text-slate-400 font-medium">${item.supplier} • £${item.price.toFixed(2)} each</p>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="font-black text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-lg">x${item.quantity}</span>
+            <button onclick="removeFromCart(${item.id})" class="p-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      totalLabel.textContent = `£${totalPrice.toFixed(2)}`;
+
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+      }
+    }
+
+    function removeFromCart(itemId) {
+      cart = cart.filter(item => item.id !== itemId);
+      updateCartUI();
+    }
+
     function submitOrder() {
       if (cart.length === 0) return;
-      // Open modal to gather person details
       document.getElementById('order-details-modal').classList.remove('hidden');
     }
 
@@ -691,189 +679,110 @@
 
     function confirmAndSubmitOrder(e) {
       e.preventDefault();
+      
+      const userName = document.getElementById('order-user-name').value.trim();
+      const userRole = document.getElementById('order-user-role').value.trim();
+      const userBranch = document.getElementById('order-user-branch').value.trim();
 
-      const name = document.getElementById('order-user-name').value.trim();
-      const role = document.getElementById('order-user-role').value.trim();
-      const branch = document.getElementById('order-user-branch').value.trim();
+      const orderId = 'PO-' + Date.now().toString().slice(-6);
+      const orderDate = new Date().toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
 
-      const orderId = Math.floor(100000 + Math.random() * 900000);
       const newOrder = {
         id: orderId,
-        date: new Date().toLocaleDateString('en-GB') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        orderedBy: { name, role, branch },
-        items: [...cart],
-        total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0)
+        date: orderDate,
+        user: { name: userName, role: userRole, branch: userBranch },
+        items: [...cart]
       };
 
-      orders.unshift(newOrder);
+      ordersList.unshift(newOrder);
       cart = [];
       updateCartUI();
-      renderAdminOrders();
-      updateAdminBadge();
+      renderOrdersList();
+      closeOrderDetailsModal();
 
-      // Reset modal inputs and hide
       document.getElementById('order-user-name').value = '';
       document.getElementById('order-user-role').value = '';
       document.getElementById('order-user-branch').value = '';
-      closeOrderDetailsModal();
 
-      alert(`Purchase Order #${orderId} submitted successfully!`);
+      alert(`Order ${orderId} generated successfully! Check Admin panel.`);
     }
 
-    // RENDER ADMIN ORDERS (INCLUDES ORDERED BY INFO)
-    function renderAdminOrders() {
-      const container = document.getElementById('admin-orders-list');
-      if (orders.length === 0) {
-        container.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">No orders created yet.</p>`;
+    function renderOrdersList() {
+      const listContainer = document.getElementById('admin-orders-list');
+      const badge = document.getElementById('admin-badge');
+
+      if (ordersList.length > 0) {
+        badge.textContent = ordersList.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      if (!listContainer) return;
+
+      if (ordersList.length === 0) {
+        listContainer.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">No orders created yet.</p>`;
         return;
       }
 
-      container.innerHTML = orders.map(o => {
-        const suppliers = [...new Set(o.items.map(i => i.supplier))];
-
+      listContainer.innerHTML = ordersList.map(order => {
+        const orderTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
         return `
-          <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-4">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-200/60 pb-3 gap-2">
+          <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+            <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-2">
               <div>
-                <span class="font-black text-slate-900 text-base">PO #${o.id}</span>
-                <span class="text-xs text-slate-400 ml-2">${o.date}</span>
-                <div class="text-xs text-slate-600 mt-1">
-                  <strong>Ordered By:</strong> ${o.orderedBy.name} (${o.orderedBy.role}) • <strong>Branch:</strong> ${o.orderedBy.branch}
-                </div>
+                <span class="text-xs font-black text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">${order.id}</span>
+                <span class="text-[11px] text-slate-400 ml-2">${order.date}</span>
               </div>
-              <span class="font-extrabold text-slate-900 text-base">Total: £${o.total.toFixed(2)}</span>
+              <div class="text-right">
+                <span class="text-xs text-slate-400 font-medium">Total Cost:</span>
+                <span class="text-sm font-black text-slate-900">£${orderTotal.toFixed(2)}</span>
+              </div>
             </div>
 
-            <div class="space-y-3">
-              <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Download Purchase Orders by Supplier:</p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                ${suppliers.map(s => {
-                  const supplierItems = o.items.filter(i => i.supplier === s);
-                  const supplierTotal = supplierItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
-                  return `
-                    <div class="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center">
-                      <div>
-                        <p class="font-bold text-xs text-slate-800">${s}</p>
-                        <p class="text-[10px] text-slate-400">${supplierItems.length} item(s) • £${supplierTotal.toFixed(2)}</p>
-                      </div>
-                      <button onclick="downloadPOPDF(${o.id}, '${s}')" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors">
-                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
-                      </button>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
+            <div class="text-[11px] text-slate-500 bg-white border border-slate-100 p-2 rounded-xl grid grid-cols-3 gap-2">
+              <div><strong class="text-slate-700">Requested By:</strong> ${order.user.name}</div>
+              <div><strong class="text-slate-700">Role:</strong> ${order.user.role}</div>
+              <div><strong class="text-slate-700">Branch:</strong> ${order.user.branch}</div>
+            </div>
+
+            <div class="space-y-1.5">
+              ${order.items.map(item => `
+                <div class="flex justify-between items-center text-xs bg-white p-2 rounded-lg border border-slate-100/70">
+                  <span class="font-medium text-slate-700">${item.name} <span class="text-[10px] text-slate-400">(${item.size})</span></span>
+                  <div class="space-x-4">
+                    <span class="text-slate-400 font-medium">${item.supplier}</span>
+                    <span class="font-bold text-slate-600">x${item.quantity}</span>
+                    <span class="font-bold text-slate-800 w-12 text-right inline-block">£${(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+              <button onclick="downloadOrderPDF('${order.id}')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i> Download PDF
+              </button>
             </div>
           </div>
         `;
       }).join('');
 
-      lucide.createIcons();
-    }
-
-    // UPDATE PDF GENERATION TO INCLUDE USER/BRANCH DETAILS
-    function downloadPOPDF(orderId, supplierName) {
-      const order = orders.find(o => o.id === orderId);
-      if (!order) return;
-
-      const items = order.items.filter(i => i.supplier === supplierName);
-      const total = items.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
-
-      const exportContainer = document.getElementById('pdf-export-container');
-      
-      exportContainer.innerHTML = `
-        <div id="pdf-content" style="padding: 30px; font-family: sans-serif; color: #1e293b; max-width: 800px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ef4444; padding-bottom: 15px; margin-bottom: 20px;">
-            <div>
-              <h1 style="font-size: 24px; font-weight: 800; margin: 0; color: #0f172a;">TREAT STREET ALIA</h1>
-              <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Internal Procurement System</p>
-            </div>
-            <div style="text-align: right;">
-              <h2 style="font-size: 18px; font-weight: 700; margin: 0; color: #ef4444;">PURCHASE ORDER</h2>
-              <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">PO #: ${orderId}-${supplierName.toUpperCase()}</p>
-              <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Date: ${order.date}</p>
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; gap: 15px; margin-bottom: 25px;">
-            <div style="flex: 1; background: #f8fafc; padding: 12px; border-radius: 8px;">
-              <p style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 4px 0;">SUPPLIER DETAILS:</p>
-              <h3 style="font-size: 14px; font-weight: 700; margin: 0; color: #0f172a;">${supplierName}</h3>
-            </div>
-            <div style="flex: 1; background: #f8fafc; padding: 12px; border-radius: 8px;">
-              <p style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 4px 0;">ORDERED BY:</p>
-              <p style="font-size: 12px; font-weight: 700; margin: 0; color: #0f172a;">${order.orderedBy.name} (${order.orderedBy.role})</p>
-              <p style="font-size: 11px; color: #64748b; margin: 2px 0 0 0;">Branch: ${order.orderedBy.branch}</p>
-            </div>
-          </div>
-
-          <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;">
-            <thead>
-              <tr style="background-color: #0f172a; color: white;">
-                <th style="padding: 8px 10px; text-align: left;">Item Description</th>
-                <th style="padding: 8px 10px; text-align: center;">Pack Size</th>
-                <th style="padding: 8px 10px; text-align: center;">Qty</th>
-                <th style="padding: 8px 10px; text-align: right;">Unit Price</th>
-                <th style="padding: 8px 10px; text-align: right;">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map((item, idx) => `
-                <tr style="border-bottom: 1px solid #e2e8f0; background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                  <td style="padding: 10px;"><strong>${item.name}</strong></td>
-                  <td style="padding: 10px; text-align: center;">${item.size || 'N/A'}</td>
-                  <td style="padding: 10px; text-align: center;">${item.qty}</td>
-                  <td style="padding: 10px; text-align: right;">£${item.price.toFixed(2)}</td>
-                  <td style="padding: 10px; text-align: right;">£${(item.price * item.qty).toFixed(2)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-
-          <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-            <div style="width: 250px; background-color: #f1f5f9; padding: 15px; border-radius: 8px; text-align: right;">
-              <span style="font-size: 12px; font-weight: 600; color: #475569;">Total Order Value:</span>
-              <h2 style="font-size: 20px; font-weight: 900; color: #0f172a; margin: 5px 0 0 0;">£${total}</h2>
-            </div>
-          </div>
-
-          <div style="margin-top: 40px; border-top: 1px solid #cbd5e1; padding-top: 15px; text-align: center; font-size: 10px; color: #94a3b8;">
-            Treat Street Alia Procurement System • Authorized Purchase Order
-          </div>
-        </div>
-      `;
-
-      const element = document.getElementById('pdf-content');
-      const opt = {
-        margin:       0.3,
-        filename:     `PO_${supplierName}_${orderId}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-
-      html2pdf().set(opt).from(element).save();
-    }
-    
-
-    function updateAdminBadge() {
-      const badge = document.getElementById('admin-badge');
-      if (orders.length > 0) {
-        badge.textContent = orders.length;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
       }
     }
 
     function clearAllOrders() {
-      orders = [];
-      renderAdminOrders();
-      updateAdminBadge();
+      if (confirm("Are you sure you want to clear order log history? This action cannot be reversed.")) {
+        ordersList = [];
+        renderOrdersList();
+      }
     }
 
-    
-    // FORM HANDLERS FOR ADDING DATA
     function handleAddSupplier(e) {
       e.preventDefault();
       const nameInput = document.getElementById('new-supplier-name');
@@ -907,16 +816,124 @@
       };
 
       catalog.push(newItem);
-      filterCatalog(); // Refresh catalog state & pagination
+      filterCatalog();
 
-      // Clear form inputs
       document.getElementById('new-item-name').value = '';
       document.getElementById('new-item-category').value = '';
       document.getElementById('new-item-size').value = '';
       document.getElementById('new-item-price').value = '';
 
-      alert(`Ingredient "${name}" successfully added to catalog!`);
+      alert(`Ingredient "${name}" successfully registered into database!`);
+    }
+
+    function downloadOrderPDF(orderId) {
+      const order = ordersList.find(o => o.id === orderId);
+      if (!order) return;
+
+      const exportContainer = document.getElementById('pdf-export-container');
+      exportContainer.classList.remove('hidden');
+
+      const ordersBySupplier = {};
+      order.items.forEach(item => {
+        if (!ordersBySupplier[item.supplier]) {
+          ordersBySupplier[item.supplier] = [];
+        }
+        ordersBySupplier[item.supplier].push(item);
+      });
+
+      let pdfHTML = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <div style="text-align: center; border-bottom: 2px solid #ef4444; padding-bottom: 10px; mb-20px;">
+            <h1 style="margin: 0; font-size: 24px; color: #1e293b;">TREAT STREET PURCHASE PORTAL</h1>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b;">Internal Procurement & Supply System</p>
+          </div>
+
+          <div style="margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 12px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td><strong>Order ID:</strong> ${order.id}</td>
+                <td style="text-align: right;"><strong>Date:</strong> ${order.date}</td>
+              </tr>
+              <tr>
+                <td><strong>Requested By:</strong> ${order.user.name} (${order.user.role})</td>
+                <td style="text-align: right;"><strong>Location:</strong> ${order.user.branch}</td>
+              </tr>
+            </table>
+          </div>
+      `;
+
+      Object.keys(ordersBySupplier).forEach(supplier => {
+        const items = ordersBySupplier[supplier];
+        const supplierTotal = items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+
+        pdfHTML += `
+          <div style="margin-top: 30px; page-break-inside: avoid;">
+            <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #b91c1c; border-bottom: 1px solid #fee2e2; padding-bottom: 4px;">
+              SUPPLIER: ${supplier.toUpperCase()}
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; color: #475569;">
+                  <th style="padding: 6px; border: 1px solid #e2e8f0;">Item Name</th>
+                  <th style="padding: 6px; border: 1px solid #e2e8f0;">Pack Size</th>
+                  <th style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">Unit Price</th>
+                  <th style="padding: 6px; border: 1px solid #e2e8f0; text-align: center;">Qty</th>
+                  <th style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map(item => `
+                  <tr>
+                    <td style="padding: 6px; border: 1px solid #e2e8f0;">${item.name}</td>
+                    <td style="padding: 6px; border: 1px solid #e2e8f0;">${item.size}</td>
+                    <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">£${item.price.toFixed(2)}</td>
+                    <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
+                    <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">£${(item.price * item.quantity).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+                <tr style="font-weight: bold; background: #fafafa;">
+                  <td colspan="4" style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">Supplier Total:</td>
+                  <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: right; color: #b91c1c;">£${supplierTotal.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      });
+
+      const absoluteTotal = order.items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+      pdfHTML += `
+          <div style="margin-top: 30px; text-align: right; font-size: 14px; border-top: 2px dashed #e2e8f0; padding-top: 10px;">
+            <strong>Grand Total Invoice Value: <span style="color: #ef4444;">£${absoluteTotal.toFixed(2)}</span></strong>
+          </div>
+          <div style="margin-top: 50px; border-top: 1px solid #cbd5e1; padding-top: 5px; text-align: center; font-size: 9px; color: #94a3b8;">
+            Authorized electronic requisition document generated inside Treat Street Network.
+          </div>
+        </div>
+      `;
+
+      exportContainer.innerHTML = pdfHTML;
+
+      const opt = {
+        margin: 0.5,
+        filename: `Purchase_Order_${order.id}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      if (typeof html2pdf !== 'undefined') {
+        html2pdf().set(opt).from(exportContainer).save().then(() => {
+          exportContainer.innerHTML = '';
+          exportContainer.classList.add('hidden');
+        });
+      } else {
+        alert("PDF download engine error. Please look over CDN inclusion rules.");
+        exportContainer.classList.add('hidden');
+      }
     }
   </script>
 </body>
 </html>
+       
+
