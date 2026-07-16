@@ -30,243 +30,235 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative">
+<body class="bg-slate-50 font-sans antialiased text-slate-900 min-h-screen flex flex-col watermark-bg">
 
-  <div class="watermark-text">
-    TREAT STREET<br/><span class="text-[0.6em] tracking-wider">ALIA</span>
-  </div>
+  <div class="watermark-text">TREAT STREET</div>
 
-  <div class="relative z-10">
-    <header class="bg-slate-900 text-white sticky top-0 z-30 border-b border-slate-800 shadow-md">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        <div class="flex items-center gap-3">
-          <div class="bg-red-600 text-white p-2 rounded-xl shadow-inner font-black text-xl leading-none">
-            TS
-          </div>
+  <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3.5 flex justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-900/30">
+          <i data-lucide="cookie" class="w-5 h-5 text-white animate-spin-slow"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-black tracking-wider text-white uppercase leading-none">Treat Street</h1>
+          <p class="text-[10px] text-slate-400 font-bold tracking-tight mt-0.5">PURCHASE PORTAL</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="switchTab('catalog')" class="p-2 text-slate-300 hover:text-white transition-colors bg-slate-800 rounded-lg border border-slate-700/60 flex items-center gap-2">
+          <i data-lucide="store" class="w-5 h-5"></i>
+          <span class="text-xs font-bold hidden sm:inline">Catalog</span>
+        </button>
+
+        <button onclick="switchTab('catalog')" class="relative p-2 text-slate-300 hover:text-white transition-colors bg-slate-800 rounded-lg border border-slate-700/60 flex items-center gap-2">
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+          <span class="text-xs font-bold hidden sm:inline">Cart</span>
+          <span id="cart-badge" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900 hidden">0</span>
+        </button>
+        
+        <button onclick="switchTab('admin')" class="p-2 text-slate-300 hover:text-white transition-colors bg-slate-800 rounded-lg border border-slate-700/60 flex items-center gap-2">
+          <i data-lucide="settings" class="w-5 h-5 text-amber-400"></i>
+          <span class="text-xs font-bold hidden sm:inline">Admin / Orders</span>
+          <span id="admin-badge" class="bg-amber-500 text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
+        </button>
+
+        <button id="logout-btn" onclick="handleLogout()" class="p-2 text-red-400 hover:text-red-300 transition-colors bg-slate-800 rounded-lg border border-red-900/40 flex items-center gap-2 hidden">
+          <i data-lucide="log-out" class="w-5 h-5"></i>
+          <span class="text-xs font-bold hidden sm:inline">Logout</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 relative z-10">
+    
+    <div id="sidebar-panel" class="lg:col-span-1 space-y-6">
+      
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+        <h3 class="font-black text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4 text-red-500"></i> Search & Filters
+        </h3>
+        
+        <div class="space-y-3">
           <div>
-            <h1 class="font-extrabold text-base tracking-wide flex items-center gap-2">
-              Treat Street <span class="bg-red-600/30 text-red-400 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">Alia Portal</span>
-            </h1>
-            <p class="text-[11px] text-slate-400">Internal Procurement System</p>
+            <label for="search-input" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Keyword Search</label>
+            <div class="relative">
+              <input type="text" id="search-input" oninput="filterCatalog()" placeholder="Search ingredients..." class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3"></i>
+            </div>
+          </div>
+
+          <div>
+            <label for="supplier-filter" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Filter by Supplier</label>
+            <select id="supplier-filter" onchange="filterCatalog()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+              <option value="ALL">All Suppliers</option>
+            </select>
           </div>
         </div>
+      </div>
 
-        <div class="flex items-center gap-3">
-          <button onclick="switchTab('catalog')" class="p-2 text-slate-300 hover:text-white transition-colors bg-slate-800 rounded-lg border border-slate-700/60 flex items-center gap-2">
-            <i data-lucide="store" class="w-5 h-5"></i>
-            <span class="text-xs font-bold hidden sm:inline">Catalog</span>
-          </button>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4 sticky top-24">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+          <h3 class="font-black text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="shopping-bag" class="w-4 h-4 text-slate-900"></i> Your Basket
+          </h3>
+          <span id="cart-item-count" class="text-[10px] font-black px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">0 items</span>
+        </div>
 
-          <button onclick="switchTab('catalog')" class="relative p-2 text-slate-300 hover:text-white transition-colors bg-slate-800 rounded-lg border border-slate-700/60 flex items-center gap-2">
-            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-            <span class="text-xs font-bold hidden sm:inline">Cart</span>
-            <span id="cart-badge" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900 hidden">0</span>
-          </button>
-          
-          <button onclick="switchTab('admin')" class="p-2 text-slate-300 hover:text-white transition-colors bg-slate-800 rounded-lg border border-slate-700/60 flex items-center gap-2">
-            <i data-lucide="settings" class="w-5 h-5 text-amber-400"></i>
-            <span class="text-xs font-bold hidden sm:inline">Admin / Orders</span>
-            <span id="admin-badge" class="bg-amber-500 text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
+        <div id="quick-cart-items" class="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+          <p class="text-xs text-slate-400 text-center py-6">Your cart is currently empty.</p>
+        </div>
+
+        <div id="quick-cart-summary" class="pt-3 border-t border-slate-100 space-y-3 hidden">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-slate-500">Est. Total:</span>
+            <span id="cart-total-price" class="text-base font-black text-slate-900">£0.00</span>
+          </div>
+          <button onclick="submitOrder()" class="w-full py-2.5 bg-slate-900 hover:bg-red-600 text-white font-bold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+            Generate Purchase Order <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
           </button>
         </div>
       </div>
-    </header>
+    </div>
 
-    <main class="max-w-7xl mx-auto px-4 py-6">
-
-      <section id="tab-catalog" class="space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <div class="lg:col-span-2 space-y-4">
-            
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
-              <div class="flex flex-col sm:flex-row gap-3">
-                <div class="relative flex-1">
-                  <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
-                  <input type="text" id="search-input" onkeyup="filterCatalog()" placeholder="Search ingredients, category..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all">
-                </div>
-                
-                <div class="w-full sm:w-48">
-                  <select id="supplier-filter" onchange="filterCatalog()" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all">
-                    <option value="ALL">All Suppliers</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="flex justify-between items-center text-xs text-slate-500 px-1 pt-1 border-t border-slate-100">
-                <span id="items-count-label" class="font-medium">Showing items</span>
-                <div class="flex items-center gap-2">
-                  <button onclick="changePage(-1)" id="btn-prev" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 rounded-lg font-bold transition-all text-xs">← Prev</button>
-                  <button onclick="changePage(1)" id="btn-next" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 rounded-lg font-bold transition-all text-xs">Next →</button>
-                </div>
-              </div>
-            </div>
-
-            <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              </div>
-
-          </div>
-
-          <div class="space-y-4">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 sticky top-20">
-              <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
-                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                  <i data-lucide="shopping-bag" class="w-5 h-5 text-red-600"></i> Current Selection
-                </h3>
-                <span id="cart-item-count" class="text-xs bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full">0 items</span>
-              </div>
-
-              <div id="quick-cart-items" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                <p class="text-xs text-slate-400 text-center py-6">Your cart is currently empty.</p>
-              </div>
-
-              <div id="quick-cart-summary" class="mt-4 pt-4 border-t border-slate-100 space-y-3 hidden">
-                <div class="flex justify-between items-center text-sm">
-                  <span class="font-medium text-slate-500">Estimated Total</span>
-                  <span id="cart-total-price" class="font-extrabold text-slate-900 text-base">£0.00</span>
-                </div>
-                
-                <button onclick="submitOrder()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md shadow-red-200 text-sm transition-all flex items-center justify-center gap-2">
-                  <i data-lucide="file-check" class="w-4 h-4"></i> Create Purchase Order
-                </button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <section id="tab-admin" class="hidden space-y-8">
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
-            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-              <i data-lucide="building" class="w-4 h-4 text-red-600"></i> Add New Supplier
-            </h3>
-            <form onsubmit="handleAddSupplier(event)" class="space-y-3">
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Supplier Name</label>
-                <input type="text" id="new-supplier-name" required placeholder="e.g. Brakes, Bidfood" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
-              </div>
-              <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs transition-colors">
-                + Add Supplier
-              </button>
-            </form>
-          </div>
-
-          <div class="md:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
-            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-              <i data-lucide="plus-circle" class="w-4 h-4 text-red-600"></i> Add New Ingredient / Item
-            </h3>
-            <form onsubmit="handleAddIngredient(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Ingredient Name</label>
-                <input type="text" id="new-item-name" required placeholder="e.g. Vanilla Ice Cream Base" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
-                <input type="text" id="new-item-category" required placeholder="e.g. Gelato, Sorbet & Ice Cream Mixes" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Package Size</label>
-                <input type="text" id="new-item-size" required placeholder="e.g. 10kg Tub or 6 x 1L" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Supplier</label>
-                <select id="new-item-supplier" required class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
-                  </select>
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Price (£)</label>
-                <input type="number" step="0.01" id="new-item-price" required placeholder="0.00" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
-              </div>
-
-              <div class="flex items-end">
-                <button type="submit" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs transition-colors">
-                  + Save New Item
-                </button>
-              </div>
-            </form>
+    <div class="lg:col-span-3">
+      
+      <div id="tab-catalog" class="space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+          <span id="items-count-label" class="text-xs font-bold text-slate-500">Showing 0-0 of 0 items</span>
+          <div class="flex gap-2">
+            <button id="btn-prev" onclick="changePage(-1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-slate-100 rounded-lg transition-colors" disabled>
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-next" onclick="changePage(1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-slate-100 rounded-lg transition-colors" disabled>
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
           </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80">
-          <div class="flex items-center justify-between mb-6">
+        <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          </div>
+      </div>
+
+      <div id="tab-admin" class="space-y-6 hidden">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-6">
+          <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-100 pb-4">
             <div>
-              <h2 class="text-xl font-bold text-slate-800">Submitted Purchase Orders</h2>
-              <p class="text-xs text-slate-400">Generate and download Purchase Order PDFs grouped by Supplier</p>
+              <h2 class="text-lg font-black text-slate-800">Administrator Command Center</h2>
+              <p class="text-xs text-slate-400 font-medium">Register ingredients, suppliers, or handle generated purchase receipts.</p>
             </div>
-            <button onclick="clearAllOrders()" class="text-xs text-red-600 hover:underline">Clear Order History</button>
+            <button onclick="clearAllOrders()" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-colors flex items-center gap-1">
+              <i data-lucide="trash" class="w-3.5 h-3.5"></i> Clear Order Logs
+            </button>
           </div>
 
-          <div id="admin-orders-list" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <form onsubmit="handleAddSupplier(event)" class="md:col-span-1 bg-slate-50/70 p-4 rounded-xl border border-slate-200/60 space-y-3">
+              <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="plus-circle" class="w-4 h-4 text-blue-500"></i> Add Supplier
+              </h3>
+              <div>
+                <label for="new-supplier-name" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Company Name</label>
+                <input type="text" id="new-supplier-name" required placeholder="e.g. Booker" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+              </div>
+              <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-colors">Register Supplier</button>
+            </form>
+
+            <form onsubmit="handleAddIngredient(event)" class="md:col-span-2 bg-slate-50/70 p-4 rounded-xl border border-slate-200/60 space-y-3">
+              <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="package-plus" class="w-4 h-4 text-emerald-500"></i> Add New Ingredient
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label for="new-item-name" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Item Description</label>
+                  <input type="text" id="new-item-name" required placeholder="Ingredient Name..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                </div>
+                <div>
+                  <label for="new-item-category" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Strategic Category</label>
+                  <input type="text" id="new-item-category" required placeholder="e.g. Dairy" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                </div>
+                <div>
+                  <label for="new-item-size" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Package Weight/Size</label>
+                  <input type="text" id="new-item-size" required placeholder="e.g. 4x400g" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                </div>
+                <div>
+                  <label for="new-item-supplier" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Assigned Vendor</label>
+                  <select id="new-item-supplier" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20"></select>
+                </div>
+                <div class="sm:col-span-2">
+                  <label for="new-item-price" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Unit Cost Base Value (£)</label>
+                  <input type="number" id="new-item-price" step="0.01" min="0" required placeholder="0.00" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                </div>
+              </div>
+              <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-colors">Register Asset To Catalog</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+          <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="file-text" class="w-4.5 h-4.5 text-red-600"></i> Active Requisition Logs
+          </h2>
+          <div id="admin-orders-list" class="space-y-4">
             <p class="text-sm text-slate-400 text-center py-10">No orders created yet.</p>
           </div>
         </div>
-      </section>
+      </div>
 
-    </main>
-  </div>
+    </div>
+  </main>
 
-  <div id="pdf-export-container" class="hidden"></div>
-<div id="passcode-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+  <div id="passcode-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 text-center space-y-4">
-      <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
-        <i data-lucide="lock" class="w-6 h-6"></i>
+      <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500 border border-amber-100">
+        <i data-lucide="shield-alert" class="w-6 h-6"></i>
       </div>
       <div>
-        <h3 class="text-lg font-bold text-slate-900">Admin Access Restricted</h3>
-        <p class="text-xs text-slate-500">Enter the admin passcode to access this section.</p>
+        <h3 class="font-bold text-slate-800 text-base">Administrative Access Lock</h3>
+        <p class="text-xs text-slate-400 mt-1">Please type the system passphrase authorization key.</p>
       </div>
-      <input type="password" id="admin-passcode-input" placeholder="Enter Passcode" class="w-full px-3 py-2 text-center text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
-      <p id="passcode-error" class="text-xs text-red-600 font-semibold hidden">Incorrect passcode. Try again.</p>
-      <div class="flex gap-2">
-        <button onclick="closePasscodeModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">Cancel</button>
-        <button onclick="verifyPasscode()" class="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs">Unlock</button>
+      <div class="space-y-2">
+        <input type="password" id="admin-passcode-input" placeholder="••••••••" class="w-full text-center tracking-widest py-2 bg-slate-50 border border-slate-200 rounded-xl font-black text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all">
+        <p id="passcode-error" class="text-[10px] text-red-500 font-bold hidden">❌ Authentication Failed. Bad Keyphrase.</p>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closePasscodeModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors">Cancel</button>
+        <button onclick="verifyPasscode()" class="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition-colors">Unlock Control</button>
       </div>
     </div>
   </div>
 
   <div id="order-details-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 space-y-4">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-          <i data-lucide="user-check" class="w-5 h-5 text-red-600"></i> Order Request Details
+        <h3 class="font-bold text-slate-800 text-base flex items-center gap-1.5">
+          <i data-lucide="user-check" class="w-5 h-5 text-red-500"></i> Procurement Metadata
         </h3>
-        <button onclick="closeOrderDetailsModal()" class="text-slate-400 hover:text-slate-600">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <button onclick="closeOrderDetailsModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-
       <form onsubmit="confirmAndSubmitOrder(event)" class="space-y-3">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name <span class="text-red-500">*</span></label>
-          <input type="text" id="order-user-name" required placeholder="e.g. John Doe" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500">
+          <label for="order-user-name" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Requested Person</label>
+          <input type="text" id="order-user-name" required placeholder="Full Name..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20">
         </div>
-
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Role / Job Title <span class="text-red-500">*</span></label>
-          <input type="text" id="order-user-role" required placeholder="e.g. Store Manager, Head Chef" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500">
+          <label for="order-user-role" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Role / Position</label>
+          <input type="text" id="order-user-role" required placeholder="e.g. Kitchen Supervisor" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20">
         </div>
-
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Branch / Location <span class="text-red-500">*</span></label>
-          <input type="text" id="order-user-branch" required placeholder="e.g. Alia Branch, Main Street" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500">
+          <label for="order-user-branch" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Target Branch / Location</label>
+          <input type="text" id="order-user-branch" required placeholder="e.g. Bedford Central" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20">
         </div>
-
         <div class="pt-2 flex gap-2">
           <button type="button" onclick="closeOrderDetailsModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors">Cancel</button>
           <button type="submit" class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-colors">Submit Order</button>
         </div>
       </form>
-
-      
     </div>
   </div>
+
   <div id="edit-price-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -295,12 +287,17 @@
       </form>
     </div>
   </div>
- <script>
-    // FULL DATASET FROM Trial_csv.csv
+
+  <div id="pdf-export-container" class="hidden"></div>
+
+  <script>
+    // CORE APP STATE SYNC
     let isAdminUnlocked = false;
     let currentPage = 1;
     const itemsPerPage = 12;
     let currentFilteredCatalog = [];
+    
+    // FULL RECONSTRUCTED INGREDIENT LIST FROM DATASET
     let catalog = [
       { id: 1, name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", category: "Dairy, Oils & Baking Essentials", size: "4 x 400g", supplier: "Bookers", price: 8.50 },
       { id: 2, name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", category: "Dairy, Oils & Baking Essentials", size: "10 x 500g", supplier: "Bookers", price: 12.00 },
@@ -390,12 +387,104 @@
       { id: 86, name: "Fuel granola", category: "Bakery, Desserts & Breakfast Staples", size: "KG", supplier: "Costco", price: 4.50 },
       { id: 87, name: "Seeds and fruit mix", category: "Bakery, Desserts & Breakfast Staples", size: "PCKT", supplier: "Costco", price: 3.80 },
       { id: 88, name: "Frozen mixed berries", category: "Bakery, Desserts & Breakfast Staples", size: "1.8KG", supplier: "Costco", price: 6.50 },
-      { id: 89, name: "St Pierre Brioche buns", category: "Bakery, Desserts & Breakfast Staples", size: "8PCS*2", supplier: "Costco", price: 4.20 }
+      { id: 89, name: "St Pierre Brioche buns", category: "Bakery, Desserts & Breakfast Staples", size: "8PCS*2", supplier: "Costco", price: 4.20 },
+      { id: 90, name: "Lotus biscoff sauce", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 9.50 },
+      { id: 91, name: "Lotus biscoff biscuits", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 11.20 },
+      { id: 92, name: "Nutella", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 6.80 },
+      { id: 93, name: "Cadbury chocolate sauce", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 8.20 },
+      { id: 94, name: "Maple syrup", category: "Sweets, Toppings & Biscuits", size: "LITRE", supplier: "Costco", price: 14.00 },
+      { id: 95, name: "Honey", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 7.50 },
+      { id: 96, name: "Salted caramel sauce", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 8.90 },
+      { id: 97, name: "Strawberry sauce", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 6.20 },
+      { id: 98, name: "White chocolate sauce", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 9.00 },
+      { id: 99, name: "Milk chocolate sauce", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 8.50 },
+      { id: 100, name: "Bubblegum sauce", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 6.50 },
+      { id: 101, name: "Raspberry sauce", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 6.20 },
+      { id: 102, name: "Mango puree", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 8.00 },
+      { id: 103, name: "Passionfruit puree", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 9.20 },
+      { id: 104, name: "Strawberry puree", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 8.00 },
+      { id: 105, name: "Raspberry puree", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 8.50 },
+      { id: 106, name: "Oreo crumbs", category: "Sweets, Toppings & Biscuits", size: "400G", supplier: "Costco", price: 4.80 },
+      { id: 107, name: "Biscoff crumbs", category: "Sweets, Toppings & Biscuits", size: "750G", supplier: "Costco", price: 5.90 },
+      { id: 108, name: "Fudge pieces", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 7.20 },
+      { id: 109, name: "Marshmallows mini", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 6.00 },
+      { id: 110, name: "Milk chocolate curls", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 9.50 },
+      { id: 111, name: "White chocolate curls", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 9.80 },
+      { id: 112, name: "Sprinkles strands", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 5.50 },
+      { id: 113, name: "Maltesers crumbs", category: "Sweets, Toppings & Biscuits", size: "400G", supplier: "Costco", price: 6.20 },
+      { id: 114, name: "Aero mint crumbs", category: "Sweets, Toppings & Biscuits", size: "400G", supplier: "Costco", price: 6.50 },
+      { id: 115, name: "Crunchie crumbs", category: "Sweets, Toppings & Biscuits", size: "400G", supplier: "Costco", price: 6.50 },
+      { id: 116, name: "Flake pieces", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 14.00 },
+      { id: 117, name: "Cookie dough mini", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 8.50 },
+      { id: 118, name: "Brownie pieces mini", category: "Sweets, Toppings & Biscuits", size: "KG", supplier: "Costco", price: 9.00 },
+      { id: 119, name: "Waffle mix", category: "Bakery, Desserts & Breakfast Staples", size: "12.5KG", supplier: "Costco", price: 28.50 },
+      { id: 120, name: "Crepe mix", category: "Bakery, Desserts & Breakfast Staples", size: "12.5KG", supplier: "Costco", price: 29.00 },
+      { id: 121, name: "Pancake mix", category: "Bakery, Desserts & Breakfast Staples", size: "12.5KG", supplier: "Costco", price: 27.00 },
+      { id: 122, name: "Milk chocolate buttons", category: "Sweets, Toppings & Biscuits", size: "2.5KG", supplier: "Costco", price: 19.50 },
+      { id: 123, name: "White chocolate buttons", category: "Sweets, Toppings & Biscuits", size: "2.5KG", supplier: "Costco", price: 21.00 },
+      { id: 124, name: "Dark chocolate buttons", category: "Sweets, Toppings & Biscuits", size: "2.5KG", supplier: "Costco", price: 19.00 },
+      { id: 125, name: "Cocoa powder", category: "Dairy, Oils & Baking Essentials", size: "1KG", supplier: "Costco", price: 7.50 },
+      { id: 126, name: "Icing sugar", category: "Dairy, Oils & Baking Essentials", size: "3KG", supplier: "Costco", price: 4.80 },
+      { id: 127, name: "Caster sugar", category: "Dairy, Oils & Baking Essentials", size: "25KG", supplier: "Costco", price: 24.50 },
+      { id: 128, name: "Granulated sugar", category: "Dairy, Oils & Baking Essentials", size: "25KG", supplier: "Costco", price: 22.00 },
+      { id: 129, name: "Plain flour", category: "Dairy, Oils & Baking Essentials", size: "16KG", supplier: "Costco", price: 11.50 },
+      { id: 130, name: "Self raising flour", category: "Dairy, Oils & Baking Essentials", size: "16KG", supplier: "Costco", price: 12.00 },
+      { id: 131, name: "Baking powder", category: "Dairy, Oils & Baking Essentials", size: "1KG", supplier: "Costco", price: 5.20 },
+      { id: 132, name: "Vanilla extract", category: "Dairy, Oils & Baking Essentials", size: "LITRE", supplier: "Costco", price: 18.00 },
+      { id: 133, name: "Vegetable oil", category: "Dairy, Oils & Baking Essentials", size: "20L", supplier: "Costco", price: 26.00 },
+      { id: 134, name: "Butter unsalted", category: "Dairy, Oils & Baking Essentials", size: "40X250G", supplier: "Costco", price: 48.00 },
+      { id: 135, name: "Nutella 3kg tub", category: "Sweets, Toppings & Biscuits", size: "3KG", supplier: "Costco", price: 19.50 },
+      { id: 136, name: "Lotus spread 8kg", category: "Sweets, Toppings & Biscuits", size: "8KG", supplier: "Costco", price: 44.00 },
+      { id: 137, name: "Bueno spread 6kg", category: "Sweets, Toppings & Biscuits", size: "6KG", supplier: "Costco", price: 38.00 },
+      { id: 138, name: "White choc spread 6kg", category: "Sweets, Toppings & Biscuits", size: "6KG", supplier: "Costco", price: 34.00 },
+      { id: 139, name: "Milk choc spread 6kg", category: "Sweets, Toppings & Biscuits", size: "6KG", supplier: "Costco", price: 32.00 },
+      { id: 140, name: "Peanut butter smooth", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 5.50 },
+      { id: 141, name: "Kinder bueno white", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 19.00 },
+      { id: 142, name: "Reeses peanut butter cups", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 16.50 },
+      { id: 143, name: "M&Ms peanut", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 8.20 },
+      { id: 144, name: "M&Ms chocolate", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 8.20 },
+      { id: 145, name: "Smarties mini", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 7.90 },
+      { id: 146, name: "Strawberry gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 9.80 },
+      { id: 147, name: "Chocolate gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 9.80 },
+      { id: 148, name: "Vanilla gelato (Airela)", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 9.50 },
+      { id: 149, name: "Salted caramel gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 10.20 },
+      { id: 150, name: "Biscoff gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 10.50 },
+      { id: 151, name: "Kinder bueno gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 10.80 },
+      { id: 152, name: "Mint choc chip gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 9.80 },
+      { id: 153, name: "Cookies and cream gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 10.20 },
+      { id: 154, name: "Mango sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 9.80 },
+      { id: 155, name: "Raspberry sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 9.80 },
+      { id: 156, name: "Lemon sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 9.50 },
+      { id: 157, name: "Bubblegum gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 9.50 },
+      { id: 158, name: "Coconut gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 10.00 },
+      { id: 159, name: "Pistachio gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 11.50 },
+      { id: 160, name: "Peanutella gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 10.80 },
+      { id: 161, name: "Ambassador gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 11.20 },
+      { id: 162, name: "Waffle cones", category: "Ice Creams", size: "BOX", supplier: "Airela", price: 14.50 },
+      { id: 163, name: "Cone tissues", category: "Ice Creams", size: "PACK", supplier: "Airela", price: 3.20 },
+      { id: 164, name: "Vanilla gelato (StratFord)", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 18.50 },
+      { id: 165, name: "Dulce de leche gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 21.00 },
+      { id: 166, name: "Cherries and custard gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 20.50 },
+      { id: 167, name: "Mascarpone gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 21.50 },
+      { id: 168, name: "Ciokamenta gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 19.80 },
+      { id: 169, name: "Vegan vanilla gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 22.00 },
+      { id: 170, name: "Scoopable acai", category: "Gelato, Sorbet & Ice Cream Mixes", size: "3.6l*2", supplier: "StratFord", price: 34.00 },
+      { id: 171, name: "Vegan chocolate gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 22.00 },
+      { id: 172, name: "Vegan salted caramel gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 23.50 },
+      { id: 173, name: "Lemon and elderflower tea", category: "Coffee, Tea & Syrups", size: "500g", supplier: "FreshPac", price: 6.80 },
+      { id: 174, name: "Green tea", category: "Coffee, Tea & Syrups", size: "500g", supplier: "FreshPac", price: 5.50 },
+      { id: 175, name: "Earl grey tea", category: "Coffee, Tea & Syrups", size: "500g", supplier: "FreshPac", price: 5.80 },
+      { id: 176, name: "Vanilla chai latte", category: "Coffee, Tea & Syrups", size: "1kg", supplier: "FreshPac", price: 11.20 },
+      { id: 177, name: "Spiced chai latte", category: "Coffee, Tea & Syrups", size: "1kg", supplier: "FreshPac", price: 11.20 },
+      { id: 178, name: "Hot chocolate luxury", category: "Coffee, Tea & Syrups", size: "2kg", supplier: "FreshPac", price: 16.50 },
+      { id: 179, name: "White hot chocolate", category: "Coffee, Tea & Syrups", size: "1kg", supplier: "FreshPac", price: 9.80 },
+      { id: 180, name: "Espresso coffee beans", category: "Coffee, Tea & Syrups", size: "1kg*6", supplier: "FreshPac", price: 58.00 },
+      { id: 181, name: "Decaf coffee beans", category: "Coffee, Tea & Syrups", size: "1kg", supplier: "FreshPac", price: 11.50 }
     ];
 
     let cart = [];
     let ordersList = [];
-    let suppliersList = ["Bookers", "Costco"];
+    let suppliersList = ["Bookers", "Costco", "Airela", "StratFord", "FreshPac"];
 
     window.addEventListener('DOMContentLoaded', () => {
       currentFilteredCatalog = [...catalog];
@@ -533,6 +622,9 @@
 
         document.getElementById('tab-catalog').classList.add('hidden');
         document.getElementById('tab-admin').classList.remove('hidden');
+        
+        // REVEAL THE DYNAMIC HEADER LOGOUT OPTION
+        document.getElementById('logout-btn').classList.remove('hidden');
 
         renderCatalog();
       } else {
@@ -546,8 +638,9 @@
       document.getElementById('passcode-error').classList.add('hidden');
     }
 
-    function logoutAdmin() {
+    function handleLogout() {
       isAdminUnlocked = false;
+      document.getElementById('logout-btn').classList.add('hidden');
       document.getElementById('tab-admin').classList.add('hidden');
       document.getElementById('tab-catalog').classList.remove('hidden');
       
@@ -843,7 +936,7 @@
 
       let pdfHTML = `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-          <div style="text-align: center; border-bottom: 2px solid #ef4444; padding-bottom: 10px; mb-20px;">
+          <div style="text-align: center; border-bottom: 2px solid #ef4444; padding-bottom: 10px; margin-bottom: 20px;">
             <h1 style="margin: 0; font-size: 24px; color: #1e293b;">TREAT STREET PURCHASE PORTAL</h1>
             <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b;">Internal Procurement & Supply System</p>
           </div>
@@ -935,5 +1028,3 @@
   </script>
 </body>
 </html>
-       
-
