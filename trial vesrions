@@ -1,1 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Treat Street Purchase Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    .watermark-bg {
+      background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+      position: relative;
+    }
+    .watermark-text {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-25deg);
+      font-size: 11vw;
+      font-weight: 900;
+      color: rgba(220, 38, 38, 0.03);
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative">
 
+  <div class="watermark-text">
+    TREAT STREET<br/><span class="text-[0.6em] tracking-wider">ALIA</span>
+  </div>
+
+  <div class="relative z-10">
+    <header class="bg-slate-900 text-white sticky top-0 z-30 border-b border-slate-800 shadow-md">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div class="bg-red-600 text-white p-2 rounded-xl shadow-inner font-black text-xl leading-none">
+            TS
+          </div>
+          <div>
+            <h1 class="font-extrabold text-base tracking-wide flex items-center gap-2">
+              Treat Street <span class="bg-red-600/30 text-red-400 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">Alia Portal</span>
+            </h1>
+            <p class="text-[11px] text-slate-400">Internal Procurement System</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="switchTab('catalog')" class="p-2 text-slate-300 hover:text-white transition-colors bg-slate-800 rounded-lg border border-slate-700/60 flex items-center gap-2">
+            <i data-lucide="store" class="w-5 h-5"></i>
+            <span class="text-xs font-bold hidden sm:inline">Catalog</span>
+          </button>
+
+          <button onclick="switchTab('catalog')" class="relative p-2 text-slate-300 hover:text-white transition-colors bg-slate-800 rounded-lg border border-slate-700/60 flex items-center gap-2">
+            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+            <span class="text-xs font-bold hidden sm:inline">Cart</span>
+            <span id="cart-badge" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900 hidden">0</span>
+          </button>
+          
+          <button onclick="switchTab('admin')" class="p-2 text-slate-300 hover:text-white transition-colors bg-slate-800 rounded-lg border border-slate-700/60 flex items-center gap-2">
+            <i data-lucide="settings" class="w-5 h-5 text-amber-400"></i>
+            <span class="text-xs font-bold hidden sm:inline">Admin / Orders</span>
+            <span id="admin-badge" class="bg-amber-500 text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+      <section id="tab-catalog" class="space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <div class="lg:col-span-2 space-y-4">
+            
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
+              <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                  <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                  <input type="text" id="search-input" onkeyup="filterCatalog()" placeholder="Search ingredients, category..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all">
+                </div>
+                
+                <div class="w-full sm:w-48">
+                  <select id="supplier-filter" onchange="filterCatalog()" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all">
+                    <option value="ALL">All Suppliers</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex justify-between items-center text-xs text-slate-500 px-1 pt-1 border-t border-slate-100">
+                <span id="items-count-label" class="font-medium">Showing items</span>
+                <div class="flex items-center gap-2">
+                  <button onclick="changePage(-1)" id="btn-prev" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 rounded-lg font-bold transition-all text-xs">← Prev</button>
+                  <button onclick="changePage(1)" id="btn-next" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 rounded-lg font-bold transition-all text-xs">Next →</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              </div>
+
+          </div>
+
+          <div class="space-y-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 sticky top-20">
+              <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                  <i data-lucide="shopping-bag" class="w-5 h-5 text-red-600"></i> Current Selection
+                </h3>
+                <span id="cart-item-count" class="text-xs bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full">0 items</span>
+              </div>
+
+              <div id="quick-cart-items" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                <p class="text-xs text-slate-400 text-center py-6">Your cart is currently empty.</p>
+              </div>
+
+              <div id="quick-cart-summary" class="mt-4 pt-4 border-t border-slate-100 space-y-3 hidden">
+                <div class="flex justify-between items-center text-sm">
+                  <span class="font-medium text-slate-500">Estimated Total</span>
+                  <span id="cart-total-price" class="font-extrabold text-slate-900 text-base">£0.00</span>
+                </div>
+                
+                <button onclick="submitOrder()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md shadow-red-200 text-sm transition-all flex items-center justify-center gap-2">
+                  <i data-lucide="file-check" class="w-4 h-4"></i> Create Purchase Order
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section id="tab-admin" class="hidden space-y-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <i data-lucide="building" class="w-4 h-4 text-red-600"></i> Add New Supplier
+            </h3>
+            <form onsubmit="handleAddSupplier(event)" class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Supplier Name</label>
+                <input type="text" id="new-supplier-name" required placeholder="e.g. Brakes, Bidfood" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
+              </div>
+              <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs transition-colors">
+                + Add Supplier
+              </button>
+            </form>
+          </div>
+
+          <div class="md:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-red-600"></i> Add New Ingredient / Item
+            </h3>
+            <form onsubmit="handleAddIngredient(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Ingredient Name</label>
+                <input type="text" id="new-item-name" required placeholder="e.g. Vanilla Ice Cream Base" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+                <input type="text" id="new-item-category" required placeholder="e.g. Gelato, Sorbet & Ice Cream Mixes" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Package Size</label>
+                <input type="text" id="new-item-size" required placeholder="e.g. 10kg Tub or 6 x 1L" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Supplier</label>
+                <select id="new-item-supplier" required class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
+                  </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Price (£)</label>
+                <input type="number" step="0.01" id="new-item-price" required placeholder="0.00" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500">
+              </div>
+
+              <div class="flex items-end">
+                <button type="submit" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs transition-colors">
+                  + Save New Item
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-xl font-bold text-slate-800">Submitted Purchase Orders</h2>
+              <p class="text-xs text-slate-400">Generate and download Purchase Order PDFs grouped by Supplier</p>
+            </div>
+            <button onclick="clearAllOrders()" class="text-xs text-red-600 hover:underline">Clear Order History</button>
+          </div>
+
+          <div id="admin-orders-list" class="space-y-6">
+            <p class="text-sm text-slate-400 text-center py-10">No orders created yet.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="pdf-export-container" class="hidden"></div>
+<div id="passcode-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 text-center space-y-4">
+      <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="lock" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-slate-900">Admin Access Restricted</h3>
+        <p class="text-xs text-slate-500">Enter the admin passcode to access this section.</p>
+      </div>
+      <input type="password" id="admin-passcode-input" placeholder="Enter Passcode" class="w-full px-3 py-2 text-center text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+      <p id="passcode-error" class="text-xs text-red-600 font-semibold hidden">Incorrect passcode. Try again.</p>
+      <div class="flex gap-2">
+        <button onclick="closePasscodeModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">Cancel</button>
+        <button onclick="verifyPasscode()" class="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="order-details-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+          <i data-lucide="user-check" class="w-5 h-5 text-red-600"></i> Order Request Details
+        </h3>
+        <button onclick="closeOrderDetailsModal()" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="confirmAndSubmitOrder(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name <span class="text-red-500">*</span></label>
+          <input type="text" id="order-user-name" required placeholder="e.g. John Doe" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Role / Job Title <span class="text-red-500">*</span></label>
+          <input type="text" id="order-user-role" required placeholder="e.g. Store Manager, Head Chef" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Branch / Location <span class="text-red-500">*</span></label>
+          <input type="text" id="order-user-branch" required placeholder="e.g. Alia Branch, Main Street" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="closeOrderDetailsModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors">Cancel</button>
+          <button type="submit" class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-colors">Submit Order</button>
+        </div>
+      </form>
+
+      
+    </div>
+  </div>
+  <script>
+    // FULL DATASET FROM Trial_csv.csv
+    let catalog = [
+      { id: 1, name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", category: "Dairy, Oils & Baking Essentials", size: "4 x 400g", supplier: "Bookers", price: 8.50 },
+      { id: 2, name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", category: "Dairy, Oils & Baking Essentials", size: "10 x 500g", supplier: "Bookers", price: 12.00 },
+      { id: 3, name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", category: "Dairy, Oils & Baking Essentials", size: "1 x 3kg", supplier: "Bookers", price: 7.20 },
+      { id: 4, name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 500g", category: "Dairy, Oils & Baking Essentials", size: "10 x 500g", supplier: "Bookers", price: 11.50 },
+      { id: 5, name: "Biscoff Biscuit Crumbs 750g", category: "Sweets, Toppings & Biscuits", size: "8 x 750g", supplier: "Bookers", price: 28.00 },
+      { id: 6, name: "Cadbury Drinking Hot Chocolate Large Tub 2KG", category: "Coffee, Tea & Syrups", size: "1 x 2kg", supplier: "Bookers", price: 14.50 },
+      { id: 7, name: "CaterPro 100 Wooden Dessert Spoons", category: "Non-Food, Cleaning & Packaging", size: "1 x 100s", supplier: "Bookers", price: 3.20 },
+      { id: 8, name: "CaterPro 100 Wooden Forks", category: "Non-Food, Cleaning & Packaging", size: "1 x 100s", supplier: "Bookers", price: 3.00 },
+      { id: 9, name: "Chef's Essentials Chopped Tomatoes in Tomato Juice 2.5kg", category: "Sauces, Condiments & Savory Staples", size: "6 x 2.5kg", supplier: "Bookers", price: 15.00 },
+      { id: 10, name: "Chef's Larder Lightly Salted Tortilla Chips 454g", category: "Sauces, Condiments & Savory Staples", size: "6 x 454g", supplier: "Bookers", price: 9.00 },
+      { id: 11, name: "Chef's Larder Salt 6kg", category: "Spices & Seasonings", size: "1 x 6kg", supplier: "Bookers", price: 4.80 },
+      { id: 12, name: "Chef's Larder White Wine Vinegar 2 Litres", category: "Sauces, Condiments & Savory Staples", size: "1 x 2ltr", supplier: "Bookers", price: 3.50 },
+      { id: 13, name: "Chef's Menu Blackened Cajun Seasoning 590g", category: "Spices & Seasonings", size: "1 x 590g", supplier: "Bookers", price: 6.20 },
+      { id: 14, name: "Chef's Menu Cayenne Pepper 460g", category: "Spices & Seasonings", size: "1 x 460g", supplier: "Bookers", price: 5.80 },
+      { id: 15, name: "Chef's Menu Chipotle Sauce 1 Litre", category: "Sauces, Condiments & Savory Staples", size: "6 x 1ltr", supplier: "Bookers", price: 14.00 },
+      { id: 16, name: "Chef's Menu Ground Black Pepper 500g", category: "Spices & Seasonings", size: "1 x 500g", supplier: "Bookers", price: 7.00 },
+      { id: 17, name: "Chef's Menu Ground Sweet Cinnamon 430g", category: "Spices & Seasonings", size: "1 x 430g", supplier: "Bookers", price: 5.50 },
+      { id: 18, name: "Chef's Menu Onion Powder 480g", category: "Spices & Seasonings", size: "1 x 480g", supplier: "Bookers", price: 4.90 },
+      { id: 19, name: "Chef's Menu Salsa 1 Litre", category: "Spices & Seasonings", size: "1 x 1ltr", supplier: "Bookers", price: 3.20 },
+      { id: 20, name: "Chef's Menu Smoked Paprika 430g", category: "Spices & Seasonings", size: "1 x 430g", supplier: "Bookers", price: 5.80 },
+      { id: 21, name: "Cif Lemon Cream Cleaner 500ml", category: "Non-Food, Cleaning & Packaging", size: "8 x 500ml", supplier: "Bookers", price: 11.00 },
+      { id: 22, name: "CleanPro 10 Scouring Pads", category: "Non-Food, Cleaning & Packaging", size: "1 x 10pk", supplier: "Bookers", price: 2.50 },
+      { id: 23, name: "CleanPro 10 Stainless Steel Scourers Medium", category: "Non-Food, Cleaning & Packaging", size: "1 x 10pk", supplier: "Bookers", price: 3.50 },
+      { id: 24, name: "CleanPro+ Heavy Duty Cleaner Degreaser 5 Litres", category: "Non-Food, Cleaning & Packaging", size: "2 x 5ltr", supplier: "Bookers", price: 12.00 },
+      { id: 25, name: "CleanPro+ Oven and Grill Cleaner 1 Litre", category: "Non-Food, Cleaning & Packaging", size: "1 x 100s", supplier: "Bookers", price: 4.80 },
+      { id: 26, name: "Clearly 100 Blue Vinyl Powder-Free Gloves (Large)", category: "Non-Food, Cleaning & Packaging", size: "10 x 100pk", supplier: "Bookers", price: 22.00 },
+      { id: 27, name: "Coca-Cola Original Taste 330ml", category: "Beverages", size: "24 x 330ml", supplier: "Bookers", price: 14.00 },
+      { id: 28, name: "Comelle Ice Cream Mix 1 Litre", category: "Gelato, Sorbet & Ice Cream Mixes", size: "12 x 1ltr", supplier: "Bookers", price: 18.00 },
+      { id: 29, name: "Curtis Catering Chopped Mixed Nuts 1kg", category: "Bakery, Desserts & Breakfast Staples", size: "1 x 1kg", supplier: "Bookers", price: 8.50 },
+      { id: 30, name: "Diet Coke 330ml Glass Bottles", category: "Beverages", size: "24 x 330ml", supplier: "Bookers", price: 13.50 },
+      { id: 31, name: "Dr. Oetker Baking Powder 170g", category: "Dairy, Oils & Baking Essentials", size: "4 x 170g", supplier: "Bookers", price: 6.00 },
+      { id: 32, name: "Dr. Oetker Madagascan Vanilla Extract 35ml", category: "Dairy, Oils & Baking Essentials", size: "6 x 35ml", supplier: "Bookers", price: 10.20 },
+      { id: 33, name: "Fairy Professional Washing Up Liquid Original 900ML", category: "Non-Food, Cleaning & Packaging", size: "6 x 900ml", supplier: "Bookers", price: 11.50 },
+      { id: 34, name: "Fanta Orange 330ml", category: "Beverages", size: "24 x 330ml", supplier: "Bookers", price: 12.50 },
+      { id: 35, name: "Flash Professional All Purpose Cleaner 5L", category: "Non-Food, Cleaning & Packaging", size: "2 x 5L", supplier: "Bookers", price: 14.00 },
+      { id: 36, name: "Frank's Red Hot Wings Buffalo Sauce 3.78L", category: "Sauces, Condiments & Savory Staples", size: "1 x 3.7ltr", supplier: "Bookers", price: 16.00 },
+      { id: 37, name: "Heinz Professional Mayonnaise 10L", category: "Sauces, Condiments & Savory Staples", size: "1 x 10ltr", supplier: "Bookers", price: 22.00 },
+      { id: 38, name: "Heinz Tomato Ketchup 4.5kg", category: "Sauces, Condiments & Savory Staples", size: "2 x 4ltr", supplier: "Bookers", price: 19.50 },
+      { id: 39, name: "Hershey's Cookies 'N' Creme 40g", category: "Sweets, Toppings & Biscuits", size: "24 x 40g", supplier: "Bookers", price: 15.00 },
+      { id: 40, name: "Huel Banana Flavour Ready-to-Drink Complete Meal 500ml", category: "Beverages", size: "8 x 500ml", supplier: "Bookers", price: 18.00 },
+      { id: 41, name: "J2O Apple & Mango 275ml", category: "Beverages", size: "12 x 275ml", supplier: "Bookers", price: 9.50 },
+      { id: 42, name: "J2O Apple & Raspberry 275ml", category: "Beverages", size: "12 x 275ml", supplier: "Bookers", price: 9.50 },
+      { id: 43, name: "J2O Orange & Passion Fruit 275ml", category: "Beverages", size: "12 x 275ml", supplier: "Bookers", price: 9.50 },
+      { id: 44, name: "Jack Rabbit Signature Collection Malbec Red Wine 75cl", category: "Alcohol", size: "6 x 75cl", supplier: "Bookers", price: 32.00 },
+      { id: 45, name: "Jack's Pure Apple Juice 1 Litre", category: "Beverages", size: "6 x 1ltr", supplier: "Bookers", price: 6.50 },
+      { id: 46, name: "JR Foods & Packaging Services 7\" Pizza Box Plain Brown", category: "Non-Food, Cleaning & Packaging", size: "1 x 100pk", supplier: "Bookers", price: 12.00 },
+      { id: 47, name: "Koffmann's Potatoes for Chefs Les Pommes Frites", category: "Sauces, Condiments & Savory Staples", size: "4 x 2.27kg", supplier: "Bookers", price: 14.00 },
+      { id: 48, name: "KTC Crispy Fried Onions 400g", category: "Sauces, Condiments & Savory Staples", size: "1 x 400g", supplier: "Bookers", price: 2.80 },
+      { id: 49, name: "Lichfields Fairtrade White Sugar 2kg", category: "Dairy, Oils & Baking Essentials", size: "1 x 2kg", supplier: "Bookers", price: 2.50 },
+      { id: 50, name: "Maltesers Milk Chocolate Bag 37g", category: "Sweets, Toppings & Biscuits", size: "40 x 37g", supplier: "Bookers", price: 22.00 },
+      { id: 51, name: "McCain Original Choice Potato Hash Browns 1kg", category: "Sauces, Condiments & Savory Staples", size: "1 x 1kg", supplier: "Bookers", price: 2.20 },
+      { id: 52, name: "McCain Potato Pops 2.5kg", category: "Sauces, Condiments & Savory Staples", size: "1 x 2.5kg", supplier: "Bookers", price: 5.50 },
+      { id: 53, name: "McVitie's Digestives The Original Biscuits 360g", category: "Sweets, Toppings & Biscuits", size: "12 x 360g", supplier: "Bookers", price: 12.00 },
+      { id: 54, name: "Mini Eggs 3kg", category: "Sweets, Toppings & Biscuits", size: "1 x 3kg", supplier: "Bookers", price: 24.00 },
+      { id: 55, name: "Monin Caramel Syrup 100cl / 70cl", category: "Coffee, Tea & Syrups", size: "1 x 1ltr", supplier: "Bookers", price: 8.90 },
+      { id: 56, name: "Mrs Elswood Burger Gherkins 670g", category: "Sauces, Condiments & Savory Staples", size: "6 x 670g", supplier: "Bookers", price: 11.00 },
+      { id: 57, name: "Müller Müllerlicious Whole Milk 2 Litre", category: "Dairy, Oils & Baking Essentials", size: "4 x 2ltr", supplier: "Bookers", price: 6.80 },
+      { id: 58, name: "Müller Semi Skimmed Milk 2 Litres", category: "Dairy, Oils & Baking Essentials", size: "4 x 2ltr", supplier: "Bookers", price: 6.80 },
+      { id: 59, name: "Nic Caramel Mini Fudge Cubes 1kg", category: "Sweets, Toppings & Biscuits", size: "1 x 1kg", supplier: "Bookers", price: 7.20 },
+      { id: 60, name: "Nic Sugar Strands Vegan 1.0kg", category: "Sweets, Toppings & Biscuits", size: "1 x 1kg", supplier: "Bookers", price: 6.50 },
+      { id: 61, name: "Oatly Oat Drink Barista Edition 1L Long Life", category: "Beverages", size: "6 x 1ltr", supplier: "Bookers", price: 10.50 },
+      { id: 62, name: "OREO Original Vanilla Sandwich Biscuits 154g", category: "Sweets, Toppings & Biscuits", size: "16 x 154g", supplier: "Bookers", price: 14.00 },
+      { id: 63, name: "Passoã Passion Fruit Liqueur 70cl", category: "Alcohol", size: "1 x 70cl", supplier: "Bookers", price: 14.50 },
+      { id: 64, name: "Paterson's Shortbread Fingers 300g", category: "Sweets, Toppings & Biscuits", size: "14 x 300g", supplier: "Bookers", price: 16.00 },
+      { id: 65, name: "Perfect Ted Ceremonial Grade Matcha 100g", category: "Coffee, Tea & Syrups", size: "1 x 100g", supplier: "Bookers", price: 12.00 },
+      { id: 66, name: "Roquito Hot Honey 720g", category: "Sauces, Condiments & Savory Staples", size: "5 x 720g", supplier: "Bookers", price: 21.00 },
+      { id: 67, name: "Silver Spoon British Icing Sugar 3kg", category: "Dairy, Oils & Baking Essentials", size: "1 x 3kg", supplier: "Bookers", price: 4.50 },
+      { id: 68, name: "Silver Spoon Granulated Sugar 1kg", category: "Dairy, Oils & Baking Essentials", size: "15 x 1kg", supplier: "Bookers", price: 15.00 },
+      { id: 69, name: "Snow Shock Blue Raspberry Premium Slush Syrup 5 Litres", category: "Coffee, Tea & Syrups", size: "1 x 5ltr", supplier: "Bookers", price: 18.00 },
+      { id: 70, name: "Spice Magic Raita Sauce 930g", category: "Sauces, Condiments & Savory Staples", size: "1 x 930g", supplier: "Bookers", price: 3.50 },
+      { id: 71, name: "Spice Magic Smooth Mango Chutney 1.2kg", category: "Sauces, Condiments & Savory Staples", size: "1 x 1.2kg", supplier: "Bookers", price: 4.00 },
+      { id: 72, name: "Sprite Zero Sugar 330ml", category: "Beverages", size: "24 x 330ml", supplier: "Bookers", price: 12.50 },
+      { id: 73, name: "St Pierre 4 Pre-Sliced Brioche Burger Buns", category: "Bakery, Desserts & Breakfast Staples", size: "9 x 4pk", supplier: "Bookers", price: 14.00 },
+      { id: 74, name: "St Pierre 4 Seeded Brioche Burger Buns", category: "Bakery, Desserts & Breakfast Staples", size: "9 x 4pk", supplier: "Bookers", price: 14.50 },
+      { id: 75, name: "St Pierre Brioche Loaf 500g", category: "Bakery, Desserts & Breakfast Staples", size: "1 x 500g", supplier: "Bookers", price: 2.20 },
+      { id: 76, name: "Strathmore Sparkling Spring Water 330ml", category: "Beverages", size: "24 x 330ml", supplier: "Bookers", price: 8.50 },
+      { id: 77, name: "Strathmore Still Spring Water 330ml / 750ml", category: "Beverages", size: "24 x 330ml", supplier: "Bookers", price: 8.50 },
+      { id: 78, name: "Sweetex Calorie Free Sweeteners 1200 Tablets", category: "Dairy, Oils & Baking Essentials", size: "12 x 1200pk", supplier: "Bookers", price: 18.00 },
+      
+      // COSTCO ITEMS
+      { id: 79, name: "Kinder bueno", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 18.50 },
+      { id: 80, name: "Ferrero rocher", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 12.00 },
+      { id: 81, name: "Skittles", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 7.50 },
+      { id: 82, name: "J2O apple and mango", category: "Beverages", size: "275ML*12", supplier: "Costco", price: 8.90 },
+      { id: 83, name: "J2O orange and passionfruit", category: "Beverages", size: "275ML*12", supplier: "Costco", price: 8.90 },
+      { id: 84, name: "J2O apple and raspberry", category: "Beverages", size: "275ML*12", supplier: "Costco", price: 8.90 },
+      { id: 85, name: "Whipped cream", category: "Dairy, Oils & Baking Essentials", size: "500G*12", supplier: "Costco", price: 24.00 },
+      { id: 86, name: "Fuel granola", category: "Bakery, Desserts & Breakfast Staples", size: "KG", supplier: "Costco", price: 4.50 },
+      { id: 87, name: "Seeds and fruit mix", category: "Bakery, Desserts & Breakfast Staples", size: "PCKT", supplier: "Costco", price: 3.80 },
+      { id: 88, name: "Frozen mixed berries", category: "Bakery, Desserts & Breakfast Staples", size: "1.8KG", supplier: "Costco", price: 6.50 },
+      { id: 89, name: "St Pierre Brioche buns", category: "Bakery, Desserts & Breakfast Staples", size: "8PCS*2", supplier: "Costco", price: 4.20 },
+      { id: 90, name: "KTC vegetable oil", category: "Dairy, Oils & Baking Essentials", size: "20LTRS", supplier: "Costco", price: 25.00 },
+      { id: 91, name: "Nacho cheese", category: "Sauces, Condiments & Savory Staples", size: "3KG", supplier: "Costco", price: 12.50 },
+      { id: 92, name: "Mayonnaise", category: "Sauces, Condiments & Savory Staples", size: "5KG", supplier: "Costco", price: 11.00 },
+      { id: 93, name: "Eggs", category: "Dairy, Oils & Baking Essentials", size: "1 BOX *60", supplier: "Costco", price: 9.50 },
+
+      // SOUTHLINCS ITEMS
+      { id: 94, name: "Apple pie filling", category: "Bakery, Desserts & Breakfast Staples", size: "2KG", supplier: "SouthLincs", price: 6.50 },
+      { id: 95, name: "Red cherry pie filling", category: "Bakery, Desserts & Breakfast Staples", size: "2KG", supplier: "SouthLincs", price: 7.20 },
+      { id: 96, name: "New york style cheesecake", category: "Bakery, Desserts & Breakfast Staples", size: "16PORTIONS /BOX", supplier: "SouthLincs", price: 16.00 },
+      { id: 97, name: "All butter croissant", category: "Bakery, Desserts & Breakfast Staples", size: "1 Box X 48", supplier: "SouthLincs", price: 18.00 },
+      { id: 98, name: "Pash’n’shoot smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 22.00 },
+      { id: 99, name: "Melon refresher smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 22.00 },
+      { id: 100, name: "Avo go go smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 22.00 },
+      { id: 101, name: "Detox zing smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 22.00 },
+      { id: 102, name: "Triple chocolate brownie", category: "Bakery, Desserts & Breakfast Staples", size: "16 portions / Box", supplier: "SouthLincs", price: 15.00 },
+      { id: 103, name: "James Brown cornflour", category: "Dairy, Oils & Baking Essentials", size: "3.5kg", supplier: "SouthLincs", price: 5.80 },
+
+      // AIRELA ITEMS
+      { id: 104, name: "Raspberry sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 13.50 },
+      { id: 105, name: "Mango sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 13.50 },
+      { id: 106, name: "Passionfruit sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 13.50 },
+      { id: 107, name: "Biscoff gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
+      { id: 108, name: "Cherry yoghurt gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
+      { id: 109, name: "Rum’n’raisin gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
+      { id: 110, name: "Coffee gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
+      { id: 111, name: "Honeycomb gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
+      { id: 112, name: "Bubblegum gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
+      { id: 113, name: "Coconut gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
+      { id: 114, name: "Eton mess gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 15.00 },
+      { id: 115, name: "Cinnamon gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
+      { id: 116, name: "Salted caramel gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
+      { id: 117, name: "S’mores gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 15.00 },
+      { id: 118, name: "Oreo gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.50 },
+      { id: 119, name: "Strawberry gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 14.00 },
+      { id: 120, name: "Pistachio gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 18.00 },
+      { id: 121, name: "Peanutella gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 15.50 },
+      { id: 122, name: "Ambassador gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 16.00 },
+      { id: 123, name: "Waffle cones", category: "Ice Creams", size: "Pack", supplier: "Airela", price: 15.00 },
+      { id: 124, name: "Cone tissues", category: "Ice Creams", size: "Pack", supplier: "Airela", price: 4.00 },
+
+      // STRATFORD ITEMS
+      { id: 125, name: "Vanilla gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 22.00 },
+      { id: 126, name: "Dulce de leche gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 25.00 },
+      { id: 127, name: "Cherries and custard gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 26.00 },
+      { id: 128, name: "Mascarpone gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 26.00 },
+      { id: 129, name: "Ciokamenta gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 25.00 },
+      { id: 130, name: "Vegan vanilla gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 27.00 },
+      { id: 131, name: "Scoopable acai", category: "Gelato, Sorbet & Ice Cream Mixes", size: "3.6l*2", supplier: "StratFord", price: 38.00 },
+      { id: 132, name: "Vegan chocolate gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 27.00 },
+      { id: 133, name: "Vegan salted caramel gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "5l", supplier: "StratFord", price: 27.00 },
+
+      // FRESHPAC ITEMS
+      { id: 134, name: "Lemon and elderflower tea", category: "Coffee, Tea & Syrups", size: "500g", supplier: "FreshPac", price: 8.00 },
+      { id: 135, name: "Green tea", category: "Coffee, Tea & Syrups", size: "500g", supplier: "FreshPac", price: 7.50 },
+      { id: 136, name: "Earl grey tea", category: "Coffee, Tea & Syrups", size: "500g", supplier: "FreshPac", price: 7.50 },
+      { id: 137, name: "Vanilla chai latte powder", category: "Coffee, Tea & Syrups", size: "1kg", supplier: "FreshPac", price: 12.00 },
+      { id: 138, name: "Spice chai latte powder", category: "Coffee, Tea & Syrups", size: "1kg", supplier: "FreshPac", price: 12.00 },
+
+      // BIDFOOD, JM POSNER & MILK AND BEANS
+      { id: 139, name: "Frozen waffles", category: "Bakery, Desserts & Breakfast Staples", size: "130*130g", supplier: "Bidfood", price: 24.00 },
+      { id: 140, name: "Waffle mix powder", category: "Bakery, Desserts & Breakfast Staples", size: "2.3kg*6", supplier: "JM Posner", price: 29.00 },
+      { id: 141, name: "Vegan waffle mix powder", category: "Bakery, Desserts & Breakfast Staples", size: "2.3kg*6", supplier: "JM Posner", price: 31.00 },
+      { id: 142, name: "Coffee Beans", category: "Coffee, Tea & Syrups", size: "kg", supplier: "Milk and Beans", price: 16.50 }
+    ];
+
+    let suppliersList = [];
+    let cart = [];
+    let orders = [];
+    let currentPage = 1;
+    const itemsPerPage = 20;
+    let currentFilteredCatalog = [];
+
+    window.onload = () => {
+      syncSuppliersList();
+      populateSupplierDropdowns();
+      currentFilteredCatalog = [...catalog];
+      renderCatalog();
+      updateCartUI();
+      lucide.createIcons();
+    };
+
+    function syncSuppliersList() {
+      suppliersList = [...new Set(catalog.map(i => i.supplier))];
+    }
+
+    function populateSupplierDropdowns() {
+      const filterSelect = document.getElementById('supplier-filter');
+      const addFormSelect = document.getElementById('new-item-supplier');
+
+      filterSelect.innerHTML = `<option value="ALL">All Suppliers</option>`;
+      addFormSelect.innerHTML = ``;
+
+      suppliersList.forEach(s => {
+        const opt1 = document.createElement('option');
+        opt1.value = s;
+        opt1.textContent = s;
+        filterSelect.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = s;
+        opt2.textContent = s;
+        addFormSelect.appendChild(opt2);
+      });
+    }
+
+    function filterCatalog() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const supplier = document.getElementById('supplier-filter').value;
+
+      currentFilteredCatalog = catalog.filter(i => {
+        const matchesSearch = i.name.toLowerCase().includes(search) || i.category.toLowerCase().includes(search);
+        const matchesSupplier = supplier === 'ALL' || i.supplier === supplier;
+        return matchesSearch && matchesSupplier;
+      });
+
+      currentPage = 1;
+      renderCatalog();
+    }
+
+    function changePage(direction) {
+      currentPage += direction;
+      renderCatalog();
+    }
+
+    function renderCatalog() {
+      const grid = document.getElementById('catalog-grid');
+      const countLabel = document.getElementById('items-count-label');
+      const prevBtn = document.getElementById('btn-prev');
+      const nextBtn = document.getElementById('btn-next');
+
+      const totalPages = Math.ceil(currentFilteredCatalog.length / itemsPerPage) || 1;
+
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const paginatedItems = currentFilteredCatalog.slice(start, end);
+
+      if (currentFilteredCatalog.length === 0) {
+        countLabel.textContent = `Showing 0 items`;
+      } else {
+        countLabel.textContent = `Showing ${start + 1}-${Math.min(end, currentFilteredCatalog.length)} of ${currentFilteredCatalog.length} items (Page ${currentPage}/${totalPages})`;
+      }
+
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages || currentFilteredCatalog.length === 0;
+
+      if (paginatedItems.length === 0) {
+        grid.innerHTML = `<p class="text-xs text-slate-400 text-center py-8 col-span-2">No items found matching your filter criteria.</p>`;
+        return;
+      }
+
+      grid.innerHTML = paginatedItems.map(item => `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/90 flex flex-col justify-between hover:border-red-300 transition-all">
+          <div>
+            <div class="flex justify-between items-start mb-2">
+              <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">${item.supplier}</span>
+              <span class="text-xs font-black text-slate-900">£${item.price.toFixed(2)}</span>
+            </div>
+            <h4 class="font-bold text-slate-800 text-sm leading-snug mb-1">${item.name}</h4>
+            <p class="text-xs text-slate-400 mb-3">Pack Size: ${item.size || 'N/A'}</p>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-1">
+              <label for="qty-${item.id}" class="text-[10px] font-bold text-slate-400">Qty:</label>
+              <select id="qty-${item.id}" class="py-1 px-2 text-xs bg-slate-100 font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500">
+                ${[1,2,3,4,5,6,7,8,9,10].map(q => `<option value="${q}">${q}</option>`).join('')}
+              </select>
+            </div>
+            <button onclick="addToCart(${item.id})" class="flex-1 py-1.5 bg-slate-900 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function addToCart(itemId) {
+      const item = catalog.find(i => i.id === itemId);
+      const qtySelect = document.getElementById(`qty-${itemId}`);
+      const qty = parseInt(qtySelect.value, 10);
+
+      const existing = cart.find(c => c.id === itemId);
+      if (existing) {
+        existing.qty += qty;
+      } else {
+        cart.push({ ...item, qty });
+      }
+
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const badge = document.getElementById('cart-badge');
+      const countLabel = document.getElementById('cart-item-count');
+      const quickContainer = document.getElementById('quick-cart-items');
+      const summary = document.getElementById('quick-cart-summary');
+      const totalLabel = document.getElementById('cart-total-price');
+
+      const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
+      const totalPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+
+      if (totalItems > 0) {
+        badge.textContent = totalItems;
+        badge.classList.remove('hidden');
+        summary.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+        summary.classList.add('hidden');
+      }
+
+      countLabel.textContent = `${totalItems} items`;
+      totalLabel.textContent = `£${totalPrice.toFixed(2)}`;
+
+      if (cart.length === 0) {
+        quickContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Your cart is currently empty.</p>`;
+        return;
+      }
+
+      quickContainer.innerHTML = cart.map(i => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+          <div class="pr-2">
+            <p class="font-bold text-slate-800 line-clamp-1">${i.name}</p>
+            <p class="text-[10px] text-slate-400">${i.supplier} | Qty: ${i.qty}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-black text-slate-900">£${(i.price * i.qty).toFixed(2)}</span>
+            <button onclick="removeFromCart(${i.id})" class="text-slate-400 hover:text-red-600">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function removeFromCart(itemId) {
+      cart = cart.filter(i => i.id !== itemId);
+      updateCartUI();
+    }
+
+let isAdminUnlocked = false;
+
+    // TAB SWITCH WITH PASSCODE PROTECTION
+    function switchTab(tab) {
+      if (tab === 'admin' && !isAdminUnlocked) {
+        document.getElementById('passcode-modal').classList.remove('hidden');
+        document.getElementById('admin-passcode-input').focus();
+        return;
+      }
+
+      document.getElementById('tab-catalog').classList.toggle('hidden', tab !== 'catalog');
+      document.getElementById('tab-admin').classList.toggle('hidden', tab !== 'admin');
+    }
+
+    function verifyPasscode() {
+      const passcode = document.getElementById('admin-passcode-input').value;
+      if (passcode === 'ALAIYA') {
+        isAdminUnlocked = true;
+        document.getElementById('passcode-modal').classList.add('hidden');
+        document.getElementById('passcode-error').classList.add('hidden');
+        document.getElementById('admin-passcode-input').value = '';
+        
+        // Switch to Admin view once unlocked
+        document.getElementById('tab-catalog').classList.add('hidden');
+        document.getElementById('tab-admin').classList.remove('hidden');
+      } else {
+        document.getElementById('passcode-error').classList.remove('hidden');
+      }
+    }
+
+    function closePasscodeModal() {
+      document.getElementById('passcode-modal').classList.add('hidden');
+      document.getElementById('admin-passcode-input').value = '';
+      document.getElementById('passcode-error').classList.add('hidden');
+    }
+
+    // ORDER SUBMISSION WITH PERSON / ROLE / BRANCH DETAILS
+    function submitOrder() {
+      if (cart.length === 0) return;
+      // Open modal to gather person details
+      document.getElementById('order-details-modal').classList.remove('hidden');
+    }
+
+    function closeOrderDetailsModal() {
+      document.getElementById('order-details-modal').classList.add('hidden');
+    }
+
+    function confirmAndSubmitOrder(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('order-user-name').value.trim();
+      const role = document.getElementById('order-user-role').value.trim();
+      const branch = document.getElementById('order-user-branch').value.trim();
+
+      const orderId = Math.floor(100000 + Math.random() * 900000);
+      const newOrder = {
+        id: orderId,
+        date: new Date().toLocaleDateString('en-GB') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        orderedBy: { name, role, branch },
+        items: [...cart],
+        total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0)
+      };
+
+      orders.unshift(newOrder);
+      cart = [];
+      updateCartUI();
+      renderAdminOrders();
+      updateAdminBadge();
+
+      // Reset modal inputs and hide
+      document.getElementById('order-user-name').value = '';
+      document.getElementById('order-user-role').value = '';
+      document.getElementById('order-user-branch').value = '';
+      closeOrderDetailsModal();
+
+      alert(`Purchase Order #${orderId} submitted successfully!`);
+    }
+
+    // RENDER ADMIN ORDERS (INCLUDES ORDERED BY INFO)
+    function renderAdminOrders() {
+      const container = document.getElementById('admin-orders-list');
+      if (orders.length === 0) {
+        container.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">No orders created yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = orders.map(o => {
+        const suppliers = [...new Set(o.items.map(i => i.supplier))];
+
+        return `
+          <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-200/60 pb-3 gap-2">
+              <div>
+                <span class="font-black text-slate-900 text-base">PO #${o.id}</span>
+                <span class="text-xs text-slate-400 ml-2">${o.date}</span>
+                <div class="text-xs text-slate-600 mt-1">
+                  <strong>Ordered By:</strong> ${o.orderedBy.name} (${o.orderedBy.role}) • <strong>Branch:</strong> ${o.orderedBy.branch}
+                </div>
+              </div>
+              <span class="font-extrabold text-slate-900 text-base">Total: £${o.total.toFixed(2)}</span>
+            </div>
+
+            <div class="space-y-3">
+              <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Download Purchase Orders by Supplier:</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                ${suppliers.map(s => {
+                  const supplierItems = o.items.filter(i => i.supplier === s);
+                  const supplierTotal = supplierItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
+                  return `
+                    <div class="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center">
+                      <div>
+                        <p class="font-bold text-xs text-slate-800">${s}</p>
+                        <p class="text-[10px] text-slate-400">${supplierItems.length} item(s) • £${supplierTotal.toFixed(2)}</p>
+                      </div>
+                      <button onclick="downloadPOPDF(${o.id}, '${s}')" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // UPDATE PDF GENERATION TO INCLUDE USER/BRANCH DETAILS
+    function downloadPOPDF(orderId, supplierName) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const items = order.items.filter(i => i.supplier === supplierName);
+      const total = items.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
+
+      const exportContainer = document.getElementById('pdf-export-container');
+      
+      exportContainer.innerHTML = `
+        <div id="pdf-content" style="padding: 30px; font-family: sans-serif; color: #1e293b; max-width: 800px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ef4444; padding-bottom: 15px; margin-bottom: 20px;">
+            <div>
+              <h1 style="font-size: 24px; font-weight: 800; margin: 0; color: #0f172a;">TREAT STREET ALIA</h1>
+              <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Internal Procurement System</p>
+            </div>
+            <div style="text-align: right;">
+              <h2 style="font-size: 18px; font-weight: 700; margin: 0; color: #ef4444;">PURCHASE ORDER</h2>
+              <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">PO #: ${orderId}-${supplierName.toUpperCase()}</p>
+              <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Date: ${order.date}</p>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; gap: 15px; margin-bottom: 25px;">
+            <div style="flex: 1; background: #f8fafc; padding: 12px; border-radius: 8px;">
+              <p style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 4px 0;">SUPPLIER DETAILS:</p>
+              <h3 style="font-size: 14px; font-weight: 700; margin: 0; color: #0f172a;">${supplierName}</h3>
+            </div>
+            <div style="flex: 1; background: #f8fafc; padding: 12px; border-radius: 8px;">
+              <p style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 4px 0;">ORDERED BY:</p>
+              <p style="font-size: 12px; font-weight: 700; margin: 0; color: #0f172a;">${order.orderedBy.name} (${order.orderedBy.role})</p>
+              <p style="font-size: 11px; color: #64748b; margin: 2px 0 0 0;">Branch: ${order.orderedBy.branch}</p>
+            </div>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;">
+            <thead>
+              <tr style="background-color: #0f172a; color: white;">
+                <th style="padding: 8px 10px; text-align: left;">Item Description</th>
+                <th style="padding: 8px 10px; text-align: center;">Pack Size</th>
+                <th style="padding: 8px 10px; text-align: center;">Qty</th>
+                <th style="padding: 8px 10px; text-align: right;">Unit Price</th>
+                <th style="padding: 8px 10px; text-align: right;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((item, idx) => `
+                <tr style="border-bottom: 1px solid #e2e8f0; background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                  <td style="padding: 10px;"><strong>${item.name}</strong></td>
+                  <td style="padding: 10px; text-align: center;">${item.size || 'N/A'}</td>
+                  <td style="padding: 10px; text-align: center;">${item.qty}</td>
+                  <td style="padding: 10px; text-align: right;">£${item.price.toFixed(2)}</td>
+                  <td style="padding: 10px; text-align: right;">£${(item.price * item.qty).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+            <div style="width: 250px; background-color: #f1f5f9; padding: 15px; border-radius: 8px; text-align: right;">
+              <span style="font-size: 12px; font-weight: 600; color: #475569;">Total Order Value:</span>
+              <h2 style="font-size: 20px; font-weight: 900; color: #0f172a; margin: 5px 0 0 0;">£${total}</h2>
+            </div>
+          </div>
+
+          <div style="margin-top: 40px; border-top: 1px solid #cbd5e1; padding-top: 15px; text-align: center; font-size: 10px; color: #94a3b8;">
+            Treat Street Alia Procurement System • Authorized Purchase Order
+          </div>
+        </div>
+      `;
+
+      const element = document.getElementById('pdf-content');
+      const opt = {
+        margin:       0.3,
+        filename:     `PO_${supplierName}_${orderId}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+    
+
+    function updateAdminBadge() {
+      const badge = document.getElementById('admin-badge');
+      if (orders.length > 0) {
+        badge.textContent = orders.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function clearAllOrders() {
+      orders = [];
+      renderAdminOrders();
+      updateAdminBadge();
+    }
+
+    
+    // FORM HANDLERS FOR ADDING DATA
+    function handleAddSupplier(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('new-supplier-name');
+      const supplierName = nameInput.value.trim();
+
+      if (supplierName && !suppliersList.includes(supplierName)) {
+        suppliersList.push(supplierName);
+        populateSupplierDropdowns();
+        nameInput.value = '';
+        alert(`Supplier "${supplierName}" added successfully!`);
+      } else {
+        alert('Supplier already exists or invalid name.');
+      }
+    }
+
+    function handleAddIngredient(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-item-name').value.trim();
+      const category = document.getElementById('new-item-category').value.trim();
+      const size = document.getElementById('new-item-size').value.trim();
+      const supplier = document.getElementById('new-item-supplier').value;
+      const price = parseFloat(document.getElementById('new-item-price').value);
+
+      const newItem = {
+        id: catalog.length ? Math.max(...catalog.map(i => i.id)) + 1 : 1,
+        name,
+        category,
+        size,
+        supplier,
+        price
+      };
+
+      catalog.push(newItem);
+      filterCatalog(); // Refresh catalog state & pagination
+
+      // Clear form inputs
+      document.getElementById('new-item-name').value = '';
+      document.getElementById('new-item-category').value = '';
+      document.getElementById('new-item-size').value = '';
+      document.getElementById('new-item-price').value = '';
+
+      alert(`Ingredient "${name}" successfully added to catalog!`);
+    }
+  </script>
+</body>
+</html>
