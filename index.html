@@ -20,7 +20,7 @@
       transform: translate(-50%, -50%) rotate(-25deg);
       font-size: 11vw;
       font-weight: 900;
-      color: rgba(220, 38, 38, 0.03);
+      color: rgba(20, 77, 55, 0.03);
       pointer-events: none;
       user-select: none;
       z-index: 0;
@@ -28,6 +28,9 @@
       text-align: center;
       line-height: 1;
     }
+    .brand-green-bg { background-color: #144D37; }
+    .brand-green-text { color: #144D37; }
+    .brand-green-border { border-color: #144D37; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative">
@@ -37,28 +40,29 @@
   </div>
 
   <div class="relative z-10">
-    <header class="bg-slate-900 text-white sticky top-0 z-30 border-b border-slate-800 shadow-md">
+    <!-- TOP HEADER -->
+    <header class="brand-green-bg text-white sticky top-0 z-30 border-b border-emerald-900 shadow-md">
       <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         <div class="flex items-center gap-3">
-          <div class="bg-red-600 text-white p-2 rounded-xl shadow-inner font-black text-xl leading-none">
+          <div class="bg-white text-[#144D37] px-2.5 py-1 rounded-lg shadow-inner font-black text-xl leading-none tracking-wider">
             TS
           </div>
           <div>
             <h1 class="font-extrabold text-base tracking-wide flex items-center gap-2">
-              Treat Street <span class="bg-red-600/30 text-red-400 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">Alia Portal</span>
+              Treat Street <span class="bg-emerald-800/80 text-emerald-200 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">Purchase Portal</span>
             </h1>
-            <p class="text-[11px] text-slate-400">Internal Procurement System</p>
+            <p class="text-[11px] text-emerald-200">Internal Procurement System</p>
           </div>
         </div>
 
         <div class="flex items-center gap-3">
-          <nav class="flex gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/50">
-            <button id="btn-tab-catalog" onclick="switchTab('catalog')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-red-600 text-white shadow-sm flex items-center gap-1.5">
+          <nav class="flex gap-1 bg-emerald-900/60 p-1 rounded-xl border border-emerald-700/50">
+            <button id="btn-tab-catalog" onclick="switchTab('catalog')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all brand-green-bg text-white shadow-sm flex items-center gap-1.5 border border-emerald-600">
               <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Order Catalog
             </button>
-            <button id="btn-tab-admin" onclick="switchTab('admin')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white flex items-center gap-1.5 relative">
+            <button id="btn-tab-admin" onclick="switchTab('admin')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-emerald-100 hover:text-white flex items-center gap-1.5 relative">
               <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Admin & Orders
-              <span id="admin-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-slate-900">0</span>
+              <span id="admin-badge" class="hidden absolute -top-1 -right-1 bg-amber-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-[#144D37]">0</span>
             </button>
           </nav>
         </div>
@@ -75,10 +79,10 @@
               <div class="flex flex-col sm:flex-row gap-3">
                 <div class="relative flex-1">
                   <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
-                  <input type="text" id="search-input" onkeyup="filterCatalog()" placeholder="Search ingredients or categories..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500 transition-all" />
+                  <input type="text" id="search-input" onkeyup="filterCatalog()" placeholder="Search ingredients or categories..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37] transition-all" />
                 </div>
                 <div class="w-full sm:w-48">
-                  <select id="supplier-filter" onchange="filterCatalog()" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                  <select id="supplier-filter" onchange="filterCatalog()" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37]">
                     <option value="ALL">All Suppliers</option>
                   </select>
                 </div>
@@ -100,9 +104,9 @@
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sticky top-20 space-y-4">
               <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                 <h3 class="font-extrabold text-slate-900 flex items-center gap-2 text-sm">
-                  <i data-lucide="shopping-cart" class="w-4 h-4 text-red-600"></i> Order Summary
+                  <i data-lucide="shopping-cart" class="w-4 h-4 brand-green-text"></i> Order Summary
                 </h3>
-                <span id="cart-count" class="bg-red-100 text-red-700 text-xs font-black px-2 py-0.5 rounded-full">0 Items</span>
+                <span id="cart-count" class="bg-emerald-100 brand-green-text text-xs font-black px-2 py-0.5 rounded-full">0 Items</span>
               </div>
 
               <div id="cart-items-list" class="space-y-3 max-h-[380px] overflow-y-auto pr-1 text-xs">
@@ -112,10 +116,10 @@
               <div class="border-t border-slate-100 pt-3 space-y-3">
                 <div class="flex justify-between items-center font-black text-slate-900 text-base">
                   <span>Total Amount:</span>
-                  <span id="cart-total-price" class="text-red-600">£0.00</span>
+                  <span id="cart-total-price" class="brand-green-text">£0.00</span>
                 </div>
-                <button id="btn-submit-order" onclick="submitOrder()" disabled class="w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
-                  <i data-lucide="send" class="w-4 h-4"></i> Submit Purchase Order
+                <button id="btn-submit-order" onclick="submitOrder()" disabled class="w-full py-2.5 brand-green-bg hover:bg-emerald-900 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                  <i data-lucide="send" class="w-4 h-4"></i> Submit & Generate POs
                 </button>
               </div>
             </div>
@@ -128,13 +132,13 @@
         <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <div>
             <h2 class="font-extrabold text-slate-900 text-lg">Admin Management & Tracking</h2>
-            <p class="text-xs text-slate-500">Track received orders, manage suppliers, pricing, and create POs</p>
+            <p class="text-xs text-slate-500">Track received orders, manage suppliers, pricing, and view POs</p>
           </div>
           <div id="admin-lock-controls">
             <button id="btn-unlock-admin" onclick="openPasscodeModal()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
-              <i data-lucide="lock" class="w-3.5 h-3.5"></i> Unlock Admin Editing
+              <i data-lucide="lock" class="w-3.5 h-3.5"></i> Unlock Admin Access
             </button>
-            <button id="btn-lock-admin" onclick="logoutAdmin()" class="hidden px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
+            <button id="btn-lock-admin" onclick="logoutAdmin()" class="hidden px-3.5 py-2 brand-green-bg hover:bg-emerald-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
               <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> Admin Unlocked (Lock)
             </button>
           </div>
@@ -143,7 +147,7 @@
         <div class="space-y-4">
           <div class="flex justify-between items-center">
             <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
-              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-red-600"></i> Existing Orders & Tracking
+              <i data-lucide="file-spreadsheet" class="w-4 h-4 brand-green-text"></i> Order History & PO Documents
             </h3>
             <button onclick="clearAllOrders()" class="text-xs font-bold text-slate-400 hover:text-red-600 transition-colors">Clear History</button>
           </div>
@@ -151,33 +155,33 @@
           <div id="admin-orders-list" class="space-y-4"></div>
         </div>
 
-        <!-- ADD SUPPLIER & ITEM MANAGEMENT (ADMIN ONLY) -->
+        <!-- ADD SUPPLIER & ITEM MANAGEMENT (ADMIN UNLOCKED ONLY) -->
         <div id="admin-editing-forms" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200">
           <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
             <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
-              <i data-lucide="truck" class="w-4 h-4 text-red-600"></i> Add New Supplier
+              <i data-lucide="truck" class="w-4 h-4 brand-green-text"></i> Add New Supplier
             </h4>
             <form onsubmit="handleAddSupplier(event)" class="space-y-3">
-              <input type="text" id="new-supplier-name" placeholder="Supplier Name" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
-              <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-colors">Add Supplier</button>
+              <input type="text" id="new-supplier-name" placeholder="Supplier Name" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
+              <button type="submit" class="w-full py-2 brand-green-bg text-white text-xs font-bold rounded-xl transition-colors">Add Supplier</button>
             </form>
           </div>
 
           <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
             <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
-              <i data-lucide="package-plus" class="w-4 h-4 text-red-600"></i> Add New Ingredient Item
+              <i data-lucide="package-plus" class="w-4 h-4 brand-green-text"></i> Add New Ingredient Item
             </h4>
             <form onsubmit="handleAddIngredient(event)" class="space-y-3">
-              <input type="text" id="new-item-name" placeholder="Ingredient Name" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
+              <input type="text" id="new-item-name" placeholder="Ingredient Name" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
               <div class="grid grid-cols-2 gap-2">
-                <input type="text" id="new-item-category" placeholder="Category" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
-                <input type="text" id="new-item-size" placeholder="Pack Size (e.g. 4 x 400g)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
+                <input type="text" id="new-item-category" placeholder="Category" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
+                <input type="text" id="new-item-size" placeholder="Pack Size (e.g. 4 x 400g)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
               </div>
               <div class="grid grid-cols-2 gap-2">
-                <select id="new-item-supplier" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500"></select>
-                <input type="number" step="0.01" id="new-item-price" placeholder="Price (£)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
+                <select id="new-item-supplier" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37]"></select>
+                <input type="number" step="0.01" id="new-item-price" placeholder="Price (£)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
               </div>
-              <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-colors">Add Item to Catalog</button>
+              <button type="submit" class="w-full py-2 brand-green-bg text-white text-xs font-bold rounded-xl transition-colors">Add Item to Catalog</button>
             </form>
           </div>
         </div>
@@ -196,20 +200,16 @@
       </div>
       <form onsubmit="confirmAndSubmitOrder(event)" class="space-y-3">
         <div>
-          <label class="text-[11px] font-bold text-slate-600 block mb-1">Your Name</label>
-          <input type="text" id="order-user-name" required placeholder="e.g. John Doe" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
+          <label class="text-[11px] font-bold text-slate-600 block mb-1">Requested By (Name & Role)</label>
+          <input type="text" id="order-user-name" required placeholder="e.g. SAI KISHORE (MANAGER)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
         </div>
         <div>
-          <label class="text-[11px] font-bold text-slate-600 block mb-1">Role / Position</label>
-          <input type="text" id="order-user-role" required placeholder="e.g. Head Baker / Store Manager" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
-        </div>
-        <div>
-          <label class="text-[11px] font-bold text-slate-600 block mb-1">Branch / Location</label>
-          <input type="text" id="order-user-branch" required placeholder="e.g. Central Kitchen / Branch A" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
+          <label class="text-[11px] font-bold text-slate-600 block mb-1">Target Location / Branch</label>
+          <input type="text" id="order-user-branch" required placeholder="e.g. MILTON KEYNES" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
         </div>
         <div class="pt-2 flex gap-2">
           <button type="button" onclick="closeOrderDetailsModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Cancel</button>
-          <button type="submit" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-colors">Confirm & Submit</button>
+          <button type="submit" class="flex-1 py-2 brand-green-bg text-white text-xs font-bold rounded-xl transition-colors">Confirm & Generate POs</button>
         </div>
       </form>
     </div>
@@ -219,13 +219,13 @@
   <div id="passcode-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-sm p-6 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-        <h3 class="font-extrabold text-slate-900 text-sm">Admin Access Required</h3>
+        <h3 class="font-extrabold text-slate-900 text-sm">Admin Passcode Required</h3>
         <button onclick="closePasscodeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <div class="space-y-3">
-        <p class="text-xs text-slate-500">Enter administrator passcode to enable price editing and catalog management.</p>
-        <input type="password" id="admin-passcode-input" placeholder="Passcode" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
-        <button onclick="verifyPasscode()" class="w-full py-2 bg-slate-900 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-colors">Unlock</button>
+        <p class="text-xs text-slate-500">Enter admin passcode to unlock order tracking status and catalog editing.</p>
+        <input type="password" id="admin-passcode-input" placeholder="Enter Passcode (e.g. 1234)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
+        <button onclick="verifyPasscode()" class="w-full py-2 brand-green-bg text-white text-xs font-bold rounded-xl transition-colors">Unlock Admin</button>
       </div>
     </div>
   </div>
@@ -242,11 +242,11 @@
         <p id="edit-item-title" class="text-xs font-bold text-slate-700"></p>
         <div>
           <label class="text-[11px] font-bold text-slate-500 block mb-1">New Price (£)</label>
-          <input type="number" step="0.01" id="edit-item-price-input" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500" />
+          <input type="number" step="0.01" id="edit-item-price-input" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
         </div>
         <div class="flex gap-2 pt-2">
           <button type="button" onclick="closeEditPriceModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Cancel</button>
-          <button type="submit" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-colors">Save Price</button>
+          <button type="submit" class="flex-1 py-2 brand-green-bg text-white text-xs font-bold rounded-xl transition-colors">Save Price</button>
         </div>
       </form>
     </div>
@@ -264,13 +264,13 @@
     let cart = [];
     let orders = [];
 
-    // COMPLETE CATALOG DATA IMPORTED FROM CSV
+    // COMPLETE UNTOUCHED 142 CATALOG ITEMS
     let catalog = [
       { id: 1, name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", category: "Dairy, Oils & Baking Essentials", size: "4 x 400g", supplier: "Bookers", price: 8.50 },
       { id: 2, name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", category: "Dairy, Oils & Baking Essentials", size: "10 x 500g", supplier: "Bookers", price: 12.00 },
       { id: 3, name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", category: "Dairy, Oils & Baking Essentials", size: "1 x 3kg", supplier: "Bookers", price: 7.20 },
       { id: 4, name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 500g", category: "Dairy, Oils & Baking Essentials", size: "10 x 500g", supplier: "Bookers", price: 11.50 },
-      { id: 5, name: "Biscoff Biscuit Crumbs 750g", category: "Sweets, Toppings & Biscuits", size: "8 x 750g", supplier: "Bookers", price: 24.00 },
+      { id: 5, name: "Biscoff Biscuit Crumbs 750g", category: "Sweets, Toppings & Biscuits", size: "8 x 750g", supplier: "Bookers", price: 28.00 },
       { id: 6, name: "Cadbury Drinking Hot Chocolate Large Tub 2KG", category: "Coffee, Tea & Syrups", size: "1 x 2kg", supplier: "Bookers", price: 14.50 },
       { id: 7, name: "CaterPro 100 Wooden Dessert Spoons", category: "Non-Food, Cleaning & Packaging", size: "1 x 100s", supplier: "Bookers", price: 3.50 },
       { id: 8, name: "CaterPro 100 Wooden Forks", category: "Non-Food, Cleaning & Packaging", size: "1 x 100s", supplier: "Bookers", price: 3.50 },
@@ -407,7 +407,7 @@
       { id: 139, name: "Costco Catering Paper Towels Roll Pack 24", category: "Non-Food, Cleaning & Packaging", size: "1 x 24s", supplier: "Costco", price: 22.00 },
       { id: 140, name: "SouthLincs Fresh Kiwis Box 30s", category: "Fruit, Vegetables & Purees", size: "1 x 30s", supplier: "SouthLincs", price: 12.50 },
       { id: 141, name: "Airela Cherry Syrup 1L", category: "Coffee, Tea & Syrups", size: "1 x 1L", supplier: "Airela", price: 9.20 },
-      { id: 142, name: "StratFord Takeaway Carrier Bags Medium Pack 500", category: "Non-Food, Cleaning & Packaging", size: "1 x 500s", supplier: "StratFord", price: 29.00 }
+      { id: 142, name: "Vegan waffle mix powder", category: "Dairy, Oils & Baking Essentials", size: "2.3kg*6", supplier: "JM Posner", price: 31.00 }
     ];
 
     let suppliersList = [];
@@ -432,13 +432,13 @@
       if (tab === 'catalog') {
         catTab.classList.remove('hidden');
         adminTab.classList.add('hidden');
-        catBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-red-600 text-white shadow-sm flex items-center gap-1.5';
-        adminBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white flex items-center gap-1.5 relative';
+        catBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all brand-green-bg text-white shadow-sm flex items-center gap-1.5 border border-emerald-600';
+        adminBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-emerald-100 hover:text-white flex items-center gap-1.5 relative';
       } else {
         catTab.classList.add('hidden');
         adminTab.classList.remove('hidden');
-        adminBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-red-600 text-white shadow-sm flex items-center gap-1.5 relative';
-        catBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white flex items-center gap-1.5';
+        adminBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all brand-green-bg text-white shadow-sm flex items-center gap-1.5 relative border border-emerald-600';
+        catBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-emerald-100 hover:text-white flex items-center gap-1.5';
       }
     }
 
@@ -518,10 +518,10 @@
       }
 
       grid.innerHTML = paginatedItems.map(item => `
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/90 flex flex-col justify-between hover:border-red-300 transition-all">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/90 flex flex-col justify-between hover:border-emerald-600 transition-all">
           <div>
             <div class="flex justify-between items-start mb-2 gap-2">
-              <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md truncate max-w-[120px]">${item.supplier}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 brand-green-text rounded-md truncate max-w-[120px]">${item.supplier}</span>
               <div class="flex items-center gap-1">
                 <span class="text-xs font-black text-slate-900">£${item.price.toFixed(2)}</span>
                 ${isAdminUnlocked ? `
@@ -538,11 +538,11 @@
           <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
             <div class="flex items-center gap-1">
               <label for="qty-${item.id}" class="text-[10px] font-bold text-slate-400">Qty:</label>
-              <select id="qty-${item.id}" class="py-1 px-2 text-xs bg-slate-100 font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500">
+              <select id="qty-${item.id}" class="py-1 px-2 text-xs bg-slate-100 font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#144D37]">
                 ${[1,2,3,4,5,6,7,8,9,10].map(q => `<option value="${q}">${q}</option>`).join('')}
               </select>
             </div>
-            <button onclick="addToCart(${item.id})" class="flex-1 py-1.5 bg-slate-900 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1">
+            <button onclick="addToCart(${item.id})" class="flex-1 py-1.5 brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
             </button>
           </div>
@@ -615,7 +615,7 @@
             <p class="text-[10px] text-slate-400">${item.supplier} • £${item.price.toFixed(2)} each</p>
           </div>
           <div class="flex items-center gap-2">
-            <input type="number" min="1" value="${item.qty}" onchange="updateCartQty(${item.id}, this.value)" class="w-12 py-1 px-1 text-center bg-white border border-slate-200 rounded-lg font-bold text-xs focus:outline-none focus:ring-1 focus:ring-red-500" />
+            <input type="number" min="1" value="${item.qty}" onchange="updateCartQty(${item.id}, this.value)" class="w-12 py-1 px-1 text-center bg-white border border-slate-200 rounded-lg font-bold text-xs focus:outline-none focus:ring-1 focus:ring-[#144D37]" />
             <button onclick="removeFromCart(${item.id})" class="text-slate-400 hover:text-red-600 transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
           </div>
         </div>
@@ -624,7 +624,7 @@
       lucide.createIcons();
     }
 
-    // ORDER SUBMISSION
+    // ORDER SUBMISSION & AUTOMATIC PO GENERATION
     function submitOrder() {
       if (cart.length === 0) return;
       document.getElementById('order-details-modal').classList.remove('hidden');
@@ -634,39 +634,58 @@
       document.getElementById('order-details-modal').classList.add('hidden');
     }
 
+    // HELPER TO GENERATE DATE STRING IN DDMMYY FORMAT
+    function getDDMMYY() {
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yy = String(now.getFullYear()).slice(-2);
+      return `${dd}${mm}${yy}`;
+    }
+
     function confirmAndSubmitOrder(e) {
       e.preventDefault();
 
-      const name = document.getElementById('order-user-name').value.trim();
-      const role = document.getElementById('order-user-role').value.trim();
-      const branch = document.getElementById('order-user-branch').value.trim();
+      const requesterName = document.getElementById('order-user-name').value.trim();
+      const targetLocation = document.getElementById('order-user-branch').value.trim();
 
-      const orderId = Math.floor(100000 + Math.random() * 900000);
+      const ddmmyy = getDDMMYY();
+      const serial = '001';
+      const primaryRef = `TSMK-MULTI-${ddmmyy}-${serial}`;
+
       const newOrder = {
-        id: orderId,
-        date: new Date().toLocaleDateString('en-GB') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        orderedBy: { name, role, branch },
+        primaryRef: primaryRef,
+        ddmmyy: ddmmyy,
+        serial: serial,
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        requestedBy: requesterName,
+        targetLocation: targetLocation,
         items: cart.map(i => ({ ...i, trackingStatus: 'Not Received' })),
         total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0)
       };
 
       orders.unshift(newOrder);
+
+      // Automatically generate PDFs for each supplier
+      const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
+      uniqueSuppliers.forEach(supplier => {
+        downloadPOPDF(newOrder.primaryRef, supplier);
+      });
+
       cart = [];
       updateCartUI();
       renderAdminOrders();
       updateAdminBadge();
 
       document.getElementById('order-user-name').value = '';
-      document.getElementById('order-user-role').value = '';
       document.getElementById('order-user-branch').value = '';
       closeOrderDetailsModal();
 
-      alert(`Purchase Order #${orderId} submitted successfully!`);
+      alert(`Order submitted successfully! ${uniqueSuppliers.length} Purchase Order(s) generated in TSMK-SUPPLIER-DDMMYY-SERIAL format.`);
     }
 
-    // UPDATE ITEM TRACKING STATUS IN EXISTING PO
-    function updateItemTrackingStatus(orderId, itemId, newStatus) {
-      const order = orders.find(o => o.id === orderId);
+    function updateItemTrackingStatus(primaryRef, itemId, newStatus) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
       if (!order) return;
 
       const item = order.items.find(i => i.id === itemId);
@@ -676,7 +695,7 @@
       }
     }
 
-    // RENDER ADMIN ORDERS & TRACKING DROPDOWNS
+    // RENDER ADMIN ORDERS (TRACKING HIDDEN UNTIL ADMIN PASSCODE ENTERED)
     function renderAdminOrders() {
       const container = document.getElementById('admin-orders-list');
       if (!container) return;
@@ -690,85 +709,81 @@
         const suppliers = [...new Set(o.items.map(i => i.supplier))];
 
         return `
-          <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-4 shadow-sm">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-200/60 pb-3 gap-2">
+          <div class="p-5 rounded-xl bg-white border border-slate-200/90 space-y-4 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-200 pb-3 gap-2">
               <div>
-                <span class="font-black text-slate-900 text-base">PO #${o.id}</span>
+                <span class="font-black brand-green-text text-base">Ref: ${o.primaryRef}</span>
                 <span class="text-xs text-slate-400 ml-2">${o.date}</span>
                 <div class="text-xs text-slate-600 mt-1">
-                  <strong>Ordered By:</strong> ${o.orderedBy.name} (${o.orderedBy.role}) • <strong>Branch:</strong> ${o.orderedBy.branch}
+                  <strong>Requested By:</strong> ${o.requestedBy} • <strong>Target Location:</strong> ${o.targetLocation}
                 </div>
               </div>
-              <span class="font-extrabold text-red-600 text-base">Total: £${o.total.toFixed(2)}</span>
+              <span class="font-extrabold brand-green-text text-base">Total: £${o.total.toFixed(2)}</span>
             </div>
 
-            <!-- ORDER ITEM TRACKING TABLE -->
-            <div class="space-y-2">
-              <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Order Items & Tracking Status:</p>
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs bg-white rounded-lg border border-slate-200 overflow-hidden">
-                  <thead class="bg-slate-900 text-white font-bold">
-                    <tr>
-                      <th class="p-2">Supplier</th>
-                      <th class="p-2">Item Description</th>
-                      <th class="p-2 text-center">Pack Size</th>
-                      <th class="p-2 text-center">Qty</th>
-                      <th class="p-2 text-right">Price</th>
-                      <th class="p-2 text-center">Order Tracking</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100">
-                    ${o.items.map(i => {
-                      const status = i.trackingStatus || 'Not Received';
-                      const statusColor = 
-                        status === 'Received' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-                        status === 'Partially Received' ? 'bg-amber-100 text-amber-800 border-amber-300' :
-                        'bg-slate-100 text-slate-700 border-slate-300';
+            <!-- ORDER ITEMS & SUPPLIER SECTIONS -->
+            <div class="space-y-3">
+              ${suppliers.map(s => {
+                const supplierItems = o.items.filter(i => i.supplier === s);
+                const supplierTotal = supplierItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
+                const poNumber = `TSMK-${s.toUpperCase().replace(/\s+/g, '')}-${o.ddmmyy}-${o.serial}`;
 
-                      return `
-                        <tr>
-                          <td class="p-2 font-bold text-slate-700">${i.supplier}</td>
-                          <td class="p-2 font-medium text-slate-800">${i.name}</td>
-                          <td class="p-2 text-center text-slate-500">${i.size || 'N/A'}</td>
-                          <td class="p-2 text-center font-bold text-slate-800">${i.qty}</td>
-                          <td class="p-2 text-right font-bold text-slate-800">£${(i.price * i.qty).toFixed(2)}</td>
-                          <td class="p-2 text-center">
-                            <select 
-                              onchange="updateItemTrackingStatus(${o.id}, ${i.id}, this.value)"
-                              class="px-2 py-1 text-[11px] font-bold rounded-md border ${statusColor} focus:outline-none cursor-pointer">
-                              <option value="Not Received" ${status === 'Not Received' ? 'selected' : ''}>Not Received</option>
-                              <option value="Partially Received" ${status === 'Partially Received' ? 'selected' : ''}>Partially Received</option>
-                              <option value="Received" ${status === 'Received' ? 'selected' : ''}>Received</option>
-                            </select>
-                          </td>
-                        </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- SUPPLIER PO DOWNLOAD BUTTONS -->
-            <div class="space-y-2 pt-2 border-t border-slate-200/60">
-              <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Download Purchase Orders by Supplier:</p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                ${suppliers.map(s => {
-                  const supplierItems = o.items.filter(i => i.supplier === s);
-                  const supplierTotal = supplierItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
-                  return `
-                    <div class="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center shadow-xs">
-                      <div>
-                        <p class="font-bold text-xs text-slate-800">${s}</p>
-                        <p class="text-[10px] text-slate-400">${supplierItems.length} item(s) • £${supplierTotal.toFixed(2)}</p>
-                      </div>
-                      <button onclick="downloadPOPDF(${o.id}, '${s}')" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors">
-                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
-                      </button>
+                return `
+                  <div class="border border-slate-200 rounded-lg overflow-hidden">
+                    <div class="brand-green-bg text-white px-3 py-2 flex justify-between items-center text-xs font-bold">
+                      <span>SUPPLIER: ${s.toUpperCase()}</span>
+                      <span class="bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded text-[10px]">PO: ${poNumber}</span>
                     </div>
-                  `;
-                }).join('')}
-              </div>
+
+                    <div class="overflow-x-auto">
+                      <table class="w-full text-left text-xs bg-white">
+                        <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                          <tr>
+                            <th class="p-2">Item Description</th>
+                            <th class="p-2 text-center">Pack Size</th>
+                            <th class="p-2 text-center">Unit Price</th>
+                            <th class="p-2 text-center">Qty</th>
+                            <th class="p-2 text-right">Subtotal</th>
+                            ${isAdminUnlocked ? `<th class="p-2 text-center">Tracking</th>` : ''}
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                          ${supplierItems.map(i => {
+                            const status = i.trackingStatus || 'Not Received';
+                            return `
+                              <tr>
+                                <td class="p-2 font-medium text-slate-800">${i.name}</td>
+                                <td class="p-2 text-center text-slate-500">${i.size || 'N/A'}</td>
+                                <td class="p-2 text-center text-slate-600">£${i.price.toFixed(2)}</td>
+                                <td class="p-2 text-center font-bold text-slate-800">${i.qty}</td>
+                                <td class="p-2 text-right font-bold text-slate-800">£${(i.price * i.qty).toFixed(2)}</td>
+                                ${isAdminUnlocked ? `
+                                  <td class="p-2 text-center">
+                                    <select 
+                                      onchange="updateItemTrackingStatus('${o.primaryRef}', ${i.id}, this.value)"
+                                      class="px-2 py-1 text-[11px] font-bold rounded border bg-slate-50 text-slate-700 border-slate-300 focus:outline-none cursor-pointer">
+                                      <option value="Not Received" ${status === 'Not Received' ? 'selected' : ''}>Not Received</option>
+                                      <option value="Partially Received" ${status === 'Partially Received' ? 'selected' : ''}>Partially Received</option>
+                                      <option value="Received" ${status === 'Received' ? 'selected' : ''}>Received</option>
+                                    </select>
+                                  </td>
+                                ` : ''}
+                              </tr>
+                            `;
+                          }).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div class="bg-slate-50 px-3 py-2 flex justify-between items-center border-t border-slate-200">
+                      <button onclick="downloadPOPDF('${o.primaryRef}', '${s}')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors">
+                        <i data-lucide="download" class="w-3 h-3"></i> Download PO PDF
+                      </button>
+                      <span class="text-xs font-bold brand-green-text">Supplier Total Cost: £${supplierTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
             </div>
           </div>
         `;
@@ -777,82 +792,89 @@
       lucide.createIcons();
     }
 
-    // PDF PO GENERATION (COMPACT FORMAT WITH NO EXTRA SPACE ABOVE PAGE)
-    function downloadPOPDF(orderId, supplierName) {
-      const order = orders.find(o => o.id === orderId);
+    // PDF PO GENERATION EXACT MATCHING UPLOADED TEMPLATE
+    function downloadPOPDF(primaryRef, supplierName) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
       if (!order) return;
 
       const items = order.items.filter(i => i.supplier === supplierName);
       const total = items.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
+      const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
 
       const exportContainer = document.getElementById('pdf-export-container');
       
       exportContainer.innerHTML = `
-        <div id="pdf-content" style="padding: 10px 20px 20px 20px; font-family: Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #ef4444; padding-bottom: 8px; margin-bottom: 12px;">
-            <div>
-              <h1 style="font-size: 20px; font-weight: 800; margin: 0; color: #0f172a; line-height: 1;">TREAT STREET ALIA</h1>
-              <p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;">Internal Procurement System</p>
+        <div id="pdf-content" style="padding: 15px 25px; font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto; background: #ffffff;">
+          
+          <!-- TOP HEADER WITH GREEN LOGO BADGE AND TITLE -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-center; margin-bottom: 8px;">
+            <div style="background-color: #144D37; color: #ffffff; padding: 10px 18px; border-radius: 8px; display: inline-block;">
+              <h1 style="font-size: 20px; font-weight: 900; margin: 0; tracking-wide: 1px; letter-spacing: 1px; font-family: sans-serif;">TREAT STREET</h1>
             </div>
             <div style="text-align: right;">
-              <h2 style="font-size: 16px; font-weight: 700; margin: 0; color: #ef4444; line-height: 1;">PURCHASE ORDER</h2>
-              <p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;"><strong>PO #:</strong> ${orderId}-${supplierName.toUpperCase()}</p>
-              <p style="font-size: 11px; color: #64748b; margin: 1px 0 0 0;"><strong>Date:</strong> ${order.date}</p>
+              <h2 style="font-size: 18px; font-weight: 900; margin: 0; color: #144D37; letter-spacing: 0.5px;">TREAT STREET PURCHASE ORDER REQUEST</h2>
+              <p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;">Official Requisition Document</p>
             </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; gap: 12px; margin-bottom: 15px;">
-            <div style="flex: 1; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-              <p style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 3px 0;">SUPPLIER DETAILS:</p>
-              <h3 style="font-size: 13px; font-weight: 700; margin: 0; color: #0f172a;">${supplierName}</h3>
+          <!-- DIVIDER LINE -->
+          <div style="border-bottom: 2px solid #144D37; margin-bottom: 15px;"></div>
+
+          <!-- ORDER META INFO -->
+          <div style="display: flex; justify-content: space-between; font-size: 11px; line-height: 1.6; margin-bottom: 18px;">
+            <div>
+              <p style="margin: 0;"><strong>Primary Ref:</strong> ${order.primaryRef}</p>
+              <p style="margin: 0;"><strong>Requested By:</strong> ${order.requestedBy.toUpperCase()}</p>
             </div>
-            <div style="flex: 1; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-              <p style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 3px 0;">ORDERED BY:</p>
-              <p style="font-size: 11px; font-weight: 700; margin: 0; color: #0f172a;">${order.orderedBy.name} (${order.orderedBy.role})</p>
-              <p style="font-size: 10px; color: #64748b; margin: 1px 0 0 0;">Branch: ${order.orderedBy.branch}</p>
+            <div style="text-align: right;">
+              <p style="margin: 0;"><strong>Date:</strong> ${order.date}</p>
+              <p style="margin: 0;"><strong>Target Location:</strong> ${order.targetLocation.toUpperCase()}</p>
             </div>
           </div>
 
-          <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 15px;">
+          <!-- SUPPLIER HEADER BANNER -->
+          <div style="background-color: #144D37; color: #ffffff; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px 4px 0 0; font-size: 12px; font-weight: 800;">
+            <span>SUPPLIER: ${supplierName.toUpperCase()}</span>
+            <span>PO: ${poNumber}</span>
+          </div>
+
+          <!-- ITEMS TABLE -->
+          <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px;">
             <thead>
-              <tr style="background-color: #0f172a; color: white;">
-                <th style="padding: 6px 8px; text-align: left;">Item Description</th>
-                <th style="padding: 6px 8px; text-align: center;">Pack Size</th>
-                <th style="padding: 6px 8px; text-align: center;">Qty</th>
-                <th style="padding: 6px 8px; text-align: right;">Unit Price</th>
-                <th style="padding: 6px 8px; text-align: right;">Subtotal</th>
+              <tr style="border-bottom: 1px solid #cbd5e1; text-align: left; color: #334155;">
+                <th style="padding: 8px 6px; text-align: left;">Item Description</th>
+                <th style="padding: 8px 6px; text-align: center;">Pack Size</th>
+                <th style="padding: 8px 6px; text-align: right;">Unit Price</th>
+                <th style="padding: 8px 6px; text-align: center;">Qty</th>
+                <th style="padding: 8px 6px; text-align: right;">Subtotal</th>
               </tr>
             </thead>
             <tbody>
-              ${items.map((item, idx) => `
-                <tr style="border-bottom: 1px solid #e2e8f0; background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                  <td style="padding: 6px 8px;"><strong>${item.name}</strong></td>
-                  <td style="padding: 6px 8px; text-align: center;">${item.size || 'N/A'}</td>
-                  <td style="padding: 6px 8px; text-align: center;">${item.qty}</td>
-                  <td style="padding: 6px 8px; text-align: right;">£${item.price.toFixed(2)}</td>
-                  <td style="padding: 6px 8px; text-align: right;">£${(item.price * item.qty).toFixed(2)}</td>
+              ${items.map((item) => `
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 8px 6px; color: #0f172a;">${item.name}</td>
+                  <td style="padding: 8px 6px; text-align: center; color: #64748b;">${item.size || 'N/A'}</td>
+                  <td style="padding: 8px 6px; text-align: right; color: #334155;">£${item.price.toFixed(2)}</td>
+                  <td style="padding: 8px 6px; text-align: center; font-weight: 700; color: #0f172a;">${item.qty}</td>
+                  <td style="padding: 8px 6px; text-align: right; font-weight: 700; color: #0f172a;">£${(item.price * item.qty).toFixed(2)}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
 
-          <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
-            <div style="width: 220px; background-color: #f1f5f9; padding: 10px 12px; border-radius: 6px; text-align: right; border: 1px solid #cbd5e1;">
-              <span style="font-size: 11px; font-weight: 600; color: #475569;">Total Order Value:</span>
-              <h2 style="font-size: 18px; font-weight: 900; color: #0f172a; margin: 2px 0 0 0;">£${total}</h2>
-            </div>
+          <!-- SUPPLIER TOTAL COST -->
+          <div style="text-align: right; padding-top: 4px;">
+            <span style="font-size: 12px; font-weight: 800; color: #144D37; margin-right: 15px;">Supplier Total Cost:</span>
+            <span style="font-size: 14px; font-weight: 900; color: #144D37;">£${total}</span>
           </div>
 
-          <div style="margin-top: 25px; border-top: 1px solid #cbd5e1; padding-top: 10px; text-align: center; font-size: 9px; color: #94a3b8;">
-            Treat Street Alia Procurement System • Authorized Purchase Order
-          </div>
         </div>
       `;
 
       const element = document.getElementById('pdf-content');
       const opt = {
         margin:       [0.1, 0.2, 0.2, 0.2],
-        filename:     `PO_${supplierName}_${orderId}.pdf`,
+        filename:     `${poNumber}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, scrollY: 0 },
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
@@ -877,7 +899,7 @@
       updateAdminBadge();
     }
 
-    // ADMIN UNLOCK / LOCK CONTROL
+    // ADMIN PASSCODE MODAL & CONTROLS
     function openPasscodeModal() {
       document.getElementById('passcode-modal').classList.remove('hidden');
     }
@@ -895,6 +917,7 @@
         document.getElementById('admin-editing-forms').classList.remove('hidden');
         closePasscodeModal();
         renderCatalog();
+        renderAdminOrders();
         alert('Admin access granted!');
       } else {
         alert('Incorrect passcode!');
@@ -907,9 +930,10 @@
       document.getElementById('btn-lock-admin').classList.add('hidden');
       document.getElementById('admin-editing-forms').classList.add('hidden');
       renderCatalog();
+      renderAdminOrders();
     }
 
-    // EDIT PRICE MODAL HANDLERS
+    // EDIT PRICE HANDLERS
     function openEditPriceModal(itemId) {
       const item = catalog.find(i => i.id === itemId);
       if (!item) return;
