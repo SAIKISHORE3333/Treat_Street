@@ -28,17 +28,39 @@
       text-align: center;
       line-height: 1;
     }
+    /* Styles specifically for PDF Output rendering */
+    .pdf-template {
+      position: relative;
+      background: #ffffff;
+      padding: 30px;
+      color: #1e293b;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .pdf-watermark {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 80px;
+      font-weight: 900;
+      color: rgba(15, 23, 42, 0.05);
+      pointer-events: none;
+      letter-spacing: 12px;
+      z-index: 0;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-900 min-h-screen flex flex-col watermark-bg">
 
   <div class="watermark-text">TREAT STREET</div>
 
+  <!-- MAIN APP TOP NAV BAR -->
   <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-md">
     <div class="max-w-7xl mx-auto px-4 py-3.5 flex justify-between items-center gap-4">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-900/30">
-          <i data-lucide="cookie" class="w-5 h-5 text-white animate-spin-slow"></i>
+          <i data-lucide="cookie" class="w-5 h-5 text-white"></i>
         </div>
         <div>
           <h1 class="text-sm font-black tracking-wider text-white uppercase leading-none">Treat Street</h1>
@@ -64,6 +86,7 @@
           <span id="admin-badge" class="bg-amber-500 text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
         </button>
 
+        <!-- DYNAMIC LOGOUT TRIGGER -->
         <button id="logout-btn" onclick="handleLogout()" class="p-2 text-red-400 hover:text-red-300 transition-colors bg-slate-800 rounded-lg border border-red-900/40 flex items-center gap-2 hidden">
           <i data-lucide="log-out" class="w-5 h-5"></i>
           <span class="text-xs font-bold hidden sm:inline">Logout</span>
@@ -72,10 +95,13 @@
     </div>
   </header>
 
+  <!-- DASHBOARD WRAPPER -->
   <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 relative z-10">
     
+    <!-- LEFT CONTROL BAR / QUICK ACTION AREA -->
     <div id="sidebar-panel" class="lg:col-span-1 space-y-6">
       
+      <!-- DATABASE FILTERS -->
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
         <h3 class="font-black text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
           <i data-lucide="sliders-horizontal" class="w-4 h-4 text-red-500"></i> Search & Filters
@@ -99,6 +125,7 @@
         </div>
       </div>
 
+      <!-- STREAMLINED ORDER BASKET OVERVIEW -->
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4 sticky top-24">
         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
           <h3 class="font-black text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
@@ -111,6 +138,7 @@
           <p class="text-xs text-slate-400 text-center py-6">Your cart is currently empty.</p>
         </div>
 
+        <!-- REALTIME REQUISITION VALUATION PANEL -->
         <div id="quick-cart-summary" class="pt-3 border-t border-slate-100 space-y-3 hidden">
           <div class="flex justify-between items-center">
             <span class="text-xs font-bold text-slate-500">Est. Total:</span>
@@ -123,8 +151,10 @@
       </div>
     </div>
 
+    <!-- MAIN INTERACTIVE VIEW AREA -->
     <div class="lg:col-span-3">
       
+      <!-- PRIMARY COMPONENT CONTENT: CATALOG INGREDIENTS LAYOUT GRID -->
       <div id="tab-catalog" class="space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <span id="items-count-label" class="text-xs font-bold text-slate-500">Showing 0-0 of 0 items</span>
@@ -139,9 +169,11 @@
         </div>
 
         <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          </div>
+          <!-- Dynamic grid items load here -->
+        </div>
       </div>
 
+      <!-- SYSTEM ADMINISTRATOR ROUTE VIEW -->
       <div id="tab-admin" class="space-y-6 hidden">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-6">
           <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-100 pb-4">
@@ -197,6 +229,7 @@
           </div>
         </div>
 
+        <!-- GENERATED INTERNAL ROUTING LOG OVERVIEW -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
           <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
             <i data-lucide="file-text" class="w-4.5 h-4.5 text-red-600"></i> Active Requisition Logs
@@ -210,6 +243,7 @@
     </div>
   </main>
 
+  <!-- POPUP ACCESS AUTHENTICATION MODAL -->
   <div id="passcode-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 text-center space-y-4">
       <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500 border border-amber-100">
@@ -230,6 +264,7 @@
     </div>
   </div>
 
+  <!-- ORDER INVOICE META INTAKE DETAILS MODAL -->
   <div id="order-details-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -249,7 +284,7 @@
         </div>
         <div>
           <label for="order-user-branch" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Target Branch / Location</label>
-          <input type="text" id="order-user-branch" required placeholder="e.g. Bedford Central" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20">
+          <input type="text" id="order-user-branch" required placeholder="e.g. Milton Keynes" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20">
         </div>
         <div class="pt-2 flex gap-2">
           <button type="button" onclick="closeOrderDetailsModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors">Cancel</button>
@@ -259,6 +294,7 @@
     </div>
   </div>
 
+  <!-- EDIT PRICE MODAL -->
   <div id="edit-price-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -288,6 +324,7 @@
     </div>
   </div>
 
+  <!-- HIDDEN CONTAINER FOR GENERATING PDF STREAMS -->
   <div id="pdf-export-container" class="hidden"></div>
 
   <script>
@@ -296,7 +333,11 @@
     let currentPage = 1;
     const itemsPerPage = 12;
     let currentFilteredCatalog = [];
-    
+    let orderSequenceCounter = 1; // GLOBAL AUTO-INCREMENTING PO COUNTER FOR SERIAL NUMBERS
+
+    // EMBEDDED LOGO DATA URI (TREAT STREET SIGN)
+    const LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAASAF4BAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=";
+
     // FULL RECONSTRUCTED INGREDIENT LIST FROM DATASET
     let catalog = [
       { id: 1, name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", category: "Dairy, Oils & Baking Essentials", size: "4 x 400g", supplier: "Bookers", price: 8.50 },
@@ -623,7 +664,7 @@
         document.getElementById('tab-catalog').classList.add('hidden');
         document.getElementById('tab-admin').classList.remove('hidden');
         
-        // REVEAL THE DYNAMIC HEADER LOGOUT OPTION
+        // REVEAL LOGOUT OPTION
         document.getElementById('logout-btn').classList.remove('hidden');
 
         renderCatalog();
@@ -770,6 +811,20 @@
       document.getElementById('order-details-modal').classList.add('hidden');
     }
 
+    // CUSTOMIZED PO NUMBER FORMATTER (TSMK-SUPPLIER-DDMMYY-SERIAL)
+    function generateFormattedPONumber(supplierName, serialNumber) {
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yy = String(now.getFullYear()).slice(-2);
+      const formattedDate = `${dd}${mm}${yy}`;
+      
+      const formattedSupplier = (supplierName || 'ALL').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const paddedSerial = String(serialNumber).padStart(3, '0');
+
+      return `TSMK-${formattedSupplier}-${formattedDate}-${paddedSerial}`;
+    }
+
     function confirmAndSubmitOrder(e) {
       e.preventDefault();
       
@@ -777,19 +832,27 @@
       const userRole = document.getElementById('order-user-role').value.trim();
       const userBranch = document.getElementById('order-user-branch').value.trim();
 
-      const orderId = 'PO-' + Date.now().toString().slice(-6);
+      // Extract unique suppliers from cart to format initial reference
+      const suppliersInCart = [...new Set(cart.map(i => i.supplier))];
+      const primarySupplier = suppliersInCart.length === 1 ? suppliersInCart[0] : 'MULTI';
+
+      const poCode = generateFormattedPONumber(primarySupplier, orderSequenceCounter);
+      
       const orderDate = new Date().toLocaleDateString('en-GB', {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
       });
 
       const newOrder = {
-        id: orderId,
+        id: poCode,
+        serial: orderSequenceCounter,
         date: orderDate,
         user: { name: userName, role: userRole, branch: userBranch },
         items: [...cart]
       };
 
       ordersList.unshift(newOrder);
+      orderSequenceCounter++; // INCREMENT SEQUENTIAL COUNTER
+      
       cart = [];
       updateCartUI();
       renderOrdersList();
@@ -799,7 +862,7 @@
       document.getElementById('order-user-role').value = '';
       document.getElementById('order-user-branch').value = '';
 
-      alert(`Order ${orderId} generated successfully! Check Admin panel.`);
+      alert(`Order ${poCode} generated successfully! Check Admin panel.`);
     }
 
     function renderOrdersList() {
@@ -857,7 +920,7 @@
 
             <div class="pt-2 flex justify-end gap-2">
               <button onclick="downloadOrderPDF('${order.id}')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm">
-                <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i> Download PDF
+                <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i> Download Purchase Order PDF
               </button>
             </div>
           </div>
@@ -919,6 +982,7 @@
       alert(`Ingredient "${name}" successfully registered into database!`);
     }
 
+    // BEAUTIFIED HIGH-SPEC PDF EXPORTER WITH WATERMARK & LOGO
     function downloadOrderPDF(orderId) {
       const order = ordersList.find(o => o.id === orderId);
       if (!order) return;
@@ -935,21 +999,35 @@
       });
 
       let pdfHTML = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-          <div style="text-align: center; border-bottom: 2px solid #ef4444; padding-bottom: 10px; margin-bottom: 20px;">
-            <h1 style="margin: 0; font-size: 24px; color: #1e293b;">TREAT STREET PURCHASE PORTAL</h1>
-            <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b;">Internal Procurement & Supply System</p>
+        <div class="pdf-template">
+          <!-- ALAIYA BACKGROUND WATERMARK -->
+          <div class="pdf-watermark">ALAIYA</div>
+
+          <!-- HEADER BAR WITH LOGO -->
+          <div style="display: flex; justify-content: space-between; items-center; border-bottom: 3px solid #166534; padding-bottom: 12px; margin-bottom: 20px; position: relative; z-index: 10;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="background-color: #064e3b; padding: 6px 14px; border-radius: 6px; display: inline-block;">
+                <span style="color: #ffffff; font-weight: 900; font-size: 18px; letter-spacing: 2px;">TREAT STREET</span>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <h1 style="margin: 0; font-size: 16px; font-weight: 900; color: #064e3b; text-transform: uppercase; letter-spacing: 1px;">
+                TREAT STREET PURCHASE ORDER REQUEST
+              </h1>
+              <p style="margin: 3px 0 0 0; font-size: 10px; color: #64748b; font-weight: 600;">Official Requisition Document</p>
+            </div>
           </div>
 
-          <div style="margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 12px;">
+          <!-- ORDER METADATA PANEL -->
+          <div style="margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 8px; font-size: 11px; position: relative; z-index: 10;">
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td><strong>Order ID:</strong> ${order.id}</td>
-                <td style="text-align: right;"><strong>Date:</strong> ${order.date}</td>
+                <td style="padding: 3px 0;"><strong>Primary Ref:</strong> ${order.id}</td>
+                <td style="padding: 3px 0; text-align: right;"><strong>Date:</strong> ${order.date}</td>
               </tr>
               <tr>
-                <td><strong>Requested By:</strong> ${order.user.name} (${order.user.role})</td>
-                <td style="text-align: right;"><strong>Location:</strong> ${order.user.branch}</td>
+                <td style="padding: 3px 0;"><strong>Requested By:</strong> ${order.user.name} (${order.user.role})</td>
+                <td style="padding: 3px 0; text-align: right;"><strong>Target Location:</strong> ${order.user.branch}</td>
               </tr>
             </table>
           </div>
@@ -958,35 +1036,40 @@
       Object.keys(ordersBySupplier).forEach(supplier => {
         const items = ordersBySupplier[supplier];
         const supplierTotal = items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+        
+        // DYNAMIC PO CREATION SPECIFICALLY STYLED PER SUPPLIER (TSMK-SUPPLIER-DDMMYY-SERIAL)
+        const supplierPO = generateFormattedPONumber(supplier, order.serial || 1);
 
         pdfHTML += `
-          <div style="margin-top: 30px; page-break-inside: avoid;">
-            <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #b91c1c; border-bottom: 1px solid #fee2e2; padding-bottom: 4px;">
-              SUPPLIER: ${supplier.toUpperCase()}
-            </h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left;">
+          <div style="margin-top: 25px; page-break-inside: avoid; position: relative; z-index: 10;">
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #064e3b; color: #ffffff; padding: 6px 12px; border-radius: 6px 6px 0 0;">
+              <span style="font-size: 11px; font-weight: 800; tracking-wide: 1px;">SUPPLIER: ${supplier.toUpperCase()}</span>
+              <span style="font-size: 10px; font-weight: 700; background: #047857; padding: 2px 8px; border-radius: 4px;">PO: ${supplierPO}</span>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: left; border: 1px solid #cbd5e1;">
               <thead>
-                <tr style="background: #f1f5f9; color: #475569;">
-                  <th style="padding: 6px; border: 1px solid #e2e8f0;">Item Name</th>
-                  <th style="padding: 6px; border: 1px solid #e2e8f0;">Pack Size</th>
-                  <th style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">Unit Price</th>
-                  <th style="padding: 6px; border: 1px solid #e2e8f0; text-align: center;">Qty</th>
-                  <th style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">Total</th>
+                <tr style="background: #f1f5f9; color: #334155; border-bottom: 1px solid #cbd5e1;">
+                  <th style="padding: 7px; border-right: 1px solid #e2e8f0;">Item Description</th>
+                  <th style="padding: 7px; border-right: 1px solid #e2e8f0;">Pack Size</th>
+                  <th style="padding: 7px; border-right: 1px solid #e2e8f0; text-align: right;">Unit Price</th>
+                  <th style="padding: 7px; border-right: 1px solid #e2e8f0; text-align: center;">Qty</th>
+                  <th style="padding: 7px; text-align: right;">Subtotal</th>
                 </tr>
               </thead>
               <tbody>
                 ${items.map(item => `
-                  <tr>
-                    <td style="padding: 6px; border: 1px solid #e2e8f0;">${item.name}</td>
-                    <td style="padding: 6px; border: 1px solid #e2e8f0;">${item.size}</td>
-                    <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">£${item.price.toFixed(2)}</td>
-                    <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
-                    <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">£${(item.price * item.quantity).toFixed(2)}</td>
+                  <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 6px 7px; border-right: 1px solid #e2e8f0; font-weight: 600; color: #1e293b;">${item.name}</td>
+                    <td style="padding: 6px 7px; border-right: 1px solid #e2e8f0; color: #64748b;">${item.size}</td>
+                    <td style="padding: 6px 7px; border-right: 1px solid #e2e8f0; text-align: right; color: #475569;">£${item.price.toFixed(2)}</td>
+                    <td style="padding: 6px 7px; border-right: 1px solid #e2e8f0; text-align: center; font-weight: 700;">${item.quantity}</td>
+                    <td style="padding: 6px 7px; text-align: right; font-weight: 700; color: #0f172a;">£${(item.price * item.quantity).toFixed(2)}</td>
                   </tr>
                 `).join('')}
-                <tr style="font-weight: bold; background: #fafafa;">
-                  <td colspan="4" style="padding: 6px; border: 1px solid #e2e8f0; text-align: right;">Supplier Total:</td>
-                  <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: right; color: #b91c1c;">£${supplierTotal.toFixed(2)}</td>
+                <tr style="font-weight: bold; background: #ecfdf5;">
+                  <td colspan="4" style="padding: 7px; border-right: 1px solid #cbd5e1; text-align: right; color: #065f46;">Supplier Total Cost:</td>
+                  <td style="padding: 7px; text-align: right; color: #047857; font-size: 11px;">£${supplierTotal.toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
@@ -996,11 +1079,13 @@
 
       const absoluteTotal = order.items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
       pdfHTML += `
-          <div style="margin-top: 30px; text-align: right; font-size: 14px; border-top: 2px dashed #e2e8f0; padding-top: 10px;">
-            <strong>Grand Total Invoice Value: <span style="color: #ef4444;">£${absoluteTotal.toFixed(2)}</span></strong>
+          <div style="margin-top: 25px; text-align: right; font-size: 13px; border-top: 2px solid #064e3b; padding-top: 12px; position: relative; z-index: 10;">
+            <strong style="color: #1e293b;">GRAND TOTAL ESTIMATED VALUATION: <span style="color: #065f46; font-size: 15px; margin-left: 6px;">£${absoluteTotal.toFixed(2)}</span></strong>
           </div>
-          <div style="margin-top: 50px; border-top: 1px solid #cbd5e1; padding-top: 5px; text-align: center; font-size: 9px; color: #94a3b8;">
-            Authorized electronic requisition document generated inside Treat Street Network.
+
+          <!-- FOOTER FORMAT -->
+          <div style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; font-size: 9px; color: #64748b; font-weight: 700; letter-spacing: 0.5px; position: relative; z-index: 10;">
+            TREAT STREET PURCHASING PORTAL POWERED BY ALAIYA
           </div>
         </div>
       `;
@@ -1008,8 +1093,8 @@
       exportContainer.innerHTML = pdfHTML;
 
       const opt = {
-        margin: 0.5,
-        filename: `Purchase_Order_${order.id}.pdf`,
+        margin: 0.3,
+        filename: `${order.id}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
@@ -1021,7 +1106,7 @@
           exportContainer.classList.add('hidden');
         });
       } else {
-        alert("PDF download engine error. Please look over CDN inclusion rules.");
+        alert("PDF download engine error. Please check your internet connectivity.");
         exportContainer.classList.add('hidden');
       }
     }
