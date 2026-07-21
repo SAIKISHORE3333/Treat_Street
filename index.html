@@ -257,6 +257,34 @@
  
   <!-- JAVASCRIPT LOGIC -->
   <script>
+    // Firebase Initialization
+const firebaseConfig = {
+  apiKey: "AIzaSyCzyEfIrb_R8HXrmXHLyGStJd-mgWmtEBU",
+  authDomain: "treat-street-purchasing-portal.firebaseapp.com",
+  databaseURL: "https://treat-street-purchasing-portal-default-rtdb.firebaseio.com",
+  projectId: "treat-street-purchasing-portal",
+  storageBucket: "treat-street-purchasing-portal.firebasestorage.app",
+  messagingSenderId: "1066531050531",
+  appId: "1:1066531050531:web:50301c1f121b5ebe9f0d96",
+  measurementId: "G-NXREBBK6Q"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Live Cloud Database Listener
+db.ref('orders').on('value', (snapshot) => {
+  const data = snapshot.val();
+  orders = [];
+  if (data) {
+    orders = Object.keys(data).map(key => ({
+      firebaseKey: key,
+      ...data[key]
+    })).reverse();
+  }
+  renderAdminOrders();
+  updateAdminBadge();
+});
     let isAdminUnlocked = false;
     let currentPage = 1;
     const itemsPerPage = 12;
@@ -644,25 +672,47 @@
     }
 
     function confirmAndSubmitOrder(e) {
-      e.preventDefault();
+  e.preventDefault();
 
-      const requesterName = document.getElementById('order-user-name').value.trim();
-      const targetLocation = document.getElementById('order-user-branch').value.trim();
+  const requesterName = document.getElementById('order-user-name').value.trim();
+  const targetLocation = document.getElementById('order-user-branch').value.trim();
 
-      const ddmmyy = getDDMMYY();
-      const serial = '001';
-      const primaryRef = `TSMK-MULTI-${ddmmyy}-${serial}`;
+  const ddmmyy = getDDMMYY();
+  const serial = '001';
+  const primaryRef = `TSMK-MULTI-${ddmmyy}-${serial}`;
 
-      const newOrder = {
-        primaryRef: primaryRef,
-        ddmmyy: ddmmyy,
-        serial: serial,
-        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        requestedBy: requesterName,
-        targetLocation: targetLocation,
-        items: cart.map(i => ({ ...i, trackingStatus: 'Not Received' })),
-        total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0)
-      };
+  const newOrder = {
+    primaryRef: primaryRef,
+    ddmmyy: ddmmyy,
+    serial: serial,
+    date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    requestedBy: requesterName,
+    targetLocation: targetLocation,
+    items: cart.map(i => ({ ...i, trackingStatus: 'Not Received' })),
+    total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0)
+  };
+
+  // Push order directly to Firebase Realtime Database
+  db.ref('orders').push(newOrder).then(() => {
+    // Generate PO PDFs for each unique supplier
+    const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
+    uniqueSuppliers.forEach(supplier => {
+      downloadPOPDF(newOrder.primaryRef, supplier, newOrder);
+    });
+
+    // Reset cart & form inputs
+    cart = [];
+    updateCartUI();
+    document.getElementById('order-user-name').value = '';
+    document.getElementById('order-user-branch').value = '';
+    closeOrderDetailsModal();
+
+    alert(`Order submitted successfully and saved to cloud! ${uniqueSuppliers.length} PO(s) generated.`);
+  }).catch((error) => {
+    console.error("Firebase Error: ", error);
+    alert("Error saving order to database. Please check your connection.");
+  });
+}
 
       orders.unshift(newOrder);
 
