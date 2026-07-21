@@ -7,6 +7,11 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <!-- FIREBASE SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
   <style>
     .watermark-bg {
       background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -224,7 +229,7 @@
       </div>
       <div class="space-y-3">
         <p class="text-xs text-slate-500">Enter admin passcode to unlock order tracking status and catalog editing.</p>
-        <input type="password" id="admin-passcode-input" placeholder="Enter Passcode (e.g. 1234)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
+        <input type="password" id="admin-passcode-input" placeholder="Enter Passcode (e.g. ALAIYA)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
         <button onclick="verifyPasscode()" class="w-full py-2 brand-green-bg text-white text-xs font-bold rounded-xl transition-colors">Unlock Admin</button>
       </div>
     </div>
@@ -257,12 +262,41 @@
  
   <!-- JAVASCRIPT LOGIC -->
   <script>
+    // FIREBASE INITIALIZATION
+    const firebaseConfig = {
+      apiKey: "AIzaSyCzyEfIrb_R8HXrmXHLyGStJd-mgWmtEBU",
+      authDomain: "treat-street-purchasing-portal.firebaseapp.com",
+      databaseURL: "https://treat-street-purchasing-portal-default-rtdb.firebaseio.com",
+      projectId: "treat-street-purchasing-portal",
+      storageBucket: "treat-street-purchasing-portal.firebasestorage.app",
+      messagingSenderId: "1066531050531",
+      appId: "1:1066531050531:web:50301c1f121b5ebe9f0d96",
+      measurementId: "G-NXREBBK6Q"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     let isAdminUnlocked = false;
     let currentPage = 1;
     const itemsPerPage = 12;
     let currentFilteredCatalog = [];
     let cart = [];
     let orders = [];
+
+    // LIVE FIREBASE REALTIME DATABASE LISTENER
+    db.ref('orders').on('value', (snapshot) => {
+      const data = snapshot.val();
+      orders = [];
+      if (data) {
+        orders = Object.keys(data).map(key => ({
+          firebaseKey: key,
+          ...data[key]
+        })).reverse();
+      }
+      renderAdminOrders();
+      updateAdminBadge();
+    });
 
     // COMPLETE UNTOUCHED 142 CATALOG ITEMS
     let catalog = [
@@ -664,38 +698,44 @@
         total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0)
       };
 
-      orders.unshift(newOrder);
+      // Push order directly to Firebase Realtime Database
+      db.ref('orders').push(newOrder).then(() => {
+        // Generate PO PDFs for each unique supplier
+        const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
+        uniqueSuppliers.forEach(supplier => {
+          downloadPOPDF(newOrder.primaryRef, supplier, newOrder);
+        });
 
-      // Automatically generate PDFs for each supplier
-      const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
-      uniqueSuppliers.forEach(supplier => {
-        downloadPOPDF(newOrder.primaryRef, supplier);
+        // Reset cart & form inputs
+        cart = [];
+        updateCartUI();
+        document.getElementById('order-user-name').value = '';
+        document.getElementById('order-user-branch').value = '';
+        closeOrderDetailsModal();
+
+        alert(`Order submitted successfully and saved to cloud! ${uniqueSuppliers.length} PO(s) generated.`);
+      }).catch((error) => {
+        console.error("Firebase Error: ", error);
+        alert("Error saving order to database. Please check your connection.");
       });
-
-      cart = [];
-      updateCartUI();
-      renderAdminOrders();
-      updateAdminBadge();
-
-      document.getElementById('order-user-name').value = '';
-      document.getElementById('order-user-branch').value = '';
-      closeOrderDetailsModal();
-
-      alert(`Order submitted successfully! ${uniqueSuppliers.length} Purchase Order(s) generated in TSMK-SUPPLIER-DDMMYY-SERIAL format.`);
     }
 
-    function updateItemTrackingStatus(primaryRef, itemId, newStatus) {
-      const order = orders.find(o => o.primaryRef === primaryRef);
+    function updateItemTrackingStatus(primaryRef, itemId, newStatus, firebaseKey) {
+      const order = orders.find(o => o.primaryRef === primaryRef || o.firebaseKey === firebaseKey);
       if (!order) return;
 
       const item = order.items.find(i => i.id === itemId);
       if (item) {
         item.trackingStatus = newStatus;
-        renderAdminOrders();
+        if (order.firebaseKey) {
+          db.ref(`orders/${order.firebaseKey}`).set(order);
+        } else {
+          renderAdminOrders();
+        }
       }
     }
 
-    // RENDER ADMIN ORDERS (TRACKING HIDDEN UNTIL ADMIN PASSCODE ENTERED)
+    // RENDER ADMIN ORDERS
     function renderAdminOrders() {
       const container = document.getElementById('admin-orders-list');
       if (!container) return;
@@ -760,7 +800,7 @@
                                 ${isAdminUnlocked ? `
                                   <td class="p-2 text-center">
                                     <select 
-                                      onchange="updateItemTrackingStatus('${o.primaryRef}', ${i.id}, this.value)"
+                                      onchange="updateItemTrackingStatus('${o.primaryRef}', ${i.id}, this.value, '${o.firebaseKey || ''}')"
                                       class="px-2 py-1 text-[11px] font-bold rounded border bg-slate-50 text-slate-700 border-slate-300 focus:outline-none cursor-pointer">
                                       <option value="Not Received" ${status === 'Not Received' ? 'selected' : ''}>Not Received</option>
                                       <option value="Partially Received" ${status === 'Partially Received' ? 'selected' : ''}>Partially Received</option>
@@ -792,9 +832,9 @@
       lucide.createIcons();
     }
 
-    // PDF PO GENERATION EXACT MATCHING UPLOADED TEMPLATE
-    function downloadPOPDF(primaryRef, supplierName) {
-      const order = orders.find(o => o.primaryRef === primaryRef);
+    // PDF PO GENERATION
+    function downloadPOPDF(primaryRef, supplierName, targetOrder) {
+      const order = targetOrder || orders.find(o => o.primaryRef === primaryRef);
       if (!order) return;
 
       const items = order.items.filter(i => i.supplier === supplierName);
@@ -806,7 +846,6 @@
       exportContainer.innerHTML = `
         <div id="pdf-content" style="padding: 15px 25px; font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto; background: #ffffff;">
           
-          <!-- TOP HEADER WITH GREEN LOGO BADGE AND TITLE -->
           <div style="display: flex; justify-content: space-between; align-items: flex-center; margin-bottom: 8px;">
             <div style="background-color: #144D37; color: #ffffff; padding: 10px 18px; border-radius: 8px; display: inline-block;">
               <h1 style="font-size: 20px; font-weight: 900; margin: 0; tracking-wide: 1px; letter-spacing: 1px; font-family: sans-serif;">TREAT STREET</h1>
@@ -817,10 +856,8 @@
             </div>
           </div>
 
-          <!-- DIVIDER LINE -->
           <div style="border-bottom: 2px solid #144D37; margin-bottom: 15px;"></div>
 
-          <!-- ORDER META INFO -->
           <div style="display: flex; justify-content: space-between; font-size: 11px; line-height: 1.6; margin-bottom: 18px;">
             <div>
               <p style="margin: 0;"><strong>Primary Ref:</strong> ${order.primaryRef}</p>
@@ -832,13 +869,11 @@
             </div>
           </div>
 
-          <!-- SUPPLIER HEADER BANNER -->
           <div style="background-color: #144D37; color: #ffffff; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px 4px 0 0; font-size: 12px; font-weight: 800;">
             <span>SUPPLIER: ${supplierName.toUpperCase()}</span>
             <span>PO: ${poNumber}</span>
           </div>
 
-          <!-- ITEMS TABLE -->
           <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px;">
             <thead>
               <tr style="border-bottom: 1px solid #cbd5e1; text-align: left; color: #334155;">
@@ -862,7 +897,6 @@
             </tbody>
           </table>
 
-          <!-- SUPPLIER TOTAL COST -->
           <div style="text-align: right; padding-top: 4px;">
             <span style="font-size: 12px; font-weight: 800; color: #144D37; margin-right: 15px;">Supplier Total Cost:</span>
             <span style="font-size: 14px; font-weight: 900; color: #144D37;">£${total}</span>
@@ -894,9 +928,13 @@
     }
 
     function clearAllOrders() {
-      orders = [];
-      renderAdminOrders();
-      updateAdminBadge();
+      if (confirm("Are you sure you want to clear order history?")) {
+        db.ref('orders').remove().then(() => {
+          orders = [];
+          renderAdminOrders();
+          updateAdminBadge();
+        });
+      }
     }
 
     // ADMIN PASSCODE MODAL & CONTROLS
