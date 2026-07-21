@@ -1027,6 +1027,167 @@ function submitOrder() {
 
       alert(`Ingredient "${name}" successfully added to catalog!`);
     }
+    function generatePurchaseOrders(event) {
+  if (event) event.preventDefault(); // Prevents page refresh
+
+  if (!cart || cart.length === 0) {
+    alert("Cart is empty! Cannot generate purchase orders.");
+    return;
+  }
+
+  // 1. Get Requester Info
+  const requesterName = document.getElementById('requester-name')?.value || "N/A";
+  const department = document.getElementById('requester-dept')?.value || "N/A";
+
+  // 2. Group Cart Items by Supplier
+  const ordersBySupplier = {};
+  cart.forEach(item => {
+    const supplier = item.supplier || "SUPPLIER";
+    if (!ordersBySupplier[supplier]) {
+      ordersBySupplier[supplier] = [];
+    }
+    ordersBySupplier[supplier].push(item);
+  });
+
+  // 3. Format Date (DDMMYY)
+  const dateStr = getDDMMYY(); 
+  let serialCounter = 1;
+
+  // 4. Generate a PO file for each Supplier
+  Object.keys(ordersBySupplier).forEach(supplierName => {
+    // Sanitize supplier name (e.g., "Betty Crocker" -> "BETTYCROCKER")
+    const cleanSupplier = supplierName.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    
+    // Format 3-digit serial (e.g., 001, 002)
+    const serialStr = String(serialCounter).padStart(3, '0');
+    
+    // Exact Format: TSMK-SUPPLIER-DDMMYY-SERIAL
+    const poNumber = `TSMK-${cleanSupplier}-${dateStr}-${serialStr}`;
+
+    // Build the PO text content
+    let poText = `=====================================\n`;
+    poText += `PURCHASE ORDER: ${poNumber}\n`;
+    poText += `Date: ${new Date().toLocaleDateString()}\n`;
+    poText += `Requested By: ${requesterName} (${department})\n`;
+    poText += `Supplier: ${supplierName}\n`;
+    poText += `=====================================\n\n`;
+    poText += `ITEMS ORDERED:\n`;
+
+    let totalCost = 0;
+    ordersBySupplier[supplierName].forEach(item => {
+      const lineTotal = item.price * item.quantity;
+      totalCost += lineTotal;
+      poText += `- ${item.name} | Qty: ${item.quantity} | Unit: £${item.price.toFixed(2)} | Total: £${lineTotal.toFixed(2)}\n`;
+    });
+
+    poText += `\n-------------------------------------\n`;
+    poText += `GRAND TOTAL: £${totalCost.toFixed(2)}\n`;
+    poText += `=====================================\n`;
+
+    // Trigger File Download
+    downloadPOFile(`${poNumber}.txt`, poText);
+
+    serialCounter++;
+  });
+
+  alert(`Successfully generated ${serialCounter - 1} Purchase Order(s)!`);
+
+  // Reset Cart and UI
+  cart = [];
+  if (typeof updateCartUI === 'function') updateCartUI();
+  if (typeof closeOrderDetailsModal === 'function') closeOrderDetailsModal();
+}
+
+// Download Helper
+function downloadPOFile(filename, textContent) {
+  const element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(textContent));
+  element.setAttribute('download', filename);
+  element.style.display = 'none';
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
+    function confirmAndSubmitOrder(event) {
+  if (event) event.preventDefault(); // Stop page refresh
+
+  if (!cart || cart.length === 0) {
+    alert("Cart is empty! Cannot generate purchase orders.");
+    return;
+  }
+
+  // 1. Get Requester Info
+  const requesterName = document.getElementById('requester-name')?.value || "N/A";
+
+  // 2. Group Cart Items by Supplier
+  const ordersBySupplier = {};
+  cart.forEach(item => {
+    const supplier = item.supplier || "SUPPLIER";
+    if (!ordersBySupplier[supplier]) {
+      ordersBySupplier[supplier] = [];
+    }
+    ordersBySupplier[supplier].push(item);
+  });
+
+  // 3. Format Date (DDMMYY)
+  const dateStr = typeof getDDMMYY === 'function' ? getDDMMYY() : '210726';
+  let serialCounter = 1;
+
+  // 4. Generate PO for each supplier in format: TSMK-SUPPLIER-DDMMYY-SERIAL
+  Object.keys(ordersBySupplier).forEach(supplierName => {
+    // Format supplier name (e.g. "Betty Crocker" -> "BETTYCROCKER")
+    const cleanSupplier = supplierName.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    
+    // Format serial as 3 digits (001, 002, etc.)
+    const serialStr = String(serialCounter).padStart(3, '0');
+    
+    // Build Custom PO Number
+    const poNumber = `TSMK-${cleanSupplier}-${dateStr}-${serialStr}`;
+
+    // Build PO Document Content
+    let poText = `=====================================\n`;
+    poText += `PURCHASE ORDER: ${poNumber}\n`;
+    poText += `Date: ${new Date().toLocaleDateString()}\n`;
+    poText += `Requested By: ${requesterName}\n`;
+    poText += `Supplier: ${supplierName}\n`;
+    poText += `=====================================\n\n`;
+    poText += `ITEMS ORDERED:\n`;
+
+    let totalCost = 0;
+    ordersBySupplier[supplierName].forEach(item => {
+      const lineTotal = item.price * item.quantity;
+      totalCost += lineTotal;
+      poText += `- ${item.name} | Qty: ${item.quantity} | Unit: £${item.price.toFixed(2)} | Total: £${lineTotal.toFixed(2)}\n`;
+    });
+
+    poText += `\n-------------------------------------\n`;
+    poText += `GRAND TOTAL: £${totalCost.toFixed(2)}\n`;
+    poText += `=====================================\n`;
+
+    // Download PO File
+    downloadPOFile(`${poNumber}.txt`, poText);
+
+    serialCounter++;
+  });
+
+  alert(`Generated ${serialCounter - 1} Purchase Order(s)!`);
+
+  // Clear cart and close modal
+  cart = [];
+  if (typeof updateCartUI === 'function') updateCartUI();
+  if (typeof closeOrderDetailsModal === 'function') closeOrderDetailsModal();
+}
+
+// Download Helper Function
+function downloadPOFile(filename, textContent) {
+  const element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(textContent));
+  element.setAttribute('download', filename);
+  element.style.display = 'none';
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
   </script>
 </body>
 </html>
