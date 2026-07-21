@@ -1108,7 +1108,10 @@ function downloadPOFile(filename, textContent) {
   element.click();
   document.body.removeChild(element);
 }
-    function confirmAndSubmitOrder(event) {
+   // Global Order History array initialized from localStorage
+var orderHistory = JSON.parse(localStorage.getItem('tsmk_order_history') || '[]');
+
+function confirmAndSubmitOrder(event) {
   if (event) event.preventDefault(); // Stop page refresh
 
   if (!cart || cart.length === 0) {
@@ -1116,61 +1119,66 @@ function downloadPOFile(filename, textContent) {
     return;
   }
 
-  // 1. Get Requester Info
-  const requesterName = document.getElementById('requester-name')?.value || "N/A";
+  // 1. Get Requester Details from inputs
+  const requesterNameInput = document.getElementById('requester-name') || document.querySelector('input[name="requesterName"]');
+  const requesterDeptInput = document.getElementById('requester-dept') || document.querySelector('input[name="requesterDept"]');
+  
+  const requesterName = requesterNameInput ? requesterNameInput.value : "Staff Member";
+  const department = requesterDeptInput ? requesterDeptInput.value : "General";
 
-  // 2. Group Cart Items by Supplier
+  // 2. Group items in cart by Supplier
   const ordersBySupplier = {};
   cart.forEach(item => {
-    const supplier = item.supplier || "SUPPLIER";
+    const supplier = item.supplier || "DEFAULT SUPPLIER";
     if (!ordersBySupplier[supplier]) {
       ordersBySupplier[supplier] = [];
     }
     ordersBySupplier[supplier].push(item);
   });
 
-  // 3. Format Date (DDMMYY)
+  // 3. Format Date (DDMMYY) and initialize Serial Counter
   const dateStr = typeof getDDMMYY === 'function' ? getDDMMYY() : '210726';
   let serialCounter = 1;
 
-  // 4. Generate PO for each supplier in format: TSMK-SUPPLIER-DDMMYY-SERIAL
+  // 4. Loop through each supplier
   Object.keys(ordersBySupplier).forEach(supplierName => {
-    // Format supplier name (e.g. "Betty Crocker" -> "BETTYCROCKER")
     const cleanSupplier = supplierName.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    
-    // Format serial as 3 digits (001, 002, etc.)
     const serialStr = String(serialCounter).padStart(3, '0');
     
-    // Build Custom PO Number
+    // Exact PO Number: TSMK-SUPPLIER-DDMMYY-SERIAL
     const poNumber = `TSMK-${cleanSupplier}-${dateStr}-${serialStr}`;
+    const supplierItems = ordersBySupplier[supplierName];
+    const poTotal = supplierItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    // Build PO Document Content
-    let poText = `=====================================\n`;
-    poText += `PURCHASE ORDER: ${poNumber}\n`;
-    poText += `Date: ${new Date().toLocaleDateString()}\n`;
-    poText += `Requested By: ${requesterName}\n`;
-    poText += `Supplier: ${supplierName}\n`;
-    poText += `=====================================\n\n`;
-    poText += `ITEMS ORDERED:\n`;
+    // Create PO Record object
+    const poRecord = {
+      poNumber: poNumber,
+      date: new Date().toLocaleDateString(),
+      requester: requesterName,
+      department: department,
+      supplier: supplierName,
+      items: supplierItems,
+      totalAmount: poTotal
+    };
 
-    let totalCost = 0;
-    ordersBySupplier[supplierName].forEach(item => {
-      const lineTotal = item.price * item.quantity;
-      totalCost += lineTotal;
-      poText += `- ${item.name} | Qty: ${item.quantity} | Unit: £${item.price.toFixed(2)} | Total: £${lineTotal.toFixed(2)}\n`;
-    });
+    // SAVE TO HISTORY ARRAY
+    orderHistory.push(poRecord);
 
-    poText += `\n-------------------------------------\n`;
-    poText += `GRAND TOTAL: £${totalCost.toFixed(2)}\n`;
-    poText += `=====================================\n`;
-
-    // Download PO File
-    downloadPOFile(`${poNumber}.txt`, poText);
+    // OPEN PRINTABLE / PDF POPUP WINDOW
+    openPDFPrintWindow(poRecord);
 
     serialCounter++;
   });
 
-  alert(`Generated ${serialCounter - 1} Purchase Order(s)!`);
+  // Save updated history array to browser localStorage
+  localStorage.setItem('tsmk_order_history', JSON.stringify(orderHistory));
+
+  // Refresh History UI table if function exists
+  if (typeof renderOrderHistoryUI === 'function') {
+    renderOrderHistoryUI();
+  }
+
+  alert(`Generated ${serialCounter - 1} Purchase Order(s) & saved to Order History!`);
 
   // Clear cart and close modal
   cart = [];
@@ -1178,6 +1186,87 @@ function downloadPOFile(filename, textContent) {
   if (typeof closeOrderDetailsModal === 'function') closeOrderDetailsModal();
 }
 
+/**
+ * Creates printable PDF layout window
+ */
+function openPDFPrintWindow(po) {
+  const printWindow = window.open('', '_blank', 'width=800,height=900');
+  
+  let itemsRows = po.items.map(item => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${item.name}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">£${Number(item.price).toFixed(2)}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">£${(item.price * item.quantity).toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${po.poNumber}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 40px; color: #1e293b; }
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #059669; padding-bottom: 15px; margin-bottom: 20px; }
+        .title { font-size: 24px; font-weight: bold; color: #059669; }
+        .po-number { font-size: 16px; font-weight: bold; color: #475569; }
+        .meta-table { width: 100%; margin-bottom: 25px; font-size: 14px; }
+        .meta-table td { padding: 4px 0; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
+        .items-table th { background-color: #f1f5f9; padding: 10px; text-align: left; font-weight: bold; }
+        .total-box { text-align: right; font-size: 18px; font-weight: bold; color: #059669; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div class="title">PURCHASE ORDER</div>
+          <div style="font-size: 12px; color: #64748b;">TSMK System</div>
+        </div>
+        <div style="text-align: right;">
+          <div class="po-number">${po.poNumber}</div>
+          <div>Date: ${po.date}</div>
+        </div>
+      </div>
+
+      <table class="meta-table">
+        <tr>
+          <td><strong>Requested By:</strong> ${po.requester}</td>
+          <td><strong>Supplier:</strong> ${po.supplier}</td>
+        </tr>
+      </table>
+
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Item Description</th>
+            <th style="text-align: center;">Qty</th>
+            <th style="text-align: right;">Unit Price</th>
+            <th style="text-align: right;">Total Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsRows}
+        </tbody>
+      </table>
+
+      <div class="total-box">
+        Grand Total: £${po.totalAmount.toFixed(2)}
+      </div>
+
+      <script>
+        window.onload = function() {
+          window.print();
+        }
+      </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+}
 // Download Helper Function
 function downloadPOFile(filename, textContent) {
   const element = document.createElement('a');
