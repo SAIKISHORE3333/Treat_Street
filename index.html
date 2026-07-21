@@ -254,7 +254,7 @@
 
   <!-- HIDDEN PDF TEMPLATE CONTAINER -->
   <div id="pdf-export-container" class="hidden"></div>
- 
+
   <!-- JAVASCRIPT LOGIC -->
   <script>
     let isAdminUnlocked = false;
@@ -910,7 +910,7 @@
 
     function verifyPasscode() {
       const input = document.getElementById('admin-passcode-input').value;
-      if (input === 'ALAIYA' || input === 'admin' || input === 'treatstreet') {
+      if (input === '1234' || input === 'admin' || input === 'treatstreet') {
         isAdminUnlocked = true;
         document.getElementById('btn-unlock-admin').classList.add('hidden');
         document.getElementById('btn-lock-admin').classList.remove('hidden');
