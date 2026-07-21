@@ -648,12 +648,21 @@
 
       lucide.createIcons();
     }
-
-    function submitOrder() {
-      if (cart.length === 0) return;
-      document.getElementById('order-details-modal').classList.remove('hidden');
-    }
-
+function submitOrder() {
+  console.log("Submit clicked, cart size:", cart ? cart.length : 0);
+  
+  if (!cart || cart.length === 0) {
+    alert("Please add an item to your cart first!");
+    return;
+  }
+  
+  const modal = document.getElementById('order-details-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  } else {
+    alert("Modal element 'order-details-modal' not found in HTML!");
+  }
+}
     function closeOrderDetailsModal() {
       document.getElementById('order-details-modal').classList.add('hidden');
     }
