@@ -7,11 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  
-  <!-- FIREBASE SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-
   <style>
     .watermark-bg {
       background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -123,9 +118,9 @@
                   <span>Total Amount:</span>
                   <span id="cart-total-price" class="brand-green-text">£0.00</span>
                 </div>
-                <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-2.5 brand-green-bg hover:bg-emerald-900 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white">
-  <i data-lucide="send" class="w-4 h-4"></i> Submit & Generate POs
-</button>
+                <button id="btn-submit-order" onclick="submitOrder()" disabled class="w-full py-2.5 brand-green-bg hover:bg-emerald-900 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                  <i data-lucide="send" class="w-4 h-4"></i> Submit & Generate POs
+                </button>
               </div>
             </div>
           </div>
@@ -160,6 +155,7 @@
           <div id="admin-orders-list" class="space-y-4"></div>
         </div>
 
+        <!-- ADD SUPPLIER & ITEM MANAGEMENT (ADMIN UNLOCKED ONLY) -->
         <div id="admin-editing-forms" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200">
           <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
             <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
@@ -195,6 +191,7 @@
   </div>
 
   <!-- MODALS -->
+  <!-- ORDER DETAILS MODAL -->
   <div id="order-details-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -218,6 +215,7 @@
     </div>
   </div>
 
+  <!-- PASSCODE MODAL -->
   <div id="passcode-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-sm p-6 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -226,12 +224,13 @@
       </div>
       <div class="space-y-3">
         <p class="text-xs text-slate-500">Enter admin passcode to unlock order tracking status and catalog editing.</p>
-        <input type="password" id="admin-passcode-input" placeholder="Enter Passcode (e.g. ALAIYA)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
+        <input type="password" id="admin-passcode-input" placeholder="Enter Passcode (e.g. 1234)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
         <button onclick="verifyPasscode()" class="w-full py-2 brand-green-bg text-white text-xs font-bold rounded-xl transition-colors">Unlock Admin</button>
       </div>
     </div>
   </div>
 
+  <!-- EDIT PRICE MODAL -->
   <div id="edit-price-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-sm p-6 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -253,24 +252,11 @@
     </div>
   </div>
 
+  <!-- HIDDEN PDF TEMPLATE CONTAINER -->
   <div id="pdf-export-container" class="hidden"></div>
- 
+
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // FIREBASE INITIALIZATION
-    const firebaseConfig = {
-      apiKey: "AIzaSyCzyEfIrb_R8HXrmXHLyGStJd-mgWmtEBU",
-      authDomain: "treat-street-purchasing-portal.firebaseapp.com",
-      databaseURL: "https://treat-street-purchasing-portal-default-rtdb.firebaseio.com",
-      projectId: "treat-street-purchasing-portal",
-      storageBucket: "treat-street-purchasing-portal.firebasestorage.app",
-      messagingSenderId: "1066531050531",
-      appId: "1:1066531050531:web:50301c1f121b5ebe9f0d96",
-      measurementId: "G-NXREBBK6Q"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
     let isAdminUnlocked = false;
     let currentPage = 1;
     const itemsPerPage = 12;
@@ -278,20 +264,7 @@
     let cart = [];
     let orders = [];
 
-    // REALTIME DATABASE LISTENER
-    db.ref('orders').on('value', (snapshot) => {
-      const data = snapshot.val();
-      orders = [];
-      if (data) {
-        orders = Object.keys(data).map(key => ({
-          firebaseKey: key,
-          ...data[key]
-        })).reverse();
-      }
-      renderAdminOrders();
-      updateAdminBadge();
-    });
-
+    // COMPLETE UNTOUCHED 142 CATALOG ITEMS
     let catalog = [
       { id: 1, name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", category: "Dairy, Oils & Baking Essentials", size: "4 x 400g", supplier: "Bookers", price: 8.50 },
       { id: 2, name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", category: "Dairy, Oils & Baking Essentials", size: "10 x 500g", supplier: "Bookers", price: 12.00 },
@@ -439,6 +412,7 @@
 
     let suppliersList = [];
 
+    // INITIALIZATION
     window.addEventListener('DOMContentLoaded', () => {
       syncSuppliersList();
       populateSupplierDropdowns();
@@ -578,6 +552,7 @@
       lucide.createIcons();
     }
 
+    // CART MANAGEMENT
     function addToCart(itemId) {
       const item = catalog.find(i => i.id === itemId);
       if (!item) return;
@@ -648,25 +623,18 @@
 
       lucide.createIcons();
     }
-function submitOrder() {
-  console.log("Submit clicked, cart size:", cart ? cart.length : 0);
-  
-  if (!cart || cart.length === 0) {
-    alert("Please add an item to your cart first!");
-    return;
-  }
-  
-  const modal = document.getElementById('order-details-modal');
-  if (modal) {
-    modal.classList.remove('hidden');
-  } else {
-    alert("Modal element 'order-details-modal' not found in HTML!");
-  }
-}
+
+    // ORDER SUBMISSION & AUTOMATIC PO GENERATION
+    function submitOrder() {
+      if (cart.length === 0) return;
+      document.getElementById('order-details-modal').classList.remove('hidden');
+    }
+
     function closeOrderDetailsModal() {
       document.getElementById('order-details-modal').classList.add('hidden');
     }
 
+    // HELPER TO GENERATE DATE STRING IN DDMMYY FORMAT
     function getDDMMYY() {
       const now = new Date();
       const dd = String(now.getDate()).padStart(2, '0');
@@ -696,40 +664,38 @@ function submitOrder() {
         total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0)
       };
 
-      db.ref('orders').push(newOrder).then(() => {
-        const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
-        uniqueSuppliers.forEach(supplier => {
-          downloadPOPDF(newOrder.primaryRef, supplier, newOrder);
-        });
+      orders.unshift(newOrder);
 
-        cart = [];
-        updateCartUI();
-        document.getElementById('order-user-name').value = '';
-        document.getElementById('order-user-branch').value = '';
-        closeOrderDetailsModal();
-
-        alert(`Order submitted successfully to cloud database! ${uniqueSuppliers.length} Purchase Order PDF(s) generated.`);
-      }).catch((error) => {
-        console.error("Firebase Error: ", error);
-        alert("Error saving order to database. Please check your network connection.");
+      // Automatically generate PDFs for each supplier
+      const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
+      uniqueSuppliers.forEach(supplier => {
+        downloadPOPDF(newOrder.primaryRef, supplier);
       });
+
+      cart = [];
+      updateCartUI();
+      renderAdminOrders();
+      updateAdminBadge();
+
+      document.getElementById('order-user-name').value = '';
+      document.getElementById('order-user-branch').value = '';
+      closeOrderDetailsModal();
+
+      alert(`Order submitted successfully! ${uniqueSuppliers.length} Purchase Order(s) generated in TSMK-SUPPLIER-DDMMYY-SERIAL format.`);
     }
 
-    function updateItemTrackingStatus(primaryRef, itemId, newStatus, firebaseKey) {
-      const order = orders.find(o => o.primaryRef === primaryRef || o.firebaseKey === firebaseKey);
+    function updateItemTrackingStatus(primaryRef, itemId, newStatus) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
       if (!order) return;
 
       const item = order.items.find(i => i.id === itemId);
       if (item) {
         item.trackingStatus = newStatus;
-        if (order.firebaseKey) {
-          db.ref(`orders/${order.firebaseKey}`).set(order);
-        } else {
-          renderAdminOrders();
-        }
+        renderAdminOrders();
       }
     }
 
+    // RENDER ADMIN ORDERS (TRACKING HIDDEN UNTIL ADMIN PASSCODE ENTERED)
     function renderAdminOrders() {
       const container = document.getElementById('admin-orders-list');
       if (!container) return;
@@ -755,6 +721,7 @@ function submitOrder() {
               <span class="font-extrabold brand-green-text text-base">Total: £${o.total.toFixed(2)}</span>
             </div>
 
+            <!-- ORDER ITEMS & SUPPLIER SECTIONS -->
             <div class="space-y-3">
               ${suppliers.map(s => {
                 const supplierItems = o.items.filter(i => i.supplier === s);
@@ -793,7 +760,7 @@ function submitOrder() {
                                 ${isAdminUnlocked ? `
                                   <td class="p-2 text-center">
                                     <select 
-                                      onchange="updateItemTrackingStatus('${o.primaryRef}', ${i.id}, this.value, '${o.firebaseKey || ''}')"
+                                      onchange="updateItemTrackingStatus('${o.primaryRef}', ${i.id}, this.value)"
                                       class="px-2 py-1 text-[11px] font-bold rounded border bg-slate-50 text-slate-700 border-slate-300 focus:outline-none cursor-pointer">
                                       <option value="Not Received" ${status === 'Not Received' ? 'selected' : ''}>Not Received</option>
                                       <option value="Partially Received" ${status === 'Partially Received' ? 'selected' : ''}>Partially Received</option>
@@ -825,8 +792,9 @@ function submitOrder() {
       lucide.createIcons();
     }
 
-    function downloadPOPDF(primaryRef, supplierName, targetOrder) {
-      const order = targetOrder || orders.find(o => o.primaryRef === primaryRef);
+    // PDF PO GENERATION EXACT MATCHING UPLOADED TEMPLATE
+    function downloadPOPDF(primaryRef, supplierName) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
       if (!order) return;
 
       const items = order.items.filter(i => i.supplier === supplierName);
@@ -837,9 +805,11 @@ function submitOrder() {
       
       exportContainer.innerHTML = `
         <div id="pdf-content" style="padding: 15px 25px; font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto; background: #ffffff;">
+          
+          <!-- TOP HEADER WITH GREEN LOGO BADGE AND TITLE -->
           <div style="display: flex; justify-content: space-between; align-items: flex-center; margin-bottom: 8px;">
             <div style="background-color: #144D37; color: #ffffff; padding: 10px 18px; border-radius: 8px; display: inline-block;">
-              <h1 style="font-size: 20px; font-weight: 900; margin: 0; letter-spacing: 1px; font-family: sans-serif;">TREAT STREET</h1>
+              <h1 style="font-size: 20px; font-weight: 900; margin: 0; tracking-wide: 1px; letter-spacing: 1px; font-family: sans-serif;">TREAT STREET</h1>
             </div>
             <div style="text-align: right;">
               <h2 style="font-size: 18px; font-weight: 900; margin: 0; color: #144D37; letter-spacing: 0.5px;">TREAT STREET PURCHASE ORDER REQUEST</h2>
@@ -847,8 +817,10 @@ function submitOrder() {
             </div>
           </div>
 
+          <!-- DIVIDER LINE -->
           <div style="border-bottom: 2px solid #144D37; margin-bottom: 15px;"></div>
 
+          <!-- ORDER META INFO -->
           <div style="display: flex; justify-content: space-between; font-size: 11px; line-height: 1.6; margin-bottom: 18px;">
             <div>
               <p style="margin: 0;"><strong>Primary Ref:</strong> ${order.primaryRef}</p>
@@ -860,11 +832,13 @@ function submitOrder() {
             </div>
           </div>
 
+          <!-- SUPPLIER HEADER BANNER -->
           <div style="background-color: #144D37; color: #ffffff; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px 4px 0 0; font-size: 12px; font-weight: 800;">
             <span>SUPPLIER: ${supplierName.toUpperCase()}</span>
             <span>PO: ${poNumber}</span>
           </div>
 
+          <!-- ITEMS TABLE -->
           <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px;">
             <thead>
               <tr style="border-bottom: 1px solid #cbd5e1; text-align: left; color: #334155;">
@@ -888,10 +862,12 @@ function submitOrder() {
             </tbody>
           </table>
 
+          <!-- SUPPLIER TOTAL COST -->
           <div style="text-align: right; padding-top: 4px;">
             <span style="font-size: 12px; font-weight: 800; color: #144D37; margin-right: 15px;">Supplier Total Cost:</span>
             <span style="font-size: 14px; font-weight: 900; color: #144D37;">£${total}</span>
           </div>
+
         </div>
       `;
 
@@ -918,15 +894,12 @@ function submitOrder() {
     }
 
     function clearAllOrders() {
-      if (confirm("Are you sure you want to clear order history from cloud?")) {
-        db.ref('orders').remove().then(() => {
-          orders = [];
-          renderAdminOrders();
-          updateAdminBadge();
-        });
-      }
+      orders = [];
+      renderAdminOrders();
+      updateAdminBadge();
     }
 
+    // ADMIN PASSCODE MODAL & CONTROLS
     function openPasscodeModal() {
       document.getElementById('passcode-modal').classList.remove('hidden');
     }
@@ -937,7 +910,7 @@ function submitOrder() {
 
     function verifyPasscode() {
       const input = document.getElementById('admin-passcode-input').value;
-      if (input === 'ALAIYA' || input === 'admin' || input === 'treatstreet') {
+      if (input === '1234' || input === 'admin' || input === 'treatstreet') {
         isAdminUnlocked = true;
         document.getElementById('btn-unlock-admin').classList.add('hidden');
         document.getElementById('btn-lock-admin').classList.remove('hidden');
@@ -960,6 +933,7 @@ function submitOrder() {
       renderAdminOrders();
     }
 
+    // EDIT PRICE HANDLERS
     function openEditPriceModal(itemId) {
       const item = catalog.find(i => i.id === itemId);
       if (!item) return;
@@ -987,6 +961,7 @@ function submitOrder() {
       }
     }
 
+    // ADD SUPPLIER / INGREDIENT HANDLERS
     function handleAddSupplier(e) {
       e.preventDefault();
       const name = document.getElementById('new-supplier-name').value.trim();
@@ -1027,256 +1002,6 @@ function submitOrder() {
 
       alert(`Ingredient "${name}" successfully added to catalog!`);
     }
-    function generatePurchaseOrders(event) {
-  if (event) event.preventDefault(); // Prevents page refresh
-
-  if (!cart || cart.length === 0) {
-    alert("Cart is empty! Cannot generate purchase orders.");
-    return;
-  }
-
-  // 1. Get Requester Info
-  const requesterName = document.getElementById('requester-name')?.value || "N/A";
-  const department = document.getElementById('requester-dept')?.value || "N/A";
-
-  // 2. Group Cart Items by Supplier
-  const ordersBySupplier = {};
-  cart.forEach(item => {
-    const supplier = item.supplier || "SUPPLIER";
-    if (!ordersBySupplier[supplier]) {
-      ordersBySupplier[supplier] = [];
-    }
-    ordersBySupplier[supplier].push(item);
-  });
-
-  // 3. Format Date (DDMMYY)
-  const dateStr = getDDMMYY(); 
-  let serialCounter = 1;
-
-  // 4. Generate a PO file for each Supplier
-  Object.keys(ordersBySupplier).forEach(supplierName => {
-    // Sanitize supplier name (e.g., "Betty Crocker" -> "BETTYCROCKER")
-    const cleanSupplier = supplierName.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    
-    // Format 3-digit serial (e.g., 001, 002)
-    const serialStr = String(serialCounter).padStart(3, '0');
-    
-    // Exact Format: TSMK-SUPPLIER-DDMMYY-SERIAL
-    const poNumber = `TSMK-${cleanSupplier}-${dateStr}-${serialStr}`;
-
-    // Build the PO text content
-    let poText = `=====================================\n`;
-    poText += `PURCHASE ORDER: ${poNumber}\n`;
-    poText += `Date: ${new Date().toLocaleDateString()}\n`;
-    poText += `Requested By: ${requesterName} (${department})\n`;
-    poText += `Supplier: ${supplierName}\n`;
-    poText += `=====================================\n\n`;
-    poText += `ITEMS ORDERED:\n`;
-
-    let totalCost = 0;
-    ordersBySupplier[supplierName].forEach(item => {
-      const lineTotal = item.price * item.quantity;
-      totalCost += lineTotal;
-      poText += `- ${item.name} | Qty: ${item.quantity} | Unit: £${item.price.toFixed(2)} | Total: £${lineTotal.toFixed(2)}\n`;
-    });
-
-    poText += `\n-------------------------------------\n`;
-    poText += `GRAND TOTAL: £${totalCost.toFixed(2)}\n`;
-    poText += `=====================================\n`;
-
-    // Trigger File Download
-    downloadPOFile(`${poNumber}.txt`, poText);
-
-    serialCounter++;
-  });
-
-  alert(`Successfully generated ${serialCounter - 1} Purchase Order(s)!`);
-
-  // Reset Cart and UI
-  cart = [];
-  if (typeof updateCartUI === 'function') updateCartUI();
-  if (typeof closeOrderDetailsModal === 'function') closeOrderDetailsModal();
-}
-
-// Download Helper
-function downloadPOFile(filename, textContent) {
-  const element = document.createElement('a');
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(textContent));
-  element.setAttribute('download', filename);
-  element.style.display = 'none';
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
-}
-   // Global Order History array initialized from localStorage
-var orderHistory = JSON.parse(localStorage.getItem('tsmk_order_history') || '[]');
-
-function confirmAndSubmitOrder(event) {
-  if (event) event.preventDefault(); // Stop page refresh
-
-  if (!cart || cart.length === 0) {
-    alert("Cart is empty! Cannot generate purchase orders.");
-    return;
-  }
-
-  // 1. Get Requester Details from inputs
-  const requesterNameInput = document.getElementById('requester-name') || document.querySelector('input[name="requesterName"]');
-  const requesterDeptInput = document.getElementById('requester-dept') || document.querySelector('input[name="requesterDept"]');
-  
-  const requesterName = requesterNameInput ? requesterNameInput.value : "Staff Member";
-  const department = requesterDeptInput ? requesterDeptInput.value : "General";
-
-  // 2. Group items in cart by Supplier
-  const ordersBySupplier = {};
-  cart.forEach(item => {
-    const supplier = item.supplier || "DEFAULT SUPPLIER";
-    if (!ordersBySupplier[supplier]) {
-      ordersBySupplier[supplier] = [];
-    }
-    ordersBySupplier[supplier].push(item);
-  });
-
-  // 3. Format Date (DDMMYY) and initialize Serial Counter
-  const dateStr = typeof getDDMMYY === 'function' ? getDDMMYY() : '210726';
-  let serialCounter = 1;
-
-  // 4. Loop through each supplier
-  Object.keys(ordersBySupplier).forEach(supplierName => {
-    const cleanSupplier = supplierName.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const serialStr = String(serialCounter).padStart(3, '0');
-    
-    // Exact PO Number: TSMK-SUPPLIER-DDMMYY-SERIAL
-    const poNumber = `TSMK-${cleanSupplier}-${dateStr}-${serialStr}`;
-    const supplierItems = ordersBySupplier[supplierName];
-    const poTotal = supplierItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    // Create PO Record object
-    const poRecord = {
-      poNumber: poNumber,
-      date: new Date().toLocaleDateString(),
-      requester: requesterName,
-      department: department,
-      supplier: supplierName,
-      items: supplierItems,
-      totalAmount: poTotal
-    };
-
-    // SAVE TO HISTORY ARRAY
-    orderHistory.push(poRecord);
-
-    // OPEN PRINTABLE / PDF POPUP WINDOW
-    openPDFPrintWindow(poRecord);
-
-    serialCounter++;
-  });
-
-  // Save updated history array to browser localStorage
-  localStorage.setItem('tsmk_order_history', JSON.stringify(orderHistory));
-
-  // Refresh History UI table if function exists
-  if (typeof renderOrderHistoryUI === 'function') {
-    renderOrderHistoryUI();
-  }
-
-  alert(`Generated ${serialCounter - 1} Purchase Order(s) & saved to Order History!`);
-
-  // Clear cart and close modal
-  cart = [];
-  if (typeof updateCartUI === 'function') updateCartUI();
-  if (typeof closeOrderDetailsModal === 'function') closeOrderDetailsModal();
-}
-
-/**
- * Creates printable PDF layout window
- */
-function openPDFPrintWindow(po) {
-  const printWindow = window.open('', '_blank', 'width=800,height=900');
-  
-  let itemsRows = po.items.map(item => `
-    <tr>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${item.name}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">£${Number(item.price).toFixed(2)}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">£${(item.price * item.quantity).toFixed(2)}</td>
-    </tr>
-  `).join('');
-
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>${po.poNumber}</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 40px; color: #1e293b; }
-        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #059669; padding-bottom: 15px; margin-bottom: 20px; }
-        .title { font-size: 24px; font-weight: bold; color: #059669; }
-        .po-number { font-size: 16px; font-weight: bold; color: #475569; }
-        .meta-table { width: 100%; margin-bottom: 25px; font-size: 14px; }
-        .meta-table td { padding: 4px 0; }
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
-        .items-table th { background-color: #f1f5f9; padding: 10px; text-align: left; font-weight: bold; }
-        .total-box { text-align: right; font-size: 18px; font-weight: bold; color: #059669; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div>
-          <div class="title">PURCHASE ORDER</div>
-          <div style="font-size: 12px; color: #64748b;">TSMK System</div>
-        </div>
-        <div style="text-align: right;">
-          <div class="po-number">${po.poNumber}</div>
-          <div>Date: ${po.date}</div>
-        </div>
-      </div>
-
-      <table class="meta-table">
-        <tr>
-          <td><strong>Requested By:</strong> ${po.requester}</td>
-          <td><strong>Supplier:</strong> ${po.supplier}</td>
-        </tr>
-      </table>
-
-      <table class="items-table">
-        <thead>
-          <tr>
-            <th>Item Description</th>
-            <th style="text-align: center;">Qty</th>
-            <th style="text-align: right;">Unit Price</th>
-            <th style="text-align: right;">Total Price</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemsRows}
-        </tbody>
-      </table>
-
-      <div class="total-box">
-        Grand Total: £${po.totalAmount.toFixed(2)}
-      </div>
-
-      <script>
-        window.onload = function() {
-          window.print();
-        }
-      </script>
-    </body>
-    </html>
-  `;
-
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
-}
-// Download Helper Function
-function downloadPOFile(filename, textContent) {
-  const element = document.createElement('a');
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(textContent));
-  element.setAttribute('download', filename);
-  element.style.display = 'none';
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
-}
   </script>
 </body>
 </html>
