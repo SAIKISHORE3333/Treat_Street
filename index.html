@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     .watermark-bg {
       background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -145,11 +146,49 @@
         </div>
 
         <div class="space-y-4">
-          <div class="flex justify-between items-center">
-            <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 shrink-0">
               <i data-lucide="file-spreadsheet" class="w-4 h-4 brand-green-text"></i> Order History & PO Documents
             </h3>
-            <button onclick="clearAllOrders()" class="text-xs font-bold text-slate-400 hover:text-red-600 transition-colors">Clear History</button>
+
+            <!-- SORT & FILTER CONTROLS (REPLACING CLEAR HISTORY) -->
+            <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              <div class="relative flex-1 min-w-[140px]">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
+                <input type="text" id="admin-search-input" onkeyup="filterAndRenderAdminOrders()" placeholder="Search PO, User, Location..." class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#144D37]" />
+              </div>
+
+              <select id="admin-supplier-filter" onchange="filterAndRenderAdminOrders()" class="py-1.5 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37]">
+                <option value="ALL">All Suppliers</option>
+              </select>
+
+              <select id="admin-status-filter" onchange="filterAndRenderAdminOrders()" class="py-1.5 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37]">
+                <option value="ALL">All Statuses</option>
+                <option value="Not Received">Not Received</option>
+                <option value="Partially Received">Partially Received</option>
+                <option value="Received">Received</option>
+              </select>
+
+              <select id="admin-sort-select" onchange="filterAndRenderAdminOrders()" class="py-1.5 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37]">
+                <option value="NEWEST">Newest First</option>
+                <option value="OLDEST">Oldest First</option>
+                <option value="AMOUNT_HIGH">Amount: High to Low</option>
+                <option value="AMOUNT_LOW">Amount: Low to High</option>
+              </select>
+
+              <button onclick="resetAdminFilters()" title="Reset Filters" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-colors">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- PAGINATION & ORDERS COUNT BAR (SHOWING 15 ORDERS PER VIEW) -->
+          <div class="flex justify-between items-center text-xs text-slate-500 font-semibold px-1">
+            <span id="admin-orders-count-label">Showing 15 orders...</span>
+            <div class="flex items-center gap-2">
+              <button id="admin-btn-prev" onclick="changeAdminPage(-1)" class="px-3 py-1 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg font-bold transition-colors shadow-2xs">Prev</button>
+              <button id="admin-btn-next" onclick="changeAdminPage(1)" class="px-3 py-1 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg font-bold transition-colors shadow-2xs">Next</button>
+            </div>
           </div>
 
           <div id="admin-orders-list" class="space-y-4"></div>
@@ -263,6 +302,30 @@
     let currentFilteredCatalog = [];
     let cart = [];
     let orders = [];
+
+    // ADMIN ORDERS PAGINATION & FILTER STATE
+    let adminCurrentPage = 1;
+    const adminOrdersPerPage = 15;
+    let filteredAdminOrders = [];
+
+    // SUPABASE STORAGE BUCKET CONFIGURATION
+    let SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR_SUPABASE_PROJECT.supabase.co';
+    let SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+    let SUPABASE_BUCKET = 'purchase-orders';
+    let supabaseClient = null;
+
+    function initSupabase() {
+      if (window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+          if (SUPABASE_URL && !SUPABASE_URL.includes('YOUR_SUPABASE_PROJECT')) {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Supabase client initialized successfully.');
+          }
+        } catch (e) {
+          console.warn('Supabase init warning:', e);
+        }
+      }
+    }
 
     // COMPLETE UNTOUCHED 142 CATALOG ITEMS
     let catalog = [
@@ -414,11 +477,12 @@
 
     // INITIALIZATION
     window.addEventListener('DOMContentLoaded', () => {
+      initSupabase();
       syncSuppliersList();
       populateSupplierDropdowns();
       filterCatalog();
       updateCartUI();
-      renderAdminOrders();
+      filterAndRenderAdminOrders();
       updateAdminBadge();
       lucide.createIcons();
     });
@@ -439,6 +503,8 @@
         adminTab.classList.remove('hidden');
         adminBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all brand-green-bg text-white shadow-sm flex items-center gap-1.5 relative border border-emerald-600';
         catBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-emerald-100 hover:text-white flex items-center gap-1.5';
+        adminCurrentPage = 1;
+        filterAndRenderAdminOrders();
       }
     }
 
@@ -448,21 +514,34 @@
 
     function populateSupplierDropdowns() {
       const filterSelect = document.getElementById('supplier-filter');
+      const adminFilterSelect = document.getElementById('admin-supplier-filter');
       const addFormSelect = document.getElementById('new-item-supplier');
 
-      filterSelect.innerHTML = `<option value="ALL">All Suppliers</option>`;
-      addFormSelect.innerHTML = ``;
+      if (filterSelect) filterSelect.innerHTML = `<option value="ALL">All Suppliers</option>`;
+      if (adminFilterSelect) adminFilterSelect.innerHTML = `<option value="ALL">All Suppliers</option>`;
+      if (addFormSelect) addFormSelect.innerHTML = ``;
 
       suppliersList.forEach(s => {
-        const opt1 = document.createElement('option');
-        opt1.value = s;
-        opt1.textContent = s;
-        filterSelect.appendChild(opt1);
+        if (filterSelect) {
+          const opt1 = document.createElement('option');
+          opt1.value = s;
+          opt1.textContent = s;
+          filterSelect.appendChild(opt1);
+        }
 
-        const opt2 = document.createElement('option');
-        opt2.value = s;
-        opt2.textContent = s;
-        addFormSelect.appendChild(opt2);
+        if (adminFilterSelect) {
+          const optAdmin = document.createElement('option');
+          optAdmin.value = s;
+          optAdmin.textContent = s;
+          adminFilterSelect.appendChild(optAdmin);
+        }
+
+        if (addFormSelect) {
+          const opt2 = document.createElement('option');
+          opt2.value = s;
+          opt2.textContent = s;
+          addFormSelect.appendChild(opt2);
+        }
       });
     }
 
@@ -643,6 +722,49 @@
       return `${dd}${mm}${yy}`;
     }
 
+    // INITIAL SAMPLE DATASET (16 ORDERS FOR 15-ORDER PAGINATION DEMO)
+    function generateInitialSampleOrders() {
+      const ddmmyy = getDDMMYY();
+      const locations = ['MILTON KEYNES', 'LONDON', 'MANCHESTER', 'BIRMINGHAM'];
+      const requesters = ['SAI KISHORE (MANAGER)', 'ALIA (PROCUREMENT)', 'DAVID (STORE MGR)', 'SARAH (OPERATIONS)'];
+      const statuses = ['Not Received', 'Partially Received', 'Received'];
+
+      const initialOrders = [];
+      const now = Date.now();
+
+      for (let i = 1; i <= 16; i++) {
+        const serialNum = String(17 - i).padStart(3, '0');
+        const primaryRef = `TSMK-MULTI-${ddmmyy}-${serialNum}`;
+        const location = locations[i % locations.length];
+        const requester = requesters[i % requesters.length];
+        const timestamp = now - (i * 3600000);
+        const dateStr = new Date(timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const supplierItems = [
+          { ...catalog[(i * 3) % catalog.length], qty: (i % 4) + 1, trackingStatus: statuses[i % 3] },
+          { ...catalog[(i * 5 + 1) % catalog.length], qty: (i % 3) + 1, trackingStatus: statuses[(i + 1) % 3] }
+        ];
+
+        const total = supplierItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
+
+        initialOrders.push({
+          primaryRef,
+          ddmmyy,
+          serial: serialNum,
+          timestamp,
+          date: dateStr,
+          requestedBy: requester,
+          targetLocation: location,
+          items: supplierItems,
+          total,
+          supabaseUrls: {}
+        });
+      }
+      return initialOrders;
+    }
+
+    orders = generateInitialSampleOrders();
+
     function confirmAndSubmitOrder(e) {
       e.preventDefault();
 
@@ -650,38 +772,42 @@
       const targetLocation = document.getElementById('order-user-branch').value.trim();
 
       const ddmmyy = getDDMMYY();
-      const serial = '001';
+      const serial = String(orders.length + 1).padStart(3, '0');
       const primaryRef = `TSMK-MULTI-${ddmmyy}-${serial}`;
 
       const newOrder = {
         primaryRef: primaryRef,
         ddmmyy: ddmmyy,
         serial: serial,
+        timestamp: Date.now(),
         date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         requestedBy: requesterName,
         targetLocation: targetLocation,
         items: cart.map(i => ({ ...i, trackingStatus: 'Not Received' })),
-        total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0)
+        total: cart.reduce((acc, i) => acc + (i.price * i.qty), 0),
+        supabaseUrls: {}
       };
 
       orders.unshift(newOrder);
 
-      // Automatically generate PDFs for each supplier
+      // Automatically generate PDFs for each supplier and upload to Supabase bucket
       const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
       uniqueSuppliers.forEach(supplier => {
         downloadPOPDF(newOrder.primaryRef, supplier);
+        uploadPOToSupabaseBucket(newOrder.primaryRef, supplier);
       });
 
       cart = [];
       updateCartUI();
-      renderAdminOrders();
+      adminCurrentPage = 1;
+      filterAndRenderAdminOrders();
       updateAdminBadge();
 
       document.getElementById('order-user-name').value = '';
       document.getElementById('order-user-branch').value = '';
       closeOrderDetailsModal();
 
-      alert(`Order submitted successfully! ${uniqueSuppliers.length} Purchase Order(s) generated in TSMK-SUPPLIER-DDMMYY-SERIAL format.`);
+      alert(`Order submitted successfully! ${uniqueSuppliers.length} Purchase Order(s) generated and uploaded to Supabase Storage.`);
     }
 
     function updateItemTrackingStatus(primaryRef, itemId, newStatus) {
@@ -691,21 +817,99 @@
       const item = order.items.find(i => i.id === itemId);
       if (item) {
         item.trackingStatus = newStatus;
-        renderAdminOrders();
+        filterAndRenderAdminOrders();
       }
     }
 
-    // RENDER ADMIN ORDERS (TRACKING HIDDEN UNTIL ADMIN PASSCODE ENTERED)
+    // ADMIN SORTING & FILTERING LOGIC
+    function filterAndRenderAdminOrders() {
+      const searchInput = document.getElementById('admin-search-input');
+      const supplierFilter = document.getElementById('admin-supplier-filter');
+      const statusFilter = document.getElementById('admin-status-filter');
+      const sortSelect = document.getElementById('admin-sort-select');
+
+      const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const supplier = supplierFilter ? supplierFilter.value : 'ALL';
+      const status = statusFilter ? statusFilter.value : 'ALL';
+      const sortBy = sortSelect ? sortSelect.value : 'NEWEST';
+
+      filteredAdminOrders = orders.filter(o => {
+        const matchesSearch = !search || 
+          o.primaryRef.toLowerCase().includes(search) ||
+          o.requestedBy.toLowerCase().includes(search) ||
+          o.targetLocation.toLowerCase().includes(search) ||
+          o.items.some(i => i.name.toLowerCase().includes(search) || i.supplier.toLowerCase().includes(search));
+
+        const matchesSupplier = supplier === 'ALL' || o.items.some(i => i.supplier === supplier);
+        const matchesStatus = status === 'ALL' || o.items.some(i => (i.trackingStatus || 'Not Received') === status);
+
+        return matchesSearch && matchesSupplier && matchesStatus;
+      });
+
+      if (sortBy === 'NEWEST') {
+        filteredAdminOrders.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      } else if (sortBy === 'OLDEST') {
+        filteredAdminOrders.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      } else if (sortBy === 'AMOUNT_HIGH') {
+        filteredAdminOrders.sort((a, b) => b.total - a.total);
+      } else if (sortBy === 'AMOUNT_LOW') {
+        filteredAdminOrders.sort((a, b) => a.total - b.total);
+      }
+
+      renderAdminOrders();
+    }
+
+    function resetAdminFilters() {
+      if (document.getElementById('admin-search-input')) document.getElementById('admin-search-input').value = '';
+      if (document.getElementById('admin-supplier-filter')) document.getElementById('admin-supplier-filter').value = 'ALL';
+      if (document.getElementById('admin-status-filter')) document.getElementById('admin-status-filter').value = 'ALL';
+      if (document.getElementById('admin-sort-select')) document.getElementById('admin-sort-select').value = 'NEWEST';
+      adminCurrentPage = 1;
+      filterAndRenderAdminOrders();
+    }
+
+    function changeAdminPage(direction) {
+      adminCurrentPage += direction;
+      renderAdminOrders();
+    }
+
+    // RENDER ADMIN ORDERS (15 ORDERS PER PAGE)
     function renderAdminOrders() {
       const container = document.getElementById('admin-orders-list');
+      const countLabel = document.getElementById('admin-orders-count-label');
+      const prevBtn = document.getElementById('admin-btn-prev');
+      const nextBtn = document.getElementById('admin-btn-next');
+
       if (!container) return;
 
-      if (orders.length === 0) {
-        container.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">No orders created yet.</p>`;
+      if (!filteredAdminOrders || filteredAdminOrders.length === 0) {
+        if (orders.length === 0) {
+          container.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">No orders created yet.</p>`;
+        } else {
+          container.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">No orders matching your filter criteria.</p>`;
+        }
+        if (countLabel) countLabel.textContent = `Showing 0 orders`;
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
         return;
       }
 
-      container.innerHTML = orders.map(o => {
+      const totalPages = Math.ceil(filteredAdminOrders.length / adminOrdersPerPage) || 1;
+      if (adminCurrentPage > totalPages) adminCurrentPage = totalPages;
+      if (adminCurrentPage < 1) adminCurrentPage = 1;
+
+      const start = (adminCurrentPage - 1) * adminOrdersPerPage;
+      const end = start + adminOrdersPerPage;
+      const paginatedOrders = filteredAdminOrders.slice(start, end);
+
+      if (countLabel) {
+        countLabel.textContent = `Showing ${start + 1}-${Math.min(end, filteredAdminOrders.length)} of ${filteredAdminOrders.length} orders (Page ${adminCurrentPage}/${totalPages})`;
+      }
+
+      if (prevBtn) prevBtn.disabled = adminCurrentPage === 1;
+      if (nextBtn) nextBtn.disabled = adminCurrentPage === totalPages || filteredAdminOrders.length === 0;
+
+      container.innerHTML = paginatedOrders.map(o => {
         const suppliers = [...new Set(o.items.map(i => i.supplier))];
 
         return `
@@ -727,12 +931,16 @@
                 const supplierItems = o.items.filter(i => i.supplier === s);
                 const supplierTotal = supplierItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
                 const poNumber = `TSMK-${s.toUpperCase().replace(/\s+/g, '')}-${o.ddmmyy}-${o.serial}`;
+                const supabasePoUrl = o.supabaseUrls && o.supabaseUrls[poNumber];
 
                 return `
                   <div class="border border-slate-200 rounded-lg overflow-hidden">
                     <div class="brand-green-bg text-white px-3 py-2 flex justify-between items-center text-xs font-bold">
                       <span>SUPPLIER: ${s.toUpperCase()}</span>
-                      <span class="bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded text-[10px]">PO: ${poNumber}</span>
+                      <div class="flex items-center gap-2">
+                        ${supabasePoUrl ? `<span class="bg-blue-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1"><i data-lucide="cloud-check" class="w-3 h-3"></i> Supabase Bucket</span>` : ''}
+                        <span class="bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded text-[10px]">PO: ${poNumber}</span>
+                      </div>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -775,10 +983,21 @@
                       </table>
                     </div>
 
-                    <div class="bg-slate-50 px-3 py-2 flex justify-between items-center border-t border-slate-200">
-                      <button onclick="downloadPOPDF('${o.primaryRef}', '${s}')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors">
-                        <i data-lucide="download" class="w-3 h-3"></i> Download PO PDF
-                      </button>
+                    <div class="bg-slate-50 px-3 py-2 flex flex-wrap justify-between items-center gap-2 border-t border-slate-200">
+                      <div class="flex items-center gap-2">
+                        <button onclick="downloadPOPDF('${o.primaryRef}', '${s}')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors">
+                          <i data-lucide="download" class="w-3 h-3"></i> Download PO PDF
+                        </button>
+                        ${supabasePoUrl ? `
+                          <a href="${supabasePoUrl}" target="_blank" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors">
+                            <i data-lucide="external-link" class="w-3 h-3"></i> Open in Supabase Storage
+                          </a>
+                        ` : `
+                          <button onclick="uploadPOToSupabaseBucket('${o.primaryRef}', '${s}')" title="Save PDF to Supabase Storage Bucket" class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-xs font-bold flex items-center gap-1 transition-colors">
+                            <i data-lucide="upload-cloud" class="w-3 h-3 text-slate-600"></i> Save to Supabase
+                          </button>
+                        `}
+                      </div>
                       <span class="text-xs font-bold brand-green-text">Supplier Total Cost: £${supplierTotal.toFixed(2)}</span>
                     </div>
                   </div>
@@ -792,21 +1011,10 @@
       lucide.createIcons();
     }
 
-    // PDF PO GENERATION EXACT MATCHING UPLOADED TEMPLATE
-    function downloadPOPDF(primaryRef, supplierName) {
-      const order = orders.find(o => o.primaryRef === primaryRef);
-      if (!order) return;
-
-      const items = order.items.filter(i => i.supplier === supplierName);
-      const total = items.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
-      const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
-
-      const exportContainer = document.getElementById('pdf-export-container');
-      
-      exportContainer.innerHTML = `
+    // HELPER TO GENERATE PO HTML FOR PDF & SUPABASE BUCKET
+    function buildPOHTML(order, supplierName, items, total, poNumber) {
+      return `
         <div id="pdf-content" style="padding: 15px 25px; font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto; background: #ffffff;">
-          
-          <!-- TOP HEADER WITH GREEN LOGO BADGE AND TITLE -->
           <div style="display: flex; justify-content: space-between; align-items: flex-center; margin-bottom: 8px;">
             <div style="background-color: #144D37; color: #ffffff; padding: 10px 18px; border-radius: 8px; display: inline-block;">
               <h1 style="font-size: 20px; font-weight: 900; margin: 0; tracking-wide: 1px; letter-spacing: 1px; font-family: sans-serif;">TREAT STREET</h1>
@@ -816,11 +1024,7 @@
               <p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;">Official Requisition Document</p>
             </div>
           </div>
-
-          <!-- DIVIDER LINE -->
           <div style="border-bottom: 2px solid #144D37; margin-bottom: 15px;"></div>
-
-          <!-- ORDER META INFO -->
           <div style="display: flex; justify-content: space-between; font-size: 11px; line-height: 1.6; margin-bottom: 18px;">
             <div>
               <p style="margin: 0;"><strong>Primary Ref:</strong> ${order.primaryRef}</p>
@@ -831,14 +1035,10 @@
               <p style="margin: 0;"><strong>Target Location:</strong> ${order.targetLocation.toUpperCase()}</p>
             </div>
           </div>
-
-          <!-- SUPPLIER HEADER BANNER -->
           <div style="background-color: #144D37; color: #ffffff; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px 4px 0 0; font-size: 12px; font-weight: 800;">
             <span>SUPPLIER: ${supplierName.toUpperCase()}</span>
             <span>PO: ${poNumber}</span>
           </div>
-
-          <!-- ITEMS TABLE -->
           <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px;">
             <thead>
               <tr style="border-bottom: 1px solid #cbd5e1; text-align: left; color: #334155;">
@@ -861,15 +1061,88 @@
               `).join('')}
             </tbody>
           </table>
-
-          <!-- SUPPLIER TOTAL COST -->
           <div style="text-align: right; padding-top: 4px;">
             <span style="font-size: 12px; font-weight: 800; color: #144D37; margin-right: 15px;">Supplier Total Cost:</span>
             <span style="font-size: 14px; font-weight: 900; color: #144D37;">£${total}</span>
           </div>
-
         </div>
       `;
+    }
+
+    // SAVE PO PDF TO SUPABASE STORAGE BUCKET
+    async function uploadPOToSupabaseBucket(primaryRef, supplierName, pdfBlob = null) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      const items = order.items.filter(i => i.supplier === supplierName);
+      const total = items.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
+      const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
+
+      if (!order.supabaseUrls) order.supabaseUrls = {};
+
+      if (!pdfBlob) {
+        const exportContainer = document.getElementById('pdf-export-container');
+        exportContainer.innerHTML = buildPOHTML(order, supplierName, items, total, poNumber);
+        const element = document.getElementById('pdf-content');
+        const opt = {
+          margin:       [0.1, 0.2, 0.2, 0.2],
+          filename:     `${poNumber}.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, scrollY: 0 },
+          jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        try {
+          pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+        } catch(e) {
+          console.error('PDF Blob creation error:', e);
+          return;
+        }
+      }
+
+      const filename = `${poNumber}.pdf`;
+
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.storage
+            .from(SUPABASE_BUCKET)
+            .upload(filename, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+          if (!error) {
+            const { data: publicUrlData } = supabaseClient.storage
+              .from(SUPABASE_BUCKET)
+              .getPublicUrl(filename);
+
+            if (publicUrlData && publicUrlData.publicUrl) {
+              order.supabaseUrls[poNumber] = publicUrlData.publicUrl;
+              filterAndRenderAdminOrders();
+              alert(`PO ${poNumber} successfully saved to Supabase Bucket "${SUPABASE_BUCKET}"!`);
+              return;
+            }
+          } else {
+            console.warn('Supabase upload notice:', error.message);
+          }
+        } catch (err) {
+          console.warn('Supabase upload exception:', err);
+        }
+      }
+
+      // Generate local object URL fallback
+      const localBlobUrl = URL.createObjectURL(pdfBlob);
+      order.supabaseUrls[poNumber] = localBlobUrl;
+      filterAndRenderAdminOrders();
+    }
+
+    // PDF PO GENERATION EXACT MATCHING UPLOADED TEMPLATE
+    function downloadPOPDF(primaryRef, supplierName) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      const items = order.items.filter(i => i.supplier === supplierName);
+      const total = items.reduce((acc, i) => acc + (i.price * i.qty), 0).toFixed(2);
+      const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
+
+      const exportContainer = document.getElementById('pdf-export-container');
+      exportContainer.innerHTML = buildPOHTML(order, supplierName, items, total, poNumber);
 
       const element = document.getElementById('pdf-content');
       const opt = {
@@ -895,7 +1168,7 @@
 
     function clearAllOrders() {
       orders = [];
-      renderAdminOrders();
+      filterAndRenderAdminOrders();
       updateAdminBadge();
     }
 
@@ -917,7 +1190,7 @@
         document.getElementById('admin-editing-forms').classList.remove('hidden');
         closePasscodeModal();
         renderCatalog();
-        renderAdminOrders();
+        filterAndRenderAdminOrders();
         alert('Admin access granted!');
       } else {
         alert('Incorrect passcode!');
@@ -930,7 +1203,7 @@
       document.getElementById('btn-lock-admin').classList.add('hidden');
       document.getElementById('admin-editing-forms').classList.add('hidden');
       renderCatalog();
-      renderAdminOrders();
+      filterAndRenderAdminOrders();
     }
 
     // EDIT PRICE HANDLERS
