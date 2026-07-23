@@ -70,8 +70,26 @@
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-6">
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
       
+      <!-- WELCOME HERO BANNER -->
+      <section class="bg-gradient-to-r from-[#144D37] via-emerald-800 to-[#144D37] text-white p-6 md:p-8 rounded-3xl shadow-md relative overflow-hidden border border-emerald-700/50">
+        <div class="absolute -right-10 -bottom-10 opacity-10 text-white font-black text-8xl pointer-events-none select-none">
+          ALAIYA
+        </div>
+        <div class="relative z-10 space-y-2">
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-emerald-200 text-xs font-bold border border-white/10">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i> Powered by ALAIYA
+          </div>
+          <h1 class="text-xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
+            Welcome to Treat Street Purchasing Portal
+          </h1>
+          <p class="text-xs md:text-sm text-emerald-100/90 max-w-2xl font-medium">
+            Internal procurement management platform. Browse our complete ingredient catalog, choose item quantities, submit orders with instant visual confirmation, generate official PO documents, and track order statuses with live Supabase storage sync.
+          </p>
+        </div>
+      </section>
+
       <!-- TAB 1: ORDER CATALOG -->
       <section id="tab-catalog" class="space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -309,8 +327,8 @@
     let filteredAdminOrders = [];
 
     // SUPABASE STORAGE BUCKET CONFIGURATION
-    let SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR_SUPABASE_PROJECT.supabase.co';
-    let SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+    let SUPABASE_URL = 'https://sdlrwosjebiiztclsydu.supabase.co';
+    let SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw';
     let SUPABASE_BUCKET = 'purchase-orders';
     let supabaseClient = null;
 
@@ -616,13 +634,13 @@
 
           <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
             <div class="flex items-center gap-1">
-              <label for="qty-${item.id}" class="text-[10px] font-bold text-slate-400">Qty:</label>
-              <select id="qty-${item.id}" class="py-1 px-2 text-xs bg-slate-100 font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#144D37]">
-                ${[1,2,3,4,5,6,7,8,9,10].map(q => `<option value="${q}">${q}</option>`).join('')}
+              <label for="qty-${item.id}" class="text-[10px] font-bold text-slate-500">Qty:</label>
+              <select id="qty-${item.id}" class="py-1 px-2 text-xs bg-slate-100 font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#144D37] cursor-pointer">
+                ${[1,2,3,4,5,6,7,8,9,10,12,15,20,25,50].map(q => `<option value="${q}">${q}</option>`).join('')}
               </select>
             </div>
-            <button onclick="addToCart(${item.id})" class="flex-1 py-1.5 brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+            <button id="add-btn-${item.id}" onclick="addToCart(${item.id})" class="flex-1 py-1.5 brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add to Order
             </button>
           </div>
         </div>
@@ -631,7 +649,7 @@
       lucide.createIcons();
     }
 
-    // CART MANAGEMENT
+    // CART MANAGEMENT WITH 'ITEM ADDED' VISUAL FEEDBACK
     function addToCart(itemId) {
       const item = catalog.find(i => i.id === itemId);
       if (!item) return;
@@ -647,6 +665,41 @@
       }
 
       updateCartUI();
+
+      // Show "Item Added!" button animation on card
+      const addBtn = document.getElementById(`add-btn-${itemId}`);
+      if (addBtn) {
+        addBtn.className = "flex-1 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 shadow-inner";
+        addBtn.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Item Added!`;
+        lucide.createIcons();
+        setTimeout(() => {
+          if (addBtn) {
+            addBtn.className = "flex-1 py-1.5 brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1";
+            addBtn.innerHTML = `<i data-lucide="plus" class="w-3.5 h-3.5"></i> Add to Order`;
+            lucide.createIcons();
+          }
+        }, 1800);
+      }
+
+      showToast(`Item Added! (${qty}x ${item.name})`);
+    }
+
+    function showToast(message) {
+      let toast = document.getElementById('toast-notification');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-notification';
+        toast.className = 'fixed bottom-6 right-6 z-50 bg-emerald-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-emerald-700 flex items-center gap-2.5 text-xs font-bold transition-all duration-300';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-300"></i> ${message}`;
+      toast.classList.remove('hidden');
+      lucide.createIcons();
+
+      if (window.toastTimeout) clearTimeout(window.toastTimeout);
+      window.toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2500);
     }
 
     function updateCartQty(itemId, newQty) {
@@ -1069,7 +1122,7 @@
       `;
     }
 
-    // SAVE PO PDF TO SUPABASE STORAGE BUCKET
+    // SAVE PO PDF TO SUPABASE STORAGE BUCKET (SUPABASE ONLY - NO LOCAL FALLBACK)
     async function uploadPOToSupabaseBucket(primaryRef, supplierName, pdfBlob = null) {
       const order = orders.find(o => o.primaryRef === primaryRef);
       if (!order) return;
@@ -1079,6 +1132,14 @@
       const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
 
       if (!order.supabaseUrls) order.supabaseUrls = {};
+
+      // Show uploading status on any matching Save to Supabase button
+      const uploadBtns = document.querySelectorAll(`[onclick="uploadPOToSupabaseBucket('${primaryRef}', '${supplierName}')"]`);
+      uploadBtns.forEach(btn => {
+        btn.innerHTML = `<i data-lucide="loader" class="w-3 h-3 animate-spin"></i> Uploading...`;
+        btn.disabled = true;
+        lucide.createIcons();
+      });
 
       if (!pdfBlob) {
         const exportContainer = document.getElementById('pdf-export-container');
@@ -1094,6 +1155,7 @@
         try {
           pdfBlob = await html2pdf().set(opt).from(element).output('blob');
         } catch(e) {
+          showToast('❌ PDF generation failed. Please try again.');
           console.error('PDF Blob creation error:', e);
           return;
         }
@@ -1101,35 +1163,37 @@
 
       const filename = `${poNumber}.pdf`;
 
-      if (supabaseClient) {
-        try {
-          const { data, error } = await supabaseClient.storage
-            .from(SUPABASE_BUCKET)
-            .upload(filename, pdfBlob, { contentType: 'application/pdf', upsert: true });
-
-          if (!error) {
-            const { data: publicUrlData } = supabaseClient.storage
-              .from(SUPABASE_BUCKET)
-              .getPublicUrl(filename);
-
-            if (publicUrlData && publicUrlData.publicUrl) {
-              order.supabaseUrls[poNumber] = publicUrlData.publicUrl;
-              filterAndRenderAdminOrders();
-              alert(`PO ${poNumber} successfully saved to Supabase Bucket "${SUPABASE_BUCKET}"!`);
-              return;
-            }
-          } else {
-            console.warn('Supabase upload notice:', error.message);
-          }
-        } catch (err) {
-          console.warn('Supabase upload exception:', err);
-        }
+      if (!supabaseClient) {
+        showToast('❌ Supabase not initialized. Check your credentials.');
+        return;
       }
 
-      // Generate local object URL fallback
-      const localBlobUrl = URL.createObjectURL(pdfBlob);
-      order.supabaseUrls[poNumber] = localBlobUrl;
-      filterAndRenderAdminOrders();
+      try {
+        const { data, error } = await supabaseClient.storage
+          .from(SUPABASE_BUCKET)
+          .upload(filename, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+        if (error) {
+          console.error('Supabase upload error:', error.message);
+          showToast(`❌ Upload failed: ${error.message}`);
+          return;
+        }
+
+        const { data: publicUrlData } = supabaseClient.storage
+          .from(SUPABASE_BUCKET)
+          .getPublicUrl(filename);
+
+        if (publicUrlData && publicUrlData.publicUrl) {
+          order.supabaseUrls[poNumber] = publicUrlData.publicUrl;
+          filterAndRenderAdminOrders();
+          showToast(`✅ PO ${poNumber} saved to Supabase!`);
+        } else {
+          showToast('❌ Upload succeeded but could not get public URL. Check bucket is set to Public.');
+        }
+      } catch (err) {
+        console.error('Supabase upload exception:', err);
+        showToast(`❌ Upload error: ${err.message}`);
+      }
     }
 
     // PDF PO GENERATION EXACT MATCHING UPLOADED TEMPLATE
