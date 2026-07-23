@@ -991,7 +991,6 @@
                     <div class="brand-green-bg text-white px-3 py-2 flex justify-between items-center text-xs font-bold">
                       <span>SUPPLIER: ${s.toUpperCase()}</span>
                       <div class="flex items-center gap-2">
-                        ${supabasePoUrl ? `<span class="bg-blue-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1"><i data-lucide="cloud-check" class="w-3 h-3"></i> Supabase Bucket</span>` : ''}
                         <span class="bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded text-[10px]">PO: ${poNumber}</span>
                       </div>
                     </div>
@@ -1041,15 +1040,6 @@
                         <button onclick="downloadPOPDF('${o.primaryRef}', '${s}')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors">
                           <i data-lucide="download" class="w-3 h-3"></i> Download PO PDF
                         </button>
-                        ${supabasePoUrl ? `
-                          <a href="${supabasePoUrl}" target="_blank" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors">
-                            <i data-lucide="external-link" class="w-3 h-3"></i> Open in Supabase Storage
-                          </a>
-                        ` : `
-                          <button onclick="uploadPOToSupabaseBucket('${o.primaryRef}', '${s}')" title="Save PDF to Supabase Storage Bucket" class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-xs font-bold flex items-center gap-1 transition-colors">
-                            <i data-lucide="upload-cloud" class="w-3 h-3 text-slate-600"></i> Save to Supabase
-                          </button>
-                        `}
                       </div>
                       <span class="text-xs font-bold brand-green-text">Supplier Total Cost: £${supplierTotal.toFixed(2)}</span>
                     </div>
@@ -1132,14 +1122,6 @@
       const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
 
       if (!order.supabaseUrls) order.supabaseUrls = {};
-
-      // Show uploading status on any matching Save to Supabase button
-      const uploadBtns = document.querySelectorAll(`[onclick="uploadPOToSupabaseBucket('${primaryRef}', '${supplierName}')"]`);
-      uploadBtns.forEach(btn => {
-        btn.innerHTML = `<i data-lucide="loader" class="w-3 h-3 animate-spin"></i> Uploading...`;
-        btn.disabled = true;
-        lucide.createIcons();
-      });
 
       if (!pdfBlob) {
         const exportContainer = document.getElementById('pdf-export-container');
