@@ -193,7 +193,11 @@
               </select>
 
               <button onclick="resetAdminFilters()" title="Reset Filters" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-colors">
-                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              </button>
+
+              <button onclick="clearOrderHistory()" title="Clear Order History" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ml-auto">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear History
               </button>
             </div>
           </div>
@@ -916,6 +920,19 @@
       if (document.getElementById('admin-sort-select')) document.getElementById('admin-sort-select').value = 'NEWEST';
       adminCurrentPage = 1;
       filterAndRenderAdminOrders();
+    }
+
+    function clearOrderHistory() {
+      const pwd = prompt("Enter admin password to clear local order history:");
+      if (pwd === "ALAIYA") {
+        orders = [];
+        adminCurrentPage = 1;
+        filterAndRenderAdminOrders();
+        updateAdminBadge();
+        showToast("✅ Local order history cleared successfully.");
+      } else if (pwd !== null) {
+        showToast("❌ Incorrect password. History not cleared.");
+      }
     }
 
     function changeAdminPage(direction) {
