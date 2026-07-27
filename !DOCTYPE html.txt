@@ -825,7 +825,16 @@
       return initialOrders;
     }
 
-    orders = generateInitialSampleOrders();
+    let storedOrders = localStorage.getItem('ts_orders');
+    if (storedOrders) {
+      orders = JSON.parse(storedOrders);
+    } else {
+      orders = generateInitialSampleOrders();
+    }
+    
+    function saveOrdersToStorage() {
+      localStorage.setItem('ts_orders', JSON.stringify(orders));
+    }
 
     function confirmAndSubmitOrder(e) {
       e.preventDefault();
@@ -851,6 +860,7 @@
       };
 
       orders.unshift(newOrder);
+      saveOrdersToStorage();
 
       // Automatically generate PDFs for each supplier and upload to Supabase bucket
       const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
@@ -878,6 +888,7 @@
       const item = order.items.find(i => i.id === itemId);
       if (item) {
         item.trackingStatus = newStatus;
+        saveOrdersToStorage();
         filterAndRenderAdminOrders();
       }
     }
@@ -933,6 +944,7 @@
       const pwd = prompt("Enter admin password to clear local order history:");
       if (pwd === "ALAIYA") {
         orders = [];
+        saveOrdersToStorage();
         adminCurrentPage = 1;
         filterAndRenderAdminOrders();
         updateAdminBadge();
