@@ -247,6 +247,18 @@
       </section>
 
     </main>
+
+    <footer id="admin-footer" class="hidden bg-emerald-900 text-white py-4 mt-8 shadow-inner relative z-20 w-full">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-5 h-5 text-amber-400"></i>
+          <span class="font-extrabold text-sm tracking-wide">ADMIN CONTROLS ACTIVE</span>
+        </div>
+        <button onclick="downloadCatalogPDF()" class="px-6 py-2.5 bg-white text-[#144D37] hover:bg-emerald-50 text-xs font-black rounded-xl transition-all shadow-md flex items-center gap-2">
+          <i data-lucide="download" class="w-4 h-4"></i> Download Full Catalog PDF
+        </button>
+      </div>
+    </footer>
   </div>
 
   <!-- MODALS -->
@@ -1273,6 +1285,7 @@
         document.getElementById('btn-unlock-admin').classList.add('hidden');
         document.getElementById('btn-lock-admin').classList.remove('hidden');
         document.getElementById('admin-editing-forms').classList.remove('hidden');
+        document.getElementById('admin-footer').classList.remove('hidden');
         closePasscodeModal();
         renderCatalog();
         filterAndRenderAdminOrders();
@@ -1287,6 +1300,7 @@
       document.getElementById('btn-unlock-admin').classList.remove('hidden');
       document.getElementById('btn-lock-admin').classList.add('hidden');
       document.getElementById('admin-editing-forms').classList.add('hidden');
+      document.getElementById('admin-footer').classList.add('hidden');
       renderCatalog();
       filterAndRenderAdminOrders();
     }
@@ -1359,6 +1373,55 @@
       document.getElementById('new-item-price').value = '';
 
       alert(`Ingredient "${name}" successfully added to catalog!`);
+    }
+
+    function downloadCatalogPDF() {
+      const exportContainer = document.getElementById('pdf-export-container');
+      
+      let tableRows = catalog.map((item, index) => {
+        return '<tr style="border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">' +
+               '<td style="padding: 8px 12px; color: #475569; text-align: center;">' + (index + 1) + '</td>' +
+               '<td style="padding: 8px 12px; color: #0f172a; font-weight: 500;">' + item.name + '</td>' +
+               '<td style="padding: 8px 12px; color: #475569; text-align: center;">' + (item.size || '-') + '</td>' +
+               '<td style="padding: 8px 12px; color: #144D37; text-align: right; font-weight: 700;">£' + item.price.toFixed(2) + '</td>' +
+               '</tr>';
+      }).join('');
+
+      const htmlContent = '<div id="catalog-pdf-content" style="padding: 30px; font-family: \\'Helvetica Neue\\', Arial, sans-serif; color: #1e293b; background: #ffffff;">' +
+                          '<div style="text-align: center; margin-bottom: 30px;">' +
+                          '<h1 style="font-size: 24px; font-weight: 900; color: #144D37; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Treat Street Full Catalog</h1>' +
+                          '<p style="font-size: 12px; color: #64748b; margin-top: 5px;">Generated on: ' + new Date().toLocaleDateString('en-GB') + '</p>' +
+                          '</div>' +
+                          '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">' +
+                          '<thead>' +
+                          '<tr style="background-color: #144D37; color: #ffffff; text-align: left;">' +
+                          '<th style="padding: 10px 12px; text-align: center; width: 5%;">S.No</th>' +
+                          '<th style="padding: 10px 12px; width: 55%;">Item Name</th>' +
+                          '<th style="padding: 10px 12px; text-align: center; width: 25%;">Quantity / Size / Units</th>' +
+                          '<th style="padding: 10px 12px; text-align: right; width: 15%;">Current Price</th>' +
+                          '</tr>' +
+                          '</thead>' +
+                          '<tbody>' +
+                          tableRows +
+                          '</tbody>' +
+                          '</table>' +
+                          '</div>';
+
+      exportContainer.innerHTML = htmlContent;
+      const element = document.getElementById('catalog-pdf-content');
+
+      const opt = {
+        margin:       [0.4, 0.4, 0.4, 0.4],
+        filename:     "Treat_Street_Catalog_" + new Date().toISOString().split('T')[0] + ".pdf",
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: 'css', avoid: 'tr' }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+         exportContainer.innerHTML = '';
+      });
     }
   </script>
 </body>
