@@ -1387,25 +1387,27 @@
                '</tr>';
       }).join('');
 
-      const htmlContent = '<div id="catalog-pdf-content" style="padding: 30px; font-family: \\'Helvetica Neue\\', Arial, sans-serif; color: #1e293b; background: #ffffff;">' +
-                          '<div style="text-align: center; margin-bottom: 30px;">' +
-                          '<h1 style="font-size: 24px; font-weight: 900; color: #144D37; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Treat Street Full Catalog</h1>' +
-                          '<p style="font-size: 12px; color: #64748b; margin-top: 5px;">Generated on: ' + new Date().toLocaleDateString('en-GB') + '</p>' +
-                          '</div>' +
-                          '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">' +
-                          '<thead>' +
-                          '<tr style="background-color: #144D37; color: #ffffff; text-align: left;">' +
-                          '<th style="padding: 10px 12px; text-align: center; width: 5%;">S.No</th>' +
-                          '<th style="padding: 10px 12px; width: 55%;">Item Name</th>' +
-                          '<th style="padding: 10px 12px; text-align: center; width: 25%;">Quantity / Size / Units</th>' +
-                          '<th style="padding: 10px 12px; text-align: right; width: 15%;">Current Price</th>' +
-                          '</tr>' +
-                          '</thead>' +
-                          '<tbody>' +
-                          tableRows +
-                          '</tbody>' +
-                          '</table>' +
-                          '</div>';
+      const htmlContent = `
+        <div id="catalog-pdf-content" style="padding: 30px; font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; background: #ffffff;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 24px; font-weight: 900; color: #144D37; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Treat Street Full Catalog</h1>
+            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">Generated on: ${new Date().toLocaleDateString('en-GB')}</p>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #144D37; color: #ffffff; text-align: left;">
+                <th style="padding: 10px 12px; text-align: center; width: 5%;">S.No</th>
+                <th style="padding: 10px 12px; width: 55%;">Item Name</th>
+                <th style="padding: 10px 12px; text-align: center; width: 25%;">Quantity / Size / Units</th>
+                <th style="padding: 10px 12px; text-align: right; width: 15%;">Current Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </div>
+      `;
 
       exportContainer.innerHTML = htmlContent;
       const element = document.getElementById('catalog-pdf-content');
