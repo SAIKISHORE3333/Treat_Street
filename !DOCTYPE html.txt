@@ -407,13 +407,13 @@
     </div>
   </div>
 
+
   <!-- HIDDEN PDF TEMPLATE CONTAINER -->
   <div id="pdf-export-container" class="hidden"></div>
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
     let isAdminUnlocked = false;
-    let taxDisplayMode = 'VAT_REGISTERED';
     let currentPage = 1;
     const itemsPerPage = 12;
     let currentFilteredCatalog = [];
@@ -1341,17 +1341,17 @@
                 const vatRate = item.vatRate;
                 const vatAmount = item.price * (vatRate / 100);
                 const grossPrice = item.price + vatAmount;
-                return \`
+                return `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 8px 6px; color: #0f172a;">\${item.name}</td>
-                  <td style="padding: 8px 6px; text-align: center; color: #64748b;">\${item.size || 'N/A'}</td>
-                  <td style="padding: 8px 6px; text-align: center; font-weight: 700; color: #144D37;">\${item.trackingStatus || 'Pending'}</td>
-                  <td style="padding: 8px 6px; text-align: right; color: #334155;">£\${item.price.toFixed(2)}</td>
-                  <td style="padding: 8px 6px; text-align: center; color: #64748b; font-size: 10px;">\${vatRate}%</td>
-                  <td style="padding: 8px 6px; text-align: center; font-weight: 700; color: #0f172a;">\${item.qty}</td>
-                  <td style="padding: 8px 6px; text-align: right; font-weight: 700; color: #0f172a;">£\${(grossPrice * item.qty).toFixed(2)}</td>
+                  <td style="padding: 8px 6px; color: #0f172a;">${item.name}</td>
+                  <td style="padding: 8px 6px; text-align: center; color: #64748b;">${item.size || 'N/A'}</td>
+                  <td style="padding: 8px 6px; text-align: center; font-weight: 700; color: #144D37;">${item.trackingStatus || 'Pending'}</td>
+                  <td style="padding: 8px 6px; text-align: right; color: #334155;">£${item.price.toFixed(2)}</td>
+                  <td style="padding: 8px 6px; text-align: center; color: #64748b; font-size: 10px;">${vatRate}%</td>
+                  <td style="padding: 8px 6px; text-align: center; font-weight: 700; color: #0f172a;">${item.qty}</td>
+                  <td style="padding: 8px 6px; text-align: right; font-weight: 700; color: #0f172a;">£${(grossPrice * item.qty).toFixed(2)}</td>
                 </tr>
-              \`;
+              `;
               }).join('')}
             </tbody>
           </table>
