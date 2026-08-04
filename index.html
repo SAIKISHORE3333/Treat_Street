@@ -784,8 +784,8 @@
             <div class="flex justify-between items-start mb-2 gap-2">
               <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 brand-green-text rounded-md truncate max-w-[120px]">${item.supplier}</span>
               <div class="flex items-center gap-1">
-                <span class="text-xs font-black text-slate-900" title="Net: £${item.price.toFixed(2)} | VAT: £${(item.price * (item.vatRate||20) / 100).toFixed(2)}">
-                  £${taxDisplayMode === 'NON_VAT' ? (item.price * (1 + (item.vatRate||20) / 100)).toFixed(2) : item.price.toFixed(2)}
+                <span class="text-xs font-black text-slate-900" title="Net: £${item.price.toFixed(2)} | VAT: £${(item.price * (item.vatRate ?? 20) / 100).toFixed(2)}">
+                  £${taxDisplayMode === 'NON_VAT' ? (item.price * (1 + (item.vatRate ?? 20) / 100)).toFixed(2) : item.price.toFixed(2)}
                   <span class="text-[9px] font-normal text-slate-500">${taxDisplayMode === 'NON_VAT' ? 'Gross' : 'Net'}</span>
                 </span>
                 ${isAdminUnlocked ? `
@@ -895,7 +895,7 @@
 
       const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
       const netPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      const vatPrice = cart.reduce((acc, i) => acc + (i.price * (i.vatRate || 20) / 100 * i.qty), 0);
+      const vatPrice = cart.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       const grossPrice = netPrice + vatPrice;
 
       if (countLabel) countLabel.textContent = `${totalItems} Items`;
@@ -1197,7 +1197,7 @@
               ${suppliers.map(s => {
                 const supplierItems = o.items.filter(i => i.supplier === s);
                 const supplierTotalNet = supplierItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
-                const supplierTotalVat = supplierItems.reduce((acc, i) => acc + (i.price * (i.vatRate || 20) / 100 * i.qty), 0);
+                const supplierTotalVat = supplierItems.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
                 const supplierTotalGross = supplierTotalNet + supplierTotalVat;
                 const poNumber = `TSMK-${s.toUpperCase().replace(/\s+/g, '')}-${o.ddmmyy}-${o.serial}`;
                 const supabasePoUrl = o.supabaseUrls && o.supabaseUrls[poNumber];
@@ -1228,7 +1228,7 @@
                         <tbody class="divide-y divide-slate-100">
                           ${supplierItems.map(i => {
                             const status = i.trackingStatus || 'Not Received';
-                            const vatRate = i.vatRate || 20;
+                            const vatRate = i.vatRate ?? 20;
                             const vatAmount = i.price * (vatRate / 100);
                             const grossPrice = i.price + vatAmount;
                             return `
@@ -1374,7 +1374,7 @@
 
       const items = order.items.filter(i => i.supplier === supplierName);
       const supplierTotalNet = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate || 20) / 100 * i.qty), 0);
+      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       const total = (supplierTotalNet + supplierTotalVat).toFixed(2);
       const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
 
@@ -1442,7 +1442,7 @@
 
       const items = order.items.filter(i => i.supplier === supplierName);
       const supplierTotalNet = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate || 20) / 100 * i.qty), 0);
+      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       const total = (supplierTotalNet + supplierTotalVat).toFixed(2);
       const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
 
@@ -1522,7 +1522,7 @@
       document.getElementById('edit-item-title').textContent = item.name;
       document.getElementById('edit-item-price-input').value = item.price.toFixed(2);
       if (document.getElementById('edit-item-vat-input')) {
-        document.getElementById('edit-item-vat-input').value = item.vatRate || 20;
+        document.getElementById('edit-item-vat-input').value = item.vatRate ?? 20;
       }
       document.getElementById('edit-price-modal').classList.remove('hidden');
     }
