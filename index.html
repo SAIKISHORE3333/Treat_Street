@@ -803,7 +803,7 @@
               <div class="flex items-center gap-1">
                 <span class="text-xs font-black text-slate-900" title="Net: £${item.price.toFixed(2)} | VAT: £${(item.price * (item.vatRate ?? 20) / 100).toFixed(2)}">
                   £${taxDisplayMode === 'NON_VAT' ? (item.price * (1 + (item.vatRate ?? 20) / 100)).toFixed(2) : item.price.toFixed(2)}
-                  <span class="text-[9px] font-normal text-slate-500">${taxDisplayMode === 'NON_VAT' ? 'Gross' : 'Net'}</span>
+                  <span class="text-[9px] font-normal text-slate-500">${taxDisplayMode === 'NON_VAT' ? '(VAT Included)' : '(VAT Excluded)'}</span>
                 </span>
                 ${isAdminUnlocked ? `
                   <button onclick="openEditPriceModal(${item.id})" title="Edit Price (Admin Only)" class="p-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-md transition-colors">
@@ -1205,7 +1205,7 @@
                 </div>
               </div>
               <span class="font-extrabold brand-green-text text-base" title="Displays based on Tax Display Mode Setting">
-                ${taxDisplayMode === 'NET' ? `Net Total: £${o.netTotal.toFixed(2)}` : `Gross Total: £${o.total.toFixed(2)}`}
+                ${taxDisplayMode === 'NET' ? `Total (VAT Excluded): £${o.netTotal.toFixed(2)}` : `Total (VAT Included): £${o.total.toFixed(2)}`}
               </span>
             </div>
 
