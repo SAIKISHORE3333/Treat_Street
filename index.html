@@ -33,6 +33,7 @@
     .brand-green-text { color: #144D37; }
     .brand-green-border { border-color: #144D37; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative">
 
@@ -431,7 +432,7 @@
     function closeSettingsModal() {
       document.getElementById('settings-modal').classList.add('hidden');
     }
-    async function saveNewPrice(e) {
+    function saveSettings() {
       taxDisplayMode = document.getElementById('tax-display-mode').value;
       localStorage.setItem('ts_taxDisplayMode', taxDisplayMode);
       closeSettingsModal();
@@ -591,7 +592,7 @@
       { id: 95, name: "Red cherry pie filling", category: "Bakery, Desserts & Breakfast Staples", size: "2KG", supplier: "SouthLincs", price: 0 },
       { id: 96, name: "New york style cheesecake", category: "Bakery, Desserts & Breakfast Staples", size: "16PORTIONS /BOX", supplier: "SouthLincs", price: 0 },
       { id: 97, name: "All butter croissant", category: "Bakery, Desserts & Breakfast Staples", size: "1 Box X 48", supplier: "SouthLincs", price: 0 },
-      { id: 98, name: "Pashnshoot smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 0 },
+      { id: 98, name: "Pash�n�shoot smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 0 },
       { id: 99, name: "Melon refresher smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 0 },
       { id: 100, name: "Avo go go smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 0 },
       { id: 101, name: "Detox zing smoothie packet", category: "Smoothie Packets (Pre-Portioned)", size: "30*140 g", supplier: "SouthLincs", price: 0 },
@@ -602,7 +603,7 @@
       { id: 106, name: "Passionfruit sorbet", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 107, name: "Biscoff gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 108, name: "Cherry yoghurt gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
-      { id: 109, name: "Rumnraisin gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
+      { id: 109, name: "Rum�n�raisin gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 110, name: "Coffee gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 111, name: "Honeycomb gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 112, name: "Bubblegum gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
@@ -610,7 +611,7 @@
       { id: 114, name: "Eton mess gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 115, name: "Cinnamon gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 116, name: "Salted caramel gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
-      { id: 117, name: "Smores gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
+      { id: 117, name: "S�mores gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 118, name: "Oreo gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 119, name: "Strawberry gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
       { id: 120, name: "Pistachio gelato", category: "Gelato, Sorbet & Ice Cream Mixes", size: "2l", supplier: "Airela", price: 0 },
@@ -646,21 +647,11 @@
     ];
 
     let suppliersList = [];
+
+    // INITIALIZATION
     window.addEventListener('DOMContentLoaded', async () => {
-      // Initialize VAT rates for legacy catalog items fallback
+      // Initialize VAT rates for legacy catalog items
       catalog = catalog.map(item => ({ ...item, vatRate: item.vatRate !== undefined ? item.vatRate : 20 }));
-      
-      // Load from localStorage as fallback
-      try {
-        const customCatalog = JSON.parse(localStorage.getItem('ts_customCatalog') || '{}');
-        const customItems = JSON.parse(localStorage.getItem('ts_customItems') || '[]');
-        const customSuppliers = JSON.parse(localStorage.getItem('ts_customSuppliers') || '[]');
-
-        catalog = catalog.map(item => customCatalog[item.id] ? { ...item, ...customCatalog[item.id] } : item);
-        catalog = [...catalog, ...customItems];
-        customSuppliers.forEach(s => { if (!suppliersList.includes(s)) suppliersList.push(s); });
-      } catch (e) { }
-
       initSupabase();
 
       // Fetch from Supabase
@@ -686,71 +677,6 @@
       updateAdminBadge();
       lucide.createIcons();
     });
-
-    async function handleAddIngredient(e) {
-      e.preventDefault();
-      const newItem = {
-        id: catalog.length + 1,
-        name: document.getElementById('new-item-name').value,
-        category: document.getElementById('new-item-category').value,
-        size: document.getElementById('new-item-size').value,
-        supplier: document.getElementById('new-item-supplier').value,
-        price: parseFloat(document.getElementById('new-item-price').value),
-        vatRate: parseInt(document.getElementById('new-item-vat').value)
-      };
-
-      catalog.push(newItem);
-      
-      try {
-        const customItems = JSON.parse(localStorage.getItem('ts_customItems') || '[]');
-        customItems.push(newItem);
-        localStorage.setItem('ts_customItems', JSON.stringify(customItems));
-      } catch(e){}
-
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('catalog').insert(newItem);
-        } catch(e) {
-          console.error('Supabase insert error:', e);
-        }
-      }
-
-      filterCatalog();
-      updateCartUI();
-      filterAndRenderAdminOrders();
-      updateAdminBadge();
-      lucide.createIcons();
-    }
-
-    async function saveNewPrice(e) {
-      e.preventDefault();
-      const itemId = parseInt(document.getElementById('edit-item-id').value);
-      const newPrice = parseFloat(document.getElementById('edit-item-price-input').value);
-      const newVatRate = parseInt(document.getElementById('edit-item-vat-input').value);
-
-      const item = catalog.find(i => i.id === itemId);
-      if (item) {
-        item.price = newPrice;
-        item.vatRate = newVatRate;
-        try {
-          const customCatalog = JSON.parse(localStorage.getItem('ts_customCatalog') || '{}');
-          customCatalog[item.id] = { price: newPrice, vatRate: newVatRate };
-          localStorage.setItem('ts_customCatalog', JSON.stringify(customCatalog));
-        } catch(e){}
-
-        if (supabaseClient) {
-          try {
-            await supabaseClient.from('catalog').upsert(item);
-          } catch(e) {
-            console.error('Supabase upsert error:', e);
-          }
-        }
-
-        closeEditPriceModal();
-        filterCatalog();
-        filterAndRenderAdminOrders();
-      }
-    }
 
     function toggleTaxDisplayMode() {
       const toggle = document.getElementById('tax-display-toggle');
@@ -1456,6 +1382,245 @@
           </div>
         </div>
       `;
+    }
+
+    // SAVE PO PDF TO SUPABASE STORAGE BUCKET (SUPABASE ONLY - NO LOCAL FALLBACK)
+    async function uploadPOToSupabaseBucket(primaryRef, supplierName, pdfBlob = null) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      const items = order.items.filter(i => i.supplier === supplierName);
+      const supplierTotalNet = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
+      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
+      const total = (supplierTotalNet + supplierTotalVat).toFixed(2);
+      const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
+
+      if (!order.supabaseUrls) order.supabaseUrls = {};
+
+      if (!pdfBlob) {
+        const exportContainer = document.getElementById('pdf-export-container');
+        exportContainer.innerHTML = buildPOHTML(order, supplierName, items, total, poNumber);
+        const element = document.getElementById('pdf-content');
+        const opt = {
+          margin:       [0.1, 0.2, 0.2, 0.2],
+          filename:     `${poNumber}.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, scrollY: 0 },
+          jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        try {
+          pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+        } catch(e) {
+          showToast('❌ PDF generation failed. Please try again.');
+          console.error('PDF Blob creation error:', e);
+          return;
+        }
+      }
+
+      const filename = `${poNumber}.pdf`;
+
+      if (!supabaseClient) {
+        showToast('❌ Supabase not initialized. Check your credentials.');
+        return;
+      }
+
+      try {
+        const { data, error } = await supabaseClient.storage
+          .from(SUPABASE_BUCKET)
+          .upload(filename, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+        if (error) {
+          console.error('Supabase upload error:', error.message);
+          showToast(`❌ Upload failed: ${error.message}`);
+          return;
+        }
+
+        const { data: publicUrlData } = supabaseClient.storage
+          .from(SUPABASE_BUCKET)
+          .getPublicUrl(filename);
+
+        if (publicUrlData && publicUrlData.publicUrl) {
+          order.supabaseUrls[poNumber] = publicUrlData.publicUrl;
+          filterAndRenderAdminOrders();
+          showToast(`✅ PO ${poNumber} saved to Supabase!`);
+        } else {
+          showToast('❌ Upload succeeded but could not get public URL. Check bucket is set to Public.');
+        }
+      } catch (err) {
+        console.error('Supabase upload exception:', err);
+        showToast(`❌ Upload error: ${err.message}`);
+      }
+    }
+
+    // PDF PO GENERATION EXACT MATCHING UPLOADED TEMPLATE
+    function downloadPOPDF(primaryRef, supplierName) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      const items = order.items.filter(i => i.supplier === supplierName);
+      const supplierTotalNet = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
+      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
+      const total = (supplierTotalNet + supplierTotalVat).toFixed(2);
+      const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
+
+      const exportContainer = document.getElementById('pdf-export-container');
+      exportContainer.innerHTML = buildPOHTML(order, supplierName, items, total, poNumber);
+
+      const element = document.getElementById('pdf-content');
+      const opt = {
+        margin:       [0.1, 0.2, 0.2, 0.2],
+        filename:     `${poNumber}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, scrollY: 0 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+
+    function updateAdminBadge() {
+      const badge = document.getElementById('admin-badge');
+      if (orders.length > 0) {
+        badge.textContent = orders.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function clearAllOrders() {
+      orders = [];
+      filterAndRenderAdminOrders();
+      updateAdminBadge();
+    }
+
+    // ADMIN PASSCODE MODAL & CONTROLS
+    function openPasscodeModal() {
+      document.getElementById('passcode-modal').classList.remove('hidden');
+    }
+
+    function closePasscodeModal() {
+      document.getElementById('passcode-modal').classList.add('hidden');
+    }
+
+    function verifyPasscode() {
+      const input = document.getElementById('admin-passcode-input').value;
+      if (input === '1234' || input === 'admin' || input === 'treatstreet') {
+        isAdminUnlocked = true;
+        document.getElementById('btn-unlock-admin').classList.add('hidden');
+        document.getElementById('btn-lock-admin').classList.remove('hidden');
+        document.getElementById('admin-editing-forms').classList.remove('hidden');
+        document.getElementById('admin-footer').classList.remove('hidden');
+        closePasscodeModal();
+        renderCatalog();
+        filterAndRenderAdminOrders();
+        alert('Admin access granted!');
+      } else {
+        alert('Incorrect passcode!');
+      }
+    }
+
+    function logoutAdmin() {
+      isAdminUnlocked = false;
+      document.getElementById('btn-unlock-admin').classList.remove('hidden');
+      document.getElementById('btn-lock-admin').classList.add('hidden');
+      document.getElementById('admin-editing-forms').classList.add('hidden');
+      document.getElementById('admin-footer').classList.add('hidden');
+      renderCatalog();
+      filterAndRenderAdminOrders();
+    }
+
+    // EDIT PRICE HANDLERS
+    function openEditPriceModal(itemId) {
+      const item = catalog.find(i => i.id === itemId);
+      if (!item) return;
+
+      document.getElementById('edit-item-id').value = item.id;
+      document.getElementById('edit-item-title').textContent = item.name;
+      document.getElementById('edit-item-price-input').value = item.price.toFixed(2);
+      if (document.getElementById('edit-item-vat-input')) {
+        document.getElementById('edit-item-vat-input').value = item.vatRate ?? 20;
+      }
+      document.getElementById('edit-price-modal').classList.remove('hidden');
+    }
+
+    function closeEditPriceModal() {
+      document.getElementById('edit-price-modal').classList.add('hidden');
+    }
+
+    async function saveNewPrice(e) {
+      e.preventDefault();
+      const id = parseInt(document.getElementById('edit-item-id').value);
+      const newPrice = parseFloat(document.getElementById('edit-item-price-input').value);
+      const newVatRate = parseFloat(document.getElementById('edit-item-vat-input').value);
+
+      const item = catalog.find(i => i.id === id);
+      if (item && !isNaN(newPrice)) {
+        item.price = newPrice;
+        item.vatRate = newVatRate;
+        if (supabaseClient) {
+          try {
+            await supabaseClient.from('catalog').upsert(item);
+          } catch(e) {}
+        }
+        closeEditPriceModal();
+        filterCatalog();
+      }
+    }
+
+    // ADD SUPPLIER / INGREDIENT HANDLERS
+    function handleAddSupplier(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-supplier-name').value.trim();
+      if (!name) return;
+
+      if (!suppliersList.includes(name)) {
+        suppliersList.push(name);
+        populateSupplierDropdowns();
+        document.getElementById('new-supplier-name').value = '';
+        alert(`Supplier "${name}" added!`);
+      }
+    }
+
+    async function handleAddIngredient(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-item-name').value.trim();
+      const category = document.getElementById('new-item-category').value.trim();
+      const size = document.getElementById('new-item-size').value.trim();
+      const supplier = document.getElementById('new-item-supplier').value;
+      const price = parseFloat(document.getElementById('new-item-price').value);
+      const vatRate = parseFloat(document.getElementById('new-item-vat').value);
+
+      const newItem = {
+        id: Date.now(),
+        name,
+        category,
+        size,
+        supplier,
+        price,
+        vatRate
+      };
+
+      catalog.push(newItem);
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('catalog').insert(newItem);
+        } catch(e) {}
+      }
+      filterCatalog();
+
+      document.getElementById('new-item-name').value = '';
+      document.getElementById('new-item-category').value = '';
+      document.getElementById('new-item-size').value = '';
+      document.getElementById('new-item-price').value = '';
+
+      alert(`Ingredient "${name}" successfully added to catalog!`);
+    }
+
+    function downloadCatalogPDF() {
+      const exportContainer = document.getElementById('pdf-export-container');
+      
+      let tableRows = catalog.map((item, index) => {
         return '<tr style="border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">' +
                '<td style="padding: 8px 12px; color: #475569; text-align: center;">' + (index + 1) + '</td>' +
                '<td style="padding: 8px 12px; color: #0f172a; font-weight: 500;">' + item.name + '</td>' +
