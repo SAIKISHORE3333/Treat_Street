@@ -651,6 +651,30 @@
     window.addEventListener('DOMContentLoaded', () => {
       // Initialize VAT rates for legacy catalog items
       catalog = catalog.map(item => ({ ...item, vatRate: item.vatRate !== undefined ? item.vatRate : 20 }));
+      
+      try {
+        const customCatalog = JSON.parse(localStorage.getItem('ts_customCatalog') || '{}');
+        const customItems = JSON.parse(localStorage.getItem('ts_customItems') || '[]');
+        const customSuppliers = JSON.parse(localStorage.getItem('ts_customSuppliers') || '[]');
+
+        // Apply custom prices/VAT overrides
+        catalog = catalog.map(item => {
+          if (customCatalog[item.id]) {
+            return { ...item, ...customCatalog[item.id] };
+          }
+          return item;
+        });
+
+        // Add custom items
+        catalog = [...catalog, ...customItems];
+
+        // Add custom suppliers
+        customSuppliers.forEach(s => {
+          if (!suppliersList.includes(s)) suppliersList.push(s);
+        });
+      } catch (e) {
+        console.error('Error loading custom catalog data', e);
+      }
       initSupabase();
       syncSuppliersList();
       populateSupplierDropdowns();
