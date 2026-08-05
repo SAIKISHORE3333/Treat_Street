@@ -410,7 +410,7 @@
 
 
   <!-- HIDDEN PDF TEMPLATE CONTAINER -->
-  <div id="pdf-export-container" class="absolute left-0 top-0 opacity-0 pointer-events-none w-[800px] -z-50"></div>
+  <div id="pdf-export-container" class="absolute left-[-9999px] top-[-9999px] w-[800px] pointer-events-none"></div>
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
@@ -1329,12 +1329,12 @@
           <div style="border-bottom: 2px solid #144D37; margin-bottom: 15px;"></div>
           <div style="display: flex; justify-content: space-between; font-size: 11px; line-height: 1.6; margin-bottom: 18px;">
             <div>
-              <p style="margin: 0;"><strong>Primary Ref:</strong> ${order.primaryRef}</p>
-              <p style="margin: 0;"><strong>Requested By:</strong> ${order.requestedBy.toUpperCase()}</p>
+              <p style="margin: 0;"><strong>Primary Ref:</strong> ${order.primaryRef || 'N/A'}</p>
+              <p style="margin: 0;"><strong>Requested By:</strong> ${(order.requestedBy || 'N/A').toUpperCase()}</p>
             </div>
             <div style="text-align: right;">
-              <p style="margin: 0;"><strong>Date:</strong> ${order.date}</p>
-              <p style="margin: 0;"><strong>Target Location:</strong> ${order.targetLocation.toUpperCase()}</p>
+              <p style="margin: 0;"><strong>Date:</strong> ${order.date || 'N/A'}</p>
+              <p style="margin: 0;"><strong>Target Location:</strong> ${(order.targetLocation || 'N/A').toUpperCase()}</p>
             </div>
           </div>
           <div style="background-color: #144D37; color: #ffffff; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px 4px 0 0; font-size: 12px; font-weight: 800;">
