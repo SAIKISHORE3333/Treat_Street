@@ -33,6 +33,7 @@
     .brand-green-text { color: #144D37; }
     .brand-green-border { border-color: #144D37; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative">
 
@@ -409,7 +410,7 @@
 
 
   <!-- HIDDEN PDF TEMPLATE CONTAINER -->
-  <div id="pdf-export-container" class="hidden"></div>
+  <div id="pdf-export-container" class="absolute left-0 top-0 opacity-0 pointer-events-none w-[800px] -z-50"></div>
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
@@ -494,84 +495,84 @@
 
     // COMPLETE UNTOUCHED 142 CATALOG ITEMS
     let catalog = [
-      { id: 1, name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", category: "Cooking Chocolate Retail", size: "4 x 400g", supplier: "Bookers", price: 9.99 },
-      { id: 2, name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", category: "Brown Sugar Retail", size: "10 x 500g", supplier: "Bookers", price: 11.79 },
-      { id: 3, name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", category: "Sugar Demerara & Brown", size: "1 x 3kg", supplier: "Bookers", price: 12.99 },
-      { id: 4, name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 500g", category: "Brown Sugar Retail", size: "10 x 500g", supplier: "Bookers", price: 11.45 },
-      { id: 5, name: "Biscoff Biscuit Crumbs 750g", category: "Baking Cake Decoration", size: "8 x 750g", supplier: "Bookers", price: 33.49 },
-      { id: 6, name: "Cadbury Drinking Hot Chocolate Cocoa Powder Large Tub 2KG", category: "Hot Chocolate & Cocoa", size: "1 x 2kg", supplier: "Bookers", price: 16.15 },
-      { id: 7, name: "CaterPro 100 Wooden Dessert Spoons", category: "Disposable Cutlery & Accessories", size: "10 x 100s", supplier: "Bookers", price: 14.99 },
-      { id: 8, name: "CaterPro 100 Wooden Forks", category: "Disposable Cutlery & Accessories", size: "10 x 100s", supplier: "Bookers", price: 14.99 },
-      { id: 9, name: "Chef's Essentials Chopped Tomatoes in Tomato Juice 2.5kg", category: "Canned Tomatoes & Pizza Toppings Catering", size: "6 x 2.5kg", supplier: "Bookers", price: 16.99 },
-      { id: 10, name: "Chef's Larder Lightly Salted Tortilla Chips 454g", category: "Crisps & Snacks Sharing", size: "6 x 454g", supplier: "Bookers", price: 11.49 },
-      { id: 11, name: "Chef's Larder Salt 6kg", category: "Salt", size: "1 x 6kg", supplier: "Bookers", price: 7.99 },
-      { id: 12, name: "Chef's Larder White Wine Vinegar 2 Litres", category: "Vinegar, Glaze & Cooking Wine", size: "1 x 2ltr", supplier: "Bookers", price: 3.79 },
-      { id: 13, name: "Chef's Menu Garlic Powder 500g", category: "Seasonings & Garlic Catering", size: "1 x 500g", supplier: "Bookers", price: 8.49 },
-      { id: 14, name: "Chef's Menu Cayenne Pepper 460g", category: "Pepper Catering", size: "1 x 460g", supplier: "Bookers", price: 5.99 },
-      { id: 15, name: "Chef's Menu Chipotle Sauce 1 litre", category: "Condiments Other Sauces", size: "6 x 1ltr", supplier: "Bookers", price: 14.99 },
-      { id: 16, name: "Chef's Menu Ground Black Pepper 500g", category: "Pepper Catering", size: "1 x 500g", supplier: "Bookers", price: 13.99 },
-      { id: 17, name: "Chef's Menu Ground Sweet Cinnamon 430g", category: "Seasonings & Garlic Catering", size: "1 x 430g", supplier: "Bookers", price: 5.49 },
-      { id: 18, name: "Chef's Menu Onion Powder 480g", category: "Seasonings & Garlic Catering", size: "1 x 480g", supplier: "Bookers", price: 5.89 },
-      { id: 19, name: "Chef's Menu Salsa 1 litre", category: "Condiments Other Sauces", size: "1 x 1ltr", supplier: "Bookers", price: 2.99 },
-      { id: 20, name: "Chef's Menu Smoked Paprika 430g", category: "Seasonings & Garlic Catering", size: "1 x 430g", supplier: "Bookers", price: 5.49 },
-      { id: 21, name: "Cif Lemon Cream Cleaner 500 ml", category: "Bath & Kitchen Cleaner", size: "8 x 500ml", supplier: "Bookers", price: 7.99 },
-      { id: 22, name: "CleanPro 10 Scouring Pads", category: "Scourers & Pads", size: "1 x 10pk", supplier: "Bookers", price: 3.49 },
-      { id: 23, name: "CleanPro 10 Stainless Steel Scourers Medium", category: "Scourers & Pads", size: "1 x 10pk", supplier: "Bookers", price: 7.99 },
-      { id: 24, name: "CleanPro+ Heavy Duty Cleaner Degreaser 5 Litres", category: "Degreaser Professional", size: "2 x 5ltr", supplier: "Bookers", price: 21.99 },
-      { id: 25, name: "CleanPro+ Oven and Grill Cleaner 1 Litre", category: "Degreaser Professional", size: "1 x 1ltr", supplier: "Bookers", price: 3.29 },
+      { id: 1, name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", category: "Cooking Chocolate Retail", size: "4 x 400g", supplier: "Bookers", price: 9.99, vatRate: 0 },
+      { id: 2, name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", category: "Brown Sugar Retail", size: "10 x 500g", supplier: "Bookers", price: 11.79, vatRate: 0 },
+      { id: 3, name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", category: "Sugar Demerara & Brown", size: "1 x 3kg", supplier: "Bookers", price: 12.99, vatRate: 0 },
+      { id: 4, name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 500g", category: "Brown Sugar Retail", size: "10 x 500g", supplier: "Bookers", price: 11.45, vatRate: 0 },
+      { id: 5, name: "Biscoff Biscuit Crumbs 750g", category: "Baking Cake Decoration", size: "8 x 750g", supplier: "Bookers", price: 33.49, vatRate: 0 },
+      { id: 6, name: "Cadbury Drinking Hot Chocolate Cocoa Powder Large Tub 2KG", category: "Hot Chocolate & Cocoa", size: "1 x 2kg", supplier: "Bookers", price: 16.15, vatRate: 0 },
+      { id: 7, name: "CaterPro 100 Wooden Dessert Spoons", category: "Disposable Cutlery & Accessories", size: "10 x 100s", supplier: "Bookers", price: 14.99, vatRate: 20 },
+      { id: 8, name: "CaterPro 100 Wooden Forks", category: "Disposable Cutlery & Accessories", size: "10 x 100s", supplier: "Bookers", price: 14.99, vatRate: 20 },
+      { id: 9, name: "Chef's Essentials Chopped Tomatoes in Tomato Juice 2.5kg", category: "Canned Tomatoes & Pizza Toppings Catering", size: "6 x 2.5kg", supplier: "Bookers", price: 16.99, vatRate: 0 },
+      { id: 10, name: "Chef's Larder Lightly Salted Tortilla Chips 454g", category: "Crisps & Snacks Sharing", size: "6 x 454g", supplier: "Bookers", price: 11.49, vatRate: 0 },
+      { id: 11, name: "Chef's Larder Salt 6kg", category: "Salt", size: "1 x 6kg", supplier: "Bookers", price: 7.99, vatRate: 0 },
+      { id: 12, name: "Chef's Larder White Wine Vinegar 2 Litres", category: "Vinegar, Glaze & Cooking Wine", size: "1 x 2ltr", supplier: "Bookers", price: 3.79, vatRate: 0 },
+      { id: 13, name: "Chef's Menu Garlic Powder 500g", category: "Seasonings & Garlic Catering", size: "1 x 500g", supplier: "Bookers", price: 8.49, vatRate: 0 },
+      { id: 14, name: "Chef's Menu Cayenne Pepper 460g", category: "Pepper Catering", size: "1 x 460g", supplier: "Bookers", price: 5.99, vatRate: 0 },
+      { id: 15, name: "Chef's Menu Chipotle Sauce 1 litre", category: "Condiments Other Sauces", size: "6 x 1ltr", supplier: "Bookers", price: 14.99, vatRate: 0 },
+      { id: 16, name: "Chef's Menu Ground Black Pepper 500g", category: "Pepper Catering", size: "1 x 500g", supplier: "Bookers", price: 13.99, vatRate: 0 },
+      { id: 17, name: "Chef's Menu Ground Sweet Cinnamon 430g", category: "Seasonings & Garlic Catering", size: "1 x 430g", supplier: "Bookers", price: 5.49, vatRate: 0 },
+      { id: 18, name: "Chef's Menu Onion Powder 480g", category: "Seasonings & Garlic Catering", size: "1 x 480g", supplier: "Bookers", price: 5.89, vatRate: 0 },
+      { id: 19, name: "Chef's Menu Salsa 1 litre", category: "Condiments Other Sauces", size: "1 x 1ltr", supplier: "Bookers", price: 2.99, vatRate: 0 },
+      { id: 20, name: "Chef's Menu Smoked Paprika 430g", category: "Seasonings & Garlic Catering", size: "1 x 430g", supplier: "Bookers", price: 5.49, vatRate: 0 },
+      { id: 21, name: "Cif Lemon Cream Cleaner 500 ml", category: "Bath & Kitchen Cleaner", size: "8 x 500ml", supplier: "Bookers", price: 7.99, vatRate: 20 },
+      { id: 22, name: "CleanPro 10 Scouring Pads", category: "Scourers & Pads", size: "1 x 10pk", supplier: "Bookers", price: 3.49, vatRate: 20 },
+      { id: 23, name: "CleanPro 10 Stainless Steel Scourers Medium", category: "Scourers & Pads", size: "1 x 10pk", supplier: "Bookers", price: 7.99, vatRate: 20 },
+      { id: 24, name: "CleanPro+ Heavy Duty Cleaner Degreaser 5 Litres", category: "Degreaser Professional", size: "2 x 5ltr", supplier: "Bookers", price: 21.99, vatRate: 20 },
+      { id: 25, name: "CleanPro+ Oven and Grill Cleaner 1 Litre", category: "Degreaser Professional", size: "1 x 1ltr", supplier: "Bookers", price: 3.29, vatRate: 20 },
       { id: 26, name: "Clearly 100 Blue Vinyl Powder-Free Gloves (Large)", category: "Non-Food, Cleaning & Packaging", size: "10 x 100pk", supplier: "Bookers", price: 0 },
-      { id: 27, name: "Coca-Cola Original Taste 330ml Glass Bottle", category: "Mixers & Non-Returnable Bottles", size: "24 x 330ml", supplier: "Bookers", price: 20.89 },
-      { id: 28, name: "Comelle Ice Cream Mix 1 Litre", category: "Ice Cream & Shake Mixes", size: "12 x 1ltr", supplier: "Bookers", price: 19.49 },
-      { id: 29, name: "Curtis Catering Chopped Mixed Nuts 1kg", category: "Baking Nuts", size: "1 x 1kg", supplier: "Bookers", price: 8.99 },
-      { id: 30, name: "Diet Coke Cola 24 x 330ml Glass Bottles", category: "Mixers & Non-Returnable Bottles", size: "24 x 330ml", supplier: "Bookers", price: 18.49 },
-      { id: 31, name: "Dr. Oetker Baking Powder 170g", category: "Baking Sundries Retail", size: "4 x 170g", supplier: "Bookers", price: 4.35 },
-      { id: 32, name: "Dr. Oetker Madagascan Vanilla Extract 35ml", category: "Baking Sundries Retail", size: "6 x 35ml", supplier: "Bookers", price: 7.09 },
-      { id: 33, name: "Fairy Professional Washing Up Liquid Original 900ML", category: "Washing Up Liquid Professional", size: "1 x 6x900ml", supplier: "Bookers", price: 14.99 },
-      { id: 34, name: "Fanta Orange 24 x 330ml", category: "Mixers & Non-Returnable Bottles", size: "1 x 24X330m", supplier: "Bookers", price: 18.99 },
-      { id: 35, name: "Flash Professional All Purpose Cleaner, 5L", category: "Floor & Carpet Care Professional", size: "2 x 5L", supplier: "Bookers", price: 15 },
-      { id: 36, name: "Frank's Red Hot Wings Buffalo Sauce 3.78l", category: "Cooking Sauce American Catering", size: "1 x 3.7ltr", supplier: "Bookers", price: 17.79 },
-      { id: 37, name: "Heinz Professional Mayonnaise 10L", category: "Condiments Mayonnaise", size: "1 x 10ltr", supplier: "Bookers", price: 28.49 },
-      { id: 38, name: "Heinz Tomato Ketchup 4.5kg", category: "Condiments Tomato Sauce", size: "2 x 4ltr", supplier: "Bookers", price: 35.89 },
-      { id: 39, name: "Hershey's Cookies 'N' Creme 40g", category: "Chocolate Bars", size: "24 x 40g", supplier: "Bookers", price: 17.69 },
-      { id: 40, name: "Huel Banana Flavour Ready-to-Drink Complete Meal 500ml", category: "Protein Drinks", size: "8 x 500ml", supplier: "Bookers", price: 19.89 },
-      { id: 41, name: "J2O Apple & Mango 275ml", category: "Juice Drinks", size: "12 x 275ml", supplier: "Bookers", price: 11.29 },
-      { id: 42, name: "J2O Apple & Raspberry 275ml", category: "Juice Drinks", size: "12 x 275ml", supplier: "Bookers", price: 11.29 },
-      { id: 43, name: "J2O Orange & Passion Fruit 12 x 275ml", category: "Juice Drinks", size: "12 x 275ml", supplier: "Bookers", price: 11.29 },
-      { id: 44, name: "Jack Rabbit Signature Collection Malbec Red Wine 75cl", category: "Red Wine", size: "6 x 75cl", supplier: "Bookers", price: 37.29 },
-      { id: 45, name: "Jack's Pure Apple Juice 1 Litre", category: "Fresh Juice & Smoothies", size: "6 x 1ltr", supplier: "Bookers", price: 8.39 },
-      { id: 46, name: "JR Foods & Packaging Services 7\" Pizza Box Plain Brown 100pcs", category: "Takeaway Food Containers", size: "1 x 100pk", supplier: "Bookers", price: 10.49 },
-      { id: 47, name: "Koffmann's Potatoes for Chefs Les Pommes Frites 4 x 2.27kg (9.08kg)", category: "Frozen Chips & Fries", size: "1 x 4x2.27k", supplier: "Bookers", price: 16.99 },
-      { id: 48, name: "KTC Crispy Fried Onions 400g", category: "Seasonings & Garlic Catering", size: "6 x 400g", supplier: "Bookers", price: 14.29 },
-      { id: 49, name: "Lichfields Fairtrade White Sugar 2kg", category: "Sugar Portions", size: "1 x 2kg", supplier: "Bookers", price: 8.49 },
-      { id: 50, name: "Maltesers Milk Chocolate Bag 37g PMP", category: "Chocolate Bags", size: "40 x 37g", supplier: "Bookers", price: 21.65 },
-      { id: 51, name: "McCain Original Choice Potato Hash Browns 1kg", category: "Frozen Potato Products", size: "1 x 1kg", supplier: "Bookers", price: 4.19 },
-      { id: 52, name: "McCain Potato Pops 2.5kg", category: "Frozen Potato Products", size: "1 x 2.5kg", supplier: "Bookers", price: 7.49 },
-      { id: 53, name: "McVitie's Digestives The Original Biscuits 360g", category: "Biscuits Packets", size: "12 x 360g", supplier: "Bookers", price: 15.99 },
-      { id: 54, name: "Mini Eggs", category: "Pick n Mix Bags", size: "1 x 3kg", supplier: "Bookers", price: 26.19 },
-      { id: 55, name: "Monin Caramel 100cl", category: "Drink Syrups Catering", size: "1 x 1ltr", supplier: "Bookers", price: 10.99 },
-      { id: 56, name: "Mrs Elswood Burger Gherkins 670g", category: "Pickled Veg Retail", size: "6 x 670g", supplier: "Bookers", price: 9.25 },
-      { id: 57, name: "Müller Müllerlicious Whole Milk 2 Litre", category: "Fresh Milk", size: "4 x 2ltr", supplier: "Bookers", price: 5.85 },
-      { id: 58, name: "Müller Semi Skimmed Milk 2 Litres", category: "Fresh Milk", size: "4 x 2ltr", supplier: "Bookers", price: 5.85 },
-      { id: 59, name: "Nic Caramel Mini Fudge Cubes 1kg", category: "Baking Cake Decoration", size: "6 x 1kg", supplier: "Bookers", price: 85.99 },
-      { id: 60, name: "Nic Sugar Strands Vegan 1.0kg", category: "Baking Cake Decoration", size: "1 x 1kg", supplier: "Bookers", price: 10.49 },
-      { id: 61, name: "Oatly Oat Drink Barista Edition 1L Long Life", category: "Milk Alternatives", size: "6 x 1ltr", supplier: "Bookers", price: 9.49 },
-      { id: 62, name: "OREO Original Vanilla Sandwich Biscuits", category: "Biscuits Packets", size: "16 x 154g", supplier: "Bookers", price: 14.69 },
-      { id: 63, name: "Passoã Passion Fruit Liqueur 70cl", category: "Other Spirits", size: "1 x 70cl", supplier: "Bookers", price: 9.99 },
-      { id: 64, name: "Paterson's Shortbread Fingers 300g (2 x 150g)", category: "Biscuits Packets", size: "14 x 300g", supplier: "Bookers", price: 15.49 },
-      { id: 65, name: "Perfect Ted Ceremonial Grade Matcha 100g", category: "Other Hot Drinks", size: "1 x 100g", supplier: "Bookers", price: 13.49 },
-      { id: 66, name: "Roquito Hot Honey 720g", category: "Preserves & Spreads Honey", size: "5 x 720g", supplier: "Bookers", price: 20.99 },
-      { id: 67, name: "Silver Spoon British Icing Sugar 3kg", category: "Sugar Icing & Speciality", size: "1 x 3kg", supplier: "Bookers", price: 7.99 },
-      { id: 68, name: "Silver Spoon Granulated Sugar 1kg", category: "Granulated Sugar Retail", size: "15 x 1kg", supplier: "Bookers", price: 13.49 },
-      { id: 69, name: "Snow Shock Blue Raspberry Premium Slush Syrup 5 Litres", category: "Milk Shake & Slush Mix", size: "1 x 5ltr", supplier: "Bookers", price: 10.99 },
-      { id: 70, name: "Spice Magic Raita", category: "Cooking Sauce Indian Catering", size: "1 x 930g", supplier: "Bookers", price: 3.99 },
-      { id: 71, name: "Spice Magic Smooth Mango Chutney 1.2kg", category: "Chutney, Relishes & Sweet Pickle", size: "1 x 1.2kg", supplier: "Bookers", price: 3.99 },
+      { id: 27, name: "Coca-Cola Original Taste 330ml Glass Bottle", category: "Mixers & Non-Returnable Bottles", size: "24 x 330ml", supplier: "Bookers", price: 20.89, vatRate: 20 },
+      { id: 28, name: "Comelle Ice Cream Mix 1 Litre", category: "Ice Cream & Shake Mixes", size: "12 x 1ltr", supplier: "Bookers", price: 19.49, vatRate: 20 },
+      { id: 29, name: "Curtis Catering Chopped Mixed Nuts 1kg", category: "Baking Nuts", size: "1 x 1kg", supplier: "Bookers", price: 8.99, vatRate: 0 },
+      { id: 30, name: "Diet Coke Cola 24 x 330ml Glass Bottles", category: "Mixers & Non-Returnable Bottles", size: "24 x 330ml", supplier: "Bookers", price: 18.49, vatRate: 20 },
+      { id: 31, name: "Dr. Oetker Baking Powder 170g", category: "Baking Sundries Retail", size: "4 x 170g", supplier: "Bookers", price: 4.35, vatRate: 0 },
+      { id: 32, name: "Dr. Oetker Madagascan Vanilla Extract 35ml", category: "Baking Sundries Retail", size: "6 x 35ml", supplier: "Bookers", price: 7.09, vatRate: 0 },
+      { id: 33, name: "Fairy Professional Washing Up Liquid Original 900ML", category: "Washing Up Liquid Professional", size: "1 x 6x900ml", supplier: "Bookers", price: 14.99, vatRate: 20 },
+      { id: 34, name: "Fanta Orange 24 x 330ml", category: "Mixers & Non-Returnable Bottles", size: "1 x 24X330m", supplier: "Bookers", price: 18.99, vatRate: 20 },
+      { id: 35, name: "Flash Professional All Purpose Cleaner, 5L", category: "Floor & Carpet Care Professional", size: "2 x 5L", supplier: "Bookers", price: 15, vatRate: 20 },
+      { id: 36, name: "Frank's Red Hot Wings Buffalo Sauce 3.78l", category: "Cooking Sauce American Catering", size: "1 x 3.7ltr", supplier: "Bookers", price: 17.79, vatRate: 0 },
+      { id: 37, name: "Heinz Professional Mayonnaise 10L", category: "Condiments Mayonnaise", size: "1 x 10ltr", supplier: "Bookers", price: 28.49, vatRate: 0 },
+      { id: 38, name: "Heinz Tomato Ketchup 4.5kg", category: "Condiments Tomato Sauce", size: "2 x 4ltr", supplier: "Bookers", price: 35.89, vatRate: 0 },
+      { id: 39, name: "Hershey's Cookies 'N' Creme 40g", category: "Chocolate Bars", size: "24 x 40g", supplier: "Bookers", price: 17.69, vatRate: 20 },
+      { id: 40, name: "Huel Banana Flavour Ready-to-Drink Complete Meal 500ml", category: "Protein Drinks", size: "8 x 500ml", supplier: "Bookers", price: 19.89, vatRate: 0 },
+      { id: 41, name: "J2O Apple & Mango 275ml", category: "Juice Drinks", size: "12 x 275ml", supplier: "Bookers", price: 11.29, vatRate: 20 },
+      { id: 42, name: "J2O Apple & Raspberry 275ml", category: "Juice Drinks", size: "12 x 275ml", supplier: "Bookers", price: 11.29, vatRate: 20 },
+      { id: 43, name: "J2O Orange & Passion Fruit 12 x 275ml", category: "Juice Drinks", size: "12 x 275ml", supplier: "Bookers", price: 11.29, vatRate: 20 },
+      { id: 44, name: "Jack Rabbit Signature Collection Malbec Red Wine 75cl", category: "Red Wine", size: "6 x 75cl", supplier: "Bookers", price: 37.29, vatRate: 20 },
+      { id: 45, name: "Jack's Pure Apple Juice 1 Litre", category: "Fresh Juice & Smoothies", size: "6 x 1ltr", supplier: "Bookers", price: 8.39, vatRate: 20 },
+      { id: 46, name: "JR Foods & Packaging Services 7\" Pizza Box Plain Brown 100pcs", category: "Takeaway Food Containers", size: "1 x 100pk", supplier: "Bookers", price: 10.49, vatRate: 20 },
+      { id: 47, name: "Koffmann's Potatoes for Chefs Les Pommes Frites 4 x 2.27kg (9.08kg)", category: "Frozen Chips & Fries", size: "1 x 4x2.27k", supplier: "Bookers", price: 16.99, vatRate: 0 },
+      { id: 48, name: "KTC Crispy Fried Onions 400g", category: "Seasonings & Garlic Catering", size: "6 x 400g", supplier: "Bookers", price: 14.29, vatRate: 0 },
+      { id: 49, name: "Lichfields Fairtrade White Sugar 2kg", category: "Sugar Portions", size: "1 x 2kg", supplier: "Bookers", price: 8.49, vatRate: 0 },
+      { id: 50, name: "Maltesers Milk Chocolate Bag 37g PMP", category: "Chocolate Bags", size: "40 x 37g", supplier: "Bookers", price: 21.65, vatRate: 20 },
+      { id: 51, name: "McCain Original Choice Potato Hash Browns 1kg", category: "Frozen Potato Products", size: "1 x 1kg", supplier: "Bookers", price: 4.19, vatRate: 0 },
+      { id: 52, name: "McCain Potato Pops 2.5kg", category: "Frozen Potato Products", size: "1 x 2.5kg", supplier: "Bookers", price: 7.49, vatRate: 0 },
+      { id: 53, name: "McVitie's Digestives The Original Biscuits 360g", category: "Biscuits Packets", size: "12 x 360g", supplier: "Bookers", price: 15.99, vatRate: 0 },
+      { id: 54, name: "Mini Eggs", category: "Pick n Mix Bags", size: "1 x 3kg", supplier: "Bookers", price: 26.19, vatRate: 20 },
+      { id: 55, name: "Monin Caramel 100cl", category: "Drink Syrups Catering", size: "1 x 1ltr", supplier: "Bookers", price: 10.99, vatRate: 0 },
+      { id: 56, name: "Mrs Elswood Burger Gherkins 670g", category: "Pickled Veg Retail", size: "6 x 670g", supplier: "Bookers", price: 9.25, vatRate: 0 },
+      { id: 57, name: "Müller Müllerlicious Whole Milk 2 Litre", category: "Fresh Milk", size: "4 x 2ltr", supplier: "Bookers", price: 5.85, vatRate: 0 },
+      { id: 58, name: "Müller Semi Skimmed Milk 2 Litres", category: "Fresh Milk", size: "4 x 2ltr", supplier: "Bookers", price: 5.85, vatRate: 0 },
+      { id: 59, name: "Nic Caramel Mini Fudge Cubes 1kg", category: "Baking Cake Decoration", size: "6 x 1kg", supplier: "Bookers", price: 85.99, vatRate: 0 },
+      { id: 60, name: "Nic Sugar Strands Vegan 1.0kg", category: "Baking Cake Decoration", size: "1 x 1kg", supplier: "Bookers", price: 10.49, vatRate: 0 },
+      { id: 61, name: "Oatly Oat Drink Barista Edition 1L Long Life", category: "Milk Alternatives", size: "6 x 1ltr", supplier: "Bookers", price: 9.49, vatRate: 0 },
+      { id: 62, name: "OREO Original Vanilla Sandwich Biscuits", category: "Biscuits Packets", size: "16 x 154g", supplier: "Bookers", price: 14.69, vatRate: 0 },
+      { id: 63, name: "Passoã Passion Fruit Liqueur 70cl", category: "Other Spirits", size: "1 x 70cl", supplier: "Bookers", price: 9.99, vatRate: 20 },
+      { id: 64, name: "Paterson's Shortbread Fingers 300g (2 x 150g)", category: "Biscuits Packets", size: "14 x 300g", supplier: "Bookers", price: 15.49, vatRate: 0 },
+      { id: 65, name: "Perfect Ted Ceremonial Grade Matcha 100g", category: "Other Hot Drinks", size: "1 x 100g", supplier: "Bookers", price: 13.49, vatRate: 0 },
+      { id: 66, name: "Roquito Hot Honey 720g", category: "Preserves & Spreads Honey", size: "5 x 720g", supplier: "Bookers", price: 20.99, vatRate: 0 },
+      { id: 67, name: "Silver Spoon British Icing Sugar 3kg", category: "Sugar Icing & Speciality", size: "1 x 3kg", supplier: "Bookers", price: 7.99, vatRate: 0 },
+      { id: 68, name: "Silver Spoon Granulated Sugar 1kg", category: "Granulated Sugar Retail", size: "15 x 1kg", supplier: "Bookers", price: 13.49, vatRate: 0 },
+      { id: 69, name: "Snow Shock Blue Raspberry Premium Slush Syrup 5 Litres", category: "Milk Shake & Slush Mix", size: "1 x 5ltr", supplier: "Bookers", price: 10.99, vatRate: 20 },
+      { id: 70, name: "Spice Magic Raita", category: "Cooking Sauce Indian Catering", size: "1 x 930g", supplier: "Bookers", price: 3.99, vatRate: 0 },
+      { id: 71, name: "Spice Magic Smooth Mango Chutney 1.2kg", category: "Chutney, Relishes & Sweet Pickle", size: "1 x 1.2kg", supplier: "Bookers", price: 3.99, vatRate: 0 },
       { id: 72, name: "Sprite Zero Sugar 330ml", category: "Beverages", size: "24 x 330ml", supplier: "Bookers", price: 0 },
-      { id: 73, name: "St Pierre 4 Pre-Sliced Brioche Burger Buns", category: "Wraps, Naan & Pitta Bread", size: "9 x 4pk", supplier: "Bookers", price: 18.59 },
-      { id: 74, name: "St Pierre 4 Seeded Brioche Burger Buns", category: "Wraps, Naan & Pitta Bread", size: "9 x 4pk", supplier: "Bookers", price: 14.99 },
-      { id: 75, name: "St Pierre Brioche Loaf 500g", category: "Wraps, Naan & Pitta Bread", size: "7 x 500g", supplier: "Bookers", price: 20.99 },
-      { id: 76, name: "Strathmore Sparkling Spring Water 330ml", category: "On Trade Water", size: "24 x 330ml", supplier: "Bookers", price: 10.89 },
-      { id: 77, name: "Strathmore Still Spring Water 750ml", category: "Water Still", size: "12 x 750ml", supplier: "Bookers", price: 10.15 },
-      { id: 78, name: "Sweetex Calorie Free Sweeteners 1200 Tablets", category: "Sugar Substitute Retail", size: "12 x 1200pk", supplier: "Bookers", price: 24.49 },
+      { id: 73, name: "St Pierre 4 Pre-Sliced Brioche Burger Buns", category: "Wraps, Naan & Pitta Bread", size: "9 x 4pk", supplier: "Bookers", price: 18.59, vatRate: 0 },
+      { id: 74, name: "St Pierre 4 Seeded Brioche Burger Buns", category: "Wraps, Naan & Pitta Bread", size: "9 x 4pk", supplier: "Bookers", price: 14.99, vatRate: 0 },
+      { id: 75, name: "St Pierre Brioche Loaf 500g", category: "Wraps, Naan & Pitta Bread", size: "7 x 500g", supplier: "Bookers", price: 20.99, vatRate: 0 },
+      { id: 76, name: "Strathmore Sparkling Spring Water 330ml", category: "On Trade Water", size: "24 x 330ml", supplier: "Bookers", price: 10.89, vatRate: 20 },
+      { id: 77, name: "Strathmore Still Spring Water 750ml", category: "Water Still", size: "12 x 750ml", supplier: "Bookers", price: 10.15, vatRate: 20 },
+      { id: 78, name: "Sweetex Calorie Free Sweeteners 1200 Tablets", category: "Sugar Substitute Retail", size: "12 x 1200pk", supplier: "Bookers", price: 24.49, vatRate: 0 },
       { id: 79, name: "Kinder bueno", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 0 },
       { id: 80, name: "Ferrero rocher", category: "Sweets, Toppings & Biscuits", size: "BOX", supplier: "Costco", price: 0 },
       { id: 81, name: "Skittles", category: "Sweets, Toppings & Biscuits", size: "1KG", supplier: "Costco", price: 0 },
@@ -636,22 +637,38 @@
       { id: 140, name: "Waffle mix powder", category: "Bakery, Desserts & Breakfast Staples", size: "2.3kg*6", supplier: "JM Posner", price: 0 },
       { id: 141, name: "Vegan waffle mix powder", category: "Bakery, Desserts & Breakfast Staples", size: "2.3kg*6", supplier: "JM Posner", price: 31 },
       { id: 142, name: "Coffee Beans", category: "Coffee, Tea & Syrups", size: "kg", supplier: "Milk and Beans", price: 0 },
-      { id: 143, name: "Euro Shopper Citrus Thick Bleach 750ml", category: "Bleach", size: "12 x 750ml", supplier: "Bookers", price: 6.65 },
-      { id: 144, name: "Lion Katsu Curry Cooking Sauce 2.27 Litres", category: "Cooking Sauce Far Eastern Catering", size: "2 x 2.27ltr", supplier: "Bookers", price: 24.89 },
-      { id: 145, name: "MONIN Vanilla Syrup 1L", category: "Drink Syrups Catering", size: "1 x 1ltr", supplier: "Bookers", price: 10.99 },
-      { id: 146, name: "Sprite Glass", category: "Mixers & Non-Returnable Bottles", size: "1 x 24x330m", supplier: "Bookers", price: 18.99 },
+      { id: 143, name: "Euro Shopper Citrus Thick Bleach 750ml", category: "Bleach", size: "12 x 750ml", supplier: "Bookers", price: 6.65, vatRate: 20 },
+      { id: 144, name: "Lion Katsu Curry Cooking Sauce 2.27 Litres", category: "Cooking Sauce Far Eastern Catering", size: "2 x 2.27ltr", supplier: "Bookers", price: 24.89, vatRate: 0 },
+      { id: 145, name: "MONIN Vanilla Syrup 1L", category: "Drink Syrups Catering", size: "1 x 1ltr", supplier: "Bookers", price: 10.99, vatRate: 0 },
+      { id: 146, name: "Sprite Glass", category: "Mixers & Non-Returnable Bottles", size: "1 x 24x330m", supplier: "Bookers", price: 18.99, vatRate: 20 },
       { id: 147, name: "Biscoff Smooth Spread 3kg", category: "Preserves & Spreads Fruit", size: "1 x 3kg", supplier: "Bookers", price: 16.49 },
-      { id: 148, name: "Chef William Foodservice Panko Breadcrumbs 1kg", category: "Stuffings & Breadcrumbs", size: "1 x 1kg", supplier: "Bookers", price: 4.69 },
-      { id: 149, name: "Yorkshire Tea 40 Tea Bags 125g", category: "Tea Bags Retail", size: "5 x 40pk", supplier: "Bookers", price: 6.99 },
+      { id: 148, name: "Chef William Foodservice Panko Breadcrumbs 1kg", category: "Stuffings & Breadcrumbs", size: "1 x 1kg", supplier: "Bookers", price: 4.69, vatRate: 0 },
+      { id: 149, name: "Yorkshire Tea 40 Tea Bags 125g", category: "Tea Bags Retail", size: "5 x 40pk", supplier: "Bookers", price: 8.99, vatRate: 0 },
     ];
 
     let suppliersList = [];
 
     // INITIALIZATION
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       // Initialize VAT rates for legacy catalog items
       catalog = catalog.map(item => ({ ...item, vatRate: item.vatRate !== undefined ? item.vatRate : 20 }));
       initSupabase();
+
+      // Fetch from Supabase
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('catalog').select('*').order('id', { ascending: true });
+          if (data && !error && data.length > 0) {
+            catalog = data;
+            console.log('Successfully loaded catalog from Supabase!');
+          } else if (error) {
+            console.error('Supabase fetch error:', error);
+          }
+        } catch(e) {
+          console.error('Supabase fetch exception:', e);
+        }
+      }
+
       syncSuppliersList();
       populateSupplierDropdowns();
       filterCatalog();
@@ -784,9 +801,9 @@
             <div class="flex justify-between items-start mb-2 gap-2">
               <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 brand-green-text rounded-md truncate max-w-[120px]">${item.supplier}</span>
               <div class="flex items-center gap-1">
-                <span class="text-xs font-black text-slate-900" title="Net: £${item.price.toFixed(2)} | VAT: £${(item.price * (item.vatRate||20) / 100).toFixed(2)}">
-                  £${taxDisplayMode === 'NON_VAT' ? (item.price * (1 + (item.vatRate||20) / 100)).toFixed(2) : item.price.toFixed(2)}
-                  <span class="text-[9px] font-normal text-slate-500">${taxDisplayMode === 'NON_VAT' ? 'Gross' : 'Net'}</span>
+                <span class="text-xs font-black text-slate-900" title="Net: £${item.price.toFixed(2)} | VAT: £${(item.price * (item.vatRate ?? 20) / 100).toFixed(2)}">
+                  £${taxDisplayMode === 'NON_VAT' ? (item.price * (1 + (item.vatRate ?? 20) / 100)).toFixed(2) : item.price.toFixed(2)}
+                  <span class="text-[9px] font-normal text-slate-500">${taxDisplayMode === 'NON_VAT' ? '(VAT Included)' : '(VAT Excluded)'}</span>
                 </span>
                 ${isAdminUnlocked ? `
                   <button onclick="openEditPriceModal(${item.id})" title="Edit Price (Admin Only)" class="p-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-md transition-colors">
@@ -895,7 +912,7 @@
 
       const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
       const netPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      const vatPrice = cart.reduce((acc, i) => acc + (i.price * (i.vatRate || 20) / 100 * i.qty), 0);
+      const vatPrice = cart.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       const grossPrice = netPrice + vatPrice;
 
       if (countLabel) countLabel.textContent = `${totalItems} Items`;
@@ -1000,7 +1017,7 @@
       localStorage.setItem('ts_orders', JSON.stringify(orders));
     }
 
-    function confirmAndSubmitOrder(e) {
+    async function confirmAndSubmitOrder(e) {
       e.preventDefault();
 
       const requesterName = document.getElementById('order-user-name').value.trim();
@@ -1043,9 +1060,9 @@
 
       // Automatically generate PDFs for each supplier and upload to Supabase bucket
       const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
-      uniqueSuppliers.forEach(supplier => {
-        uploadPOToSupabaseBucket(newOrder.primaryRef, supplier);
-      });
+      for (const supplier of uniqueSuppliers) {
+        await uploadPOToSupabaseBucket(newOrder.primaryRef, supplier);
+      }
 
       cart = [];
       updateCartUI();
@@ -1188,7 +1205,7 @@
                 </div>
               </div>
               <span class="font-extrabold brand-green-text text-base" title="Displays based on Tax Display Mode Setting">
-                ${taxDisplayMode === 'NET' ? `Net Total: £${o.netTotal.toFixed(2)}` : `Gross Total: £${o.total.toFixed(2)}`}
+                ${taxDisplayMode === 'NET' ? `Total (VAT Excluded): £${o.netTotal.toFixed(2)}` : `Total (VAT Included): £${o.total.toFixed(2)}`}
               </span>
             </div>
 
@@ -1197,7 +1214,7 @@
               ${suppliers.map(s => {
                 const supplierItems = o.items.filter(i => i.supplier === s);
                 const supplierTotalNet = supplierItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
-                const supplierTotalVat = supplierItems.reduce((acc, i) => acc + (i.price * (i.vatRate || 20) / 100 * i.qty), 0);
+                const supplierTotalVat = supplierItems.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
                 const supplierTotalGross = supplierTotalNet + supplierTotalVat;
                 const poNumber = `TSMK-${s.toUpperCase().replace(/\s+/g, '')}-${o.ddmmyy}-${o.serial}`;
                 const supabasePoUrl = o.supabaseUrls && o.supabaseUrls[poNumber];
@@ -1228,7 +1245,7 @@
                         <tbody class="divide-y divide-slate-100">
                           ${supplierItems.map(i => {
                             const status = i.trackingStatus || 'Not Received';
-                            const vatRate = i.vatRate || 20;
+                            const vatRate = i.vatRate ?? 20;
                             const vatAmount = i.price * (vatRate / 100);
                             const grossPrice = i.price + vatAmount;
                             return `
@@ -1285,7 +1302,7 @@
     // HELPER TO GENERATE PO HTML FOR PDF & SUPABASE BUCKET
     function buildPOHTML(order, supplierName, items, total, poNumber) {
       const supplierNetTotal = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      let supplierVatTotal = items.reduce((acc, i) => acc + (i.price * i.vatRate / 100 * i.qty), 0);
+      let supplierVatTotal = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       
       // If the entire order's VAT was overridden, we apply the order's vatTotal directly if there's only one supplier.
       // If there are multiple suppliers in an overridden order, we distribute the VAT proportionally (basic fallback).
@@ -1302,7 +1319,7 @@
         <div id="pdf-content" style="padding: 15px 25px; font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto; background: #ffffff;">
           <div style="display: flex; justify-content: space-between; align-items: flex-center; margin-bottom: 8px;">
             <div style="background-color: #144D37; color: #ffffff; padding: 10px 18px; border-radius: 8px; display: inline-block;">
-              <h1 style="font-size: 20px; font-weight: 900; margin: 0; tracking-wide: 1px; letter-spacing: 1px; font-family: sans-serif;">TREAT STREET</h1>
+              <h1 style="font-size: 20px; font-weight: 900; margin: 0; letter-spacing: 1px; font-family: sans-serif;">TREAT STREET</h1>
             </div>
             <div style="text-align: right;">
               <h2 style="font-size: 18px; font-weight: 900; margin: 0; color: #144D37; letter-spacing: 0.5px;">TREAT STREET PURCHASE ORDER REQUEST</h2>
@@ -1338,7 +1355,7 @@
             </thead>
             <tbody>
               ${items.map((item) => {
-                const vatRate = item.vatRate;
+                const vatRate = item.vatRate ?? 20;
                 const vatAmount = item.price * (vatRate / 100);
                 const grossPrice = item.price + vatAmount;
                 return `
@@ -1374,7 +1391,7 @@
 
       const items = order.items.filter(i => i.supplier === supplierName);
       const supplierTotalNet = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate || 20) / 100 * i.qty), 0);
+      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       const total = (supplierTotalNet + supplierTotalVat).toFixed(2);
       const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
 
@@ -1442,7 +1459,7 @@
 
       const items = order.items.filter(i => i.supplier === supplierName);
       const supplierTotalNet = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate || 20) / 100 * i.qty), 0);
+      const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       const total = (supplierTotalNet + supplierTotalVat).toFixed(2);
       const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
 
@@ -1522,7 +1539,7 @@
       document.getElementById('edit-item-title').textContent = item.name;
       document.getElementById('edit-item-price-input').value = item.price.toFixed(2);
       if (document.getElementById('edit-item-vat-input')) {
-        document.getElementById('edit-item-vat-input').value = item.vatRate || 20;
+        document.getElementById('edit-item-vat-input').value = item.vatRate ?? 20;
       }
       document.getElementById('edit-price-modal').classList.remove('hidden');
     }
@@ -1531,7 +1548,7 @@
       document.getElementById('edit-price-modal').classList.add('hidden');
     }
 
-    function saveNewPrice(e) {
+    async function saveNewPrice(e) {
       e.preventDefault();
       const id = parseInt(document.getElementById('edit-item-id').value);
       const newPrice = parseFloat(document.getElementById('edit-item-price-input').value);
@@ -1541,6 +1558,11 @@
       if (item && !isNaN(newPrice)) {
         item.price = newPrice;
         item.vatRate = newVatRate;
+        if (supabaseClient) {
+          try {
+            await supabaseClient.from('catalog').upsert(item);
+          } catch(e) {}
+        }
         closeEditPriceModal();
         filterCatalog();
       }
@@ -1560,7 +1582,7 @@
       }
     }
 
-    function handleAddIngredient(e) {
+    async function handleAddIngredient(e) {
       e.preventDefault();
       const name = document.getElementById('new-item-name').value.trim();
       const category = document.getElementById('new-item-category').value.trim();
@@ -1580,6 +1602,11 @@
       };
 
       catalog.push(newItem);
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('catalog').insert(newItem);
+        } catch(e) {}
+      }
       filterCatalog();
 
       document.getElementById('new-item-name').value = '';
