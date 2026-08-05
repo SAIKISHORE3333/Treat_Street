@@ -78,7 +78,7 @@
     <!-- Navbar -->
     <header class="brand-green-bg text-white sticky top-0 z-30 border-b border-emerald-900 shadow-md no-print">
       <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        <div class="flex items-center gap-3 cursor-pointer" onclick="app.showDashboard()">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="sopApp.showDashboard()">
           <div class="bg-white text-[#144D37] px-2.5 py-1 rounded-lg shadow-inner font-black text-xl leading-none tracking-wider">
             TS
           </div>
@@ -95,10 +95,10 @@
             <a href="index.html" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-emerald-100 hover:text-white flex items-center gap-1.5">
               <i class="fas fa-home"></i> Hub
             </a>
-            <button onclick="app.showDashboard()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-800 text-white shadow-sm flex items-center gap-1.5 border border-emerald-600">
+            <button onclick="sopApp.showDashboard()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-800 text-white shadow-sm flex items-center gap-1.5 border border-emerald-600">
               <i class="fas fa-columns"></i> Dashboard
             </button>
-            <button onclick="app.showForm()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center gap-1.5 border border-amber-400 ml-1">
+            <button onclick="sopApp.showForm()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center gap-1.5 border border-amber-400 ml-1">
               <i class="fas fa-plus"></i> New Recipe
             </button>
           </nav>
@@ -122,9 +122,9 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-search text-slate-400"></i>
                         </div>
-                        <input type="text" id="searchInput" oninput="app.filterRecipes()" placeholder="Search recipes..." class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-shadow">
+                        <input type="text" id="searchInput" oninput="sopApp.filterRecipes()" placeholder="Search recipes..." class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner sm:text-sm transition-shadow">
                     </div>
-                    <select id="categoryFilter" onchange="app.filterRecipes()" class="block w-full sm:w-40 py-2 px-3 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    <select id="categoryFilter" onchange="sopApp.filterRecipes()" class="block w-full sm:w-40 py-2 px-3 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner sm:text-sm">
                         <option value="">All Categories</option>
                         <option value="Mains">Mains</option>
                         <option value="Starters">Starters</option>
@@ -148,7 +148,7 @@
                 </div>
                 <h3 class="text-lg font-medium text-slate-900 mb-1">No recipes found</h3>
                 <p class="text-slate-500 max-w-sm mx-auto mb-6">Get started by creating your first standardized operating procedure for the kitchen.</p>
-                <button onclick="app.showForm()" class="brand-green-bg hover:bg-emerald-900 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-colors">
+                <button onclick="sopApp.showForm()" class="brand-green-bg hover:bg-emerald-900 text-white px-8 py-3 rounded-xl font-black text-lg shadow-xl shadow-emerald-900/20 transition-all hover:scale-105 border border-emerald-700">
                     Create Recipe SOP
                 </button>
             </div>
@@ -157,29 +157,29 @@
         <!-- FORM VIEW (ADD/EDIT) -->
         <div id="formView" class="view-section hidden max-w-4xl mx-auto">
             <div class="flex items-center mb-6">
-                <button onclick="app.showDashboard()" class="mr-4 text-slate-400 hover:text-slate-600 transition-colors">
+                <button onclick="sopApp.showDashboard()" class="mr-4 text-slate-400 hover:text-slate-600 transition-colors">
                     <i class="fas fa-arrow-left text-xl"></i>
                 </button>
-                <h1 id="formTitle" class="text-3xl font-bold text-slate-900">Create Recipe SOP</h1>
+                <h1 id="formTitle" class="text-4xl font-black text-slate-900 tracking-tight">Create Recipe SOP</h1>
             </div>
 
-            <form id="recipeForm" onsubmit="app.saveRecipe(event)" class="space-y-8">
+            <form id="recipeForm" onsubmit="sopApp.saveRecipe(event)" class="space-y-8">
                 <!-- General Info -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
-                            <i class="fas fa-info-circle text-primary mr-2"></i> General Information
+                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
+                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] shadow-inner">
+                        <h2 class="text-lg font-bold text-white flex items-center">
+                            <i class="fas fa-info-circle text-emerald-200 mr-2"></i> General Information
                         </h2>
                     </div>
                     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-slate-700 mb-1">Recipe Title *</label>
-                            <input type="text" id="recipeTitle" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+                            <input type="text" id="recipeTitle" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Category *</label>
-                            <select id="recipeCategory" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                            <select id="recipeCategory" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none bg-white">
                                 <option value="Mains">Mains</option>
                                 <option value="Starters">Starters</option>
                                 <option value="Desserts">Desserts</option>
@@ -191,40 +191,40 @@
                         
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Station/Section *</label>
-                            <input type="text" id="recipeStation" required placeholder="e.g., Grill, Sauté, Salad" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+                            <input type="text" id="recipeStation" required placeholder="e.g., Grill, Sauté, Salad" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
                         </div>
                         
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Prep Time</label>
-                                <input type="text" id="recipePrepTime" placeholder="e.g., 15 mins" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+                                <input type="text" id="recipePrepTime" placeholder="e.g., 15 mins" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Cook Time</label>
-                                <input type="text" id="recipeCookTime" placeholder="e.g., 10 mins" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+                                <input type="text" id="recipeCookTime" placeholder="e.g., 10 mins" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
                             </div>
                         </div>
                         
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Yield/Portion</label>
-                                <input type="text" id="recipeYield" placeholder="e.g., 4 portions" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+                                <input type="text" id="recipeYield" placeholder="e.g., 4 portions" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Shelf Life</label>
-                                <input type="text" id="recipeShelfLife" placeholder="e.g., 3 days" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+                                <input type="text" id="recipeShelfLife" placeholder="e.g., 3 days" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Ingredients -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
-                            <i class="fas fa-carrot text-accent mr-2"></i> Ingredients
+                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
+                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] flex justify-between items-center shadow-inner">
+                        <h2 class="text-lg font-bold text-white flex items-center">
+                            <i class="fas fa-carrot text-amber-400 mr-2"></i> Ingredients
                         </h2>
-                        <button type="button" onclick="app.addIngredientRow()" class="text-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md font-medium transition-colors">
+                        <button type="button" onclick="sopApp.addIngredientRow()" class="text-sm bg-amber-500 hover:bg-amber-600 text-white border border-amber-400 shadow-md px-4 py-2 rounded-lg font-bold transition-all hover:scale-105 hover:shadow-amber-500/30">
                             <i class="fas fa-plus mr-1"></i> Add Row
                         </button>
                     </div>
@@ -247,12 +247,12 @@
                 </div>
 
                 <!-- Equipment -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
-                            <i class="fas fa-blender text-slate-500 mr-2"></i> Equipment Needed
+                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
+                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] flex justify-between items-center shadow-inner">
+                        <h2 class="text-lg font-bold text-white flex items-center">
+                            <i class="fas fa-blender text-emerald-200 mr-2"></i> Equipment Needed
                         </h2>
-                        <button type="button" onclick="app.addEquipmentRow()" class="text-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md font-medium transition-colors">
+                        <button type="button" onclick="sopApp.addEquipmentRow()" class="text-sm bg-amber-500 hover:bg-amber-600 text-white border border-amber-400 shadow-md px-4 py-2 rounded-lg font-bold transition-all hover:scale-105 hover:shadow-amber-500/30">
                             <i class="fas fa-plus mr-1"></i> Add Equipment
                         </button>
                     </div>
@@ -264,12 +264,12 @@
                 </div>
 
                 <!-- Step-by-Step SOP -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
-                            <i class="fas fa-list-ol text-primary mr-2"></i> Step-by-Step Method
+                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
+                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] flex justify-between items-center shadow-inner">
+                        <h2 class="text-lg font-bold text-white flex items-center">
+                            <i class="fas fa-list-ol text-emerald-200 mr-2"></i> Step-by-Step Method
                         </h2>
-                        <button type="button" onclick="app.addStepRow()" class="text-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md font-medium transition-colors">
+                        <button type="button" onclick="sopApp.addStepRow()" class="text-sm bg-amber-500 hover:bg-amber-600 text-white border border-amber-400 shadow-md px-4 py-2 rounded-lg font-bold transition-all hover:scale-105 hover:shadow-amber-500/30">
                             <i class="fas fa-plus mr-1"></i> Add Step
                         </button>
                     </div>
@@ -281,23 +281,23 @@
                 </div>
 
                 <!-- Costing & Yield Notes -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
-                            <i class="fas fa-chart-pie text-success mr-2"></i> Costing & Yield Notes
+                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
+                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] shadow-inner">
+                        <h2 class="text-lg font-bold text-white flex items-center">
+                            <i class="fas fa-chart-pie text-amber-400 mr-2"></i> Costing & Yield Notes
                         </h2>
                     </div>
                     <div class="p-6">
-                        <textarea id="recipeCosting" rows="3" placeholder="Enter target cost %, waste targets, or specific yield expectations..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-y"></textarea>
+                        <textarea id="recipeCosting" rows="3" placeholder="Enter target cost %, waste targets, or specific yield expectations..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all resize-y"></textarea>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex justify-end space-x-4 pt-4 pb-12">
-                    <button type="button" onclick="app.showDashboard()" class="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors">
+                    <button type="button" onclick="sopApp.showDashboard()" class="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors">
                         Cancel
                     </button>
-                    <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-colors">
+                    <button type="submit" class="px-8 py-3 bg-gradient-to-r from-[#144D37] to-emerald-900 text-white rounded-xl font-black text-lg hover:from-emerald-900 hover:to-[#144D37] shadow-xl shadow-emerald-900/30 transition-all hover:scale-105 border border-emerald-700">
                         Save Recipe SOP
                     </button>
                 </div>
@@ -309,11 +309,11 @@
             
             <!-- SOP Header Actions (No Print) -->
             <div class="bg-slate-100 p-4 flex justify-between items-center border-b border-slate-200 no-print">
-                <button onclick="app.showDashboard()" class="text-slate-600 hover:text-slate-900 font-medium transition-colors flex items-center">
+                <button onclick="sopApp.showDashboard()" class="text-slate-600 hover:text-slate-900 font-medium transition-colors flex items-center">
                     <i class="fas fa-arrow-left mr-2"></i> Back
                 </button>
                 <div class="space-x-3">
-                    <button onclick="app.editCurrentRecipe()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
+                    <button onclick="sopApp.editCurrentRecipe()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
                         <i class="fas fa-edit mr-1"></i> Edit
                     </button>
                     <button onclick="window.print()" class="brand-green-bg hover:bg-emerald-900 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
@@ -416,7 +416,7 @@
     </main>
 
     <script>
-        const app = {
+        const sopApp = {
             recipes: [],
             currentRecipeId: null,
             
@@ -545,27 +545,27 @@
                         if (recipe.category === 'Prep') badgeColor = 'bg-amber-100 text-amber-700';
                         if (recipe.category === 'Sauces') badgeColor = 'bg-rose-100 text-rose-700';
                         
-                        card.innerHTML = \`
+                        card.innerHTML = `
                             <div class="p-5 flex-grow">
                                 <div class="flex justify-between items-start mb-3">
-                                    <span class="px-2.5 py-1 \${badgeColor} text-xs font-bold uppercase tracking-wider rounded-md">\${recipe.category}</span>
-                                    <button onclick="event.stopPropagation(); app.deleteRecipe('\${recipe.id}')" class="text-slate-300 hover:text-danger transition-colors p-1" title="Delete">
+                                    <span class="px-2.5 py-1 ${badgeColor} text-xs font-bold uppercase tracking-wider rounded-md">${recipe.category}</span>
+                                    <button onclick="event.stopPropagation(); sopApp.deleteRecipe('${recipe.id}')" class="text-slate-300 hover:text-danger transition-colors p-1" title="Delete">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
-                                <h3 class="text-xl font-bold text-slate-900 mb-1 leading-tight">\${recipe.title}</h3>
-                                <p class="text-sm font-medium text-primary mb-4"><i class="fas fa-map-marker-alt mr-1"></i> \${recipe.station}</p>
+                                <h3 class="text-xl font-bold text-slate-900 mb-1 leading-tight">${recipe.title}</h3>
+                                <p class="text-sm font-medium text-primary mb-4"><i class="fas fa-map-marker-alt mr-1"></i> ${recipe.station}</p>
                                 
                                 <div class="grid grid-cols-2 gap-2 text-sm text-slate-600">
-                                    <div class="flex items-center"><i class="far fa-clock w-5 text-slate-400"></i> \${recipe.prepTime || '-'}</div>
-                                    <div class="flex items-center"><i class="fas fa-fire w-5 text-slate-400"></i> \${recipe.cookTime || '-'}</div>
+                                    <div class="flex items-center"><i class="far fa-clock w-5 text-slate-400"></i> ${recipe.prepTime || '-'}</div>
+                                    <div class="flex items-center"><i class="fas fa-fire w-5 text-slate-400"></i> ${recipe.cookTime || '-'}</div>
                                 </div>
                             </div>
                             <div class="bg-slate-50 px-5 py-3 border-t border-slate-100 text-sm font-medium text-slate-500 flex justify-between items-center">
                                 <span>View SOP</span>
                                 <i class="fas fa-chevron-right text-xs"></i>
                             </div>
-                        \`;
+                        `;
                         grid.appendChild(card);
                     });
                 }
@@ -632,25 +632,25 @@
                 const tbody = document.getElementById('ingredientsBody');
                 const tr = document.createElement('tr');
                 tr.className = 'ing-row hover:bg-slate-50 transition-colors group';
-                tr.innerHTML = \`
+                tr.innerHTML = `
                     <td class="py-2 pr-2">
-                        <input type="text" value="\${data.name.replace(/"/g, '&quot;')}" placeholder="Ingredient" class="ing-name w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                        <input type="text" value="${data.name.replace(/"/g, '&quot;')}" placeholder="Ingredient" class="ing-name w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                     </td>
                     <td class="py-2 pr-2">
-                        <input type="text" value="\${data.qty}" placeholder="0" class="ing-qty w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                        <input type="text" value="${data.qty}" placeholder="0" class="ing-qty w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                     </td>
                     <td class="py-2 pr-2">
-                        <input type="text" value="\${data.unit}" placeholder="g, ml, pcs" class="ing-unit w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                        <input type="text" value="${data.unit}" placeholder="g, ml, pcs" class="ing-unit w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                     </td>
                     <td class="py-2 pr-2">
-                        <input type="text" value="\${data.notes.replace(/"/g, '&quot;')}" placeholder="Notes..." class="ing-notes w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                        <input type="text" value="${data.notes.replace(/"/g, '&quot;')}" placeholder="Notes..." class="ing-notes w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                     </td>
                     <td class="py-2 text-center">
                         <button type="button" onclick="this.closest('tr').remove()" class="text-slate-300 hover:text-danger p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                             <i class="fas fa-times"></i>
                         </button>
                     </td>
-                \`;
+                `;
                 tbody.appendChild(tr);
             },
 
@@ -658,13 +658,13 @@
                 const ul = document.getElementById('equipmentList');
                 const li = document.createElement('li');
                 li.className = 'eq-row flex items-center gap-2 group';
-                li.innerHTML = \`
+                li.innerHTML = `
                     <i class="fas fa-grip-vertical text-slate-300 cursor-move hidden sm:block"></i>
-                    <input type="text" value="\${val.replace(/"/g, '&quot;')}" placeholder="Equipment item (e.g., 20L Stock pot)" class="eq-val flex-grow px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                    <input type="text" value="${val.replace(/"/g, '&quot;')}" placeholder="Equipment item (e.g., 20L Stock pot)" class="eq-val flex-grow px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                     <button type="button" onclick="this.closest('li').remove()" class="text-slate-300 hover:text-danger p-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fas fa-times"></i>
                     </button>
-                \`;
+                `;
                 ul.appendChild(li);
             },
 
@@ -673,12 +673,12 @@
                 const stepCount = cont.children.length + 1;
                 const div = document.createElement('div');
                 div.className = 'step-row bg-slate-50 border border-slate-200 rounded-lg p-4 relative group';
-                div.innerHTML = \`
+                div.innerHTML = `
                     <div class="absolute -left-3 -top-3 bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs border-2 border-white shadow-sm step-num">
-                        \${stepCount}
+                        ${stepCount}
                     </div>
                     <div class="absolute right-2 top-2">
-                        <button type="button" onclick="app.removeStep(this)" class="text-slate-300 hover:text-danger p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onclick="sopApp.removeStep(this)" class="text-slate-300 hover:text-danger p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                             <i class="fas fa-trash-alt text-sm"></i>
                         </button>
                     </div>
@@ -686,22 +686,22 @@
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mt-2">
                         <div class="md:col-span-8">
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Instruction</label>
-                            <textarea rows="2" class="step-desc w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary outline-none resize-y" placeholder="Describe this step in detail...">\${data.desc}</textarea>
+                            <textarea rows="2" class="step-desc w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none resize-y" placeholder="Describe this step in detail...">${data.desc}</textarea>
                         </div>
                         <div class="md:col-span-4 space-y-3">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Time / Temp</label>
-                                <input type="text" value="\${data.timeTemp}" class="step-timetemp w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary outline-none" placeholder="e.g., 10 mins / 180°C">
+                                <input type="text" value="${data.timeTemp}" class="step-timetemp w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none" placeholder="e.g., 10 mins / 180°C">
                             </div>
                             <div class="flex items-center pt-1">
-                                <input type="checkbox" class="step-critical w-4 h-4 text-danger border-slate-300 rounded focus:ring-danger cursor-pointer" \${data.isCritical ? 'checked' : ''}>
+                                <input type="checkbox" class="step-critical w-4 h-4 text-danger border-slate-300 rounded focus:ring-danger cursor-pointer" ${data.isCritical ? 'checked' : ''}>
                                 <label class="ml-2 text-sm font-medium text-slate-700 cursor-pointer flex items-center" onclick="this.previousElementSibling.click()">
                                     <i class="fas fa-exclamation-triangle text-amber-500 mr-1 text-xs"></i> Critical Checkpoint
                                 </label>
                             </div>
                         </div>
                     </div>
-                \`;
+                `;
                 cont.appendChild(div);
             },
 
@@ -805,19 +805,19 @@
                 // Equipment
                 const eqList = document.getElementById('viewEquipmentList');
                 eqList.innerHTML = recipe.equipment.length > 0 
-                    ? recipe.equipment.map(eq => \`<li class="py-1 border-b border-slate-100 last:border-0">\${eq}</li>\`).join('')
+                    ? recipe.equipment.map(eq => `<li class="py-1 border-b border-slate-100 last:border-0">${eq}</li>`).join('')
                     : '<li class="text-slate-400 italic">None specified</li>';
 
                 // Ingredients
                 const ingList = document.getElementById('viewIngredientsList');
                 if (recipe.ingredients.length > 0) {
-                    ingList.innerHTML = recipe.ingredients.map(ing => \`
+                    ingList.innerHTML = recipe.ingredients.map(ing => `
                         <tr class="group hover:bg-slate-50 transition-colors">
-                            <td class="py-2 pr-2 font-medium text-slate-800">\${ing.name}</td>
-                            <td class="py-2 pr-2 text-slate-600 whitespace-nowrap">\${ing.qty} \${ing.unit}</td>
-                            <td class="py-2 text-slate-500 text-xs italic text-right">\${ing.notes}</td>
+                            <td class="py-2 pr-2 font-medium text-slate-800">${ing.name}</td>
+                            <td class="py-2 pr-2 text-slate-600 whitespace-nowrap">${ing.qty} ${ing.unit}</td>
+                            <td class="py-2 text-slate-500 text-xs italic text-right">${ing.notes}</td>
                         </tr>
-                    \`).join('');
+                    `).join('');
                 } else {
                     ingList.innerHTML = '<tr><td class="py-2 text-slate-400 italic">No ingredients listed</td></tr>';
                 }
@@ -826,44 +826,44 @@
                 const stepList = document.getElementById('viewStepsList');
                 if (recipe.steps.length > 0) {
                     stepList.innerHTML = recipe.steps.map((step, index) => {
-                        const stepId = \`step_\${index}\`;
+                        const stepId = `step_${index}`;
                         const criticalBadge = step.isCritical 
-                            ? \`<div class="mt-2 inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            ? `<div class="mt-2 inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                 <i class="fas fa-exclamation-triangle mr-1.5"></i> CRITICAL CHECKPOINT
-                               </div>\` 
+                               </div>` 
                             : '';
                             
                         const timeTempBadge = step.timeTemp
-                            ? \`<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
-                                <i class="far fa-clock mr-1"></i> \${step.timeTemp}
-                               </span>\`
+                            ? `<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+                                <i class="far fa-clock mr-1"></i> ${step.timeTemp}
+                               </span>`
                             : '';
 
-                        return \`
+                        return `
                             <div class="relative pl-10 md:pl-12 py-2 print-break-inside-avoid group">
                                 <!-- Number Bubble -->
                                 <div class="absolute left-0 top-2 bg-slate-800 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm shadow-sm z-10">
-                                    \${index + 1}
+                                    ${index + 1}
                                 </div>
                                 <!-- Connecting line -->
-                                \${index !== recipe.steps.length - 1 ? \`<div class="absolute left-3.5 top-9 bottom-[-1rem] w-px bg-slate-200 -z-0"></div>\` : ''}
+                                ${index !== recipe.steps.length - 1 ? `<div class="absolute left-3.5 top-9 bottom-[-1rem] w-px bg-slate-200 -z-0"></div>` : ''}
                                 
                                 <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                                     <div class="flex items-start">
                                         <div class="pt-0.5 mr-3 no-print">
-                                            <input type="checkbox" id="\${stepId}" class="step-checkbox w-5 h-5 text-primary border-slate-300 rounded focus:ring-primary cursor-pointer transition-colors">
+                                            <input type="checkbox" id="${stepId}" class="step-checkbox w-5 h-5 text-primary border-slate-300 rounded focus:ring-primary cursor-pointer transition-colors">
                                         </div>
                                         <div class="flex-grow">
-                                            <label for="\${stepId}" class="text-base text-slate-800 cursor-pointer block leading-relaxed break-words">
-                                                \${step.desc.replace(/\\n/g, '<br>')}
-                                                \${timeTempBadge}
+                                            <label for="${stepId}" class="text-base text-slate-800 cursor-pointer block leading-relaxed break-words">
+                                                ${step.desc.replace(/\\n/g, '<br>')}
+                                                ${timeTempBadge}
                                             </label>
-                                            \${criticalBadge}
+                                            ${criticalBadge}
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        \`;
+                        `;
                     }).join('');
                 } else {
                     stepList.innerHTML = '<p class="text-slate-400 italic">No steps defined.</p>';
@@ -877,7 +877,7 @@
 
         // Boot
         document.addEventListener('DOMContentLoaded', () => {
-            app.init();
+            sopApp.init();
         });
     </script>
 </body>
