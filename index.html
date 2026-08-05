@@ -1216,7 +1216,7 @@
                 const supplierTotalNet = supplierItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
                 const supplierTotalVat = supplierItems.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
                 const supplierTotalGross = supplierTotalNet + supplierTotalVat;
-                const poNumber = `TSMK-${s.toUpperCase().replace(/\s+/g, '')}-${o.ddmmyy}-${o.serial}`;
+                const poNumber = `TSMK-${(s || 'UNKNOWN').toUpperCase().replace(/\s+/g, '')}-${o.ddmmyy || '000000'}-${o.serial || '000'}`;
                 const supabasePoUrl = o.supabaseUrls && o.supabaseUrls[poNumber];
                 const hasStatusChanged = supplierItems.some(item => item.trackingStatus && item.trackingStatus !== 'Pending' && item.trackingStatus !== 'Not Received (Default)');
 
@@ -1393,7 +1393,7 @@
       const supplierTotalNet = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
       const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       const total = (supplierTotalNet + supplierTotalVat).toFixed(2);
-      const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
+      const poNumber = `TSMK-${(supplierName || 'UNKNOWN').toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy || '000000'}-${order.serial || '000'}`;
 
       if (!order.supabaseUrls) order.supabaseUrls = {};
 
@@ -1461,7 +1461,7 @@
       const supplierTotalNet = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
       const supplierTotalVat = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       const total = (supplierTotalNet + supplierTotalVat).toFixed(2);
-      const poNumber = `TSMK-${supplierName.toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy}-${order.serial}`;
+      const poNumber = `TSMK-${(supplierName || 'UNKNOWN').toUpperCase().replace(/\s+/g, '')}-${order.ddmmyy || '000000'}-${order.serial || '000'}`;
 
       const exportContainer = document.getElementById('pdf-export-container');
       exportContainer.innerHTML = buildPOHTML(order, supplierName, items, total, poNumber);
