@@ -410,7 +410,7 @@
 
 
   <!-- HIDDEN PDF TEMPLATE CONTAINER -->
-  <div id="pdf-export-container" class="absolute left-[-9999px] top-[-9999px] w-[800px] pointer-events-none"></div>
+  <div id="pdf-export-container" class="absolute left-0 top-0 opacity-0 pointer-events-none w-[800px] -z-50"></div>
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
@@ -1017,7 +1017,7 @@
       localStorage.setItem('ts_orders', JSON.stringify(orders));
     }
 
-    function confirmAndSubmitOrder(e) {
+    async function confirmAndSubmitOrder(e) {
       e.preventDefault();
 
       const requesterName = document.getElementById('order-user-name').value.trim();
@@ -1060,9 +1060,9 @@
 
       // Automatically generate PDFs for each supplier and upload to Supabase bucket
       const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
-      uniqueSuppliers.forEach(supplier => {
-        uploadPOToSupabaseBucket(newOrder.primaryRef, supplier);
-      });
+      for (const supplier of uniqueSuppliers) {
+        await uploadPOToSupabaseBucket(newOrder.primaryRef, supplier);
+      }
 
       cart = [];
       updateCartUI();
@@ -1302,7 +1302,7 @@
     // HELPER TO GENERATE PO HTML FOR PDF & SUPABASE BUCKET
     function buildPOHTML(order, supplierName, items, total, poNumber) {
       const supplierNetTotal = items.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      let supplierVatTotal = items.reduce((acc, i) => acc + (i.price * i.vatRate / 100 * i.qty), 0);
+      let supplierVatTotal = items.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
       
       // If the entire order's VAT was overridden, we apply the order's vatTotal directly if there's only one supplier.
       // If there are multiple suppliers in an overridden order, we distribute the VAT proportionally (basic fallback).
@@ -1355,7 +1355,7 @@
             </thead>
             <tbody>
               ${items.map((item) => {
-                const vatRate = item.vatRate;
+                const vatRate = item.vatRate ?? 20;
                 const vatAmount = item.price * (vatRate / 100);
                 const grossPrice = item.price + vatAmount;
                 return `
