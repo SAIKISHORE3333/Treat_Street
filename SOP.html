@@ -708,7 +708,19 @@
                         <input type="text" value="${data.qty}" placeholder="0" class="ing-qty w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                     </td>
                     <td class="py-2 pr-2">
-                        <select class="ing-unit w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">\n                            <option value="" ${!data.unit ? \'selected\' : \'\'}>Select Unit</option>\n                            <option value="unit" ${data.unit === \'unit\' ? \'selected\' : \'\'}>Units</option>\n                            <option value="tbsp" ${data.unit === \'tbsp\' ? \'selected\' : \'\'}>Tbsp</option>\n                            <option value="tsp" ${data.unit === \'tsp\' ? \'selected\' : \'\'}>Tsp</option>\n                            <option value="ml" ${data.unit === \'ml\' ? \'selected\' : \'\'}>ml</option>\n                            <option value="L" ${data.unit === \'L\' ? \'selected\' : \'\'}>L</option>\n                            <option value="g" ${data.unit === \'g\' ? \'selected\' : \'\'}>g</option>\n                            <option value="kg" ${data.unit === \'kg\' ? \'selected\' : \'\'}>kg</option>\n                            <option value="oz" ${data.unit === \'oz\' ? \'selected\' : \'\'}>oz</option>\n                            <option value="lbs" ${data.unit === \'lbs\' ? \'selected\' : \'\'}>lbs</option>\n                            <option value="cups" ${data.unit === \'cups\' ? \'selected\' : \'\'}>Cups</option>\n                        </select>
+                        <select class="ing-unit w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
+                            <option value="" ${!data.unit ? 'selected' : ''}>Select Unit</option>
+                            <option value="unit" ${data.unit === 'unit' ? 'selected' : ''}>Units</option>
+                            <option value="tbsp" ${data.unit === 'tbsp' ? 'selected' : ''}>Tbsp</option>
+                            <option value="tsp" ${data.unit === 'tsp' ? 'selected' : ''}>Tsp</option>
+                            <option value="ml" ${data.unit === 'ml' ? 'selected' : ''}>ml</option>
+                            <option value="L" ${data.unit === 'L' ? 'selected' : ''}>L</option>
+                            <option value="g" ${data.unit === 'g' ? 'selected' : ''}>g</option>
+                            <option value="kg" ${data.unit === 'kg' ? 'selected' : ''}>kg</option>
+                            <option value="oz" ${data.unit === 'oz' ? 'selected' : ''}>oz</option>
+                            <option value="lbs" ${data.unit === 'lbs' ? 'selected' : ''}>lbs</option>
+                            <option value="cups" ${data.unit === 'cups' ? 'selected' : ''}>Cups</option>
+                        </select>
                     </td>
                     <td class="py-2 pr-2">
                         <input type="text" value="${data.notes.replace(/"/g, '&quot;')}" placeholder="Notes..." class="ing-notes w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
