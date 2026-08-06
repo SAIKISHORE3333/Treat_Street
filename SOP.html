@@ -442,12 +442,13 @@
             
             updateCatalogWithSubRecipes() {
                 // Remove existing sub-recipes from catalog to prevent duplicates
+                if (!Array.isArray(this.catalog)) this.catalog = [];
                 this.catalog = this.catalog.filter(item => item.category !== 'Sub-Recipe');
                 
                 let maxId = this.catalog.reduce((max, item) => (typeof item.id === 'number' && item.id > max) ? item.id : max, 0);
 
                 if (this.recipes && Array.isArray(this.recipes)) {
-                    for (const recipe of this.recipes) {
+                    for (const recipe of this.recipes) {\n                        if (!recipe) continue;
                         let totalCost = 0;
                         if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
                             for (const ing of recipe.ingredients) {
@@ -484,6 +485,7 @@
                 // Load Catalog
                 const localCatalog = localStorage.getItem('ts_shared_catalog');
                 this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
+                if (!Array.isArray(this.catalog)) this.catalog = window.tsCatalog ? window.tsCatalog : [];
                 
                 // Build Datalist
                 let datalist = document.getElementById('ingredient-catalog-list');
@@ -496,6 +498,7 @@
 
                 this.loadData();
                 this.updateCatalogWithSubRecipes();
+                
                 this.showDashboard();
                 this.renderDashboard();
                 
@@ -630,6 +633,7 @@
                     ];
                     this.saveData();
                     this.updateCatalogWithSubRecipes();
+                    
                 }
             },
 
@@ -743,6 +747,7 @@
                     this.recipes = this.recipes.filter(r => r.id !== id);
                     this.saveData();
                     this.updateCatalogWithSubRecipes();
+                    
                     this.renderDashboard();
                 }
             },
@@ -962,6 +967,7 @@
 
                 this.saveData();
                     this.updateCatalogWithSubRecipes();
+                    
                 this.showSOP(recipe.id);
             },
 
