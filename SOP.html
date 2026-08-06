@@ -463,6 +463,72 @@
             },
 
             // Data Management
+            calculateRowCost(element) {
+                const row = element.closest('tr');
+                const nameInput = row.querySelector('.ing-name').value;
+                const qtyInput = parseFloat(row.querySelector('.ing-qty').value);
+                const unitInput = row.querySelector('.ing-unit').value;
+                const notesInput = row.querySelector('.ing-notes');
+
+                if (!nameInput || !this.catalog) return;
+                
+                const item = this.catalog.find(i => i.name === nameInput);
+                if (!item) return;
+
+                const price = parseFloat(item.price) || 0;
+                const sizeStr = (item.size || '').toLowerCase();
+                
+                let totalCatalogAmt = 1;
+                let isVolume = false;
+                let isWeight = false;
+
+                const match = sizeStr.match(/(\d+)\s*x\s*([\d.]+)\s*([a-z]+)/);
+                if (match) {
+                    const count = parseFloat(match[1]);
+                    const amount = parseFloat(match[2]);
+                    const type = match[3];
+                    totalCatalogAmt = count * amount;
+                    if (type.includes('ltr') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
+                    else if (type.includes('ml')) { isVolume = true; }
+                    else if (type.includes('kg')) { totalCatalogAmt *= 1000; isWeight = true; }
+                    else if (type.includes('g')) { isWeight = true; }
+                } else {
+                    const singleMatch = sizeStr.match(/([\d.]+)\s*([a-z]+)/);
+                    if (singleMatch) {
+                        const amount = parseFloat(singleMatch[1]);
+                        const type = singleMatch[2];
+                        totalCatalogAmt = amount;
+                        if (type.includes('ltr') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
+                        else if (type.includes('ml')) { isVolume = true; }
+                        else if (type.includes('kg')) { totalCatalogAmt *= 1000; isWeight = true; }
+                        else if (type.includes('g')) { isWeight = true; }
+                    }
+                }
+
+                if (isNaN(qtyInput) || !unitInput || qtyInput === 0) {
+                    notesInput.value = `£${price.toFixed(2)} / ${item.size || 'Unit'}`;
+                    return;
+                }
+
+                let recipeBaseQty = qtyInput;
+                const u = unitInput.toLowerCase();
+                
+                if (u === 'l') recipeBaseQty = qtyInput * 1000;
+                else if (u === 'tbsp') recipeBaseQty = qtyInput * 15;
+                else if (u === 'tsp') recipeBaseQty = qtyInput * 5;
+                else if (u === 'cups') recipeBaseQty = qtyInput * 250;
+                else if (u === 'kg') recipeBaseQty = qtyInput * 1000;
+                else if (u === 'oz') recipeBaseQty = qtyInput * 28.35;
+                else if (u === 'lbs') recipeBaseQty = qtyInput * 453.59;
+                
+                let calculatedCost = 0;
+                if (totalCatalogAmt > 0) {
+                    calculatedCost = (price / totalCatalogAmt) * recipeBaseQty;
+                }
+                
+                notesInput.value = `Cost: £${calculatedCost.toFixed(2)} (from £${price.toFixed(2)} / ${item.size || 'Unit'})`;
+            },
+
             handleIngredientSelect(input) {
                 const val = input.value;
                 const item = this.catalog.find(i => i.name === val);
@@ -482,9 +548,7 @@
                         if (exists) unitInput.value = inferredUnit;
                     }
 
-                    if (!notesInput.value) {
-                        notesInput.value = `£${parseFloat(item.price).toFixed(2)} / ${item.size}`;
-                    }
+                    this.calculateRowCost(input);
                 }
             },
             
@@ -705,10 +769,10 @@
                         <input type="text" value="${data.name.replace(/"/g, '&quot;')}" placeholder="Search catalog or type custom..." list="ingredient-catalog-list" oninput="sopApp.handleIngredientSelect(this)" class="ing-name w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                     </td>
                     <td class="py-2 pr-2">
-                        <input type="text" value="${data.qty}" placeholder="0" class="ing-qty w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
+                        <input type="text" value="${data.qty}" placeholder="0" class="ing-qty w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none" oninput="sopApp.calculateRowCost(this)">
                     </td>
                     <td class="py-2 pr-2">
-                        <select class="ing-unit w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
+                        <select class="ing-unit onchange="sopApp.calculateRowCost(this)" w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                             <option value="" ${!data.unit ? 'selected' : ''}>Select Unit</option>
                             <option value="unit" ${data.unit === 'unit' ? 'selected' : ''}>Units</option>
                             <option value="tbsp" ${data.unit === 'tbsp' ? 'selected' : ''}>Tbsp</option>
