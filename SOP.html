@@ -440,7 +440,47 @@
             // Initialization
             catalog: [],
             
-            init() {
+            updateCatalogWithSubRecipes() {
+                // Remove existing sub-recipes from catalog to prevent duplicates
+                this.catalog = this.catalog.filter(item => item.category !== 'Sub-Recipe');
+                
+                let maxId = this.catalog.reduce((max, item) => (typeof item.id === 'number' && item.id > max) ? item.id : max, 0);
+
+                if (this.recipes && Array.isArray(this.recipes)) {
+                    for (const recipe of this.recipes) {
+                        let totalCost = 0;
+                        if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
+                            for (const ing of recipe.ingredients) {
+                                if (ing.notes) {
+                                    const match = ing.notes.match(/Cost: £([\d.]+)/);
+                                    if (match) {
+                                        totalCost += parseFloat(match[1]);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (totalCost > 0 || (recipe.title && recipe.yield)) {
+                            maxId++;
+                            this.catalog.push({
+                                id: maxId,
+                                name: recipe.title || 'Untitled Recipe',
+                                category: 'Sub-Recipe',
+                                size: recipe.yield || 'Unit',
+                                supplier: 'Internal',
+                                price: parseFloat(totalCost.toFixed(2)),
+                                vatRate: 0
+                            });
+                        }
+                    }
+                }
+                
+                // Rebuild Datalist
+                let datalist = document.getElementById('ingredient-catalog-list');
+                if (datalist && this.catalog) {
+                    datalist.innerHTML = this.catalog.map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
+                }
+            },\n\n            init() {
                 // Load Catalog
                 const localCatalog = localStorage.getItem('ts_shared_catalog');
                 this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
@@ -455,6 +495,7 @@
                 datalist.innerHTML = this.catalog.map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
 
                 this.loadData();
+                this.updateCatalogWithSubRecipes();
                 this.showDashboard();
                 this.renderDashboard();
                 
@@ -588,6 +629,7 @@
                         }
                     ];
                     this.saveData();
+                    this.updateCatalogWithSubRecipes();
                 }
             },
 
@@ -700,6 +742,7 @@
                 if (confirm('Are you sure you want to delete this recipe? This cannot be undone.')) {
                     this.recipes = this.recipes.filter(r => r.id !== id);
                     this.saveData();
+                    this.updateCatalogWithSubRecipes();
                     this.renderDashboard();
                 }
             },
@@ -918,6 +961,7 @@
                 }
 
                 this.saveData();
+                    this.updateCatalogWithSubRecipes();
                 this.showSOP(recipe.id);
             },
 
