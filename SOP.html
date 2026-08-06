@@ -448,7 +448,8 @@
                 let maxId = this.catalog.reduce((max, item) => (typeof item.id === 'number' && item.id > max) ? item.id : max, 0);
 
                 if (this.recipes && Array.isArray(this.recipes)) {
-                    for (const recipe of this.recipes) {\n                        if (!recipe) continue;
+                    for (const recipe of this.recipes) {
+                        if (!recipe) continue;
                         let totalCost = 0;
                         if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
                             for (const ing of recipe.ingredients) {
