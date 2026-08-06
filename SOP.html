@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="catalog.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -208,7 +209,23 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Yield/Portion</label>
-                                <input type="text" id="recipeYield" placeholder="e.g., 4 portions" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
+                                <div class="flex gap-2">
+                                    <input type="number" id="recipeYieldNum" placeholder="4" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
+                                    <select id="recipeYieldUnit" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-white shadow-inner outline-none transition-all">
+                                        <option value="portions">Portions</option>
+                                        <option value="unit">Units</option>
+                                        <option value="tbsp">Tbsp</option>
+                                        <option value="tsp">Tsp</option>
+                                        <option value="ml">ml</option>
+                                        <option value="L">L</option>
+                                        <option value="g">g</option>
+                                        <option value="kg">kg</option>
+                                        <option value="oz">oz</option>
+                                        <option value="lbs">lbs</option>
+                                        <option value="cups">Cups</option>
+                                    </select>
+                                </div>
+                                <input type="hidden" id="recipeYield">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Shelf Life</label>
@@ -421,7 +438,22 @@
             currentRecipeId: null,
             
             // Initialization
+            catalog: [],
+            
             init() {
+                // Load Catalog
+                const localCatalog = localStorage.getItem('ts_shared_catalog');
+                this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
+                
+                // Build Datalist
+                let datalist = document.getElementById('ingredient-catalog-list');
+                if (!datalist) {
+                    datalist = document.createElement('datalist');
+                    datalist.id = 'ingredient-catalog-list';
+                    document.body.appendChild(datalist);
+                }
+                datalist.innerHTML = this.catalog.map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
+
                 this.loadData();
                 this.showDashboard();
                 this.renderDashboard();
@@ -431,6 +463,31 @@
             },
 
             // Data Management
+            handleIngredientSelect(input) {
+                const val = input.value;
+                const item = this.catalog.find(i => i.name === val);
+                if (item) {
+                    const row = input.closest('tr');
+                    const notesInput = row.querySelector('.ing-notes');
+                    const unitInput = row.querySelector('.ing-unit');
+                    
+                    // Try to infer unit based on size
+                    let inferredUnit = 'unit';
+                    const sizeStr = (item.size || '').toLowerCase();
+                    if (sizeStr.includes('g') || sizeStr.includes('kg')) inferredUnit = 'g';
+                    if (sizeStr.includes('ml') || sizeStr.includes('ltr') || sizeStr.includes('l')) inferredUnit = 'ml';
+                    
+                    if (!unitInput.value || unitInput.value === 'unit' || unitInput.value === '') {
+                        const exists = Array.from(unitInput.options).some(o => o.value === inferredUnit);
+                        if (exists) unitInput.value = inferredUnit;
+                    }
+
+                    if (!notesInput.value) {
+                        notesInput.value = `£${parseFloat(item.price).toFixed(2)} / ${item.size}`;
+                    }
+                }
+            },
+            
             loadData() {
                 const data = localStorage.getItem('recipeSOPs');
                 if (data) {
@@ -605,7 +662,18 @@
                 document.getElementById('recipeStation').value = recipe.station;
                 document.getElementById('recipePrepTime').value = recipe.prepTime;
                 document.getElementById('recipeCookTime').value = recipe.cookTime;
-                document.getElementById('recipeYield').value = recipe.yield;
+                if (document.getElementById('recipeYieldNum')) {
+                    const y = recipe.yield || '';
+                    const parts = y.split(' ');
+                    if (parts.length > 1 && !isNaN(parts[0])) {
+                        document.getElementById('recipeYieldNum').value = parts[0];
+                        document.getElementById('recipeYieldUnit').value = parts.slice(1).join(' ');
+                    } else {
+                        document.getElementById('recipeYieldNum').value = y;
+                    }
+                } else {
+                    document.getElementById('recipeYield').value = recipe.yield || '';
+                }
                 document.getElementById('recipeShelfLife').value = recipe.shelfLife;
                 document.getElementById('recipeCosting').value = recipe.costing;
 
@@ -634,13 +702,13 @@
                 tr.className = 'ing-row hover:bg-slate-50 transition-colors group';
                 tr.innerHTML = `
                     <td class="py-2 pr-2">
-                        <input type="text" value="${data.name.replace(/"/g, '&quot;')}" placeholder="Ingredient" class="ing-name w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
+                        <input type="text" value="${data.name.replace(/"/g, '&quot;')}" placeholder="Search catalog or type custom..." list="ingredient-catalog-list" oninput="sopApp.handleIngredientSelect(this)" class="ing-name w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                     </td>
                     <td class="py-2 pr-2">
                         <input type="text" value="${data.qty}" placeholder="0" class="ing-qty w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                     </td>
                     <td class="py-2 pr-2">
-                        <input type="text" value="${data.unit}" placeholder="g, ml, pcs" class="ing-unit w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
+                        <select class="ing-unit w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">\n                            <option value="" ${!data.unit ? \'selected\' : \'\'}>Select Unit</option>\n                            <option value="unit" ${data.unit === \'unit\' ? \'selected\' : \'\'}>Units</option>\n                            <option value="tbsp" ${data.unit === \'tbsp\' ? \'selected\' : \'\'}>Tbsp</option>\n                            <option value="tsp" ${data.unit === \'tsp\' ? \'selected\' : \'\'}>Tsp</option>\n                            <option value="ml" ${data.unit === \'ml\' ? \'selected\' : \'\'}>ml</option>\n                            <option value="L" ${data.unit === \'L\' ? \'selected\' : \'\'}>L</option>\n                            <option value="g" ${data.unit === \'g\' ? \'selected\' : \'\'}>g</option>\n                            <option value="kg" ${data.unit === \'kg\' ? \'selected\' : \'\'}>kg</option>\n                            <option value="oz" ${data.unit === \'oz\' ? \'selected\' : \'\'}>oz</option>\n                            <option value="lbs" ${data.unit === \'lbs\' ? \'selected\' : \'\'}>lbs</option>\n                            <option value="cups" ${data.unit === \'cups\' ? \'selected\' : \'\'}>Cups</option>\n                        </select>
                     </td>
                     <td class="py-2 pr-2">
                         <input type="text" value="${data.notes.replace(/"/g, '&quot;')}" placeholder="Notes..." class="ing-notes w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
@@ -725,7 +793,7 @@
                     station: document.getElementById('recipeStation').value,
                     prepTime: document.getElementById('recipePrepTime').value,
                     cookTime: document.getElementById('recipeCookTime').value,
-                    yield: document.getElementById('recipeYield').value,
+                    yield: document.getElementById('recipeYieldNum') ? (document.getElementById('recipeYieldNum').value + ' ' + document.getElementById('recipeYieldUnit').value).trim() : document.getElementById('recipeYield').value,
                     shelfLife: document.getElementById('recipeShelfLife').value,
                     costing: document.getElementById('recipeCosting').value,
                     ingredients: [],
