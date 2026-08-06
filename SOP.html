@@ -482,7 +482,9 @@
                 if (datalist && this.catalog) {
                     datalist.innerHTML = this.catalog.map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
                 }
-            },\n\n            init() {
+            },
+
+            init() {
                 // Load Catalog
                 const localCatalog = localStorage.getItem('ts_shared_catalog');
                 this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
