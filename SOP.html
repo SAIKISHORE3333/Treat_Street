@@ -118,22 +118,33 @@
                     <p class="text-slate-500 mt-1">Powered by ALAIYA - Manage and standardise your kitchen procedures.</p>
                 </div>
                 
-                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                    <div class="relative w-full sm:w-64">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-slate-400"></i>
-                        </div>
-                        <input type="text" id="searchInput" oninput="sopApp.filterRecipes()" placeholder="Search recipes..." class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner sm:text-sm transition-shadow">
+                <div class="flex flex-col xl:flex-row gap-4 w-full md:w-auto items-start xl:items-center">
+                    
+                    <!-- Tabs -->
+                    <div class="flex bg-slate-200/70 p-1 rounded-xl shadow-inner border border-slate-200 w-full sm:w-auto overflow-x-auto hide-scrollbar">
+                        <button id="tab-all" onclick="sopApp.setTab('all')" class="flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 bg-white text-[#144D37] shadow-sm transform scale-100 whitespace-nowrap">All Items</button>
+                        <button id="tab-recipes" onclick="sopApp.setTab('recipes')" class="flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/60 whitespace-nowrap">Main Recipes</button>
+                        <button id="tab-subrecipes" onclick="sopApp.setTab('subrecipes')" class="flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/60 whitespace-nowrap">Sub-Recipes (Ingredients)</button>
                     </div>
-                    <select id="categoryFilter" onchange="sopApp.filterRecipes()" class="block w-full sm:w-40 py-2 px-3 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner sm:text-sm">
-                        <option value="">All Categories</option>
-                        <option value="Mains">Mains</option>
-                        <option value="Starters">Starters</option>
-                        <option value="Desserts">Desserts</option>
-                        <option value="Drinks">Drinks</option>
-                        <option value="Sauces">Sauces</option>
-                        <option value="Prep">Prep</option>
-                    </select>
+
+                    <!-- Search & Filter -->
+                    <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                        <div class="relative w-full sm:w-64">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-slate-400"></i>
+                            </div>
+                            <input type="text" id="searchInput" oninput="sopApp.filterRecipes()" placeholder="Search recipes..." class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner sm:text-sm transition-shadow">
+                        </div>
+                        <select id="categoryFilter" onchange="sopApp.filterRecipes()" class="block w-full sm:w-40 py-2 px-3 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner sm:text-sm transition-shadow">
+                            <option value="">All Categories</option>
+                            <option value="Mains">Mains</option>
+                            <option value="Starters">Starters</option>
+                            <option value="Desserts">Desserts</option>
+                            <option value="Drinks">Drinks</option>
+                            <option value="Sauces">Sauces</option>
+                            <option value="Prep">Prep</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -436,6 +447,7 @@
         const sopApp = {
             recipes: [],
             currentRecipeId: null,
+            currentTab: 'all',
             
             // Initialization
             catalog: [],
@@ -535,20 +547,20 @@
                     const amount = parseFloat(match[2]);
                     const type = match[3];
                     totalCatalogAmt = count * amount;
-                    if (type.includes('ltr') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
+                    if (type.includes('ltr') || type.includes('liter') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
                     else if (type.includes('ml')) { isVolume = true; }
-                    else if (type.includes('kg')) { totalCatalogAmt *= 1000; isWeight = true; }
-                    else if (type.includes('g')) { isWeight = true; }
+                    else if (type.includes('kg') || type.includes('kilo')) { totalCatalogAmt *= 1000; isWeight = true; }
+                    else if (type.includes('g') || type.includes('gram')) { isWeight = true; }
                 } else {
                     const singleMatch = sizeStr.match(/([\d.]+)\s*([a-z]+)/);
                     if (singleMatch) {
                         const amount = parseFloat(singleMatch[1]);
                         const type = singleMatch[2];
                         totalCatalogAmt = amount;
-                        if (type.includes('ltr') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
+                        if (type.includes('ltr') || type.includes('liter') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
                         else if (type.includes('ml')) { isVolume = true; }
-                        else if (type.includes('kg')) { totalCatalogAmt *= 1000; isWeight = true; }
-                        else if (type.includes('g')) { isWeight = true; }
+                        else if (type.includes('kg') || type.includes('kilo')) { totalCatalogAmt *= 1000; isWeight = true; }
+                        else if (type.includes('g') || type.includes('gram')) { isWeight = true; }
                     }
                 }
 
@@ -560,13 +572,16 @@
                 let recipeBaseQty = qtyInput;
                 const u = unitInput.toLowerCase();
                 
-                if (u === 'l') recipeBaseQty = qtyInput * 1000;
+                if (u === 'l' || u.includes('liter') || u === 'ltr') recipeBaseQty = qtyInput * 1000;
+                else if (u === 'ml') recipeBaseQty = qtyInput;
                 else if (u === 'tbsp') recipeBaseQty = qtyInput * 15;
                 else if (u === 'tsp') recipeBaseQty = qtyInput * 5;
-                else if (u === 'cups') recipeBaseQty = qtyInput * 250;
-                else if (u === 'kg') recipeBaseQty = qtyInput * 1000;
+                else if (u === 'cups' || u === 'cup') recipeBaseQty = qtyInput * 250;
+                else if (u === 'kg' || u.includes('kilo')) recipeBaseQty = qtyInput * 1000;
+                else if (u === 'g' || u === 'gram' || u === 'grams') recipeBaseQty = qtyInput;
                 else if (u === 'oz') recipeBaseQty = qtyInput * 28.35;
-                else if (u === 'lbs') recipeBaseQty = qtyInput * 453.59;
+                else if (u === 'lbs' || u === 'lb') recipeBaseQty = qtyInput * 453.59;
+                else if (u.includes('portion')) recipeBaseQty = qtyInput;
                 
                 let calculatedCost = 0;
                 if (totalCatalogAmt > 0) {
@@ -691,7 +706,15 @@
                 let filtered = this.recipes.filter(r => {
                     const matchesSearch = r.title.toLowerCase().includes(searchTerm) || r.station.toLowerCase().includes(searchTerm);
                     const matchesCategory = categoryFilter === '' || r.category === categoryFilter;
-                    return matchesSearch && matchesCategory;
+                    
+                    let matchesTab = true;
+                    if (this.currentTab === 'recipes') {
+                        matchesTab = ['Mains', 'Starters', 'Desserts', 'Drinks'].includes(r.category);
+                    } else if (this.currentTab === 'subrecipes') {
+                        matchesTab = ['Sauces', 'Prep'].includes(r.category);
+                    }
+
+                    return matchesSearch && matchesCategory && matchesTab;
                 });
 
                 grid.innerHTML = '';
@@ -710,30 +733,38 @@
                         card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full';
                         card.onclick = () => this.showSOP(recipe.id);
                         
-                        let badgeColor = 'bg-slate-100 text-slate-700';
-                        if (recipe.category === 'Mains') badgeColor = 'bg-indigo-100 text-indigo-700';
-                        if (recipe.category === 'Prep') badgeColor = 'bg-amber-100 text-amber-700';
-                        if (recipe.category === 'Sauces') badgeColor = 'bg-rose-100 text-rose-700';
+                        let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
+                        if (recipe.category === 'Mains') badgeColor = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+                        if (recipe.category === 'Prep') badgeColor = 'bg-amber-100 text-amber-700 border-amber-200';
+                        if (recipe.category === 'Sauces') badgeColor = 'bg-rose-100 text-rose-700 border-rose-200';
                         
+                        let isSubRecipe = ['Sauces', 'Prep'].includes(recipe.category);
+                        let typeBadge = isSubRecipe 
+                            ? `<span class="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded shadow-sm border border-amber-600 w-max"><i class="fas fa-layer-group mr-1"></i> Sub-Recipe</span>`
+                            : `<span class="px-2 py-0.5 bg-gradient-to-r from-[#144D37] to-emerald-800 text-white text-[10px] font-black uppercase tracking-widest rounded shadow-sm border border-emerald-900 w-max"><i class="fas fa-utensils mr-1"></i> Recipe</span>`;
+
                         card.innerHTML = `
-                            <div class="p-5 flex-grow">
-                                <div class="flex justify-between items-start mb-3">
-                                    <span class="px-2.5 py-1 ${badgeColor} text-xs font-bold uppercase tracking-wider rounded-md">${recipe.category}</span>
+                            <div class="p-5 flex-grow group">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="flex flex-col gap-2">
+                                        ${typeBadge}
+                                        <span class="px-2.5 py-1 ${badgeColor} text-xs font-bold uppercase tracking-wider rounded-md border w-max">${recipe.category}</span>
+                                    </div>
                                     <button onclick="event.stopPropagation(); sopApp.deleteRecipe('${recipe.id}')" class="text-slate-300 hover:text-danger transition-colors p-1" title="Delete">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
-                                <h3 class="text-xl font-bold text-slate-900 mb-1 leading-tight">${recipe.title}</h3>
-                                <p class="text-sm font-medium text-primary mb-4"><i class="fas fa-map-marker-alt mr-1"></i> ${recipe.station}</p>
+                                <h3 class="text-xl font-bold text-slate-900 mb-1 leading-tight group-hover:text-[#144D37] transition-colors">${recipe.title}</h3>
+                                <p class="text-sm font-medium text-slate-500 mb-4"><i class="fas fa-map-marker-alt mr-1 text-primary/70"></i> ${recipe.station}</p>
                                 
                                 <div class="grid grid-cols-2 gap-2 text-sm text-slate-600">
                                     <div class="flex items-center"><i class="far fa-clock w-5 text-slate-400"></i> ${recipe.prepTime || '-'}</div>
                                     <div class="flex items-center"><i class="fas fa-fire w-5 text-slate-400"></i> ${recipe.cookTime || '-'}</div>
                                 </div>
                             </div>
-                            <div class="bg-slate-50 px-5 py-3 border-t border-slate-100 text-sm font-medium text-slate-500 flex justify-between items-center">
-                                <span>View SOP</span>
-                                <i class="fas fa-chevron-right text-xs"></i>
+                            <div class="bg-slate-50 px-5 py-3 border-t border-slate-100 text-sm font-medium text-slate-500 flex justify-between items-center transition-colors hover:bg-slate-100">
+                                <span class="group-hover:text-[#144D37] font-semibold transition-colors">View SOP</span>
+                                <i class="fas fa-chevron-right text-xs group-hover:text-[#144D37] group-hover:translate-x-1 transition-transform"></i>
                             </div>
                         `;
                         grid.appendChild(card);
@@ -742,6 +773,31 @@
             },
 
             filterRecipes() {
+                this.renderDashboard();
+            },
+
+            setTab(tab) {
+                this.currentTab = tab;
+                // Update UI for tabs
+                ['all', 'recipes', 'subrecipes'].forEach(t => {
+                    const btn = document.getElementById(`tab-${t}`);
+                    if (t === tab) {
+                        btn.className = 'flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 bg-white text-[#144D37] shadow-sm transform scale-100 whitespace-nowrap';
+                    } else {
+                        btn.className = 'flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/60 whitespace-nowrap';
+                    }
+                });
+                
+                // Update category dropdown
+                const catSelect = document.getElementById('categoryFilter');
+                if (tab === 'recipes') {
+                    catSelect.innerHTML = `<option value="">All Recipes</option><option value="Mains">Mains</option><option value="Starters">Starters</option><option value="Desserts">Desserts</option><option value="Drinks">Drinks</option>`;
+                } else if (tab === 'subrecipes') {
+                    catSelect.innerHTML = `<option value="">All Sub-Recipes</option><option value="Sauces">Sauces</option><option value="Prep">Prep</option>`;
+                } else {
+                    catSelect.innerHTML = `<option value="">All Categories</option><option value="Mains">Mains</option><option value="Starters">Starters</option><option value="Desserts">Desserts</option><option value="Drinks">Drinks</option><option value="Sauces">Sauces</option><option value="Prep">Prep</option>`;
+                }
+                
                 this.renderDashboard();
             },
 
