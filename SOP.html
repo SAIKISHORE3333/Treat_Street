@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="catalog.js"></script>
     <script>
         tailwind.config = {
@@ -537,8 +538,14 @@
                     subDatalist.innerHTML = subrecipes.map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
                 }
             },
+            supabaseClient: null,
+            
+            async init() {
+                // Initialize Supabase
+                if (window.supabase) {
+                    this.supabaseClient = window.supabase.createClient('https://sdlrwosjebiiztclsydu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw');
+                }
 
-            init() {
                 // Load Catalog
                 const localCatalog = localStorage.getItem('ts_shared_catalog');
                 this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
@@ -561,7 +568,7 @@
                 }
                 subDatalist.innerHTML = this.catalog.filter(i => i.category === 'Sub-Recipe').map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
 
-                this.loadData();
+                await this.loadData();
                 this.updateCatalogWithSubRecipes();
                 
                 this.showDashboard();
@@ -694,45 +701,50 @@
                 }
             },
             
-            loadData() {
-                const data = localStorage.getItem('recipeSOPs');
-                if (data) {
-                    this.recipes = JSON.parse(data);
-                } else {
-                    // Seed some dummy data for demonstration
-                    this.recipes = [
-                        {
-                            id: this.generateId(),
-                            title: 'Classic Marinara Sauce',
-                            category: 'Sauces',
-                            station: 'Prep',
-                            prepTime: '15 mins',
-                            cookTime: '45 mins',
-                            yield: '4 Liters',
-                            shelfLife: '5 days',
-                            costing: 'Target Cost: 18%\\nEnsure tomatoes are fully crushed.',
-                            ingredients: [
-                                { name: 'San Marzano Tomatoes', qty: '3', unit: 'kg', notes: 'Canned, crushed' },
-                                { name: 'Extra Virgin Olive Oil', qty: '120', unit: 'ml', notes: '' },
-                                { name: 'Garlic', qty: '50', unit: 'g', notes: 'Minced fine' },
-                                { name: 'Fresh Basil', qty: '1', unit: 'bunch', notes: 'Torn' }
-                            ],
-                            equipment: ['Large heavy-bottom pot', 'Immersion blender', 'Storage containers (4L)'],
-                            steps: [
-                                { desc: 'Heat olive oil in the pot over medium heat.', timeTemp: 'Medium Heat', isCritical: false },
-                                { desc: 'Add minced garlic and sauté until fragrant but NOT brown.', timeTemp: '1-2 mins', isCritical: true },
-                                { desc: 'Add crushed tomatoes. Stir well and bring to a gentle simmer.', timeTemp: 'Simmer', isCritical: false },
-                                { desc: 'Reduce heat to low, partially cover, and let simmer to develop flavor. Stir occasionally to prevent burning on the bottom.', timeTemp: '45 mins', isCritical: true },
-                                { desc: 'Remove from heat. Stir in fresh torn basil leaves.', timeTemp: '', isCritical: false },
-                                { desc: 'Cool in ice bath before storing in walk-in cooler.', timeTemp: '< 4°C within 2hrs', isCritical: true }
-                            ],
-                            updatedAt: new Date().toISOString()
+            async loadData() {
+                if (this.supabaseClient) {
+                    try {
+                        const { data, error } = await this.supabaseClient.from('sop_recipes').select('*');
+                        if (error) throw error;
+                        
+                        if (data && data.length > 0) {
+                            this.recipes = data.map(row => ({
+                                id: row.id,
+                                title: row.title,
+                                recipeType: row.recipeType || 'Main Recipe',
+                                category: row.category,
+                                station: row.station,
+                                prepTime: row.prepTime,
+                                cookTime: row.cookTime,
+                                yield: row.yield,
+                                shelfLife: row.shelfLife,
+                                costing: row.costing,
+                                totalCost: row.totalCost || '0.00',
+                                ingredients: typeof row.ingredients === 'string' ? JSON.parse(row.ingredients) : (row.ingredients || []),
+                                equipment: typeof row.equipment === 'string' ? JSON.parse(row.equipment) : (row.equipment || []),
+                                steps: typeof row.steps === 'string' ? JSON.parse(row.steps) : (row.steps || []),
+                                updatedAt: row.updatedAt
+                            }));
+                        } else {
+                            this.recipes = [];
                         }
-                    ];
-                    this.saveData();
-                    this.updateCatalogWithSubRecipes();
-                    
+                    } catch (e) {
+                        console.error('Error loading recipes from Supabase:', e);
+                        const localData = localStorage.getItem('recipeSOPs');
+                        if (localData) this.recipes = JSON.parse(localData);
+                    }
+                } else {
+                    const localData = localStorage.getItem('recipeSOPs');
+                    if (localData) {
+                        this.recipes = JSON.parse(localData);
+                    } else {
+                        // Dummy data fallback
+                        this.recipes = [];
+                    }
                 }
+                
+                // Keep local storage in sync as fallback
+                this.saveData();
             },
 
             saveData() {
@@ -881,13 +893,23 @@
                 this.renderDashboard();
             },
 
-            deleteRecipe(id) {
+            async deleteRecipe(id) {
                 if (confirm('Are you sure you want to delete this recipe? This cannot be undone.')) {
                     this.recipes = this.recipes.filter(r => r.id !== id);
                     this.saveData();
                     this.updateCatalogWithSubRecipes();
                     
                     this.renderDashboard();
+                    
+                    if (this.supabaseClient) {
+                        try {
+                            const { error } = await this.supabaseClient.from('sop_recipes').delete().eq('id', id);
+                            if (error) throw error;
+                        } catch (e) {
+                            console.error('Failed to delete from Supabase:', e);
+                            alert('Deleted locally, but failed to remove from cloud database.');
+                        }
+                    }
                 }
             },
 
@@ -1062,7 +1084,7 @@
                 });
             },
 
-            saveRecipe(e) {
+            async saveRecipe(e) {
                 e.preventDefault();
 
                 // Gather data
@@ -1080,23 +1102,30 @@
                     ingredients: [],
                     equipment: [],
                     steps: [],
+                    totalCost: '0.00',
                     updatedAt: new Date().toISOString()
                 };
+
+                let calculatedTotalCost = 0;
 
                 // Ingredients
                 document.querySelectorAll('.ing-row').forEach(row => {
                     const name = row.querySelector('.ing-name').value.trim();
                     if (name) {
+                        const costStr = row.querySelector('.ing-cost') ? row.querySelector('.ing-cost').value.trim() : '0.00';
+                        calculatedTotalCost += parseFloat(costStr) || 0;
                         recipe.ingredients.push({
                             name: name,
                             qty: row.querySelector('.ing-qty').value.trim(),
                             unit: row.querySelector('.ing-unit').value.trim(),
-                            cost: row.querySelector('.ing-cost') ? row.querySelector('.ing-cost').value.trim() : '0.00',
+                            cost: costStr,
                             isSubRecipe: row.querySelector('.ing-name').list && row.querySelector('.ing-name').list.id === 'subrecipe-catalog-list',
                             notes: row.querySelector('.ing-notes').value.trim()
                         });
                     }
                 });
+                
+                recipe.totalCost = calculatedTotalCost.toFixed(2);
 
                 // Equipment
                 document.querySelectorAll('.eq-row .eq-val').forEach(input => {
@@ -1125,8 +1154,34 @@
                 }
 
                 this.saveData();
-                    this.updateCatalogWithSubRecipes();
+                this.updateCatalogWithSubRecipes();
                     
+                if (this.supabaseClient) {
+                    try {
+                        const { error } = await this.supabaseClient.from('sop_recipes').upsert({
+                            id: recipe.id,
+                            title: recipe.title,
+                            recipeType: recipe.recipeType,
+                            category: recipe.category,
+                            station: recipe.station,
+                            prepTime: recipe.prepTime,
+                            cookTime: recipe.cookTime,
+                            yield: recipe.yield,
+                            shelfLife: recipe.shelfLife,
+                            costing: recipe.costing,
+                            totalCost: recipe.totalCost,
+                            ingredients: recipe.ingredients,
+                            equipment: recipe.equipment,
+                            steps: recipe.steps,
+                            updatedAt: new Date().toISOString()
+                        });
+                        if (error) throw error;
+                    } catch (e) {
+                        console.error('Failed to save to Supabase:', e);
+                        alert('Saved locally, but failed to sync to cloud database.');
+                    }
+                }
+
                 this.showSOP(recipe.id);
             },
 
