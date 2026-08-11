@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="catalog.js"></script>
     <script>
         tailwind.config = {
@@ -371,6 +372,9 @@
                 <div class="space-x-3">
                     <button onclick="sopApp.editCurrentRecipe()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
                         <i class="fas fa-edit mr-1"></i> Edit
+                    </button>
+                    <button onclick="sopApp.uploadPDFToCloud(this)" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
+                        <i class="fas fa-cloud-upload-alt mr-1"></i> Save PDF to Cloud
                     </button>
                     <button onclick="window.print()" class="brand-green-bg hover:bg-emerald-900 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
                         <i class="fas fa-print mr-1"></i> Print / Save PDF
@@ -1356,6 +1360,52 @@
 
             editCurrentRecipe() {
                 this.showForm(this.currentRecipeId);
+            },
+
+            async uploadPDFToCloud(btnElement) {
+                if (!this.supabaseClient) {
+                    alert("Supabase client not initialized.");
+                    return;
+                }
+                const originalText = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating...';
+                btnElement.disabled = true;
+
+                try {
+                    const element = document.getElementById('sopPrintArea');
+                    const recipe = this.recipes.find(r => r.id === this.currentRecipeId);
+                    const safeTitle = (recipe.title || 'Untitled').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                    const filename = `recipe_${safeTitle}_${Date.now()}.pdf`;
+
+                    const opt = {
+                        margin:       0.5,
+                        filename:     filename,
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2 },
+                        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                    };
+
+                    const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+
+                    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Uploading...';
+                    
+                    const { data, error } = await this.supabaseClient.storage
+                        .from('sop_pdfs')
+                        .upload(filename, pdfBlob, {
+                            contentType: 'application/pdf',
+                            upsert: true
+                        });
+
+                    if (error) throw error;
+                    
+                    alert('Success! PDF saved privately to your Supabase "sop_pdfs" bucket.');
+                } catch (e) {
+                    console.error('PDF Upload Error:', e);
+                    alert('Failed to upload PDF. Have you created the "sop_pdfs" bucket in Supabase Storage yet? Error: ' + e.message);
+                } finally {
+                    btnElement.innerHTML = originalText;
+                    btnElement.disabled = false;
+                }
             }
         };
 
