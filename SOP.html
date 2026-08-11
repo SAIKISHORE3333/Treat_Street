@@ -599,7 +599,7 @@
                 let totalCatalogAmt = 1;
                 let catalogType = 'unit';
 
-                const multiMatch = sizeStr.match(/(\d+)\s*x\s*([\d.]+)\s*([a-z]*)/);
+                const multiMatch = sizeStr.match(/(\d+)\s*(?:x|\*|[a-z]+\s*\*)\s*([\d.]+)\s*([a-z]*)/);
                 if (multiMatch) {
                     totalCatalogAmt = parseFloat(multiMatch[1]) * parseFloat(multiMatch[2]);
                     const unitStr = multiMatch[3];
@@ -647,7 +647,7 @@
                 else if (u === 'g' || u === 'gram' || u === 'grams') recipeBaseQty = qtyInput;
                 else if (u === 'oz') recipeBaseQty = qtyInput * 28.35;
                 else if (u === 'lbs' || u === 'lb') recipeBaseQty = qtyInput * 453.59;
-                else if (u === 'unit' || u === 'units' || u.includes('portion')) recipeBaseQty = qtyInput;
+                else if (u === 'unit' || u === 'units' || u === 'piece' || u === 'pieces' || u === 'pcs' || u.includes('portion')) recipeBaseQty = qtyInput;
                 
                 let calculatedCost = 0;
                 if (totalCatalogAmt > 0) {
@@ -971,6 +971,7 @@
                         <select class="ing-unit onchange="sopApp.calculateRowCost(this)" w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
                             <option value="" ${!data.unit ? 'selected' : ''}>Select Unit</option>
                             <option value="unit" ${data.unit === 'unit' ? 'selected' : ''}>Units</option>
+                            <option value="piece" ${data.unit === 'piece' ? 'selected' : ''}>Pieces</option>
                             <option value="tbsp" ${data.unit === 'tbsp' ? 'selected' : ''}>Tbsp</option>
                             <option value="tsp" ${data.unit === 'tsp' ? 'selected' : ''}>Tsp</option>
                             <option value="ml" ${data.unit === 'ml' ? 'selected' : ''}>ml</option>
