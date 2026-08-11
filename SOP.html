@@ -594,33 +594,39 @@
                 }
 
                 const price = parseFloat(item.price) || 0;
-                const sizeStr = (item.size || '').toLowerCase();
+                let sizeStr = (item.size || '').toLowerCase().trim();
                 
                 let totalCatalogAmt = 1;
-                let isVolume = false;
-                let isWeight = false;
+                let catalogType = 'unit';
 
-                const match = sizeStr.match(/(\d+)\s*x\s*([\d.]+)\s*([a-z]+)/);
-                if (match) {
-                    const count = parseFloat(match[1]);
-                    const amount = parseFloat(match[2]);
-                    const type = match[3];
-                    totalCatalogAmt = count * amount;
-                    if (type.includes('ltr') || type.includes('liter') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
-                    else if (type.includes('ml')) { isVolume = true; }
-                    else if (type.includes('kg') || type.includes('kilo')) { totalCatalogAmt *= 1000; isWeight = true; }
-                    else if (type.includes('g') || type.includes('gram')) { isWeight = true; }
+                const multiMatch = sizeStr.match(/(\d+)\s*x\s*([\d.]+)\s*([a-z]*)/);
+                if (multiMatch) {
+                    totalCatalogAmt = parseFloat(multiMatch[1]) * parseFloat(multiMatch[2]);
+                    const unitStr = multiMatch[3];
+                    if (['l', 'ltr', 'liter', 'liters'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'volume'; }
+                    else if (['ml'].includes(unitStr)) { catalogType = 'volume'; }
+                    else if (['kg', 'kilo', 'kilos'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'weight'; }
+                    else if (['g', 'gram', 'grams'].includes(unitStr)) { catalogType = 'weight'; }
                 } else {
-                    const singleMatch = sizeStr.match(/([\d.]+)\s*([a-z]+)/);
-                    if (singleMatch) {
-                        const amount = parseFloat(singleMatch[1]);
-                        const type = singleMatch[2];
-                        totalCatalogAmt = amount;
-                        if (type.includes('ltr') || type.includes('liter') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
-                        else if (type.includes('ml')) { isVolume = true; }
-                        else if (type.includes('kg') || type.includes('kilo')) { totalCatalogAmt *= 1000; isWeight = true; }
-                        else if (type.includes('g') || type.includes('gram')) { isWeight = true; }
+                    const numMatch = sizeStr.match(/([\d.]+)/);
+                    let amount = numMatch ? parseFloat(numMatch[1]) : 1;
+                    
+                    if (sizeStr.includes('per kg') || sizeStr === 'kg') amount = 1;
+                    if (sizeStr.includes('per ltr') || sizeStr === 'l' || sizeStr === 'ltr') amount = 1;
+
+                    const words = sizeStr.replace(/[\d.]+/g, ' ').split(/[^a-z]+/).filter(w => w);
+                    
+                    let isWeight = words.some(w => ['kg', 'kilo', 'kilos', 'g', 'gram', 'grams'].includes(w));
+                    let isVolume = words.some(w => ['l', 'ltr', 'liter', 'liters', 'ml'].includes(w));
+                    
+                    if (isWeight) {
+                        catalogType = 'weight';
+                        if (words.some(w => ['kg', 'kilo', 'kilos'].includes(w))) amount *= 1000;
+                    } else if (isVolume) {
+                        catalogType = 'volume';
+                        if (words.some(w => ['l', 'ltr', 'liter', 'liters'].includes(w))) amount *= 1000;
                     }
+                    totalCatalogAmt = amount || 1;
                 }
 
                 if (isNaN(qtyInput) || !unitInput || qtyInput === 0) {
@@ -641,7 +647,7 @@
                 else if (u === 'g' || u === 'gram' || u === 'grams') recipeBaseQty = qtyInput;
                 else if (u === 'oz') recipeBaseQty = qtyInput * 28.35;
                 else if (u === 'lbs' || u === 'lb') recipeBaseQty = qtyInput * 453.59;
-                else if (u.includes('portion')) recipeBaseQty = qtyInput;
+                else if (u === 'unit' || u === 'units' || u.includes('portion')) recipeBaseQty = qtyInput;
                 
                 let calculatedCost = 0;
                 if (totalCatalogAmt > 0) {
