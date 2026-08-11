@@ -507,17 +507,7 @@
                 if (this.recipes && Array.isArray(this.recipes)) {
                     for (const recipe of this.recipes) {
                         if (!recipe || recipe.recipeType !== 'Sub-Recipe') continue;
-                        let totalCost = 0;
-                        if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
-                            for (const ing of recipe.ingredients) {
-                                if (ing.notes) {
-                                    const match = ing.notes.match(/Cost: £([\d.]+)/);
-                                    if (match) {
-                                        totalCost += parseFloat(match[1]);
-                                    }
-                                }
-                            }
-                        }
+                        let totalCost = parseFloat(recipe.totalCost) || 0;
                         
                         if (totalCost > 0 || (recipe.title && recipe.yield)) {
                             maxId++;
@@ -757,7 +747,12 @@
                                 updatedAt: row.updatedAt
                             }));
                         } else {
-                            this.recipes = [];
+                            const localData = localStorage.getItem('recipeSOPs');
+                            if (localData && JSON.parse(localData).length > 0) {
+                                this.recipes = JSON.parse(localData);
+                            } else {
+                                this.recipes = [];
+                            }
                         }
                     } catch (e) {
                         console.error('Error loading recipes from Supabase:', e);
@@ -1219,7 +1214,11 @@
                         if (error) throw error;
                     } catch (e) {
                         console.error('Failed to save to Supabase:', e);
-                        alert('Saved locally, but failed to sync to cloud database.');
+                        if (e.message && e.message.includes('recipeType')) {
+                            alert('CRITICAL DATABASE ERROR: Failed to save to Supabase! You MUST add the "recipeType" (text) and "totalCost" (text) columns to your "sop_recipes" table in the Supabase Dashboard. Without these, cloud syncing will fail.');
+                        } else {
+                            alert('Saved locally, but failed to sync to cloud database. ' + (e.message || ''));
+                        }
                     }
                 }
 
