@@ -235,8 +235,8 @@
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Yield/Portion</label>
                                 <div class="flex gap-2">
-                                    <input type="number" id="recipeYieldNum" placeholder="4" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
-                                    <select id="recipeYieldUnit" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-white shadow-inner outline-none transition-all">
+                                    <input type="number" id="recipeYieldNum" placeholder="4" step="0.01" oninput="sopApp.calculateTotalRecipeCost()" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
+                                    <select id="recipeYieldUnit" onchange="sopApp.calculateTotalRecipeCost()" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-white shadow-inner outline-none transition-all">
                                         <option value="portions">Portions</option>
                                         <option value="unit">Units</option>
                                         <option value="tbsp">Tbsp</option>
@@ -293,8 +293,11 @@
                         </table>
                     </div>
                     <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end items-center">
-                        <div class="text-lg font-bold text-slate-800">
-                            Total Recipe Cost: <span id="totalRecipeCost" class="text-[#144D37]">£0.00</span>
+                        <div class="text-lg font-bold text-slate-800 flex flex-col sm:flex-row gap-2 sm:gap-6 items-end sm:items-center">
+                            <div>Total Recipe Cost: <span id="totalRecipeCost" class="text-[#144D37]">£0.00</span></div>
+                            <div id="costPerPortionContainer" class="hidden text-sm sm:text-base text-slate-500 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
+                                Cost per <span id="portionUnitLabel">Portion</span>: <span id="costPerPortion" class="text-emerald-600 font-extrabold">£0.00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -444,6 +447,10 @@
                                     <tr class="border-t border-slate-200">
                                         <td colspan="2" class="py-2 font-bold text-slate-800 text-right pr-4">Total Cost:</td>
                                         <td class="py-2 font-bold text-slate-800 text-right" id="viewTotalCost">£0.00</td>
+                                    </tr>
+                                    <tr id="viewCostPerPortionRow" class="hidden">
+                                        <td colspan="2" class="py-1 font-bold text-emerald-700 text-right pr-4">Cost per <span id="viewPortionUnitLabel">Portion</span>:</td>
+                                        <td class="py-1 font-bold text-emerald-700 text-right" id="viewCostPerPortion">£0.00</td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -676,6 +683,30 @@
                 }
                 const totalEl = document.getElementById('totalRecipeCost');
                 if (totalEl) totalEl.innerText = `£${total.toFixed(2)}`;
+
+                const yieldNumEl = document.getElementById('recipeYieldNum');
+                const yieldUnitEl = document.getElementById('recipeYieldUnit');
+                const perPortionContainer = document.getElementById('costPerPortionContainer');
+                const perPortionLabel = document.getElementById('portionUnitLabel');
+                const perPortionCost = document.getElementById('costPerPortion');
+
+                if (yieldNumEl && perPortionContainer) {
+                    const yieldVal = parseFloat(yieldNumEl.value);
+                    if (yieldVal > 0) {
+                        const costPer = total / yieldVal;
+                        perPortionContainer.classList.remove('hidden');
+                        if (perPortionLabel && yieldUnitEl) {
+                            let unitText = yieldUnitEl.options[yieldUnitEl.selectedIndex].text;
+                            // singularize roughly for display
+                            if (unitText.toLowerCase() === 'portions') unitText = 'Portion';
+                            if (unitText.toLowerCase() === 'units') unitText = 'Unit';
+                            perPortionLabel.innerText = unitText;
+                        }
+                        if (perPortionCost) perPortionCost.innerText = `£${costPer.toFixed(2)}`;
+                    } else {
+                        perPortionContainer.classList.add('hidden');
+                    }
+                }
             },
 
             handleIngredientSelect(input) {
@@ -990,7 +1021,7 @@
                         <input type="text" value="${data.qty || ''}" placeholder="0" class="ing-qty w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none" oninput="sopApp.calculateRowCost(this)">
                     </td>
                     <td class="py-2 pr-2">
-                        <select class="ing-unit onchange="sopApp.calculateRowCost(this)" w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
+                        <select class="ing-unit w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none" onchange="sopApp.calculateRowCost(this)">
                             <option value="" ${!data.unit ? 'selected' : ''}>Select Unit</option>
                             <option value="unit" ${data.unit === 'unit' ? 'selected' : ''}>Units</option>
                             <option value="piece" ${data.unit === 'piece' ? 'selected' : ''}>Pieces</option>
@@ -1228,6 +1259,42 @@
                     `).join('');
                 } else {
                     ingList.innerHTML = '<tr><td class="py-2 text-slate-400 italic">No ingredients listed</td></tr>';
+                }
+
+                // Cost display
+                const viewTotalCostEl = document.getElementById('viewTotalCost');
+                if (viewTotalCostEl) {
+                    viewTotalCostEl.innerText = recipe.totalCost ? `£${parseFloat(recipe.totalCost).toFixed(2)}` : '£0.00';
+                }
+
+                const viewCostPerPortionRow = document.getElementById('viewCostPerPortionRow');
+                const viewPortionUnitLabel = document.getElementById('viewPortionUnitLabel');
+                const viewCostPerPortion = document.getElementById('viewCostPerPortion');
+
+                if (viewCostPerPortionRow && recipe.yield) {
+                    // Try to parse number and unit from "4 portions"
+                    const yieldMatch = recipe.yield.trim().match(/^([\d.]+)\s*(.*)$/);
+                    if (yieldMatch) {
+                        const yieldVal = parseFloat(yieldMatch[1]);
+                        const yieldUnit = yieldMatch[2] || 'Portion';
+                        
+                        if (yieldVal > 0 && recipe.totalCost) {
+                            const costPer = parseFloat(recipe.totalCost) / yieldVal;
+                            let unitText = yieldUnit;
+                            if (unitText.toLowerCase() === 'portions') unitText = 'Portion';
+                            if (unitText.toLowerCase() === 'units') unitText = 'Unit';
+                            
+                            if (viewPortionUnitLabel) viewPortionUnitLabel.innerText = unitText;
+                            if (viewCostPerPortion) viewCostPerPortion.innerText = `£${costPer.toFixed(2)}`;
+                            viewCostPerPortionRow.classList.remove('hidden');
+                        } else {
+                            viewCostPerPortionRow.classList.add('hidden');
+                        }
+                    } else {
+                        viewCostPerPortionRow.classList.add('hidden');
+                    }
+                } else if (viewCostPerPortionRow) {
+                    viewCostPerPortionRow.classList.add('hidden');
                 }
 
                 // Steps
