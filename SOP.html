@@ -188,6 +188,19 @@
                             <label class="block text-sm font-medium text-slate-700 mb-1">Recipe Title *</label>
                             <input type="text" id="recipeTitle" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
                         </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Recipe Type *</label>
+                            <div class="flex space-x-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="recipeType" value="Main Recipe" checked class="form-radio h-4 w-4 text-[#144D37] focus:ring-[#144D37] border-slate-300">
+                                    <span class="ml-2 text-sm text-slate-700">Main Recipe</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="recipeType" value="Sub-Recipe" class="form-radio h-4 w-4 text-[#144D37] focus:ring-[#144D37] border-slate-300">
+                                    <span class="ml-2 text-sm text-slate-700">Sub-Recipe</span>
+                                </label>
+                            </div>
+                        </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Category *</label>
@@ -485,7 +498,7 @@
 
                 if (this.recipes && Array.isArray(this.recipes)) {
                     for (const recipe of this.recipes) {
-                        if (!recipe) continue;
+                        if (!recipe || recipe.recipeType !== 'Sub-Recipe') continue;
                         let totalCost = 0;
                         if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
                             for (const ing of recipe.ingredients) {
@@ -770,9 +783,9 @@
                     
                     let matchesTab = true;
                     if (this.currentTab === 'recipes') {
-                        matchesTab = ['Mains', 'Starters', 'Desserts', 'Drinks'].includes(r.category);
+                        matchesTab = r.recipeType !== 'Sub-Recipe';
                     } else if (this.currentTab === 'subrecipes') {
-                        matchesTab = ['Sauces', 'Prep'].includes(r.category);
+                        matchesTab = r.recipeType === 'Sub-Recipe';
                     }
 
                     return matchesSearch && matchesCategory && matchesTab;
@@ -799,7 +812,7 @@
                         if (recipe.category === 'Prep') badgeColor = 'bg-amber-100 text-amber-700 border-amber-200';
                         if (recipe.category === 'Sauces') badgeColor = 'bg-rose-100 text-rose-700 border-rose-200';
                         
-                        let isSubRecipe = ['Sauces', 'Prep'].includes(recipe.category);
+                        let isSubRecipe = recipe.recipeType === 'Sub-Recipe';
                         let typeBadge = isSubRecipe 
                             ? `<span class="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded shadow-sm border border-amber-600 w-max"><i class="fas fa-layer-group mr-1"></i> Sub-Recipe</span>`
                             : `<span class="px-2 py-0.5 bg-gradient-to-r from-[#144D37] to-emerald-800 text-white text-[10px] font-black uppercase tracking-widest rounded shadow-sm border border-emerald-900 w-max"><i class="fas fa-utensils mr-1"></i> Recipe</span>`;
@@ -875,6 +888,7 @@
             // Form Logic
             resetForm() {
                 document.getElementById('recipeForm').reset();
+                document.querySelector('input[name="recipeType"][value="Main Recipe"]').checked = true;
                 document.getElementById('ingredientsBody').innerHTML = '';
                 document.getElementById('equipmentList').innerHTML = '';
                 document.getElementById('stepsContainer').innerHTML = '';
@@ -890,6 +904,12 @@
                 if (!recipe) return;
 
                 document.getElementById('recipeTitle').value = recipe.title;
+                if (recipe.recipeType) {
+                    const typeRadio = document.querySelector(`input[name="recipeType"][value="${recipe.recipeType}"]`);
+                    if (typeRadio) typeRadio.checked = true;
+                } else {
+                    document.querySelector('input[name="recipeType"][value="Main Recipe"]').checked = true;
+                }
                 document.getElementById('recipeCategory').value = recipe.category;
                 document.getElementById('recipeStation').value = recipe.station;
                 document.getElementById('recipePrepTime').value = recipe.prepTime;
@@ -1042,6 +1062,7 @@
                 const recipe = {
                     id: this.currentRecipeId || this.generateId(),
                     title: document.getElementById('recipeTitle').value,
+                    recipeType: document.querySelector('input[name="recipeType"]:checked').value,
                     category: document.getElementById('recipeCategory').value,
                     station: document.getElementById('recipeStation').value,
                     prepTime: document.getElementById('recipePrepTime').value,
