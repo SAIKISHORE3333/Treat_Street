@@ -104,6 +104,12 @@
             <button onclick="sopApp.showForm()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center gap-1.5 border border-amber-400 ml-1">
               <i class="fas fa-plus"></i> New Recipe
             </button>
+            <button onclick="sopApp.refreshCatalog()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-blue-500 hover:bg-blue-600 text-white shadow-sm flex items-center gap-1.5 border border-blue-400 ml-1" title="Refresh ingredients from Purchase Portal">
+              <i class="fas fa-sync-alt"></i> Refresh Catalog
+            </button>
+            <button onclick="sopApp.showAddIngredientModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-purple-500 hover:bg-purple-600 text-white shadow-sm flex items-center gap-1.5 border border-purple-400 ml-1" title="Add new ingredient to Catalog">
+              <i class="fas fa-carrot"></i> Add Ingredient
+            </button>
           </nav>
         </div>
       </div>
@@ -490,6 +496,54 @@
             </div>
         </div>
 
+        <!-- ADD INGREDIENT MODAL -->
+        <div id="addIngredientModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden transform transition-all">
+                <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] flex justify-between items-center shadow-inner">
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-plus-circle text-emerald-200 mr-2"></i> Add New Ingredient
+                    </h2>
+                    <button onclick="sopApp.hideAddIngredientModal()" class="text-emerald-200 hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <form onsubmit="sopApp.saveNewIngredient(event)" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Ingredient Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="newIngName" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Category <span class="text-red-500">*</span></label>
+                            <input type="text" id="newIngCategory" required placeholder="e.g. Dairy, Produce" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Size/Unit <span class="text-red-500">*</span></label>
+                            <input type="text" id="newIngSize" required placeholder="e.g. 1kg, 500g, 1L" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
+                            <input type="text" id="newIngSupplier" placeholder="e.g. Bookers, Costco" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Price (£) <span class="text-red-500">*</span></label>
+                            <input type="number" id="newIngPrice" required step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
+                        </div>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-3 border-t border-slate-100 mt-6">
+                        <button type="button" onclick="sopApp.hideAddIngredientModal()" class="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-[#144D37] to-emerald-900 text-white rounded-lg font-bold shadow-lg shadow-emerald-900/30 hover:scale-105 transition-all">
+                            Save to Catalog
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </main>
 
     <script>
@@ -539,6 +593,119 @@
                     subDatalist.innerHTML = subrecipes.map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
                 }
             },
+            
+            async refreshCatalog() {
+                let loadedFromSupabase = false;
+                if (this.supabaseClient) {
+                    try {
+                        const { data, error } = await this.supabaseClient.from('catalog').select('*').order('id', { ascending: true });
+                        if (data && !error && data.length > 0) {
+                            this.catalog = data;
+                            localStorage.setItem('ts_shared_catalog', JSON.stringify(this.catalog));
+                            loadedFromSupabase = true;
+                        }
+                    } catch(e) { console.error('Supabase fetch exception:', e); }
+                }
+                
+                if (!loadedFromSupabase) {
+                    const localCatalog = localStorage.getItem('ts_shared_catalog');
+                    this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
+                    if (!Array.isArray(this.catalog)) this.catalog = window.tsCatalog ? window.tsCatalog : [];
+                }
+                
+                this.updateCatalogWithSubRecipes();
+                this.showToast('Catalog refreshed successfully!', 'success');
+                
+                // If in form view, recalculate costs to reflect any price changes
+                if (!document.getElementById('formView').classList.contains('hidden')) {
+                    const rows = document.querySelectorAll('#ingredientsBody tr');
+                    rows.forEach(row => {
+                        const input = row.querySelector('.ing-name');
+                        if (input && input.value) {
+                            this.calculateRowCost(input);
+                        }
+                    });
+                }
+            },
+            
+            showAddIngredientModal() {
+                const modal = document.getElementById('addIngredientModal');
+                if (modal) modal.classList.remove('hidden');
+            },
+            
+            hideAddIngredientModal() {
+                const modal = document.getElementById('addIngredientModal');
+                if (modal) modal.classList.add('hidden');
+            },
+            
+            async saveNewIngredient(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('newIngName').value.trim();
+                const category = document.getElementById('newIngCategory').value.trim();
+                const size = document.getElementById('newIngSize').value.trim();
+                const supplier = document.getElementById('newIngSupplier').value.trim() || 'Internal';
+                const price = parseFloat(document.getElementById('newIngPrice').value) || 0;
+                
+                if (!name || !size || isNaN(price)) return;
+                
+                let maxId = 0;
+                if (this.catalog && this.catalog.length > 0) {
+                    maxId = this.catalog.reduce((max, item) => (typeof item.id === 'number' && item.id > max) ? item.id : max, 0);
+                }
+                
+                const newItem = {
+                    id: maxId + 1,
+                    name: name,
+                    category: category,
+                    size: size,
+                    supplier: supplier,
+                    price: price,
+                    vatRate: 0
+                };
+                
+                if (!this.catalog) this.catalog = [];
+                this.catalog.push(newItem);
+                
+                // Update local storage so other portals see the changes locally
+                localStorage.setItem('ts_shared_catalog', JSON.stringify(this.catalog));
+                
+                // Push to Supabase storage
+                if (this.supabaseClient) {
+                    try {
+                        const { error } = await this.supabaseClient.from('catalog').insert(newItem);
+                        if (error) console.error('Supabase insert error:', error);
+                    } catch(err) {
+                        console.error('Supabase insert exception:', err);
+                    }
+                }
+                
+                // Refresh local views
+                this.updateCatalogWithSubRecipes();
+                
+                this.hideAddIngredientModal();
+                e.target.reset();
+                this.showToast(`Added ${name} to catalog!`, 'success');
+            },
+            
+            showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white font-medium shadow-lg z-50 transform transition-all translate-y-10 opacity-0 ${type === 'success' ? 'bg-emerald-600' : 'bg-red-500'}`;
+                toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i> ${message}`;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-10', 'opacity-0');
+                }, 10);
+                
+                setTimeout(() => {
+                    toast.classList.add('translate-y-10', 'opacity-0');
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 300);
+                }, 3000);
+            },
+
             supabaseClient: null,
             
             async init() {
@@ -548,9 +715,26 @@
                 }
 
                 // Load Catalog
-                const localCatalog = localStorage.getItem('ts_shared_catalog');
-                this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
-                if (!Array.isArray(this.catalog)) this.catalog = window.tsCatalog ? window.tsCatalog : [];
+                let loadedFromSupabase = false;
+                if (this.supabaseClient) {
+                    try {
+                        const { data, error } = await this.supabaseClient.from('catalog').select('*').order('id', { ascending: true });
+                        if (data && !error && data.length > 0) {
+                            this.catalog = data;
+                            localStorage.setItem('ts_shared_catalog', JSON.stringify(this.catalog));
+                            loadedFromSupabase = true;
+                            console.log('Successfully loaded catalog from Supabase!');
+                        }
+                    } catch(e) {
+                        console.error('Supabase fetch exception:', e);
+                    }
+                }
+
+                if (!loadedFromSupabase) {
+                    const localCatalog = localStorage.getItem('ts_shared_catalog');
+                    this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
+                    if (!Array.isArray(this.catalog)) this.catalog = window.tsCatalog ? window.tsCatalog : [];
+                }
                 
                 // Build Datalists
                 let datalist = document.getElementById('ingredient-catalog-list');
