@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     .watermark-bg {
@@ -1474,24 +1476,51 @@
           await supabaseClient.from('catalog').insert(newItem);
         } catch(e) {}
       }
-        </div>
-      `;
+    }
 
-      exportContainer.innerHTML = htmlContent;
-      const element = document.getElementById('catalog-pdf-content');
+    function downloadCatalogPDF() {
+      if (!catalog || catalog.length === 0) {
+        alert("Catalog is empty!");
+        return;
+      }
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      doc.setFontSize(16);
+      doc.setTextColor(20, 77, 55);
+      doc.text("Treat Street Full Catalog", 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Generated on: ${new Date().toLocaleDateString('en-GB')}`, 14, 21);
 
-      const opt = {
-        margin:       [0.4, 0.4, 0.4, 0.4],
-        filename:     "Treat_Street_Catalog_" + new Date().toISOString().split('T')[0] + ".pdf",
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
-        pagebreak:    { mode: 'css', avoid: 'tr' }
-      };
+      const tableData = catalog.map((item, index) => [
+        index + 1,
+        item.name,
+        item.supplier || '-',
+        item.size || '-',
+        `£${(item.price || 0).toFixed(2)}`
+      ]);
 
-      html2pdf().set(opt).from(element).save().then(() => {
-         exportContainer.innerHTML = '';
+      doc.autoTable({
+        startY: 25,
+        head: [['S.No', 'Item Name', 'Supplier', 'Quantity / Size', 'Current Price']],
+        body: tableData,
+        headStyles: { fillColor: [20, 77, 55], textColor: 255 },
+        styles: { fontSize: 8, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 15, halign: 'center' },
+          1: { cellWidth: 'auto' },
+          2: { cellWidth: 35, halign: 'center' },
+          3: { cellWidth: 35, halign: 'center' },
+          4: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { top: 20, right: 14, bottom: 20, left: 14 }
       });
+
+      doc.save(`Treat_Street_Full_Catalog_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.pdf`);
     }
   </script>
 </body>
