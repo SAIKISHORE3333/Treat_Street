@@ -795,28 +795,28 @@
                 if (multiMatch) {
                     totalCatalogAmt = parseFloat(multiMatch[1]) * parseFloat(multiMatch[2]);
                     const unitStr = multiMatch[3];
-                    if (['l', 'ltr', 'liter', 'liters'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'volume'; }
+                    if (['l', 'ltr', 'liter', 'liters', 'litre', 'litres'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'volume'; }
                     else if (['ml'].includes(unitStr)) { catalogType = 'volume'; }
-                    else if (['kg', 'kilo', 'kilos'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'weight'; }
+                    else if (['kg', 'kilo', 'kilos', 'kilogram', 'kilograms'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'weight'; }
                     else if (['g', 'gram', 'grams'].includes(unitStr)) { catalogType = 'weight'; }
                 } else {
                     const numMatch = sizeStr.match(/([\d.]+)/);
                     let amount = numMatch ? parseFloat(numMatch[1]) : 1;
                     
                     if (sizeStr.includes('per kg') || sizeStr === 'kg') amount = 1;
-                    if (sizeStr.includes('per ltr') || sizeStr === 'l' || sizeStr === 'ltr') amount = 1;
+                    if (sizeStr.includes('per ltr') || sizeStr.includes('per litre') || sizeStr === 'l' || sizeStr === 'ltr') amount = 1;
 
                     const words = sizeStr.replace(/[\d.]+/g, ' ').split(/[^a-z]+/).filter(w => w);
                     
-                    let isWeight = words.some(w => ['kg', 'kilo', 'kilos', 'g', 'gram', 'grams'].includes(w));
-                    let isVolume = words.some(w => ['l', 'ltr', 'liter', 'liters', 'ml'].includes(w));
+                    let isWeight = words.some(w => ['kg', 'kilo', 'kilos', 'kilogram', 'kilograms', 'g', 'gram', 'grams'].includes(w));
+                    let isVolume = words.some(w => ['l', 'ltr', 'liter', 'liters', 'litre', 'litres', 'ml'].includes(w));
                     
                     if (isWeight) {
                         catalogType = 'weight';
-                        if (words.some(w => ['kg', 'kilo', 'kilos'].includes(w))) amount *= 1000;
+                        if (words.some(w => ['kg', 'kilo', 'kilos', 'kilogram', 'kilograms'].includes(w))) amount *= 1000;
                     } else if (isVolume) {
                         catalogType = 'volume';
-                        if (words.some(w => ['l', 'ltr', 'liter', 'liters'].includes(w))) amount *= 1000;
+                        if (words.some(w => ['l', 'ltr', 'liter', 'liters', 'litre', 'litres'].includes(w))) amount *= 1000;
                     }
                     totalCatalogAmt = amount || 1;
                 }
