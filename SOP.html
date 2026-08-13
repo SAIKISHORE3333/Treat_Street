@@ -525,7 +525,9 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
-                            <input type="text" id="newIngSupplier" placeholder="e.g. Bookers, Costco" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
+                            <select id="newIngSupplier" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
+                                <option value="Internal">Internal</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Price (£) <span class="text-red-500">*</span></label>
@@ -594,6 +596,22 @@
                 }
             },
             
+            populateSupplierDropdown() {
+                const addFormSelect = document.getElementById('newIngSupplier');
+                if (addFormSelect && this.catalog) {
+                    const suppliersList = [...new Set(this.catalog.map(i => i.supplier).filter(Boolean))];
+                    addFormSelect.innerHTML = `<option value="Internal">Internal</option>`;
+                    suppliersList.forEach(s => {
+                        if (s !== 'Internal') {
+                            const opt = document.createElement('option');
+                            opt.value = s;
+                            opt.textContent = s;
+                            addFormSelect.appendChild(opt);
+                        }
+                    });
+                }
+            },
+            
             async refreshCatalog() {
                 let loadedFromSupabase = false;
                 if (this.supabaseClient) {
@@ -614,6 +632,7 @@
                 }
                 
                 this.updateCatalogWithSubRecipes();
+                this.populateSupplierDropdown();
                 this.showToast('Catalog refreshed successfully!', 'success');
                 
                 // If in form view, recalculate costs to reflect any price changes
@@ -755,6 +774,7 @@
 
                 await this.loadData();
                 this.updateCatalogWithSubRecipes();
+                this.populateSupplierDropdown();
                 
                 this.showDashboard();
                 this.renderDashboard();
