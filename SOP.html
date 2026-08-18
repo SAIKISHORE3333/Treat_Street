@@ -811,10 +811,10 @@
                 let totalCatalogAmt = 1;
                 let catalogType = 'unit';
 
-                const multiMatch = sizeStr.match(/(\d+)\s*(?:x|\*|[a-z]+\s*\*)\s*([\d.]+)\s*([a-z]*)/);
+                const multiMatch = sizeStr.match(/([\d.]+)\s*([a-z]*)\s*(?:x|\*)\s*([\d.]+)\s*([a-z]*)/);
                 if (multiMatch) {
-                    totalCatalogAmt = parseFloat(multiMatch[1]) * parseFloat(multiMatch[2]);
-                    const unitStr = multiMatch[3];
+                    totalCatalogAmt = parseFloat(multiMatch[1]) * parseFloat(multiMatch[3]);
+                    const unitStr = multiMatch[2] || multiMatch[4];
                     if (['l', 'ltr', 'liter', 'liters', 'litre', 'litres'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'volume'; }
                     else if (['ml'].includes(unitStr)) { catalogType = 'volume'; }
                     else if (['kg', 'kilo', 'kilos', 'kilogram', 'kilograms'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'weight'; }
