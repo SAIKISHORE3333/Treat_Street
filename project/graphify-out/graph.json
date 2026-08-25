@@ -1,0 +1,404 @@
+{
+  "generatedAt": "2026-07-02T13:25:04.706Z",
+  "project": "Treat Street Purchase",
+  "metrics": {
+    "totalFiles": 21,
+    "totalLines": 2192,
+    "totalBytes": 105819,
+    "externalCount": 4
+  },
+  "nodes": [
+    {
+      "id": "src/App.tsx",
+      "label": "App.tsx",
+      "category": "App Entry",
+      "size": 1410,
+      "lines": 51,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 6,
+      "centrality": 7.8
+    },
+    {
+      "id": "src/components/admin/AdminLogin.tsx",
+      "label": "AdminLogin.tsx",
+      "category": "Admin Component",
+      "size": 4650,
+      "lines": 116,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 1,
+      "centrality": 2.8
+    },
+    {
+      "id": "src/components/admin/InventoryManager.tsx",
+      "label": "InventoryManager.tsx",
+      "category": "Admin Component",
+      "size": 26169,
+      "lines": 421,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 2,
+      "centrality": 3.8
+    },
+    {
+      "id": "src/components/admin/OrderLog.tsx",
+      "label": "OrderLog.tsx",
+      "category": "Admin Component",
+      "size": 12749,
+      "lines": 284,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 2,
+      "centrality": 3.8
+    },
+    {
+      "id": "src/components/CartDrawer.tsx",
+      "label": "CartDrawer.tsx",
+      "category": "UI Component",
+      "size": 4949,
+      "lines": 113,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 1,
+      "centrality": 2.8
+    },
+    {
+      "id": "src/components/CheckoutModal.tsx",
+      "label": "CheckoutModal.tsx",
+      "category": "UI Component",
+      "size": 7818,
+      "lines": 156,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 2,
+      "centrality": 3.8
+    },
+    {
+      "id": "src/components/ItemCard.tsx",
+      "label": "ItemCard.tsx",
+      "category": "UI Component",
+      "size": 3940,
+      "lines": 99,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 2,
+      "centrality": 3.8
+    },
+    {
+      "id": "src/components/Navbar.tsx",
+      "label": "Navbar.tsx",
+      "category": "UI Component",
+      "size": 2913,
+      "lines": 68,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 1,
+      "centrality": 2.8
+    },
+    {
+      "id": "src/config/admin.ts",
+      "label": "admin.ts",
+      "category": "App Config",
+      "size": 100,
+      "lines": 3,
+      "exportCount": 2,
+      "incomingCount": 2,
+      "outgoingCount": 0,
+      "centrality": 3.6
+    },
+    {
+      "id": "src/context/CartContext.tsx",
+      "label": "CartContext.tsx",
+      "category": "React Context",
+      "size": 3715,
+      "lines": 116,
+      "exportCount": 2,
+      "incomingCount": 5,
+      "outgoingCount": 1,
+      "centrality": 10
+    },
+    {
+      "id": "src/index.css",
+      "label": "index.css",
+      "category": "Styling",
+      "size": 364,
+      "lines": 24,
+      "exportCount": 0,
+      "incomingCount": 1,
+      "outgoingCount": 0,
+      "centrality": 1.8
+    },
+    {
+      "id": "src/lib/supabase.ts",
+      "label": "supabase.ts",
+      "category": "Library Config",
+      "size": 263,
+      "lines": 7,
+      "exportCount": 1,
+      "incomingCount": 4,
+      "outgoingCount": 0,
+      "centrality": 7.2
+    },
+    {
+      "id": "src/main.tsx",
+      "label": "main.tsx",
+      "category": "App Entry",
+      "size": 234,
+      "lines": 11,
+      "exportCount": 0,
+      "incomingCount": 0,
+      "outgoingCount": 2,
+      "centrality": 2
+    },
+    {
+      "id": "src/pages/AdminDashboard.tsx",
+      "label": "AdminDashboard.tsx",
+      "category": "Page View",
+      "size": 3720,
+      "lines": 99,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 4,
+      "centrality": 5.8
+    },
+    {
+      "id": "src/pages/Storefront.tsx",
+      "label": "Storefront.tsx",
+      "category": "Page View",
+      "size": 6948,
+      "lines": 167,
+      "exportCount": 1,
+      "incomingCount": 1,
+      "outgoingCount": 3,
+      "centrality": 4.8
+    },
+    {
+      "id": "src/types/index.ts",
+      "label": "index.ts",
+      "category": "Type Definition",
+      "size": 983,
+      "lines": 51,
+      "exportCount": 6,
+      "incomingCount": 5,
+      "outgoingCount": 0,
+      "centrality": 9
+    },
+    {
+      "id": "src/vite-env.d.ts",
+      "label": "vite-env.d.ts",
+      "category": "Utility/Other",
+      "size": 38,
+      "lines": 2,
+      "exportCount": 0,
+      "incomingCount": 0,
+      "outgoingCount": 0,
+      "centrality": 0
+    },
+    {
+      "id": "supabase/migrations/20260701121531_create_purchasing_portal_schema.sql",
+      "label": "20260701121531_create_purchasing_portal_schema.sql",
+      "category": "Database Migration",
+      "size": 7550,
+      "lines": 163,
+      "exportCount": 4,
+      "incomingCount": 3,
+      "outgoingCount": 3,
+      "centrality": 8.4
+    },
+    {
+      "id": "supabase/migrations/20260701121630_seed_initial_products.sql",
+      "label": "20260701121630_seed_initial_products.sql",
+      "category": "Database Migration",
+      "size": 8131,
+      "lines": 105,
+      "exportCount": 0,
+      "incomingCount": 0,
+      "outgoingCount": 0,
+      "centrality": 0
+    },
+    {
+      "id": "supabase/migrations/20260701135236_add_supplier_email_and_order_branch.sql",
+      "label": "20260701135236_add_supplier_email_and_order_branch.sql",
+      "category": "Database Migration",
+      "size": 672,
+      "lines": 22,
+      "exportCount": 0,
+      "incomingCount": 0,
+      "outgoingCount": 0,
+      "centrality": 0
+    },
+    {
+      "id": "supabase/migrations/20260701141907_reseed_inventory_with_supplier_email.sql",
+      "label": "20260701141907_reseed_inventory_with_supplier_email.sql",
+      "category": "Database Migration",
+      "size": 8503,
+      "lines": 114,
+      "exportCount": 0,
+      "incomingCount": 0,
+      "outgoingCount": 0,
+      "centrality": 0
+    }
+  ],
+  "edges": [
+    {
+      "from": "src/App.tsx",
+      "to": "src/context/CartContext.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/App.tsx",
+      "to": "src/components/Navbar.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/App.tsx",
+      "to": "src/components/CartDrawer.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/App.tsx",
+      "to": "src/components/CheckoutModal.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/App.tsx",
+      "to": "src/pages/Storefront.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/App.tsx",
+      "to": "src/pages/AdminDashboard.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/components/admin/AdminLogin.tsx",
+      "to": "src/config/admin.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/components/admin/InventoryManager.tsx",
+      "to": "src/lib/supabase.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/components/admin/InventoryManager.tsx",
+      "to": "src/types/index.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/components/admin/OrderLog.tsx",
+      "to": "src/lib/supabase.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/components/admin/OrderLog.tsx",
+      "to": "src/types/index.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/components/CartDrawer.tsx",
+      "to": "src/context/CartContext.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/components/CheckoutModal.tsx",
+      "to": "src/lib/supabase.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/components/CheckoutModal.tsx",
+      "to": "src/context/CartContext.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/components/ItemCard.tsx",
+      "to": "src/types/index.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/components/ItemCard.tsx",
+      "to": "src/context/CartContext.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/components/Navbar.tsx",
+      "to": "src/context/CartContext.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/context/CartContext.tsx",
+      "to": "src/types/index.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/main.tsx",
+      "to": "src/App.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/main.tsx",
+      "to": "src/index.css",
+      "type": "import"
+    },
+    {
+      "from": "src/pages/AdminDashboard.tsx",
+      "to": "src/components/admin/OrderLog.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/pages/AdminDashboard.tsx",
+      "to": "src/components/admin/InventoryManager.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/pages/AdminDashboard.tsx",
+      "to": "src/components/admin/AdminLogin.tsx",
+      "type": "import"
+    },
+    {
+      "from": "src/pages/AdminDashboard.tsx",
+      "to": "src/config/admin.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/pages/Storefront.tsx",
+      "to": "src/lib/supabase.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/pages/Storefront.tsx",
+      "to": "src/types/index.ts",
+      "type": "import"
+    },
+    {
+      "from": "src/pages/Storefront.tsx",
+      "to": "src/components/ItemCard.tsx",
+      "type": "import"
+    },
+    {
+      "from": "supabase/migrations/20260701121531_create_purchasing_portal_schema.sql",
+      "to": "supabase/migrations/20260701121531_create_purchasing_portal_schema.sql",
+      "type": "sql_ref",
+      "label": "references suppliers"
+    },
+    {
+      "from": "supabase/migrations/20260701121531_create_purchasing_portal_schema.sql",
+      "to": "supabase/migrations/20260701121531_create_purchasing_portal_schema.sql",
+      "type": "sql_ref",
+      "label": "references orders"
+    },
+    {
+      "from": "supabase/migrations/20260701121531_create_purchasing_portal_schema.sql",
+      "to": "supabase/migrations/20260701121531_create_purchasing_portal_schema.sql",
+      "type": "sql_ref",
+      "label": "references products"
+    }
+  ],
+  "externalDependencies": [
+    "@supabase/supabase-js",
+    "lucide-react",
+    "react",
+    "react-dom/client"
+  ]
+}

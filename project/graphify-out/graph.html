@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treat Street Purchase - Dependency Graph</title>
+  <!-- Vis.js for Network Graph -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+      color: #f8fafc;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    #mynetwork {
+      width: 100%;
+      height: calc(100vh - 80px);
+      background-color: transparent;
+    }
+    .glass {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="overflow-hidden h-screen flex flex-col">
+  <!-- Header -->
+  <header class="h-20 border-b border-slate-800/80 glass px-6 flex items-center justify-between shrink-0 z-10 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-600 flex items-center justify-center shadow-md">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-black tracking-tight text-white uppercase">Treat Street</h1>
+        <p class="text-xs text-slate-400 font-semibold tracking-wide uppercase">Interactive Codebase Dependency Graph</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-6 text-sm">
+      <div class="text-right hidden md:block">
+        <span class="text-slate-400 text-xs">Total Files Indexed</span>
+        <div class="text-amber-400 font-bold text-base">21 nodes</div>
+      </div>
+      <div class="text-right hidden md:block">
+        <span class="text-slate-400 text-xs">Total Code Size</span>
+        <div class="text-rose-400 font-bold text-base">103.3 KB</div>
+      </div>
+      <button onclick="fitGraph()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700/60 rounded-xl transition-all font-semibold text-xs text-white shadow-sm flex items-center gap-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18a2.25 2.25 0 0 1-2.25 2.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+        </svg>
+        Recenter
+      </button>
+    </div>
+  </header>
+
+  <!-- Main view -->
+  <div class="flex-1 flex relative overflow-hidden">
+    <!-- Graph canvas -->
+    <div id="mynetwork" class="flex-1"></div>
+
+    <!-- Node info panel -->
+    <div id="details-panel" class="absolute right-6 top-6 bottom-6 w-96 glass rounded-2xl p-6 z-10 shadow-2xl flex flex-col transition-all duration-300 opacity-0 pointer-events-none transform translate-x-4">
+      <div class="flex items-start justify-between mb-4 pb-4 border-b border-slate-800">
+        <div>
+          <h2 id="node-name" class="font-bold text-white text-lg break-all">Select a node</h2>
+          <span id="node-category" class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider">Category</span>
+        </div>
+        <button onclick="closeDetails()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800/80 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-5 pr-1">
+        <div>
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">File Path</h3>
+          <p id="node-path" class="text-xs text-slate-300 bg-slate-900/60 p-2.5 rounded-xl font-mono break-all border border-slate-800/40 select-all"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-900/40 border border-slate-800/40 p-3 rounded-xl">
+            <h4 class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-0.5">File Size</h4>
+            <p id="node-size" class="text-white text-sm font-bold">0 KB</p>
+          </div>
+          <div class="bg-slate-900/40 border border-slate-800/40 p-3 rounded-xl">
+            <h4 class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-0.5">Lines</h4>
+            <p id="node-lines" class="text-white text-sm font-bold">0 lines</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-900/40 border border-slate-800/40 p-3 rounded-xl">
+            <h4 class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-0.5">Incoming Links</h4>
+            <p id="node-incoming" class="text-amber-400 text-sm font-bold">0</p>
+          </div>
+          <div class="bg-slate-900/40 border border-slate-800/40 p-3 rounded-xl">
+            <h4 class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-0.5">Outgoing Links</h4>
+            <p id="node-outgoing" class="text-emerald-400 text-sm font-bold">0</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/40 border border-slate-800/40 p-3.5 rounded-xl">
+          <h4 class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1.5">God Node Centrality Score</h4>
+          <div class="flex items-center gap-3">
+            <div class="flex-1 bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div id="node-centrality-bar" class="bg-gradient-to-r from-amber-500 to-rose-500 h-full rounded-full" style="width: 0%"></div>
+            </div>
+            <span id="node-centrality" class="text-white text-sm font-black">0</span>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-2 font-medium">Weighted index based on incoming (1.8x) and outgoing imports.</p>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Connected Files</h3>
+          <div id="node-relations" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="absolute left-6 bottom-6 glass rounded-2xl p-4 z-10 text-xs shadow-2xl flex flex-col gap-2">
+      <h3 class="font-bold text-white mb-1 tracking-wider uppercase text-[10px] text-slate-400">Node Categories</h3>
+      <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: #3b82f6;"></div><span class="text-slate-300">UI Component</span></div>
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: #f59e0b;"></div><span class="text-slate-300">Admin Component</span></div>
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: #ef4444;"></div><span class="text-slate-300">Page View</span></div>
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: #10b981;"></div><span class="text-slate-300">React Context</span></div>
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: #8b5cf6;"></div><span class="text-slate-300">Database Schema</span></div>
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: #64748b;"></div><span class="text-slate-300">App Entry/Others</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const data = {"generatedAt":"2026-07-02T13:25:04.706Z","project":"Treat Street Purchase","metrics":{"totalFiles":21,"totalLines":2192,"totalBytes":105819,"externalCount":4},"nodes":[{"id":"src/App.tsx","label":"App.tsx","category":"App Entry","size":1410,"lines":51,"exportCount":1,"incomingCount":1,"outgoingCount":6,"centrality":7.8},{"id":"src/components/admin/AdminLogin.tsx","label":"AdminLogin.tsx","category":"Admin Component","size":4650,"lines":116,"exportCount":1,"incomingCount":1,"outgoingCount":1,"centrality":2.8},{"id":"src/components/admin/InventoryManager.tsx","label":"InventoryManager.tsx","category":"Admin Component","size":26169,"lines":421,"exportCount":1,"incomingCount":1,"outgoingCount":2,"centrality":3.8},{"id":"src/components/admin/OrderLog.tsx","label":"OrderLog.tsx","category":"Admin Component","size":12749,"lines":284,"exportCount":1,"incomingCount":1,"outgoingCount":2,"centrality":3.8},{"id":"src/components/CartDrawer.tsx","label":"CartDrawer.tsx","category":"UI Component","size":4949,"lines":113,"exportCount":1,"incomingCount":1,"outgoingCount":1,"centrality":2.8},{"id":"src/components/CheckoutModal.tsx","label":"CheckoutModal.tsx","category":"UI Component","size":7818,"lines":156,"exportCount":1,"incomingCount":1,"outgoingCount":2,"centrality":3.8},{"id":"src/components/ItemCard.tsx","label":"ItemCard.tsx","category":"UI Component","size":3940,"lines":99,"exportCount":1,"incomingCount":1,"outgoingCount":2,"centrality":3.8},{"id":"src/components/Navbar.tsx","label":"Navbar.tsx","category":"UI Component","size":2913,"lines":68,"exportCount":1,"incomingCount":1,"outgoingCount":1,"centrality":2.8},{"id":"src/config/admin.ts","label":"admin.ts","category":"App Config","size":100,"lines":3,"exportCount":2,"incomingCount":2,"outgoingCount":0,"centrality":3.6},{"id":"src/context/CartContext.tsx","label":"CartContext.tsx","category":"React Context","size":3715,"lines":116,"exportCount":2,"incomingCount":5,"outgoingCount":1,"centrality":10},{"id":"src/index.css","label":"index.css","category":"Styling","size":364,"lines":24,"exportCount":0,"incomingCount":1,"outgoingCount":0,"centrality":1.8},{"id":"src/lib/supabase.ts","label":"supabase.ts","category":"Library Config","size":263,"lines":7,"exportCount":1,"incomingCount":4,"outgoingCount":0,"centrality":7.2},{"id":"src/main.tsx","label":"main.tsx","category":"App Entry","size":234,"lines":11,"exportCount":0,"incomingCount":0,"outgoingCount":2,"centrality":2},{"id":"src/pages/AdminDashboard.tsx","label":"AdminDashboard.tsx","category":"Page View","size":3720,"lines":99,"exportCount":1,"incomingCount":1,"outgoingCount":4,"centrality":5.8},{"id":"src/pages/Storefront.tsx","label":"Storefront.tsx","category":"Page View","size":6948,"lines":167,"exportCount":1,"incomingCount":1,"outgoingCount":3,"centrality":4.8},{"id":"src/types/index.ts","label":"index.ts","category":"Type Definition","size":983,"lines":51,"exportCount":6,"incomingCount":5,"outgoingCount":0,"centrality":9},{"id":"src/vite-env.d.ts","label":"vite-env.d.ts","category":"Utility/Other","size":38,"lines":2,"exportCount":0,"incomingCount":0,"outgoingCount":0,"centrality":0},{"id":"supabase/migrations/20260701121531_create_purchasing_portal_schema.sql","label":"20260701121531_create_purchasing_portal_schema.sql","category":"Database Migration","size":7550,"lines":163,"exportCount":4,"incomingCount":3,"outgoingCount":3,"centrality":8.4},{"id":"supabase/migrations/20260701121630_seed_initial_products.sql","label":"20260701121630_seed_initial_products.sql","category":"Database Migration","size":8131,"lines":105,"exportCount":0,"incomingCount":0,"outgoingCount":0,"centrality":0},{"id":"supabase/migrations/20260701135236_add_supplier_email_and_order_branch.sql","label":"20260701135236_add_supplier_email_and_order_branch.sql","category":"Database Migration","size":672,"lines":22,"exportCount":0,"incomingCount":0,"outgoingCount":0,"centrality":0},{"id":"supabase/migrations/20260701141907_reseed_inventory_with_supplier_email.sql","label":"20260701141907_reseed_inventory_with_supplier_email.sql","category":"Database Migration","size":8503,"lines":114,"exportCount":0,"incomingCount":0,"outgoingCount":0,"centrality":0}],"edges":[{"from":"src/App.tsx","to":"src/context/CartContext.tsx","type":"import"},{"from":"src/App.tsx","to":"src/components/Navbar.tsx","type":"import"},{"from":"src/App.tsx","to":"src/components/CartDrawer.tsx","type":"import"},{"from":"src/App.tsx","to":"src/components/CheckoutModal.tsx","type":"import"},{"from":"src/App.tsx","to":"src/pages/Storefront.tsx","type":"import"},{"from":"src/App.tsx","to":"src/pages/AdminDashboard.tsx","type":"import"},{"from":"src/components/admin/AdminLogin.tsx","to":"src/config/admin.ts","type":"import"},{"from":"src/components/admin/InventoryManager.tsx","to":"src/lib/supabase.ts","type":"import"},{"from":"src/components/admin/InventoryManager.tsx","to":"src/types/index.ts","type":"import"},{"from":"src/components/admin/OrderLog.tsx","to":"src/lib/supabase.ts","type":"import"},{"from":"src/components/admin/OrderLog.tsx","to":"src/types/index.ts","type":"import"},{"from":"src/components/CartDrawer.tsx","to":"src/context/CartContext.tsx","type":"import"},{"from":"src/components/CheckoutModal.tsx","to":"src/lib/supabase.ts","type":"import"},{"from":"src/components/CheckoutModal.tsx","to":"src/context/CartContext.tsx","type":"import"},{"from":"src/components/ItemCard.tsx","to":"src/types/index.ts","type":"import"},{"from":"src/components/ItemCard.tsx","to":"src/context/CartContext.tsx","type":"import"},{"from":"src/components/Navbar.tsx","to":"src/context/CartContext.tsx","type":"import"},{"from":"src/context/CartContext.tsx","to":"src/types/index.ts","type":"import"},{"from":"src/main.tsx","to":"src/App.tsx","type":"import"},{"from":"src/main.tsx","to":"src/index.css","type":"import"},{"from":"src/pages/AdminDashboard.tsx","to":"src/components/admin/OrderLog.tsx","type":"import"},{"from":"src/pages/AdminDashboard.tsx","to":"src/components/admin/InventoryManager.tsx","type":"import"},{"from":"src/pages/AdminDashboard.tsx","to":"src/components/admin/AdminLogin.tsx","type":"import"},{"from":"src/pages/AdminDashboard.tsx","to":"src/config/admin.ts","type":"import"},{"from":"src/pages/Storefront.tsx","to":"src/lib/supabase.ts","type":"import"},{"from":"src/pages/Storefront.tsx","to":"src/types/index.ts","type":"import"},{"from":"src/pages/Storefront.tsx","to":"src/components/ItemCard.tsx","type":"import"},{"from":"supabase/migrations/20260701121531_create_purchasing_portal_schema.sql","to":"supabase/migrations/20260701121531_create_purchasing_portal_schema.sql","type":"sql_ref","label":"references suppliers"},{"from":"supabase/migrations/20260701121531_create_purchasing_portal_schema.sql","to":"supabase/migrations/20260701121531_create_purchasing_portal_schema.sql","type":"sql_ref","label":"references orders"},{"from":"supabase/migrations/20260701121531_create_purchasing_portal_schema.sql","to":"supabase/migrations/20260701121531_create_purchasing_portal_schema.sql","type":"sql_ref","label":"references products"}],"externalDependencies":["@supabase/supabase-js","lucide-react","react","react-dom/client"]};
+    
+    // Categorization colors
+    const colors = {
+      'UI Component': { background: '#3b82f6', border: '#2563eb', highlight: { background: '#60a5fa', border: '#3b82f6' } },
+      'Admin Component': { background: '#f59e0b', border: '#d97706', highlight: { background: '#fbbf24', border: '#f59e0b' } },
+      'Page View': { background: '#ef4444', border: '#dc2626', highlight: { background: '#f87171', border: '#ef4444' } },
+      'React Context': { background: '#10b981', border: '#059669', highlight: { background: '#34d399', border: '#10b981' } },
+      'Database Migration': { background: '#8b5cf6', border: '#7c3aed', highlight: { background: '#a78bfa', border: '#8b5cf6' } },
+      'Library Config': { background: '#ec4899', border: '#db2777', highlight: { background: '#f472b6', border: '#ec4899' } },
+      'App Entry': { background: '#e2e8f0', border: '#94a3b8', highlight: { background: '#ffffff', border: '#cbd5e1' } },
+      'default': { background: '#64748b', border: '#475569', highlight: { background: '#94a3b8', border: '#64748b' } }
+    };
+    
+    const visNodes = data.nodes.map(n => {
+      const col = colors[n.category] || colors['default'];
+      const centralityPercent = Math.min(100, (n.centrality / 15) * 100);
+      
+      // Node sizing based on lines count
+      const sizeVal = Math.max(12, Math.min(32, 10 + Math.sqrt(n.lines)));
+      
+      return {
+        id: n.id,
+        label: n.label,
+        shape: 'dot',
+        size: sizeVal,
+        color: {
+          background: col.background,
+          border: col.border,
+          highlight: col.highlight
+        },
+        font: { color: '#f8fafc', size: 11, face: 'Inter, system-ui' },
+        borderWidth: 1.5,
+        shadow: { enabled: true, color: 'rgba(0,0,0,0.5)', size: 4, x: 0, y: 2 },
+        // Custom variables
+        rawNode: n
+      };
+    });
+
+    const visEdges = data.edges.map(e => ({
+      from: e.from,
+      to: e.to,
+      arrows: 'to',
+      color: { color: '#334155', highlight: '#f59e0b', hover: '#475569' },
+      width: 1.5,
+      smooth: { type: 'cubicBezier', roundness: 0.4 }
+    }));
+
+    const container = document.getElementById('mynetwork');
+    const graphPayload = {
+      nodes: new vis.DataSet(visNodes),
+      edges: new vis.DataSet(visEdges)
+    };
+
+    const options = {
+      physics: {
+        forceAtlas2Based: {
+          gravitationalConstant: -26,
+          centralGravity: 0.005,
+          springLength: 90,
+          springConstant: 0.18
+        },
+        maxVelocity: 146,
+        solver: 'forceAtlas2Based',
+        timestep: 0.35,
+        stabilization: { iterations: 150 }
+      },
+      interaction: {
+        hover: true,
+        tooltipDelay: 200,
+        selectable: true,
+        selectConnectedEdges: true
+      }
+    };
+
+    const network = new vis.Network(container, graphPayload, options);
+    
+    // Fit network
+    function fitGraph() {
+      network.fit({ animation: { duration: 1000, easingFunction: 'easeInOutQuad' } });
+    }
+
+    // Detail Panel Logic
+    const panel = document.getElementById('details-panel');
+    
+    network.on("selectNode", function (params) {
+      const nodeId = params.nodes[0];
+      const clickedNode = visNodes.find(n => n.id === nodeId).rawNode;
+      showNodeDetails(clickedNode);
+    });
+
+    network.on("deselectNode", function (params) {
+      closeDetails();
+    });
+
+    function showNodeDetails(node) {
+      document.getElementById('node-name').innerText = node.label;
+      const catBadge = document.getElementById('node-category');
+      catBadge.innerText = node.category;
+      
+      // Style category badge
+      const c = colors[node.category] || colors['default'];
+      catBadge.style.backgroundColor = c.background;
+      catBadge.style.color = '#fff';
+      
+      document.getElementById('node-path').innerText = node.id;
+      document.getElementById('node-size').innerText = (node.size / 1024).toFixed(2) + ' KB';
+      document.getElementById('node-lines').innerText = node.lines + ' lines';
+      document.getElementById('node-incoming').innerText = node.incomingCount;
+      document.getElementById('node-outgoing').innerText = node.outgoingCount;
+      document.getElementById('node-centrality').innerText = node.centrality.toFixed(1);
+      
+      const centPercent = Math.min(100, (node.centrality / 12) * 100);
+      document.getElementById('node-centrality-bar').style.width = centPercent + '%';
+      
+      // Find connected files
+      const relContainer = document.getElementById('node-relations');
+      relContainer.innerHTML = '';
+      
+      const connections = data.edges.filter(e => e.from === node.id || e.to === node.id);
+      
+      if (connections.length === 0) {
+        relContainer.innerHTML = '<p class="text-xs text-slate-500 italic">No connected nodes</p>';
+      } else {
+        const uniqueConnected = new Set();
+        connections.forEach(e => {
+          if (e.from !== node.id) uniqueConnected.add(e.from);
+          if (e.to !== node.id) uniqueConnected.add(e.to);
+        });
+        
+        uniqueConnected.forEach(connId => {
+          const connNode = data.nodes.find(n => n.id === connId);
+          if (connNode) {
+            const item = document.createElement('div');
+            item.className = "flex items-center justify-between p-2 hover:bg-slate-800/50 rounded-lg cursor-pointer transition-colors text-xs";
+            item.onclick = () => {
+              network.selectNodes([connId]);
+              showNodeDetails(connNode);
+              network.focus(connId, { animation: { duration: 600 } });
+            };
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.className = "text-slate-300 font-semibold truncate max-w-[200px]";
+            nameSpan.innerText = connNode.label;
+            
+            const catBadge = document.createElement('span');
+            catBadge.className = "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0";
+            const col = colors[connNode.category] || colors['default'];
+            catBadge.style.backgroundColor = col.background + '30';
+            catBadge.style.color = col.background;
+            catBadge.innerText = connNode.category.split(' ')[0];
+            
+            item.appendChild(nameSpan);
+            item.appendChild(catBadge);
+            relContainer.appendChild(item);
+          }
+        });
+      }
+      
+      panel.classList.remove('opacity-0', 'pointer-events-none', 'translate-x-4');
+    }
+
+    function closeDetails() {
+      panel.classList.add('opacity-0', 'pointer-events-none', 'translate-x-4');
+    }
+  </script>
+</body>
+</html>
