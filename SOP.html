@@ -1717,7 +1717,7 @@
                     const element = document.getElementById('sopPrintArea');
                     const recipe = this.recipes.find(r => r.id === this.currentRecipeId);
                     const safeTitle = (recipe.title || 'Untitled').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                    const filename = `recipe_${safeTitle}_${Date.now()}.pdf`;
+                    const filename = `recipe_${safeTitle}_${recipe.id}.pdf`;
 
                     const opt = {
                         margin:       0.5,
