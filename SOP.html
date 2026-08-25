@@ -7,9 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="catalog.js"></script>
+    <script src="SOP/catalog.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -18,9 +16,9 @@
                         sans: ['Inter', 'sans-serif'],
                     },
                     colors: {
-                        primary: '#144D37',
+                        primary: '#1b4b36',
                         secondary: '#475569',
-                        accent: '#f59e0b', // Amber 500
+                        accent: '#d6d3c4',
                         danger: '#ef4444',
                         success: '#10b981',
                     }
@@ -28,30 +26,9 @@
             }
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
-        
-                .watermark-bg {
-            background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-            background-size: 20px 20px;
-            position: relative;
-        }
-        .watermark-text {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-25deg);
-            font-size: 11vw;
-            font-weight: 900;
-            color: rgba(20, 77, 55, 0.03);
-            pointer-events: none;
-            user-select: none;
-            z-index: 0;
-            white-space: nowrap;
-            text-align: center;
-            line-height: 1;
-        }
-        .brand-green-bg { background-color: #144D37; }
         
         /* Print styles */
         @media print {
@@ -73,86 +50,61 @@
         .step-checkbox:checked + label { text-decoration: line-through; color: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col watermark-bg relative">
-    <div class="watermark-text no-print">
-        TREAT STREET<br/><span class="text-[0.6em] tracking-wider">ALIA</span>
-    </div>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
     <!-- Navbar -->
-    <header class="brand-green-bg text-white sticky top-0 z-30 border-b border-emerald-900 shadow-md no-print">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        <div class="flex items-center gap-3 cursor-pointer" onclick="sopApp.showDashboard()">
-          <div class="bg-white text-[#144D37] px-2.5 py-1 rounded-lg shadow-inner font-black text-xl leading-none tracking-wider">
-            TS
-          </div>
-          <div>
-            <h1 class="font-extrabold text-base tracking-wide flex items-center gap-2">
-              Treat Street <span class="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">SOP System</span>
-            </h1>
-            <p class="text-[11px] text-emerald-200">Internal Operations Portal</p>
-          </div>
+    <nav class="bg-white shadow-sm border-b border-slate-200 no-print sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center cursor-pointer" onclick="app.showDashboard()">
+                    <i class="fas fa-utensils text-primary text-2xl mr-3"></i>
+                    <div class="flex flex-col">
+                        <span class="font-bold text-lg tracking-tight uppercase" style="color: #1b4b36;">Treat Street Internal SOP's System</span>
+                        <span class="text-[10px] font-bold tracking-widest uppercase mt-0.5" style="color: #d6d3c4; background-color: #1b4b36; padding: 2px 6px; border-radius: 4px; width: fit-content;">Powered by ALAIYA</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="app.showDashboard()" class="text-slate-500 hover:text-primary font-medium transition-colors hidden sm:block">
+                        Dashboard
+                    </button>
+                    <button onclick="app.showPriceManager()" class="text-slate-500 hover:text-primary font-medium transition-colors hidden sm:block">
+                        Price Manager
+                    </button>
+                    <button onclick="app.showForm()" class="bg-primary hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center">
+                        <i class="fas fa-plus mr-2"></i> New Recipe
+                    </button>
+                </div>
+            </div>
         </div>
-
-        <div class="flex items-center gap-3">
-          <nav class="flex gap-1 bg-emerald-900/60 p-1 rounded-xl border border-emerald-700/50">
-            <a href="index.html" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-emerald-100 hover:text-white flex items-center gap-1.5">
-              <i class="fas fa-home"></i> Hub
-            </a>
-            <button onclick="sopApp.showDashboard()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-800 text-white shadow-sm flex items-center gap-1.5 border border-emerald-600">
-              <i class="fas fa-columns"></i> Dashboard
-            </button>
-            <button onclick="sopApp.showForm()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center gap-1.5 border border-amber-400 ml-1">
-              <i class="fas fa-plus"></i> New Recipe
-            </button>
-            <button onclick="sopApp.refreshCatalog()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-blue-500 hover:bg-blue-600 text-white shadow-sm flex items-center gap-1.5 border border-blue-400 ml-1" title="Refresh ingredients from Purchase Portal">
-              <i class="fas fa-sync-alt"></i> Refresh Catalog
-            </button>
-            <button onclick="sopApp.showAddIngredientModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-purple-500 hover:bg-purple-600 text-white shadow-sm flex items-center gap-1.5 border border-purple-400 ml-1" title="Add new ingredient to Catalog">
-              <i class="fas fa-carrot"></i> Add Ingredient
-            </button>
-          </nav>
-        </div>
-      </div>
-    </header>
+    </nav>
 
     <!-- Main Content -->
-    <main id="sopAppContainer" class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+    <main id="app" class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         
         <!-- DASHBOARD VIEW -->
         <div id="dashboardView" class="view-section">
             <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold" style="color: #144D37;">Treat Street Internal SOP's System</h1>
+                    <h1 class="text-3xl font-bold" style="color: #1b4b36;">Treat Street Internal SOP's System</h1>
                     <p class="text-slate-500 mt-1">Powered by ALAIYA - Manage and standardise your kitchen procedures.</p>
                 </div>
                 
-                <div class="flex flex-col xl:flex-row gap-4 w-full md:w-auto items-start xl:items-center">
-                    
-                    <!-- Tabs -->
-                    <div class="flex bg-slate-200/70 p-1 rounded-xl shadow-inner border border-slate-200 w-full sm:w-auto overflow-x-auto hide-scrollbar">
-                        <button id="tab-all" onclick="sopApp.setTab('all')" class="flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 bg-white text-[#144D37] shadow-sm transform scale-100 whitespace-nowrap">All Items</button>
-                        <button id="tab-recipes" onclick="sopApp.setTab('recipes')" class="flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/60 whitespace-nowrap">Main Recipes</button>
-                        <button id="tab-subrecipes" onclick="sopApp.setTab('subrecipes')" class="flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/60 whitespace-nowrap">Sub-Recipes (Ingredients)</button>
-                    </div>
-
-                    <!-- Search & Filter -->
-                    <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-                        <div class="relative w-full sm:w-64">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-search text-slate-400"></i>
-                            </div>
-                            <input type="text" id="searchInput" oninput="sopApp.filterRecipes()" placeholder="Search recipes..." class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner sm:text-sm transition-shadow">
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    <div class="relative w-full sm:w-64">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-slate-400"></i>
                         </div>
-                        <select id="categoryFilter" onchange="sopApp.filterRecipes()" class="block w-full sm:w-40 py-2 px-3 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner sm:text-sm transition-shadow">
-                            <option value="">All Categories</option>
-                            <option value="Mains">Mains</option>
-                            <option value="Starters">Starters</option>
-                            <option value="Desserts">Desserts</option>
-                            <option value="Drinks">Drinks</option>
-                            <option value="Sauces">Sauces</option>
-                            <option value="Prep">Prep</option>
-                        </select>
+                        <input type="text" id="searchInput" oninput="app.filterRecipes()" placeholder="Search recipes..." class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-shadow">
                     </div>
+                    <select id="categoryFilter" onchange="app.filterRecipes()" class="block w-full sm:w-40 py-2 px-3 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                        <option value="">All Categories</option>
+                        <option value="Mains">Mains</option>
+                        <option value="Starters">Starters</option>
+                        <option value="Desserts">Desserts</option>
+                        <option value="Drinks">Drinks</option>
+                        <option value="Sauces">Sauces</option>
+                        <option value="Prep">Prep</option>
+                    </select>
                 </div>
             </div>
 
@@ -168,51 +120,71 @@
                 </div>
                 <h3 class="text-lg font-medium text-slate-900 mb-1">No recipes found</h3>
                 <p class="text-slate-500 max-w-sm mx-auto mb-6">Get started by creating your first standardized operating procedure for the kitchen.</p>
-                <button onclick="sopApp.showForm()" class="brand-green-bg hover:bg-emerald-900 text-white px-8 py-3 rounded-xl font-black text-lg shadow-xl shadow-emerald-900/20 transition-all hover:scale-105 border border-emerald-700">
+                <button onclick="app.showForm()" class="bg-primary hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-colors">
                     Create Recipe SOP
                 </button>
+            </div>
+        </div>
+
+        <!-- PRICE MANAGER VIEW -->
+        <div id="priceManagerView" class="view-section hidden max-w-5xl mx-auto">
+            <div class="flex items-center mb-6">
+                <h1 class="text-3xl font-bold text-slate-900">Price Manager</h1>
+            </div>
+            <div class="mb-4">
+                <div class="relative w-full sm:w-96">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-slate-400"></i>
+                    </div>
+                    <input type="text" id="priceSearchInput" oninput="app.renderPriceManager()" placeholder="Search ingredients..." class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm">
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                <th class="px-6 py-3">Ingredient Name</th>
+                                <th class="px-6 py-3">Category</th>
+                                <th class="px-6 py-3">Size</th>
+                                <th class="px-6 py-3">Current Price (£)</th>
+                                <th class="px-6 py-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="priceTableBody" class="divide-y divide-slate-100 text-sm">
+                            <!-- Rows generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <!-- FORM VIEW (ADD/EDIT) -->
         <div id="formView" class="view-section hidden max-w-4xl mx-auto">
             <div class="flex items-center mb-6">
-                <button onclick="sopApp.showDashboard()" class="mr-4 text-slate-400 hover:text-slate-600 transition-colors">
+                <button onclick="app.showDashboard()" class="mr-4 text-slate-400 hover:text-slate-600 transition-colors">
                     <i class="fas fa-arrow-left text-xl"></i>
                 </button>
-                <h1 id="formTitle" class="text-4xl font-black text-slate-900 tracking-tight">Create Recipe SOP</h1>
+                <h1 id="formTitle" class="text-3xl font-bold text-slate-900">Create Recipe SOP</h1>
             </div>
 
-            <form id="recipeForm" onsubmit="sopApp.saveRecipe(event)" class="space-y-8">
+            <form id="recipeForm" onsubmit="app.saveRecipe(event)" class="space-y-8">
                 <!-- General Info -->
-                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
-                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] shadow-inner">
-                        <h2 class="text-lg font-bold text-white flex items-center">
-                            <i class="fas fa-info-circle text-emerald-200 mr-2"></i> General Information
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                            <i class="fas fa-info-circle text-primary mr-2"></i> General Information
                         </h2>
                     </div>
                     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Recipe Title</label>
-                            <input type="text" id="recipeTitle" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Recipe Type</label>
-                            <div class="flex space-x-4">
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="recipeType" value="Main Recipe" checked class="form-radio h-4 w-4 text-[#144D37] focus:ring-[#144D37] border-slate-300">
-                                    <span class="ml-2 text-sm text-slate-700">Main Recipe</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="recipeType" value="Sub-Recipe" class="form-radio h-4 w-4 text-[#144D37] focus:ring-[#144D37] border-slate-300">
-                                    <span class="ml-2 text-sm text-slate-700">Sub-Recipe</span>
-                                </label>
-                            </div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Recipe Title *</label>
+                            <input type="text" id="recipeTitle" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                            <select id="recipeCategory" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none bg-white">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Category *</label>
+                            <select id="recipeCategory" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
                                 <option value="Mains">Mains</option>
                                 <option value="Starters">Starters</option>
                                 <option value="Desserts">Desserts</option>
@@ -223,18 +195,18 @@
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Station/Section</label>
-                            <input type="text" id="recipeStation" placeholder="e.g., Grill, Sauté, Salad" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Station/Section *</label>
+                            <input type="text" id="recipeStation" required placeholder="e.g., Grill, Sauté, Salad" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
                         </div>
                         
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Prep Time</label>
-                                <input type="text" id="recipePrepTime" placeholder="e.g., 15 mins" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
+                                <input type="text" id="recipePrepTime" placeholder="e.g., 15 mins" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Cook Time</label>
-                                <input type="text" id="recipeCookTime" placeholder="e.g., 10 mins" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
+                                <input type="text" id="recipeCookTime" placeholder="e.g., 10 mins" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
                             </div>
                         </div>
                         
@@ -242,8 +214,8 @@
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Yield/Portion</label>
                                 <div class="flex gap-2">
-                                    <input type="number" id="recipeYieldNum" placeholder="4" step="0.01" oninput="sopApp.calculateTotalRecipeCost()" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
-                                    <select id="recipeYieldUnit" onchange="sopApp.calculateTotalRecipeCost()" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-white shadow-inner outline-none transition-all">
+                                    <input type="number" id="recipeYieldNum" placeholder="4" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+                                    <select id="recipeYieldUnit" class="w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
                                         <option value="portions">Portions</option>
                                         <option value="unit">Units</option>
                                         <option value="tbsp">Tbsp</option>
@@ -261,36 +233,30 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Shelf Life</label>
-                                <input type="text" id="recipeShelfLife" placeholder="e.g., 3 days" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
+                                <input type="text" id="recipeShelfLife" placeholder="e.g., 3 days" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Ingredients -->
-                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
-                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] flex justify-between items-center shadow-inner">
-                        <h2 class="text-lg font-bold text-white flex items-center">
-                            <i class="fas fa-carrot text-amber-400 mr-2"></i> Ingredients
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                            <i class="fas fa-carrot text-accent mr-2"></i> Ingredients
                         </h2>
-                        <div class="flex space-x-2">
-                            <button type="button" onclick="sopApp.addSubRecipeRow()" class="text-sm bg-blue-500 hover:bg-blue-600 text-white border border-blue-400 shadow-md px-4 py-2 rounded-lg font-bold transition-all hover:scale-105 hover:shadow-blue-500/30">
-                                <i class="fas fa-link mr-1"></i> Link Sub-Recipe
-                            </button>
-                            <button type="button" onclick="sopApp.addIngredientRow()" class="text-sm bg-amber-500 hover:bg-amber-600 text-white border border-amber-400 shadow-md px-4 py-2 rounded-lg font-bold transition-all hover:scale-105 hover:shadow-amber-500/30">
-                                <i class="fas fa-plus mr-1"></i> Add Row
-                            </button>
-                        </div>
+                        <button type="button" onclick="app.addIngredientRow()" class="text-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md font-medium transition-colors">
+                            <i class="fas fa-plus mr-1"></i> Add Row
+                        </button>
                     </div>
                     <div class="p-6 overflow-x-auto">
                         <table class="w-full min-w-[600px] text-left border-collapse" id="ingredientsTable">
                             <thead>
                                 <tr class="text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                                    <th class="pb-3 pl-2 w-1/4">Ingredient</th>
+                                    <th class="pb-3 pl-2 w-1/3">Ingredient</th>
                                     <th class="pb-3 w-1/6">Qty</th>
                                     <th class="pb-3 w-1/6">Unit</th>
-                                    <th class="pb-3 w-1/6">Cost (£)</th>
-                                    <th class="pb-3 w-1/4">Notes/Brand</th>
+                                    <th class="pb-3 w-1/3">Notes/Brand</th>
                                     <th class="pb-3 w-10"></th>
                                 </tr>
                             </thead>
@@ -299,23 +265,15 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end items-center">
-                        <div class="text-lg font-bold text-slate-800 flex flex-col sm:flex-row gap-2 sm:gap-6 items-end sm:items-center">
-                            <div>Total Recipe Cost: <span id="totalRecipeCost" class="text-[#144D37]">£0.00</span></div>
-                            <div id="costPerPortionContainer" class="hidden text-sm sm:text-base text-slate-500 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
-                                Cost per <span id="portionUnitLabel">Portion</span>: <span id="costPerPortion" class="text-emerald-600 font-extrabold">£0.00</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Equipment -->
-                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
-                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] flex justify-between items-center shadow-inner">
-                        <h2 class="text-lg font-bold text-white flex items-center">
-                            <i class="fas fa-blender text-emerald-200 mr-2"></i> Equipment Needed
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                            <i class="fas fa-blender text-slate-500 mr-2"></i> Equipment Needed
                         </h2>
-                        <button type="button" onclick="sopApp.addEquipmentRow()" class="text-sm bg-amber-500 hover:bg-amber-600 text-white border border-amber-400 shadow-md px-4 py-2 rounded-lg font-bold transition-all hover:scale-105 hover:shadow-amber-500/30">
+                        <button type="button" onclick="app.addEquipmentRow()" class="text-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md font-medium transition-colors">
                             <i class="fas fa-plus mr-1"></i> Add Equipment
                         </button>
                     </div>
@@ -327,12 +285,12 @@
                 </div>
 
                 <!-- Step-by-Step SOP -->
-                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
-                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] flex justify-between items-center shadow-inner">
-                        <h2 class="text-lg font-bold text-white flex items-center">
-                            <i class="fas fa-list-ol text-emerald-200 mr-2"></i> Step-by-Step Method
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                            <i class="fas fa-list-ol text-primary mr-2"></i> Step-by-Step Method
                         </h2>
-                        <button type="button" onclick="sopApp.addStepRow()" class="text-sm bg-amber-500 hover:bg-amber-600 text-white border border-amber-400 shadow-md px-4 py-2 rounded-lg font-bold transition-all hover:scale-105 hover:shadow-amber-500/30">
+                        <button type="button" onclick="app.addStepRow()" class="text-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md font-medium transition-colors">
                             <i class="fas fa-plus mr-1"></i> Add Step
                         </button>
                     </div>
@@ -344,23 +302,23 @@
                 </div>
 
                 <!-- Costing & Yield Notes -->
-                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden relative z-10">
-                    <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] shadow-inner">
-                        <h2 class="text-lg font-bold text-white flex items-center">
-                            <i class="fas fa-chart-pie text-amber-400 mr-2"></i> Costing & Yield Notes
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                            <i class="fas fa-chart-pie text-success mr-2"></i> Costing & Yield Notes
                         </h2>
                     </div>
                     <div class="p-6">
-                        <textarea id="recipeCosting" rows="3" placeholder="Enter target cost %, waste targets, or specific yield expectations..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all resize-y"></textarea>
+                        <textarea id="recipeCosting" rows="3" placeholder="Enter target cost %, waste targets, or specific yield expectations..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-y"></textarea>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex justify-end space-x-4 pt-4 pb-12">
-                    <button type="button" onclick="sopApp.showDashboard()" class="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors">
+                    <button type="button" onclick="app.showDashboard()" class="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors">
                         Cancel
                     </button>
-                    <button type="submit" class="px-8 py-3 bg-gradient-to-r from-[#144D37] to-emerald-900 text-white rounded-xl font-black text-lg hover:from-emerald-900 hover:to-[#144D37] shadow-xl shadow-emerald-900/30 transition-all hover:scale-105 border border-emerald-700">
+                    <button type="submit" id="submitBtn" class="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-colors">
                         Save Recipe SOP
                     </button>
                 </div>
@@ -372,17 +330,14 @@
             
             <!-- SOP Header Actions (No Print) -->
             <div class="bg-slate-100 p-4 flex justify-between items-center border-b border-slate-200 no-print">
-                <button onclick="sopApp.showDashboard()" class="text-slate-600 hover:text-slate-900 font-medium transition-colors flex items-center">
+                <button onclick="app.showDashboard()" class="text-slate-600 hover:text-slate-900 font-medium transition-colors flex items-center">
                     <i class="fas fa-arrow-left mr-2"></i> Back
                 </button>
                 <div class="space-x-3">
-                    <button onclick="sopApp.editCurrentRecipe()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
+                    <button onclick="app.editCurrentRecipe()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
                         <i class="fas fa-edit mr-1"></i> Edit
                     </button>
-                    <button onclick="sopApp.uploadPDFToCloud(this)" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
-                        <i class="fas fa-cloud-upload-alt mr-1"></i> Save PDF to Cloud
-                    </button>
-                    <button onclick="window.print()" class="brand-green-bg hover:bg-emerald-900 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
+                    <button onclick="window.print()" class="bg-primary hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm">
                         <i class="fas fa-print mr-1"></i> Print / Save PDF
                     </button>
                 </div>
@@ -398,6 +353,7 @@
                             <span id="viewStationBadge" class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider rounded-full border border-blue-100">Station</span>
                         </div>
                         <h1 id="viewTitle" class="text-4xl font-extrabold text-slate-900 tracking-tight">Recipe Title</h1>
+                        <p id="viewLastUpdated" class="text-sm text-slate-500 mt-2 font-medium"></p>
                     </div>
                     <div class="text-right flex flex-wrap gap-4 text-sm md:text-base">
                         <div class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-left">
@@ -443,26 +399,9 @@
                         <div>
                             <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-2 mb-4">Ingredients</h3>
                             <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 text-left">
-                                        <th class="pb-2">Ingredient</th>
-                                        <th class="pb-2">Qty</th>
-                                        <th class="pb-2 text-right">Cost</th>
-                                    </tr>
-                                </thead>
                                 <tbody id="viewIngredientsList" class="divide-y divide-slate-100">
                                     <!-- Ingredient items injected here -->
                                 </tbody>
-                                <tfoot>
-                                    <tr class="border-t border-slate-200">
-                                        <td colspan="2" class="py-2 font-bold text-slate-800 text-right pr-4">Total Cost:</td>
-                                        <td class="py-2 font-bold text-slate-800 text-right" id="viewTotalCost">£0.00</td>
-                                    </tr>
-                                    <tr id="viewCostPerPortionRow" class="hidden">
-                                        <td colspan="2" class="py-1 font-bold text-emerald-700 text-right pr-4">Cost per <span id="viewPortionUnitLabel">Portion</span>:</td>
-                                        <td class="py-1 font-bold text-emerald-700 text-right" id="viewCostPerPortion">£0.00</td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
 
@@ -496,64 +435,161 @@
             </div>
         </div>
 
-        <!-- ADD INGREDIENT MODAL -->
-        <div id="addIngredientModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden transform transition-all">
-                <div class="bg-gradient-to-r from-[#144D37] to-emerald-900 px-6 py-4 border-b border-[#144D37] flex justify-between items-center shadow-inner">
-                    <h2 class="text-xl font-bold text-white flex items-center">
-                        <i class="fas fa-plus-circle text-emerald-200 mr-2"></i> Add New Ingredient
-                    </h2>
-                    <button onclick="sopApp.hideAddIngredientModal()" class="text-emerald-200 hover:text-white transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                <form onsubmit="sopApp.saveNewIngredient(event)" class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Ingredient Name <span class="text-red-500">*</span></label>
-                        <input type="text" id="newIngName" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none transition-all">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Category <span class="text-red-500">*</span></label>
-                            <input type="text" id="newIngCategory" required placeholder="e.g. Dairy, Produce" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Size/Unit <span class="text-red-500">*</span></label>
-                            <input type="text" id="newIngSize" required placeholder="e.g. 1kg, 500g, 1L" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
-                            <select id="newIngSupplier" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
-                                <option value="Internal">Internal</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Price (£) <span class="text-red-500">*</span></label>
-                            <input type="number" id="newIngPrice" required step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 shadow-inner outline-none transition-all">
-                        </div>
-                    </div>
-                    <div class="pt-4 flex justify-end space-x-3 border-t border-slate-100 mt-6">
-                        <button type="button" onclick="sopApp.hideAddIngredientModal()" class="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-[#144D37] to-emerald-900 text-white rounded-lg font-bold shadow-lg shadow-emerald-900/30 hover:scale-105 transition-all">
-                            Save to Catalog
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
     </main>
 
     <script>
-        const sopApp = {
+        window.app = {
             recipes: [],
             currentRecipeId: null,
-            currentTab: 'all',
+            inventory: [
+                { id: 'PKG-001', name: 'CaterPro 100 Wooden Dessert Spoons' },
+                { id: 'PKG-002', name: 'CaterPro 100 Wooden Forks' },
+                { id: 'PKG-003', name: 'JR Foods & Packaging Services 7" Pizza Box Plain Brown 100pcs' },
+                { id: 'PKG-004', name: 'Waffle cones' },
+                { id: 'PKG-005', name: 'Cone tissues' },
+                { id: 'CLN-001', name: 'Cif Lemon Cream Cleaner 500 ml' },
+                { id: 'CLN-002', name: 'CleanPro 10 Scouring Pads' },
+                { id: 'CLN-003', name: 'CleanPro 10 Stainless Steel Scourers Medium' },
+                { id: 'CLN-004', name: 'CleanPro+ Heavy Duty Cleaner Degreaser 5 Litres' },
+                { id: 'CLN-005', name: 'CleanPro+ Oven and Grill Cleaner 1 Litre' },
+                { id: 'CLN-006', name: 'Clearly 100 Blue Vinyl Powder-Free Gloves (Large)' },
+                { id: 'CLN-007', name: 'Fairy Professional Washing Up Liquid Original 900ML' },
+                { id: 'CLN-008', name: 'Flash Professional All Purpose Cleaner, 5L' },
+                { id: 'CLN-009', name: 'Euro Shopper Citrus Thick Bleach 750ml' },
+                { id: 'RAW-001', name: 'Betty Crocker Indulgent Chocolate Fudge Icing 400g' },
+                { id: 'RAW-002', name: 'Billington\'s Dark Brown Soft Natural Unrefined Cane Sugar 500g' },
+                { id: 'RAW-003', name: 'Billington\'s Light Brown Soft Natural Unrefined Cane Sugar 3kg' },
+                { id: 'RAW-004', name: 'Billington\'s Light Brown Soft Natural Unrefined Cane Sugar 500g' },
+                { id: 'RAW-005', name: 'Biscoff Biscuit Crumbs 750g' },
+                { id: 'RAW-006', name: 'Curtis Catering Chopped Mixed Nuts 1kg' },
+                { id: 'RAW-007', name: 'Dr. Oetker Baking Powder 170g' },
+                { id: 'RAW-008', name: 'Dr. Oetker Madagascan Vanilla Extract 35ml' },
+                { id: 'RAW-009', name: 'Lichfields Fairtrade White Sugar 2kg' },
+                { id: 'RAW-010', name: 'McVitie\'s Digestives The Original Biscuits 360g' },
+                { id: 'RAW-011', name: 'Nic Caramel Mini Fudge Cubes 1kg' },
+                { id: 'RAW-012', name: 'Nic Sugar Strands Vegan 1.0kg' },
+                { id: 'RAW-013', name: 'OREO Original Vanilla Sandwich Biscuits' },
+                { id: 'RAW-014', name: 'Paterson\'s Shortbread Fingers 300g' },
+                { id: 'RAW-015', name: 'Silver Spoon British Icing Sugar 3kg' },
+                { id: 'RAW-016', name: 'Silver Spoon Granulated Sugar 1kg' },
+                { id: 'RAW-017', name: 'Sweetex Calorie Free Sweeteners 1200 Tablets' },
+                { id: 'RAW-018', name: 'Fuel granola' },
+                { id: 'RAW-019', name: 'Seeds and fruit mix' },
+                { id: 'RAW-020', name: 'James Brown cornflour' },
+                { id: 'RAW-021', name: 'Waffle mix powder' },
+                { id: 'RAW-022', name: 'Vegan waffle mix powder' },
+                { id: 'RAW-023', name: 'Chef\'s Essentials Chopped Tomatoes in Tomato Juice 2.5kg' },
+                { id: 'RAW-024', name: 'Chef\'s Larder Salt 6kg' },
+                { id: 'RAW-025', name: 'Chef\'s Larder White Wine Vinegar 2 Litres' },
+                { id: 'RAW-026', name: 'Chef\'s Menu Garlic Powder 500g' },
+                { id: 'RAW-027', name: 'Chef\'s Menu Cayenne Pepper 460g' },
+                { id: 'RAW-028', name: 'Chef\'s Menu Chipotle Sauce 1 litre' },
+                { id: 'RAW-029', name: 'Chef\'s Menu Ground Black Pepper 500g' },
+                { id: 'RAW-030', name: 'Chef\'s Menu Ground Sweet Cinnamon 430g' },
+                { id: 'RAW-031', name: 'Chef\'s Menu Onion Powder 480g' },
+                { id: 'RAW-032', name: 'Chef\'s Menu Salsa 1 litre' },
+                { id: 'RAW-033', name: 'Chef\'s Menu Smoked Paprika 430g' },
+                { id: 'RAW-034', name: 'Frank\'s Red Hot Wings Buffalo Sauce 3.78l' },
+                { id: 'RAW-035', name: 'Heinz Professional Mayonnaise 10L' },
+                { id: 'RAW-036', name: 'Heinz Tomato Ketchup 4.5kg' },
+                { id: 'RAW-037', name: 'Monin Caramel 100cl' },
+                { id: 'RAW-038', name: 'Mrs Elswood Burger Gherkins 670g' },
+                { id: 'RAW-039', name: 'Roquito Hot Honey 720g' },
+                { id: 'RAW-040', name: 'Snow Shock Blue Raspberry Premium Slush Syrup 5 Litres' },
+                { id: 'RAW-041', name: 'Spice Magic Raita' },
+                { id: 'RAW-042', name: 'Spice Magic Smooth Mango Chutney 1.2kg' },
+                { id: 'RAW-043', name: 'KTC vegetable oil' },
+                { id: 'RAW-044', name: 'Nacho cheese' },
+                { id: 'RAW-045', name: 'Mayonnaise' },
+                { id: 'RAW-046', name: 'Chef\'s Larder Lightly Salted Tortilla Chips 454g' },
+                { id: 'RAW-047', name: 'Comelle Ice Cream Mix 1 Litre' },
+                { id: 'RAW-048', name: 'Koffmann\'s Potatoes Les Pommes Frites' },
+                { id: 'RAW-049', name: 'KTC Crispy Fried Onions 400g' },
+                { id: 'RAW-050', name: 'McCain Original Choice Potato Hash Browns 1kg' },
+                { id: 'RAW-051', name: 'McCain Potato Pops 2.5kg' },
+                { id: 'RAW-052', name: 'Müller Müllerlicious Whole Milk 2 Litre' },
+                { id: 'RAW-053', name: 'Müller Semi Skimmed Milk 2 Litres' },
+                { id: 'RAW-054', name: 'Oatly Oat Drink Barista Edition 1L Long Life' },
+                { id: 'RAW-055', name: 'St Pierre 4 Pre-Sliced Brioche Burger Buns' },
+                { id: 'RAW-056', name: 'St Pierre 4 Seeded Brioche Burger Buns' },
+                { id: 'RAW-057', name: 'St Pierre Brioche Loaf 500g' },
+                { id: 'RAW-058', name: 'Whipped cream' },
+                { id: 'RAW-059', name: 'Frozen mixed berries' },
+                { id: 'RAW-060', name: 'St Pierre Brioche buns' },
+                { id: 'RAW-061', name: 'Eggs' },
+                { id: 'RAW-062', name: 'Apple pie filling' },
+                { id: 'RAW-063', name: 'Red cherry pie filling' },
+                { id: 'RAW-064', name: 'New york style cheesecake' },
+                { id: 'RAW-065', name: 'All butter croissant' },
+                { id: 'RAW-066', name: 'Passion shoot smoothie packet' },
+                { id: 'RAW-067', name: 'Melon refresher smoothie packet' },
+                { id: 'RAW-068', name: 'Avo go go smoothie packet' },
+                { id: 'RAW-069', name: 'Detox zing smoothie packet' },
+                { id: 'RAW-070', name: 'Triple chocolate brownie' },
+                { id: 'RAW-071', name: 'Frozen waffles' },
+                { id: 'RAW-072', name: 'Cadbury Drinking Hot Chocolate Cocoa Powder 2KG' },
+                { id: 'RAW-073', name: 'Coca-Cola Original Taste 330ml Glass Bottle' },
+                { id: 'RAW-074', name: 'Diet Coke Cola Glass Bottles' },
+                { id: 'RAW-075', name: 'Fanta Orange 330ml' },
+                { id: 'RAW-076', name: 'Hershey\'s Cookies \'N\' Creme 40g' },
+                { id: 'RAW-077', name: 'Huel Banana Flavour Ready-to-Drink 500ml' },
+                { id: 'RAW-078', name: 'J20 Apple & Mango 275ml' },
+                { id: 'RAW-079', name: 'J20 Apple & Raspberry 275ml' },
+                { id: 'RAW-080', name: 'J20 Orange & Passion Fruit 275ml' },
+                { id: 'RAW-081', name: 'Jack Rabbit Signature Malbec Red Wine 75cl' },
+                { id: 'RAW-082', name: 'Jack\'s Pure Apple Juice 1 Litre' },
+                { id: 'RAW-083', name: 'Maltesers Milk Chocolate Bag 37g PMP' },
+                { id: 'RAW-084', name: 'Mini Eggs' },
+                { id: 'RAW-085', name: 'Passoã Passion Fruit Liqueur 70cl' },
+                { id: 'RAW-086', name: 'Perfect Ted Ceremonial Grade Matcha 100g' },
+                { id: 'RAW-087', name: 'Sprite Zero Sugar 330ml' },
+                { id: 'RAW-088', name: 'Strathmore Sparkling Spring Water 330ml' },
+                { id: 'RAW-089', name: 'Strathmore Still Spring Water 750ml' },
+                { id: 'RAW-090', name: 'Kinder bueno' },
+                { id: 'RAW-091', name: 'Ferrero rocher' },
+                { id: 'RAW-092', name: 'Skittles' },
+                { id: 'RAW-093', name: 'J20 apple and mango' },
+                { id: 'RAW-094', name: 'J20 orange and passionfruit' },
+                { id: 'RAW-095', name: 'J20 apple and raspberry' },
+                { id: 'RAW-096', name: 'Lemon and elderflower tea' },
+                { id: 'RAW-097', name: 'Green tea' },
+                { id: 'RAW-098', name: 'Earl grey tea' },
+                { id: 'RAW-099', name: 'Vanilla chai latte powder' },
+                { id: 'RAW-100', name: 'Spice chai latte powder' },
+                { id: 'RAW-101', name: 'Coffee Beans' },
+                { id: 'RAW-102', name: 'Raspberry sorbet' },
+                { id: 'RAW-103', name: 'Mango sorbet' },
+                { id: 'RAW-104', name: 'Passionfruit sorbet' },
+                { id: 'RAW-105', name: 'Biscoff gelato' },
+                { id: 'RAW-106', name: 'Cherry yoghurt gelato' },
+                { id: 'RAW-107', name: 'Rumon raisin gelato' },
+                { id: 'RAW-108', name: 'Coffee gelato' },
+                { id: 'RAW-109', name: 'Honeycomb gelato' },
+                { id: 'RAW-110', name: 'Bubblegum gelato' },
+                { id: 'RAW-111', name: 'Coconut gelato' },
+                { id: 'RAW-112', name: 'Eton mess gelato' },
+                { id: 'RAW-113', name: 'Cinnamon gelato' },
+                { id: 'RAW-114', name: 'Salted caramel gelato' },
+                { id: 'RAW-115', name: 'Smores gelato' },
+                { id: 'RAW-116', name: 'Oreo gelato' },
+                { id: 'RAW-117', name: 'Strawberry gelato' },
+                { id: 'RAW-118', name: 'Pistachio gelato' },
+                { id: 'RAW-119', name: 'Peanutella gelato' },
+                { id: 'RAW-120', name: 'Ambassador gelato' },
+                { id: 'RAW-121', name: 'Vanilla gelato' },
+                { id: 'RAW-122', name: 'Dulce de leche gelato' },
+                { id: 'RAW-123', name: 'Cherries and custard gelato' },
+                { id: 'RAW-124', name: 'Mascarpone gelato' },
+                { id: 'RAW-125', name: 'Ciokamenta gelato' },
+                { id: 'RAW-126', name: 'Vegan vanilla gelato' },
+                { id: 'RAW-127', name: 'Scoopable acai' },
+                { id: 'RAW-128', name: 'Vegan chocolate gelato' },
+                { id: 'RAW-129', name: 'Vegan salted caramel gelato' }
+            ],
             
+            // Supabase Setup
+            supabase: null,
+
             // Initialization
             catalog: [],
             
@@ -566,8 +602,18 @@
 
                 if (this.recipes && Array.isArray(this.recipes)) {
                     for (const recipe of this.recipes) {
-                        if (!recipe || recipe.recipeType !== 'Sub-Recipe') continue;
-                        let totalCost = parseFloat(recipe.totalCost) || 0;
+                        if (!recipe) continue;
+                        let totalCost = 0;
+                        if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
+                            for (const ing of recipe.ingredients) {
+                                if (ing.notes) {
+                                    const match = ing.notes.match(/Cost: £([\d.]+)/);
+                                    if (match) {
+                                        totalCost += parseFloat(match[1]);
+                                    }
+                                }
+                            }
+                        }
                         
                         if (totalCost > 0 || (recipe.title && recipe.yield)) {
                             maxId++;
@@ -584,178 +630,19 @@
                     }
                 }
                 
-                // Rebuild Datalists
+                // Rebuild Datalist
                 let datalist = document.getElementById('ingredient-catalog-list');
                 if (datalist && this.catalog) {
                     datalist.innerHTML = this.catalog.map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
                 }
-                let subDatalist = document.getElementById('subrecipe-catalog-list');
-                if (subDatalist && this.catalog) {
-                    let subrecipes = this.catalog.filter(i => i.category === 'Sub-Recipe');
-                    subDatalist.innerHTML = subrecipes.map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
-                }
             },
-            
-            populateSupplierDropdown() {
-                const addFormSelect = document.getElementById('newIngSupplier');
-                if (addFormSelect && this.catalog) {
-                    const suppliersList = [...new Set(this.catalog.map(i => i.supplier).filter(Boolean))];
-                    addFormSelect.innerHTML = `<option value="Internal">Internal</option>`;
-                    suppliersList.forEach(s => {
-                        if (s !== 'Internal') {
-                            const opt = document.createElement('option');
-                            opt.value = s;
-                            opt.textContent = s;
-                            addFormSelect.appendChild(opt);
-                        }
-                    });
-                }
-            },
-            
-            async refreshCatalog() {
-                let loadedFromSupabase = false;
-                if (this.supabaseClient) {
-                    try {
-                        const { data, error } = await this.supabaseClient.from('catalog').select('*').order('id', { ascending: true });
-                        if (data && !error && data.length > 0) {
-                            this.catalog = data;
-                            localStorage.setItem('ts_shared_catalog', JSON.stringify(this.catalog));
-                            loadedFromSupabase = true;
-                        }
-                    } catch(e) { console.error('Supabase fetch exception:', e); }
-                }
-                
-                if (!loadedFromSupabase) {
-                    const localCatalog = localStorage.getItem('ts_shared_catalog');
-                    this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
-                    if (!Array.isArray(this.catalog)) this.catalog = window.tsCatalog ? window.tsCatalog : [];
-                }
-                
-                this.updateCatalogWithSubRecipes();
-                this.populateSupplierDropdown();
-                this.showToast('Catalog refreshed successfully!', 'success');
-                
-                // If in form view, recalculate costs to reflect any price changes
-                if (!document.getElementById('formView').classList.contains('hidden')) {
-                    const rows = document.querySelectorAll('#ingredientsBody tr');
-                    rows.forEach(row => {
-                        const input = row.querySelector('.ing-name');
-                        if (input && input.value) {
-                            this.calculateRowCost(input);
-                        }
-                    });
-                }
-            },
-            
-            showAddIngredientModal() {
-                const modal = document.getElementById('addIngredientModal');
-                if (modal) modal.classList.remove('hidden');
-            },
-            
-            hideAddIngredientModal() {
-                const modal = document.getElementById('addIngredientModal');
-                if (modal) modal.classList.add('hidden');
-            },
-            
-            async saveNewIngredient(e) {
-                e.preventDefault();
-                
-                const name = document.getElementById('newIngName').value.trim();
-                const category = document.getElementById('newIngCategory').value.trim();
-                const size = document.getElementById('newIngSize').value.trim();
-                const supplier = document.getElementById('newIngSupplier').value.trim() || 'Internal';
-                const price = parseFloat(document.getElementById('newIngPrice').value) || 0;
-                
-                if (!name || !size || isNaN(price)) return;
-                
-                let maxId = 0;
-                if (this.catalog && this.catalog.length > 0) {
-                    maxId = this.catalog.reduce((max, item) => (typeof item.id === 'number' && item.id > max) ? item.id : max, 0);
-                }
-                
-                const newItem = {
-                    id: maxId + 1,
-                    name: name,
-                    category: category,
-                    size: size,
-                    supplier: supplier,
-                    price: price,
-                    vatRate: 0
-                };
-                
-                if (!this.catalog) this.catalog = [];
-                this.catalog.push(newItem);
-                
-                // Update local storage so other portals see the changes locally
-                localStorage.setItem('ts_shared_catalog', JSON.stringify(this.catalog));
-                
-                // Push to Supabase storage
-                if (this.supabaseClient) {
-                    try {
-                        const { error } = await this.supabaseClient.from('catalog').insert(newItem);
-                        if (error) console.error('Supabase insert error:', error);
-                    } catch(err) {
-                        console.error('Supabase insert exception:', err);
-                    }
-                }
-                
-                // Refresh local views
-                this.updateCatalogWithSubRecipes();
-                
-                this.hideAddIngredientModal();
-                e.target.reset();
-                this.showToast(`Added ${name} to catalog!`, 'success');
-            },
-            
-            showToast(message, type = 'success') {
-                const toast = document.createElement('div');
-                toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white font-medium shadow-lg z-50 transform transition-all translate-y-10 opacity-0 ${type === 'success' ? 'bg-emerald-600' : 'bg-red-500'}`;
-                toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i> ${message}`;
-                document.body.appendChild(toast);
-                
-                setTimeout(() => {
-                    toast.classList.remove('translate-y-10', 'opacity-0');
-                }, 10);
-                
-                setTimeout(() => {
-                    toast.classList.add('translate-y-10', 'opacity-0');
-                    setTimeout(() => {
-                        toast.remove();
-                    }, 300);
-                }, 3000);
-            },
-
-            supabaseClient: null,
-            
             async init() {
-                // Initialize Supabase
-                if (window.supabase) {
-                    this.supabaseClient = window.supabase.createClient('https://sdlrwosjebiiztclsydu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw');
-                }
-
                 // Load Catalog
-                let loadedFromSupabase = false;
-                if (this.supabaseClient) {
-                    try {
-                        const { data, error } = await this.supabaseClient.from('catalog').select('*').order('id', { ascending: true });
-                        if (data && !error && data.length > 0) {
-                            this.catalog = data;
-                            localStorage.setItem('ts_shared_catalog', JSON.stringify(this.catalog));
-                            loadedFromSupabase = true;
-                            console.log('Successfully loaded catalog from Supabase!');
-                        }
-                    } catch(e) {
-                        console.error('Supabase fetch exception:', e);
-                    }
-                }
-
-                if (!loadedFromSupabase) {
-                    const localCatalog = localStorage.getItem('ts_shared_catalog');
-                    this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
-                    if (!Array.isArray(this.catalog)) this.catalog = window.tsCatalog ? window.tsCatalog : [];
-                }
+                const localCatalog = localStorage.getItem('ts_shared_catalog');
+                this.catalog = localCatalog ? JSON.parse(localCatalog) : (window.tsCatalog ? window.tsCatalog : []);
+                if (!Array.isArray(this.catalog)) this.catalog = window.tsCatalog ? window.tsCatalog : [];
                 
-                // Build Datalists
+                // Build Datalist
                 let datalist = document.getElementById('ingredient-catalog-list');
                 if (!datalist) {
                     datalist = document.createElement('datalist');
@@ -763,20 +650,15 @@
                     document.body.appendChild(datalist);
                 }
                 datalist.innerHTML = this.catalog.map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
-                
-                let subDatalist = document.getElementById('subrecipe-catalog-list');
-                if (!subDatalist) {
-                    subDatalist = document.createElement('datalist');
-                    subDatalist.id = 'subrecipe-catalog-list';
-                    document.body.appendChild(subDatalist);
-                }
-                subDatalist.innerHTML = this.catalog.filter(i => i.category === 'Sub-Recipe').map(i => `<option value="${i.name.replace(/"/g, '&quot;')}">`).join('');
+
+                // Initialize Supabase (Replace these placeholders with your actual keys!)
+                const supabaseUrl = 'https://sdlrwosjebiiztclsydu.supabase.co';
+                const supabaseKey = 'sb_publishable_NhC960waOrCWgb5UOg5O1A_l0BNUaOD';
+                this.supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
                 await this.loadData();
                 this.updateCatalogWithSubRecipes();
-                this.populateSupplierDropdown();
-                
-                this.showDashboard();
+                                                this.showDashboard();
                 this.renderDashboard();
                 
                 // Set print date
@@ -790,121 +672,64 @@
                 const qtyInput = parseFloat(row.querySelector('.ing-qty').value);
                 const unitInput = row.querySelector('.ing-unit').value;
                 const notesInput = row.querySelector('.ing-notes');
-                const costInput = row.querySelector('.ing-cost');
 
-                if (!nameInput || !this.catalog) {
-                    if (costInput) costInput.value = '0.00';
-                    this.calculateTotalRecipeCost();
-                    return;
-                }
+                if (!nameInput || !this.catalog) return;
                 
                 const item = this.catalog.find(i => i.name === nameInput);
-                if (!item) {
-                    if (costInput) costInput.value = '0.00';
-                    this.calculateTotalRecipeCost();
-                    return;
-                }
+                if (!item) return;
 
                 const price = parseFloat(item.price) || 0;
-                let sizeStr = (item.size || '').toLowerCase().trim();
+                const sizeStr = (item.size || '').toLowerCase();
                 
                 let totalCatalogAmt = 1;
-                let catalogType = 'unit';
+                let isVolume = false;
+                let isWeight = false;
 
-                const multiMatch = sizeStr.match(/([\d.]+)\s*([a-z]*)\s*(?:x|\*)\s*([\d.]+)\s*([a-z]*)/);
-                if (multiMatch) {
-                    totalCatalogAmt = parseFloat(multiMatch[1]) * parseFloat(multiMatch[3]);
-                    const unitStr = multiMatch[2] || multiMatch[4];
-                    if (['l', 'ltr', 'liter', 'liters', 'litre', 'litres'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'volume'; }
-                    else if (['ml'].includes(unitStr)) { catalogType = 'volume'; }
-                    else if (['kg', 'kilo', 'kilos', 'kilogram', 'kilograms'].includes(unitStr)) { totalCatalogAmt *= 1000; catalogType = 'weight'; }
-                    else if (['g', 'gram', 'grams'].includes(unitStr)) { catalogType = 'weight'; }
+                const match = sizeStr.match(/(\d+)\s*x\s*([\d.]+)\s*([a-z]+)/);
+                if (match) {
+                    const count = parseFloat(match[1]);
+                    const amount = parseFloat(match[2]);
+                    const type = match[3];
+                    totalCatalogAmt = count * amount;
+                    if (type.includes('ltr') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
+                    else if (type.includes('ml')) { isVolume = true; }
+                    else if (type.includes('kg')) { totalCatalogAmt *= 1000; isWeight = true; }
+                    else if (type.includes('g')) { isWeight = true; }
                 } else {
-                    const numMatch = sizeStr.match(/([\d.]+)/);
-                    let amount = numMatch ? parseFloat(numMatch[1]) : 1;
-                    
-                    if (sizeStr.includes('per kg') || sizeStr === 'kg') amount = 1;
-                    if (sizeStr.includes('per ltr') || sizeStr.includes('per litre') || sizeStr === 'l' || sizeStr === 'ltr') amount = 1;
-
-                    const words = sizeStr.replace(/[\d.]+/g, ' ').split(/[^a-z]+/).filter(w => w);
-                    
-                    let isWeight = words.some(w => ['kg', 'kilo', 'kilos', 'kilogram', 'kilograms', 'g', 'gram', 'grams'].includes(w));
-                    let isVolume = words.some(w => ['l', 'ltr', 'liter', 'liters', 'litre', 'litres', 'ml'].includes(w));
-                    
-                    if (isWeight) {
-                        catalogType = 'weight';
-                        if (words.some(w => ['kg', 'kilo', 'kilos', 'kilogram', 'kilograms'].includes(w))) amount *= 1000;
-                    } else if (isVolume) {
-                        catalogType = 'volume';
-                        if (words.some(w => ['l', 'ltr', 'liter', 'liters', 'litre', 'litres'].includes(w))) amount *= 1000;
+                    const singleMatch = sizeStr.match(/([\d.]+)\s*([a-z]+)/);
+                    if (singleMatch) {
+                        const amount = parseFloat(singleMatch[1]);
+                        const type = singleMatch[2];
+                        totalCatalogAmt = amount;
+                        if (type.includes('ltr') || type === 'l') { totalCatalogAmt *= 1000; isVolume = true; }
+                        else if (type.includes('ml')) { isVolume = true; }
+                        else if (type.includes('kg')) { totalCatalogAmt *= 1000; isWeight = true; }
+                        else if (type.includes('g')) { isWeight = true; }
                     }
-                    totalCatalogAmt = amount || 1;
                 }
 
                 if (isNaN(qtyInput) || !unitInput || qtyInput === 0) {
-                    if (costInput) costInput.value = '0.00';
-                    this.calculateTotalRecipeCost();
+                    notesInput.value = `£${price.toFixed(2)} / ${item.size || 'Unit'}`;
                     return;
                 }
 
                 let recipeBaseQty = qtyInput;
                 const u = unitInput.toLowerCase();
                 
-                if (u === 'l' || u.includes('liter') || u === 'ltr') recipeBaseQty = qtyInput * 1000;
-                else if (u === 'ml') recipeBaseQty = qtyInput;
+                if (u === 'l') recipeBaseQty = qtyInput * 1000;
                 else if (u === 'tbsp') recipeBaseQty = qtyInput * 15;
                 else if (u === 'tsp') recipeBaseQty = qtyInput * 5;
-                else if (u === 'cups' || u === 'cup') recipeBaseQty = qtyInput * 250;
-                else if (u === 'kg' || u.includes('kilo')) recipeBaseQty = qtyInput * 1000;
-                else if (u === 'g' || u === 'gram' || u === 'grams') recipeBaseQty = qtyInput;
+                else if (u === 'cups') recipeBaseQty = qtyInput * 250;
+                else if (u === 'kg') recipeBaseQty = qtyInput * 1000;
                 else if (u === 'oz') recipeBaseQty = qtyInput * 28.35;
-                else if (u === 'lbs' || u === 'lb') recipeBaseQty = qtyInput * 453.59;
-                else if (u === 'unit' || u === 'units' || u === 'piece' || u === 'pieces' || u === 'pcs' || u.includes('portion')) recipeBaseQty = qtyInput;
+                else if (u === 'lbs') recipeBaseQty = qtyInput * 453.59;
                 
                 let calculatedCost = 0;
                 if (totalCatalogAmt > 0) {
                     calculatedCost = (price / totalCatalogAmt) * recipeBaseQty;
                 }
                 
-                if (costInput) costInput.value = calculatedCost.toFixed(2);
-                this.calculateTotalRecipeCost();
-            },
-            
-            calculateTotalRecipeCost() {
-                const tbody = document.getElementById('ingredientsBody');
-                let total = 0;
-                if (tbody) {
-                    const costInputs = tbody.querySelectorAll('.ing-cost');
-                    costInputs.forEach(input => {
-                        total += parseFloat(input.value) || 0;
-                    });
-                }
-                const totalEl = document.getElementById('totalRecipeCost');
-                if (totalEl) totalEl.innerText = `£${total.toFixed(2)}`;
-
-                const yieldNumEl = document.getElementById('recipeYieldNum');
-                const yieldUnitEl = document.getElementById('recipeYieldUnit');
-                const perPortionContainer = document.getElementById('costPerPortionContainer');
-                const perPortionLabel = document.getElementById('portionUnitLabel');
-                const perPortionCost = document.getElementById('costPerPortion');
-
-                if (yieldNumEl && perPortionContainer) {
-                    const yieldVal = parseFloat(yieldNumEl.value);
-                    if (yieldVal > 0) {
-                        const costPer = total / yieldVal;
-                        perPortionContainer.classList.remove('hidden');
-                        if (perPortionLabel && yieldUnitEl) {
-                            let unitText = yieldUnitEl.options[yieldUnitEl.selectedIndex].text;
-                            // singularize roughly for display
-                            if (unitText.toLowerCase() === 'portions') unitText = 'Portion';
-                            if (unitText.toLowerCase() === 'units') unitText = 'Unit';
-                            perPortionLabel.innerText = unitText;
-                        }
-                        if (perPortionCost) perPortionCost.innerText = `£${costPer.toFixed(2)}`;
-                    } else {
-                        perPortionContainer.classList.add('hidden');
-                    }
-                }
+                notesInput.value = `Cost: £${calculatedCost.toFixed(2)} (from £${price.toFixed(2)} / ${item.size || 'Unit'})`;
             },
 
             handleIngredientSelect(input) {
@@ -915,7 +740,6 @@
                     const notesInput = row.querySelector('.ing-notes');
                     const unitInput = row.querySelector('.ing-unit');
                     
-                    // Try to infer unit based on size
                     let inferredUnit = 'unit';
                     const sizeStr = (item.size || '').toLowerCase();
                     if (sizeStr.includes('g') || sizeStr.includes('kg')) inferredUnit = 'g';
@@ -931,58 +755,37 @@
             },
             
             async loadData() {
-                if (this.supabaseClient) {
-                    try {
-                        const { data, error } = await this.supabaseClient.from('sop_recipes').select('*');
-                        if (error) throw error;
-                        
-                        if (data && data.length > 0) {
-                            this.recipes = data.map(row => ({
-                                id: row.id,
-                                title: row.title,
-                                recipeType: row.recipeType || 'Main Recipe',
-                                category: row.category,
-                                station: row.station,
-                                prepTime: row.prepTime,
-                                cookTime: row.cookTime,
-                                yield: row.yield,
-                                shelfLife: row.shelfLife,
-                                costing: row.costing,
-                                totalCost: row.totalCost || '0.00',
-                                ingredients: typeof row.ingredients === 'string' ? JSON.parse(row.ingredients) : (row.ingredients || []),
-                                equipment: typeof row.equipment === 'string' ? JSON.parse(row.equipment) : (row.equipment || []),
-                                steps: typeof row.steps === 'string' ? JSON.parse(row.steps) : (row.steps || []),
-                                updatedAt: row.updatedAt
-                            }));
-                        } else {
-                            const localData = localStorage.getItem('recipeSOPs');
-                            if (localData && JSON.parse(localData).length > 0) {
-                                this.recipes = JSON.parse(localData);
-                            } else {
-                                this.recipes = [];
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error loading recipes from Supabase:', e);
-                        const localData = localStorage.getItem('recipeSOPs');
-                        if (localData) this.recipes = JSON.parse(localData);
-                    }
-                } else {
+                try {
+                    const { data, error } = await this.supabase
+                        .from('sop_recipes')
+                        .select('*')
+                        .order('updatedAt', { ascending: false });
+                    
+                    if (error) throw error;
+                    this.recipes = data || [];
+                } catch(e) {
+                    console.error("Supabase load error:", e);
+                    // Fallback to local storage if supabase isn't configured yet
                     const localData = localStorage.getItem('recipeSOPs');
-                    if (localData) {
-                        this.recipes = JSON.parse(localData);
-                    } else {
-                        // Dummy data fallback
-                        this.recipes = [];
-                    }
+                    if (localData) this.recipes = JSON.parse(localData);
                 }
-                
-                // Keep local storage in sync as fallback
-                this.saveData();
             },
 
-            saveData() {
-                localStorage.setItem('recipeSOPs', JSON.stringify(this.recipes));
+            async saveData(recipe) {
+                try {
+                    // Update in Supabase
+                    if (recipe && this.supabase) {
+                        const { error } = await this.supabase
+                            .from('sop_recipes')
+                            .upsert([recipe]);
+                        if (error) throw error;
+                    }
+                    // Also save locally as a backup
+                    localStorage.setItem('recipeSOPs', JSON.stringify(this.recipes));
+                } catch(e) {
+                    console.error("Supabase save error:", e);
+                    localStorage.setItem('recipeSOPs', JSON.stringify(this.recipes));
+                }
             },
 
             generateId() {
@@ -991,7 +794,7 @@
 
             // Navigation
             hideAllViews() {
-                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                Array.from(document.querySelectorAll('.view-section')).forEach(el => el.classList.add('hidden'));
                 window.scrollTo(0, 0);
             },
 
@@ -1001,16 +804,19 @@
                 this.renderDashboard();
             },
 
-            showForm(recipeId = null) {
+            showForm(recipeId) {
                 this.hideAllViews();
                 document.getElementById('formView').classList.remove('hidden');
-                this.currentRecipeId = recipeId;
                 
-                if (recipeId) {
+                if (typeof recipeId === 'string') {
+                    this.currentRecipeId = recipeId;
                     document.getElementById('formTitle').innerText = 'Edit Recipe SOP';
+                    document.getElementById('submitBtn').innerText = 'Update SOP';
                     this.populateForm(recipeId);
                 } else {
+                    this.currentRecipeId = null;
                     document.getElementById('formTitle').innerText = 'Create Recipe SOP';
+                    document.getElementById('submitBtn').innerText = 'Save Recipe SOP';
                     this.resetForm();
                 }
             },
@@ -1030,19 +836,9 @@
                 const categoryFilter = document.getElementById('categoryFilter').value;
 
                 let filtered = this.recipes.filter(r => {
-                    const titleSafe = r.title || 'Untitled Recipe';
-                    const stationSafe = r.station || '';
-                    const matchesSearch = titleSafe.toLowerCase().includes(searchTerm) || stationSafe.toLowerCase().includes(searchTerm);
-                    const matchesCategory = categoryFilter === '' || r.category === categoryFilter || (!r.category && categoryFilter === '');
-                    
-                    let matchesTab = true;
-                    if (this.currentTab === 'recipes') {
-                        matchesTab = r.recipeType !== 'Sub-Recipe';
-                    } else if (this.currentTab === 'subrecipes') {
-                        matchesTab = r.recipeType === 'Sub-Recipe';
-                    }
-
-                    return matchesSearch && matchesCategory && matchesTab;
+                    const matchesSearch = r.title.toLowerCase().includes(searchTerm) || r.station.toLowerCase().includes(searchTerm);
+                    const matchesCategory = categoryFilter === '' || r.category === categoryFilter;
+                    return matchesSearch && matchesCategory;
                 });
 
                 grid.innerHTML = '';
@@ -1061,46 +857,30 @@
                         card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full';
                         card.onclick = () => this.showSOP(recipe.id);
                         
-                        let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
-                        if (recipe.category === 'Mains') badgeColor = 'bg-indigo-100 text-indigo-700 border-indigo-200';
-                        if (recipe.category === 'Prep') badgeColor = 'bg-amber-100 text-amber-700 border-amber-200';
-                        if (recipe.category === 'Sauces') badgeColor = 'bg-rose-100 text-rose-700 border-rose-200';
+                        let badgeColor = 'bg-slate-100 text-slate-700';
+                        if (recipe.category === 'Mains') badgeColor = 'bg-indigo-100 text-indigo-700';
+                        if (recipe.category === 'Prep') badgeColor = 'bg-amber-100 text-amber-700';
+                        if (recipe.category === 'Sauces') badgeColor = 'bg-rose-100 text-rose-700';
                         
-                        let isSubRecipe = recipe.recipeType === 'Sub-Recipe';
-                        let typeBadge = isSubRecipe 
-                            ? `<span class="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded shadow-sm border border-amber-600 w-max"><i class="fas fa-layer-group mr-1"></i> Sub-Recipe</span>`
-                            : `<span class="px-2 py-0.5 bg-gradient-to-r from-[#144D37] to-emerald-800 text-white text-[10px] font-black uppercase tracking-widest rounded shadow-sm border border-emerald-900 w-max"><i class="fas fa-utensils mr-1"></i> Recipe</span>`;
-
                         card.innerHTML = `
-                            <div class="p-5 flex-grow group">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div class="flex flex-col gap-2">
-                                        ${typeBadge}
-                                        <span class="px-2.5 py-1 ${badgeColor} text-xs font-bold uppercase tracking-wider rounded-md border w-max">${recipe.category || 'Uncategorized'}</span>
-                                    </div>
-                                    <button onclick="event.stopPropagation(); sopApp.deleteRecipe('${recipe.id}')" class="text-slate-300 hover:text-danger transition-colors p-1" title="Delete">
+                            <div class="p-5 flex-grow">
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="px-2.5 py-1 ${badgeColor} text-xs font-bold uppercase tracking-wider rounded-md">${recipe.category}</span>
+                                    <button onclick="event.stopPropagation(); app.deleteRecipe('${recipe.id}')" class="text-slate-300 hover:text-danger transition-colors p-1" title="Delete">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
-                                <h3 class="text-xl font-bold text-slate-900 mb-1 leading-tight group-hover:text-[#144D37] transition-colors">${recipe.title || 'Untitled Recipe'}</h3>
-                                <div class="flex items-center text-sm text-slate-500 mb-4">
-                                    <i class="fas fa-map-marker-alt w-5 text-center text-slate-400"></i>
-                                    <span>${recipe.station || 'Unassigned Station'}</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-3 text-xs">
-                                    <div class="bg-slate-50 p-2 rounded border border-slate-100 flex flex-col items-center justify-center text-center">
-                                        <span class="text-slate-400 font-medium mb-1">Prep Time</span>
-                                        <span class="font-bold text-slate-700">${recipe.prepTime || '-'}</span>
-                                    </div>
-                                    <div class="bg-slate-50 p-2 rounded border border-slate-100 flex flex-col items-center justify-center text-center">
-                                        <span class="text-slate-400 font-medium mb-1">Total Cost</span>
-                                        <span class="font-bold text-[#144D37]">${recipe.totalCost && recipe.totalCost !== '0.00' ? `£${recipe.totalCost}` : '-'}</span>
-                                    </div>
+                                <h3 class="text-xl font-bold text-slate-900 mb-1 leading-tight">${recipe.title}</h3>
+                                <p class="text-sm font-medium text-primary mb-4"><i class="fas fa-map-marker-alt mr-1"></i> ${recipe.station}</p>
+                                
+                                <div class="grid grid-cols-2 gap-2 text-sm text-slate-600">
+                                    <div class="flex items-center"><i class="far fa-clock w-5 text-slate-400"></i> ${recipe.prepTime || '-'}</div>
+                                    <div class="flex items-center"><i class="fas fa-fire w-5 text-slate-400"></i> ${recipe.cookTime || '-'}</div>
                                 </div>
                             </div>
-                            <div class="bg-slate-50 px-5 py-3 border-t border-slate-100 text-sm font-medium text-slate-500 flex justify-between items-center transition-colors hover:bg-slate-100">
-                                <span class="group-hover:text-[#144D37] font-semibold transition-colors">View SOP</span>
-                                <i class="fas fa-chevron-right text-xs group-hover:text-[#144D37] group-hover:translate-x-1 transition-transform"></i>
+                            <div class="bg-slate-50 px-5 py-3 border-t border-slate-100 text-sm font-medium text-slate-500 flex justify-between items-center">
+                                <span>View SOP</span>
+                                <i class="fas fa-chevron-right text-xs"></i>
                             </div>
                         `;
                         grid.appendChild(card);
@@ -1111,56 +891,96 @@
             filterRecipes() {
                 this.renderDashboard();
             },
-
-            setTab(tab) {
-                this.currentTab = tab;
-                // Update UI for tabs
-                ['all', 'recipes', 'subrecipes'].forEach(t => {
-                    const btn = document.getElementById(`tab-${t}`);
-                    if (t === tab) {
-                        btn.className = 'flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 bg-white text-[#144D37] shadow-sm transform scale-100 whitespace-nowrap';
-                    } else {
-                        btn.className = 'flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/60 whitespace-nowrap';
-                    }
-                });
+            
+            showPriceManager() {
+                this.hideAllViews();
+                document.getElementById('priceManagerView').classList.remove('hidden');
+                this.renderPriceManager();
+            },
+            
+            renderPriceManager() {
+                const tbody = document.getElementById('priceTableBody');
+                const searchTerm = document.getElementById('priceSearchInput').value.toLowerCase();
                 
-                // Update category dropdown
-                const catSelect = document.getElementById('categoryFilter');
-                if (tab === 'recipes') {
-                    catSelect.innerHTML = `<option value="">All Recipes</option><option value="Mains">Mains</option><option value="Starters">Starters</option><option value="Desserts">Desserts</option><option value="Drinks">Drinks</option>`;
-                } else if (tab === 'subrecipes') {
-                    catSelect.innerHTML = `<option value="">All Sub-Recipes</option><option value="Sauces">Sauces</option><option value="Prep">Prep</option>`;
-                } else {
-                    catSelect.innerHTML = `<option value="">All Categories</option><option value="Mains">Mains</option><option value="Starters">Starters</option><option value="Desserts">Desserts</option><option value="Drinks">Drinks</option><option value="Sauces">Sauces</option><option value="Prep">Prep</option>`;
+                // Only show actual catalog items, not sub-recipes
+                const baseCatalog = this.catalog.filter(i => i.category !== 'Sub-Recipe');
+                
+                const filtered = baseCatalog.filter(i => 
+                    i.name.toLowerCase().includes(searchTerm) || 
+                    (i.category && i.category.toLowerCase().includes(searchTerm))
+                );
+                
+                tbody.innerHTML = '';
+                filtered.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition-colors';
+                    tr.innerHTML = `
+                        <td class="px-6 py-3 font-medium text-slate-800">\${item.name}</td>
+                        <td class="px-6 py-3 text-slate-500">\${item.category || '-'}</td>
+                        <td class="px-6 py-3 text-slate-500">\${item.size || '-'}</td>
+                        <td class="px-6 py-3">
+                            <div class="flex items-center">
+                                <span class="text-slate-500 mr-2">£</span>
+                                <input type="number" step="0.01" min="0" value="\${item.price.toFixed(2)}" id="priceInput_\${item.id}" class="w-24 px-2 py-1 border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                            </div>
+                        </td>
+                        <td class="px-6 py-3">
+                            <button onclick="app.updatePrice(\${item.id})" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-medium transition-colors">
+                                Update
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            },
+            
+            updatePrice(id) {
+                const input = document.getElementById('priceInput_' + id);
+                const newPrice = parseFloat(input.value);
+                if (isNaN(newPrice) || newPrice < 0) {
+                    alert('Please enter a valid price');
+                    return;
                 }
                 
-                this.renderDashboard();
+                const item = this.catalog.find(i => i.id === id);
+                if (item) {
+                    item.price = newPrice;
+                    // Save to local storage
+                    const baseCatalog = this.catalog.filter(i => i.category !== 'Sub-Recipe');
+                    localStorage.setItem('ts_shared_catalog', JSON.stringify(baseCatalog));
+                    
+                    // Show visual feedback
+                    const btn = input.closest('tr').querySelector('button');
+                    const originalText = btn.innerText;
+                    btn.innerText = 'Saved!';
+                    btn.classList.add('bg-success', 'text-white');
+                    setTimeout(() => {
+                        btn.innerText = 'Update';
+                        btn.classList.remove('bg-success', 'text-white');
+                    }, 2000);
+                }
             },
 
             async deleteRecipe(id) {
                 if (confirm('Are you sure you want to delete this recipe? This cannot be undone.')) {
-                    this.recipes = this.recipes.filter(r => r.id !== id);
-                    this.saveData();
-                    this.updateCatalogWithSubRecipes();
-                    
-                    this.renderDashboard();
-                    
-                    if (this.supabaseClient) {
-                        try {
-                            const { error } = await this.supabaseClient.from('sop_recipes').delete().eq('id', id);
-                            if (error) throw error;
-                        } catch (e) {
-                            console.error('Failed to delete from Supabase:', e);
-                            alert('Deleted locally, but failed to remove from cloud database.');
-                        }
+                    try {
+                        const { error } = await this.supabase
+                            .from('sop_recipes')
+                            .delete()
+                            .eq('id', id);
+                        if (error) throw error;
+                    } catch(e) {
+                        console.error("Supabase delete error:", e);
                     }
+                    this.recipes = this.recipes.filter(r => r.id !== id);
+                    await this.saveData(null);
+                    this.renderDashboard();
                 }
             },
 
             // Form Logic
             resetForm() {
                 document.getElementById('recipeForm').reset();
-                document.querySelector('input[name="recipeType"][value="Main Recipe"]').checked = true;
                 document.getElementById('ingredientsBody').innerHTML = '';
                 document.getElementById('equipmentList').innerHTML = '';
                 document.getElementById('stepsContainer').innerHTML = '';
@@ -1176,28 +996,11 @@
                 if (!recipe) return;
 
                 document.getElementById('recipeTitle').value = recipe.title;
-                if (recipe.recipeType) {
-                    const typeRadio = document.querySelector(`input[name="recipeType"][value="${recipe.recipeType}"]`);
-                    if (typeRadio) typeRadio.checked = true;
-                } else {
-                    document.querySelector('input[name="recipeType"][value="Main Recipe"]').checked = true;
-                }
                 document.getElementById('recipeCategory').value = recipe.category;
                 document.getElementById('recipeStation').value = recipe.station;
                 document.getElementById('recipePrepTime').value = recipe.prepTime;
                 document.getElementById('recipeCookTime').value = recipe.cookTime;
-                if (document.getElementById('recipeYieldNum')) {
-                    const y = recipe.yield || '';
-                    const parts = y.split(' ');
-                    if (parts.length > 1 && !isNaN(parts[0])) {
-                        document.getElementById('recipeYieldNum').value = parts[0];
-                        document.getElementById('recipeYieldUnit').value = parts.slice(1).join(' ');
-                    } else {
-                        document.getElementById('recipeYieldNum').value = y;
-                    }
-                } else {
-                    document.getElementById('recipeYield').value = recipe.yield || '';
-                }
+                document.getElementById('recipeYield').value = recipe.yield;
                 document.getElementById('recipeShelfLife').value = recipe.shelfLife;
                 document.getElementById('recipeCosting').value = recipe.costing;
 
@@ -1218,54 +1021,58 @@
                 stepCont.innerHTML = '';
                 recipe.steps.forEach(step => this.addStepRow(step));
                 if(recipe.steps.length === 0) this.addStepRow();
-                this.calculateTotalRecipeCost();
             },
 
-            addIngredientRow(data = { name: '', qty: '', unit: '', cost: '0.00', notes: '', isSubRecipe: false }) {
+            addIngredientRow(data = { name: '', qty: '', unit: '', notes: '' }) {
                 const tbody = document.getElementById('ingredientsBody');
                 const tr = document.createElement('tr');
                 tr.className = 'ing-row hover:bg-slate-50 transition-colors group';
-                const listId = data.isSubRecipe ? 'subrecipe-catalog-list' : 'ingredient-catalog-list';
+                
+                let optionsHtml = '<option value="">Select Ingredient...</option>';
+                this.inventory.forEach(item => {
+                    const label = `[${item.id}] ${item.name}`;
+                    const selected = (data.name === label || data.name === item.name) ? 'selected' : '';
+                    optionsHtml += `<option value="${label.replace(/"/g, '&quot;')}" ${selected}>${label}</option>`;
+                });
+                
+                const inInventory = this.inventory.some(item => `[${item.id}] ${item.name}` === data.name || item.name === data.name);
+                if (data.name && !inInventory) {
+                    optionsHtml += `<option value="${data.name.replace(/"/g, '&quot;')}" selected>${data.name}</option>`;
+                }
+
                 tr.innerHTML = `
                     <td class="py-2 pr-2">
-                        <input type="text" value="${(data.name || '').replace(/"/g, '&quot;')}" placeholder="${data.isSubRecipe ? 'Select Sub-Recipe...' : 'Search catalog...'}" list="${listId}" oninput="sopApp.handleIngredientSelect(this)" class="ing-name w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white ${data.isSubRecipe ? 'bg-blue-50 border-blue-200' : 'bg-slate-50/70 border-slate-200'} shadow-inner outline-none">
-                    </td>
-                    <td class="py-2 pr-2">
-                        <input type="text" value="${data.qty || ''}" placeholder="0" class="ing-qty w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none" oninput="sopApp.calculateRowCost(this)">
-                    </td>
-                    <td class="py-2 pr-2">
-                        <select class="ing-unit w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none" onchange="sopApp.calculateRowCost(this)">
-                            <option value="" ${!data.unit ? 'selected' : ''}>Select Unit</option>
-                            <option value="unit" ${data.unit === 'unit' ? 'selected' : ''}>Units</option>
-                            <option value="piece" ${data.unit === 'piece' ? 'selected' : ''}>Pieces</option>
-                            <option value="tbsp" ${data.unit === 'tbsp' ? 'selected' : ''}>Tbsp</option>
-                            <option value="tsp" ${data.unit === 'tsp' ? 'selected' : ''}>Tsp</option>
-                            <option value="ml" ${data.unit === 'ml' ? 'selected' : ''}>ml</option>
-                            <option value="L" ${data.unit === 'L' ? 'selected' : ''}>L</option>
-                            <option value="g" ${data.unit === 'g' ? 'selected' : ''}>g</option>
-                            <option value="kg" ${data.unit === 'kg' ? 'selected' : ''}>kg</option>
-                            <option value="oz" ${data.unit === 'oz' ? 'selected' : ''}>oz</option>
-                            <option value="lbs" ${data.unit === 'lbs' ? 'selected' : ''}>lbs</option>
-                            <option value="cups" ${data.unit === 'cups' ? 'selected' : ''}>Cups</option>
+                        <select class="ing-name w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none bg-white">
+                            ${optionsHtml}
                         </select>
                     </td>
                     <td class="py-2 pr-2">
-                        <input type="text" value="${data.cost || '0.00'}" readonly class="ing-cost font-semibold text-[#144D37] bg-transparent w-full px-3 py-1.5 text-sm border-none focus:outline-none text-right">
+                        <input type="text" value="${data.qty}" placeholder="0" class="ing-qty w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none" oninput="app.calculateRowCost(this)">
                     </td>
                     <td class="py-2 pr-2">
-                        <input type="text" value="${(data.notes || '').replace(/"/g, '&quot;')}" placeholder="Notes..." class="ing-notes w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
+                        <select class="ing-unit onchange="app.calculateRowCost(this)" w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none bg-white">
+                            <option value="">Unit...</option>
+                            <option value="g" ${data.unit === 'g' || data.unit === 'gms' ? 'selected' : ''}>g / gms</option>
+                            <option value="kg" ${data.unit === 'kg' ? 'selected' : ''}>kg</option>
+                            <option value="ml" ${data.unit === 'ml' ? 'selected' : ''}>ml</option>
+                            <option value="L" ${data.unit === 'L' ? 'selected' : ''}>L</option>
+                            <option value="pcs" ${data.unit === 'pcs' ? 'selected' : ''}>pcs</option>
+                            <option value="tsp" ${data.unit === 'tsp' ? 'selected' : ''}>tsp</option>
+                            <option value="tbsp" ${data.unit === 'tbsp' ? 'selected' : ''}>tbsp</option>
+                            <option value="cup" ${data.unit === 'cup' ? 'selected' : ''}>cup</option>
+                            <option value="bunch" ${data.unit === 'bunch' ? 'selected' : ''}>bunch</option>
+                        </select>
+                    </td>
+                    <td class="py-2 pr-2">
+                        <input type="text" value="${data.notes.replace(/"/g, '&quot;')}" placeholder="Notes..." class="ing-notes w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
                     </td>
                     <td class="py-2 text-center">
-                        <button type="button" onclick="this.closest('tr').remove(); sopApp.calculateTotalRecipeCost();" class="text-slate-300 hover:text-danger p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onclick="this.closest('tr').remove()" class="text-slate-300 hover:text-danger p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                             <i class="fas fa-times"></i>
                         </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
-            },
-            
-            addSubRecipeRow() {
-                this.addIngredientRow({ name: '', qty: '', unit: '', cost: '0.00', notes: '', isSubRecipe: true });
             },
 
             addEquipmentRow(val = '') {
@@ -1274,7 +1081,7 @@
                 li.className = 'eq-row flex items-center gap-2 group';
                 li.innerHTML = `
                     <i class="fas fa-grip-vertical text-slate-300 cursor-move hidden sm:block"></i>
-                    <input type="text" value="${val.replace(/"/g, '&quot;')}" placeholder="Equipment item (e.g., 20L Stock pot)" class="eq-val flex-grow px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none">
+                    <input type="text" value="${val.replace(/"/g, '&quot;')}" placeholder="Equipment item (e.g., 20L Stock pot)" class="eq-val flex-grow px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary outline-none">
                     <button type="button" onclick="this.closest('li').remove()" class="text-slate-300 hover:text-danger p-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fas fa-times"></i>
                     </button>
@@ -1292,7 +1099,7 @@
                         ${stepCount}
                     </div>
                     <div class="absolute right-2 top-2">
-                        <button type="button" onclick="sopApp.removeStep(this)" class="text-slate-300 hover:text-danger p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onclick="app.removeStep(this)" class="text-slate-300 hover:text-danger p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                             <i class="fas fa-trash-alt text-sm"></i>
                         </button>
                     </div>
@@ -1300,12 +1107,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mt-2">
                         <div class="md:col-span-8">
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Instruction</label>
-                            <textarea rows="2" class="step-desc w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none resize-y" placeholder="Describe this step in detail...">${data.desc}</textarea>
+                            <textarea rows="2" class="step-desc w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary outline-none resize-y" placeholder="Describe this step in detail...">${data.desc}</textarea>
                         </div>
                         <div class="md:col-span-4 space-y-3">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Time / Temp</label>
-                                <input type="text" value="${data.timeTemp}" class="step-timetemp w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-[#144D37] focus:border-[#144D37] focus:bg-white bg-slate-50/70 border-slate-200 shadow-inner outline-none" placeholder="e.g., 10 mins / 180°C">
+                                <input type="text" value="${data.timeTemp}" class="step-timetemp w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary outline-none" placeholder="e.g., 10 mins / 180°C">
                             </div>
                             <div class="flex items-center pt-1">
                                 <input type="checkbox" class="step-critical w-4 h-4 text-danger border-slate-300 rounded focus:ring-danger cursor-pointer" ${data.isCritical ? 'checked' : ''}>
@@ -1322,8 +1129,7 @@
             removeStep(btn) {
                 btn.closest('.step-row').remove();
                 // Update numbers
-                const rows = document.querySelectorAll('.step-row .step-num');
-                rows.forEach((el, index) => {
+                Array.from(document.querySelectorAll('.step-row .step-num')).forEach((el, index) => {
                     el.innerText = index + 1;
                 });
             },
@@ -1335,7 +1141,6 @@
                 const recipe = {
                     id: this.currentRecipeId || this.generateId(),
                     title: document.getElementById('recipeTitle').value,
-                    recipeType: document.querySelector('input[name="recipeType"]:checked').value,
                     category: document.getElementById('recipeCategory').value,
                     station: document.getElementById('recipeStation').value,
                     prepTime: document.getElementById('recipePrepTime').value,
@@ -1346,39 +1151,30 @@
                     ingredients: [],
                     equipment: [],
                     steps: [],
-                    totalCost: '0.00',
                     updatedAt: new Date().toISOString()
                 };
 
-                let calculatedTotalCost = 0;
-
                 // Ingredients
-                document.querySelectorAll('.ing-row').forEach(row => {
+                Array.from(document.querySelectorAll('.ing-row')).forEach(row => {
                     const name = row.querySelector('.ing-name').value.trim();
                     if (name) {
-                        const costStr = row.querySelector('.ing-cost') ? row.querySelector('.ing-cost').value.trim() : '0.00';
-                        calculatedTotalCost += parseFloat(costStr) || 0;
                         recipe.ingredients.push({
                             name: name,
                             qty: row.querySelector('.ing-qty').value.trim(),
                             unit: row.querySelector('.ing-unit').value.trim(),
-                            cost: costStr,
-                            isSubRecipe: row.querySelector('.ing-name').list && row.querySelector('.ing-name').list.id === 'subrecipe-catalog-list',
                             notes: row.querySelector('.ing-notes').value.trim()
                         });
                     }
                 });
-                
-                recipe.totalCost = calculatedTotalCost.toFixed(2);
 
                 // Equipment
-                document.querySelectorAll('.eq-row .eq-val').forEach(input => {
+                Array.from(document.querySelectorAll('.eq-row .eq-val')).forEach(input => {
                     const val = input.value.trim();
                     if (val) recipe.equipment.push(val);
                 });
 
                 // Steps
-                document.querySelectorAll('.step-row').forEach(row => {
+                Array.from(document.querySelectorAll('.step-row')).forEach(row => {
                     const desc = row.querySelector('.step-desc').value.trim();
                     if (desc) {
                         recipe.steps.push({
@@ -1397,39 +1193,7 @@
                     this.recipes.push(recipe);
                 }
 
-                this.saveData();
-                this.updateCatalogWithSubRecipes();
-                    
-                if (this.supabaseClient) {
-                    try {
-                        const { error } = await this.supabaseClient.from('sop_recipes').upsert({
-                            id: recipe.id,
-                            title: recipe.title,
-                            recipeType: recipe.recipeType,
-                            category: recipe.category,
-                            station: recipe.station,
-                            prepTime: recipe.prepTime,
-                            cookTime: recipe.cookTime,
-                            yield: recipe.yield,
-                            shelfLife: recipe.shelfLife,
-                            costing: recipe.costing,
-                            totalCost: recipe.totalCost,
-                            ingredients: recipe.ingredients,
-                            equipment: recipe.equipment,
-                            steps: recipe.steps,
-                            updatedAt: new Date().toISOString()
-                        });
-                        if (error) throw error;
-                    } catch (e) {
-                        console.error('Failed to save to Supabase:', e);
-                        if (e.message && e.message.includes('recipeType')) {
-                            alert('CRITICAL DATABASE ERROR: Failed to save to Supabase! You MUST add the "recipeType" (text) and "totalCost" (text) columns to your "sop_recipes" table in the Supabase Dashboard. Without these, cloud syncing will fail.');
-                        } else {
-                            alert('Saved locally, but failed to sync to cloud database. ' + (e.message || ''));
-                        }
-                    }
-                }
-
+                await this.saveData(recipe);
                 this.showSOP(recipe.id);
             },
 
@@ -1447,6 +1211,13 @@
                 document.getElementById('viewCookTime').innerText = recipe.cookTime || '-';
                 document.getElementById('viewYield').innerText = recipe.yield || '-';
                 document.getElementById('viewShelfLife').innerText = recipe.shelfLife || '-';
+                
+                if (recipe.updatedAt) {
+                    const updateDate = new Date(recipe.updatedAt);
+                    document.getElementById('viewLastUpdated').innerText = `Last Updated: \${updateDate.toLocaleDateString()} at \${updateDate.toLocaleTimeString()}`;
+                } else {
+                    document.getElementById('viewLastUpdated').innerText = '';
+                }
 
                 // Costing
                 const costCont = document.getElementById('viewCostingContainer');
@@ -1476,42 +1247,6 @@
                     `).join('');
                 } else {
                     ingList.innerHTML = '<tr><td class="py-2 text-slate-400 italic">No ingredients listed</td></tr>';
-                }
-
-                // Cost display
-                const viewTotalCostEl = document.getElementById('viewTotalCost');
-                if (viewTotalCostEl) {
-                    viewTotalCostEl.innerText = recipe.totalCost ? `£${parseFloat(recipe.totalCost).toFixed(2)}` : '£0.00';
-                }
-
-                const viewCostPerPortionRow = document.getElementById('viewCostPerPortionRow');
-                const viewPortionUnitLabel = document.getElementById('viewPortionUnitLabel');
-                const viewCostPerPortion = document.getElementById('viewCostPerPortion');
-
-                if (viewCostPerPortionRow && recipe.yield) {
-                    // Try to parse number and unit from "4 portions"
-                    const yieldMatch = recipe.yield.trim().match(/^([\d.]+)\s*(.*)$/);
-                    if (yieldMatch) {
-                        const yieldVal = parseFloat(yieldMatch[1]);
-                        const yieldUnit = yieldMatch[2] || 'Portion';
-                        
-                        if (yieldVal > 0 && recipe.totalCost) {
-                            const costPer = parseFloat(recipe.totalCost) / yieldVal;
-                            let unitText = yieldUnit;
-                            if (unitText.toLowerCase() === 'portions') unitText = 'Portion';
-                            if (unitText.toLowerCase() === 'units') unitText = 'Unit';
-                            
-                            if (viewPortionUnitLabel) viewPortionUnitLabel.innerText = unitText;
-                            if (viewCostPerPortion) viewCostPerPortion.innerText = `£${costPer.toFixed(2)}`;
-                            viewCostPerPortionRow.classList.remove('hidden');
-                        } else {
-                            viewCostPerPortionRow.classList.add('hidden');
-                        }
-                    } else {
-                        viewCostPerPortionRow.classList.add('hidden');
-                    }
-                } else if (viewCostPerPortionRow) {
-                    viewCostPerPortionRow.classList.add('hidden');
                 }
 
                 // Steps
@@ -1564,58 +1299,12 @@
 
             editCurrentRecipe() {
                 this.showForm(this.currentRecipeId);
-            },
-
-            async uploadPDFToCloud(btnElement) {
-                if (!this.supabaseClient) {
-                    alert("Supabase client not initialized.");
-                    return;
-                }
-                const originalText = btnElement.innerHTML;
-                btnElement.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating...';
-                btnElement.disabled = true;
-
-                try {
-                    const element = document.getElementById('sopPrintArea');
-                    const recipe = this.recipes.find(r => r.id === this.currentRecipeId);
-                    const safeTitle = (recipe.title || 'Untitled').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                    const filename = `recipe_${safeTitle}_${Date.now()}.pdf`;
-
-                    const opt = {
-                        margin:       0.5,
-                        filename:     filename,
-                        image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2 },
-                        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-                    };
-
-                    const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-
-                    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Uploading...';
-                    
-                    const { data, error } = await this.supabaseClient.storage
-                        .from('sop_pdfs')
-                        .upload(filename, pdfBlob, {
-                            contentType: 'application/pdf',
-                            upsert: true
-                        });
-
-                    if (error) throw error;
-                    
-                    alert('Success! PDF saved privately to your Supabase "sop_pdfs" bucket.');
-                } catch (e) {
-                    console.error('PDF Upload Error:', e);
-                    alert('Failed to upload PDF. Have you created the "sop_pdfs" bucket in Supabase Storage yet? Error: ' + e.message);
-                } finally {
-                    btnElement.innerHTML = originalText;
-                    btnElement.disabled = false;
-                }
             }
         };
 
         // Boot
         document.addEventListener('DOMContentLoaded', () => {
-            sopApp.init();
+            app.init();
         });
     </script>
 </body>
