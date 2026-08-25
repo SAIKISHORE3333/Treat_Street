@@ -1441,6 +1441,11 @@
             async saveRecipe(e) {
                 e.preventDefault();
 
+                if (this.currentRecipeId) {
+                    const confirmUpdate = confirm("Are you sure you want to update this SOP in the database? This will replace and overwrite the older version.");
+                    if (!confirmUpdate) return;
+                }
+
                 // Gather data
                 const recipe = {
                     id: this.currentRecipeId || this.generateId(),
@@ -1513,7 +1518,7 @@
                     
                 if (this.supabaseClient) {
                     try {
-                        const { error } = await this.supabaseClient.from('sop_recipes').upsert({
+                        const payload = {
                             id: recipe.id,
                             title: recipe.title,
                             recipeType: recipe.recipeType,
@@ -1529,7 +1534,19 @@
                             equipment: recipe.equipment,
                             steps: recipe.steps,
                             updatedAt: new Date().toISOString()
-                        });
+                        };
+                        
+                        let error = null;
+                        if (this.currentRecipeId) {
+                            // EXPLICIT UPDATE: Overwrite existing document, absolutely no duplication
+                            const result = await this.supabaseClient.from('sop_recipes').update(payload).eq('id', recipe.id);
+                            error = result.error;
+                        } else {
+                            // EXPLICIT INSERT: New document
+                            const result = await this.supabaseClient.from('sop_recipes').insert([payload]);
+                            error = result.error;
+                        }
+                        
                         if (error) throw error;
                     } catch (e) {
                         console.error('Failed to save to Supabase:', e);
