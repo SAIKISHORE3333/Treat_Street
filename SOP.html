@@ -604,10 +604,11 @@
                 if (!tbody) return;
                 
                 const searchTerm = (document.getElementById('priceSearch')?.value || '').toLowerCase();
-                const filteredCatalog = this.catalog.filter(i => 
-                    i.name.toLowerCase().includes(searchTerm) || 
-                    (i.category && i.category.toLowerCase().includes(searchTerm))
-                ).sort((a, b) => a.name.localeCompare(b.name));
+                const filteredCatalog = this.catalog.filter(i => {
+                    const itemName = i.name || '';
+                    const itemCat = i.category || '';
+                    return itemName.toLowerCase().includes(searchTerm) || itemCat.toLowerCase().includes(searchTerm);
+                }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
                 
                 tbody.innerHTML = filteredCatalog.map(item => `
                     <tr class="hover:bg-slate-50 transition-colors">
