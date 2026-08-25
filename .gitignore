@@ -1,0 +1,13 @@
+MinGit/
+node_modules/
+*.zip
+MinGit.zip
+
+*.js
+!catalog.js
+*.pdf
+*.csv
+*.txt
+*.json
+
+*.py
