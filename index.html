@@ -30,6 +30,31 @@
     .brand-green-bg { background-color: #144D37; }
     .brand-green-text { color: #144D37; }
     
+    /* Premium UI Enhancements */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+    }
+    
+    .animated-bg {
+      background: linear-gradient(120deg, #f8fafc, #f1f5f9, #e2e8f0);
+      background-size: 200% 200%;
+      animation: gradientMove 8s ease infinite;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       20%, 60% { transform: translateX(-5px); }
@@ -54,7 +79,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative overflow-x-hidden flex flex-col items-center justify-center">
+<body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative flex flex-col items-center justify-center p-4 animated-bg">
 
   <div class="watermark-text">
     TREAT STREET<br/><span class="text-[0.6em] tracking-wider">ALIA</span>
@@ -175,20 +200,7 @@
     let targetUrl = '';
 
     function openPasswordModal(url, titleText) {
-      targetUrl = url;
-      document.getElementById('modal-title-text').innerText = titleText || 'System Authentication';
-      input.value = '';
-      errorMsg.classList.add('hidden');
-      input.classList.remove('border-red-500', 'focus:ring-red-500');
-      
-      modal.classList.remove('hidden');
-      // small delay to allow display block to apply before animating opacity
-      setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        modalContent.classList.remove('scale-95');
-      }, 10);
-      
-      setTimeout(() => input.focus(), 300);
+      window.location.href = url;
     }
 
     function closePasswordModal() {
