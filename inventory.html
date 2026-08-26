@@ -170,19 +170,12 @@
 
     const catalogData = window.tsCatalog || [];
     
+    // Tab Switching
     function switchTab(tab) {
       document.getElementById('tab-live-stock').className = tab === 'live-stock' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
       document.getElementById('tab-audit').className = tab === 'audit' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
       document.getElementById('section-live-stock').classList.toggle('hidden', tab !== 'live-stock');
       document.getElementById('section-audit').classList.toggle('hidden', tab !== 'audit');
-    }
-
-    // Mock theoretical stock generation (since we don't have a backend DB tracking it yet)
-    // Generates a random stock percentage between 10% and 100%
-    function getMockStockLevel(id) {
-      // Deterministic random based on ID for demo stability
-      const pseudoRandom = Math.sin(id * 9999) * 10000;
-      return 10 + Math.floor(Math.abs(pseudoRandom % 90));
     }
 
     function init() {
@@ -191,15 +184,14 @@
       
       let totalValue = 0;
 
-      // Slice first 30 for performance in demo
-      const demoCatalog = catalogData.slice(0, 30);
+      // Render all items in catalog
+      const demoCatalog = catalogData;
 
       demoCatalog.forEach((item, index) => {
-        // Generate mock stock
-        const stockPct = getMockStockLevel(item.id);
-        const maxUnits = 20; 
-        const currentUnits = ((stockPct / 100) * maxUnits).toFixed(1);
-        const value = currentUnits * item.price;
+        // Since we are not using fake data, theoretical stock is 0 until we connect to a live backend.
+        const stockPct = 0;
+        const currentUnits = 0;
+        const value = 0;
         totalValue += value;
 
         // Determine Pot Color
@@ -327,7 +319,7 @@
 
       const payload = {
         audit_id: 'AUD-' + Date.now(),
-        branch_id: 'Sunderland', 
+        branch_id: 'MK Stadium HQ', 
         audit_date: new Date().toISOString(),
         items: items
       };
