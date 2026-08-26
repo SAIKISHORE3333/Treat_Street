@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Treat Street Portal Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .watermark-bg {
+      background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+      position: relative;
+    }
+    .watermark-text {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-25deg);
+      font-size: 11vw;
+      font-weight: 900;
+      color: rgba(20, 77, 55, 0.03);
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1;
+    }
+    .brand-green-bg { background-color: #144D37; }
+    .brand-green-text { color: #144D37; }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+    .shake-anim {
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    
+    /* Custom glow effects */
+    .portal-card {
+      transition: all 0.3s ease;
+    }
+    .portal-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(20, 77, 55, 0.1), 0 8px 10px -6px rgba(20, 77, 55, 0.1);
+    }
+    
+    .modal-backdrop {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative overflow-x-hidden flex flex-col items-center justify-center">
+
+  <div class="watermark-text">
+    TREAT STREET<br/><span class="text-[0.6em] tracking-wider">ALIA</span>
+  </div>
+
+  <div class="relative z-10 w-full max-w-5xl px-6">
+    <!-- HERO HEADER -->
+    <div class="text-center mb-12">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl brand-green-bg text-white shadow-xl mb-6">
+        <span class="font-black text-3xl tracking-wider">TS</span>
+      </div>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 mb-4">
+        Welcome to Treat Street
+      </h1>
+      <p class="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
+        Select a portal below to access internal systems.
+      </p>
+    </div>
+
+    <!-- PORTAL CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      
+      <!-- Purchase Portal -->
+      <div onclick="openPasswordModal('purchase.html', 'Purchase Portal')" class="portal-card bg-white rounded-3xl p-8 border border-slate-200/80 flex flex-col relative overflow-hidden group cursor-pointer block">
+        <div class="absolute -right-6 -top-6 w-32 h-32 bg-emerald-50 rounded-full group-hover:scale-150 transition-transform duration-500 ease-in-out z-0"></div>
+        <div class="absolute top-6 right-6 z-10 text-slate-300 group-hover:text-emerald-500 transition-colors">
+          <i data-lucide="lock" class="w-5 h-5"></i>
+        </div>
+        <div class="relative z-10">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-[#144D37] flex items-center justify-center mb-6 shadow-sm">
+            <i data-lucide="shopping-bag" class="w-7 h-7"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">Purchase Orders</h2>
+          <p class="text-slate-500 mb-6 text-sm leading-relaxed">
+            Manage ingredient catalog, add items to cart, generate PDF purchase orders, and sync with ALAIYA storage.
+          </p>
+          <div class="mt-auto flex items-center text-[#144D37] font-bold text-sm">
+            Secure Access <i data-lucide="arrow-right" class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOP Portal -->
+      <div onclick="openPasswordModal('SOP.html', 'SOP Authentication')" class="portal-card bg-white rounded-3xl p-8 border border-slate-200/80 flex flex-col relative overflow-hidden group cursor-pointer">
+        <div class="absolute -right-6 -top-6 w-32 h-32 bg-amber-50 rounded-full group-hover:scale-150 transition-transform duration-500 ease-in-out z-0"></div>
+        <div class="absolute top-6 right-6 z-10 text-slate-300 group-hover:text-amber-500 transition-colors">
+          <i data-lucide="lock" class="w-5 h-5"></i>
+        </div>
+        <div class="relative z-10">
+          <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mb-6 shadow-sm">
+            <i data-lucide="file-text" class="w-7 h-7"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">Internal SOP's</h2>
+          <p class="text-slate-500 mb-6 text-sm leading-relaxed">
+            Standard operating procedures, recipe methods, equipment specs, and kitchen operations management.
+          </p>
+          <div class="mt-auto flex items-center text-amber-700 font-bold text-sm">
+            Secure Access <i data-lucide="arrow-right" class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"></i>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER ALAIYA TAG -->
+    <div class="mt-16 text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-white/50 backdrop-blur-md rounded-full text-slate-500 text-xs font-bold border border-slate-200 shadow-sm">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i> Powered by ALAIYA
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSWORD MODAL -->
+  <div id="password-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-slate-900/40 modal-backdrop" onclick="closePasswordModal()"></div>
+    
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4 relative z-10 overflow-hidden transform scale-95 transition-transform duration-300" id="modal-content">
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-br from-[#144D37] to-emerald-900 p-6 text-center relative">
+        <button onclick="closePasswordModal()" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="lock" class="w-6 h-6 text-emerald-100"></i>
+        </div>
+        <h3 id="modal-title-text" class="text-lg font-bold text-white">System Authentication</h3>
+        <p class="text-emerald-200 text-xs mt-1">Restricted Area</p>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6">
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Access Code</label>
+        <div class="relative">
+          <input type="password" id="access-code" placeholder="Enter code..." 
+                 class="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#144D37] focus:bg-white transition-all"
+                 onkeypress="if(event.key === 'Enter') verifyCode()" />
+          <i data-lucide="key" class="w-4 h-4 text-slate-400 absolute right-4 top-3.5"></i>
+        </div>
+        <p id="error-msg" class="text-red-500 text-xs font-bold mt-2 hidden flex items-center gap-1">
+          <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Incorrect code
+        </p>
+        
+        <button onclick="verifyCode()" class="w-full mt-6 py-3 brand-green-bg hover:bg-emerald-900 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-emerald-900/20">
+          Verify Access
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize icons
+    lucide.createIcons();
+
+    const modal = document.getElementById('password-modal');
+    const modalContent = document.getElementById('modal-content');
+    const input = document.getElementById('access-code');
+    const errorMsg = document.getElementById('error-msg');
+    let targetUrl = '';
+
+    function openPasswordModal(url, titleText) {
+      targetUrl = url;
+      document.getElementById('modal-title-text').innerText = titleText || 'System Authentication';
+      input.value = '';
+      errorMsg.classList.add('hidden');
+      input.classList.remove('border-red-500', 'focus:ring-red-500');
+      
+      modal.classList.remove('hidden');
+      // small delay to allow display block to apply before animating opacity
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modalContent.classList.remove('scale-95');
+      }, 10);
+      
+      setTimeout(() => input.focus(), 300);
+    }
+
+    function closePasswordModal() {
+      modal.classList.add('opacity-0');
+      modalContent.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    function verifyCode() {
+      const code = input.value.trim().toUpperCase();
+      if (code === 'ALAIYA') {
+        // Success
+        input.classList.remove('border-red-500');
+        input.classList.add('border-emerald-500', 'text-emerald-700', 'bg-emerald-50');
+        errorMsg.classList.add('hidden');
+        
+        // Redirect
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 300);
+      } else {
+        // Error
+        errorMsg.classList.remove('hidden');
+        input.classList.add('border-red-500', 'focus:ring-red-500');
+        
+        // Trigger shake
+        modalContent.classList.remove('shake-anim');
+        void modalContent.offsetWidth; // trigger reflow
+        modalContent.classList.add('shake-anim');
+        
+        // Auto-select text for easy retyping
+        input.select();
+      }
+    }
+  </script>
+</body>
+</html>
