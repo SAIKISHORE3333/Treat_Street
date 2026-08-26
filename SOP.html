@@ -53,6 +53,42 @@
         }
         .brand-green-bg { background-color: #144D37; }
         
+        /* Premium UI Enhancements */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
+        
+        .hover-scale {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-scale:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px -5px rgba(20, 77, 55, 0.1), 0 8px 10px -6px rgba(20, 77, 55, 0.1);
+        }
+        
+        .animated-bg {
+            background: linear-gradient(120deg, #f8fafc, #f1f5f9, #e2e8f0);
+            background-size: 200% 200%;
+            animation: gradientMove 8s ease infinite;
+        }
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        button { transition: all 0.2s ease; }
+        button:active { transform: scale(0.97); }
+        
         /* Print styles */
         @media print {
             .no-print { display: none !important; }
@@ -73,7 +109,7 @@
         .step-checkbox:checked + label { text-decoration: line-through; color: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col watermark-bg relative">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col watermark-bg relative animated-bg">
     <div class="watermark-text no-print">
         TREAT STREET<br/><span class="text-[0.6em] tracking-wider">ALIA</span>
     </div>
