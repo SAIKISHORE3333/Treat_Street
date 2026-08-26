@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inventory & Waste - Treat Street</title>
+  <title>Stock & Inventory Dashboard - Treat Street</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -31,8 +31,8 @@
       border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
     }
     
-    .hover-scale { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .hover-scale:hover { transform: translateY(-2px); box-shadow: 0 12px 25px -5px rgba(20, 77, 55, 0.1), 0 8px 10px -6px rgba(20, 77, 55, 0.1); }
+    .hover-scale { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s; }
+    .hover-scale:hover { transform: translateY(-3px); box-shadow: 0 12px 25px -5px rgba(20, 77, 55, 0.15); }
     
     .animated-bg {
       background: linear-gradient(120deg, #f8fafc, #f1f5f9, #e2e8f0);
@@ -41,16 +41,46 @@
     }
     @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     
-    button { transition: all 0.2s ease; }
-    button:active { transform: scale(0.97); }
-    
     .tab-active { border-bottom: 2px solid #144D37; color: #144D37; font-weight: 700; }
     .tab-inactive { color: #64748b; font-weight: 500; border-bottom: 2px solid transparent; }
-    .tab-inactive:hover { color: #334155; }
+    
+    /* Liquid Pot Animation */
+    .pot-container {
+      position: relative;
+      width: 40px;
+      height: 60px;
+      border-radius: 8px 8px 12px 12px;
+      border: 3px solid #e2e8f0;
+      overflow: hidden;
+      background: #f8fafc;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    }
+    .liquid {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      transition: height 1.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 1.5s;
+    }
+    /* SVG Bubbles Overlay */
+    .liquid::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -50%;
+      width: 200%;
+      height: 15px;
+      background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 20" xmlns="http://www.w3.org/2000/svg"><path d="M0,10 Q25,20 50,10 T100,10" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="3"/></svg>') repeat-x;
+      background-size: 50% 100%;
+      animation: wave 2s linear infinite;
+    }
+    @keyframes wave {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(25%); }
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative animated-bg">
-
   <div class="watermark-text">TREAT STREET<br/><span class="text-[0.6em] tracking-wider">ALIA</span></div>
 
   <div class="relative z-10 flex flex-col min-h-screen">
@@ -60,9 +90,9 @@
           <div class="bg-white text-[#144D37] px-2.5 py-1 rounded-lg shadow-inner font-black text-xl">TS</div>
           <div>
             <h1 class="font-extrabold text-base tracking-wide flex items-center gap-2">
-              Treat Street <span class="bg-emerald-800/80 text-emerald-200 text-[10px] px-2 py-0.5 rounded-full uppercase">Inventory & Waste</span>
+              Treat Street <span class="bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase">Stock Dashboard</span>
             </h1>
-            <p class="text-[11px] text-emerald-200">Back-of-House Control</p>
+            <p class="text-[11px] text-emerald-200">Live Inventory Management</p>
           </div>
         </div>
         <a href="index.html" class="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 rounded-lg text-xs font-bold transition-colors flex items-center gap-2">
@@ -72,52 +102,27 @@
     </header>
 
     <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
-      
       <div class="flex gap-4 border-b border-slate-200">
-        <button onclick="switchTab('waste')" id="tab-waste" class="tab-active pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> Waste Logging</button>
-        <button onclick="switchTab('audit')" id="tab-audit" class="tab-inactive pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="clipboard-check" class="w-4 h-4"></i> Physical Audit</button>
+        <button onclick="switchTab('live-stock')" id="tab-live-stock" class="tab-active pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Live Stock Levels</button>
+        <button onclick="switchTab('audit')" id="tab-audit" class="tab-inactive pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="clipboard-check" class="w-4 h-4"></i> Month-End Audit</button>
       </div>
 
-      <!-- WASTE LOGGING TAB -->
-      <section id="section-waste" class="glass-panel p-6 rounded-2xl hover-scale">
-        <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i> Log Waste / Spoilage</h2>
-        <p class="text-xs text-slate-500 mb-6">Log ingredient waste to keep theoretical COGS accurate and notify ALAIYAOPS.</p>
+      <!-- LIVE STOCK LEVELS TAB -->
+      <section id="section-live-stock">
+        <div class="flex justify-between items-end mb-6">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="activity" class="w-6 h-6 text-indigo-500"></i> Theoretical Stock Monitor</h2>
+            <p class="text-sm text-slate-500">Real-time pot levels tracking raw ingredient depletion. Levels turning red signify a reorder is required.</p>
+          </div>
+          <div class="text-right glass-panel px-4 py-2 rounded-xl">
+            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total Stock Value</p>
+            <p id="total-stock-val" class="text-2xl font-black text-[#144D37]">£0.00</p>
+          </div>
+        </div>
         
-        <form id="waste-form" onsubmit="submitWaste(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Branch</label>
-            <select id="waste-branch" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#144D37] outline-none">
-              <option value="Sunderland">Sunderland</option>
-              <option value="Head Office">Head Office</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Ingredient / Recipe Name</label>
-            <select id="waste-ingredient" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#144D37] outline-none">
-              <option value="">Select Item...</option>
-              <!-- Populated by JS -->
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Quantity Wasted</label>
-            <input type="number" id="waste-qty" step="0.01" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#144D37] outline-none" placeholder="e.g. 2.5">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Reason</label>
-            <select id="waste-reason" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#144D37] outline-none">
-              <option value="Spoilage">Spoilage</option>
-              <option value="Dropped/Spilled">Dropped / Spilled</option>
-              <option value="Over-prep">Over-prep</option>
-              <option value="Quality Issue">Quality Issue</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="md:col-span-2">
-            <button type="submit" class="w-full brand-green-bg hover:bg-emerald-900 text-white font-bold py-3 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
-              <i data-lucide="send" class="w-4 h-4"></i> Submit Waste Log
-            </button>
-          </div>
-        </form>
+        <div id="stock-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Populated by JS -->
+        </div>
       </section>
 
       <!-- AUDIT TAB -->
@@ -125,7 +130,7 @@
         <div class="flex justify-between items-end mb-6">
           <div>
             <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="clipboard-check" class="w-5 h-5 text-indigo-500"></i> Physical Inventory Audit</h2>
-            <p class="text-xs text-slate-500">Record physical stock counts. Variances will be synced to ALAIYAOPS.</p>
+            <p class="text-xs text-slate-500">Record physical counts to reconcile against theoretical stock levels.</p>
           </div>
           <button onclick="submitAudit()" class="brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-2">
             <i data-lucide="upload-cloud" class="w-4 h-4"></i> Finalize Audit
@@ -137,8 +142,8 @@
             <thead>
               <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
                 <th class="p-3 font-bold text-xs uppercase tracking-wider">Ingredient</th>
-                <th class="p-3 font-bold text-xs uppercase tracking-wider">Category</th>
                 <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Unit Price (£)</th>
+                <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Theo. Qty</th>
                 <th class="p-3 font-bold text-xs uppercase tracking-wider text-right w-32">Actual Count</th>
                 <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Variance (£)</th>
               </tr>
@@ -149,125 +154,155 @@
           </table>
         </div>
       </section>
-
     </main>
   </div>
 
   <script>
     lucide.createIcons();
 
+    // Setup Supabase
     let SUPABASE_URL = 'https://sdlrwosjebiiztclsydu.supabase.co';
     let SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw';
     let supabaseClient = null;
-
     if (window.supabase && typeof window.supabase.createClient === 'function') {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     const catalogData = window.tsCatalog || [];
     
-    // Tab Switching
     function switchTab(tab) {
-      document.getElementById('tab-waste').className = tab === 'waste' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
+      document.getElementById('tab-live-stock').className = tab === 'live-stock' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
       document.getElementById('tab-audit').className = tab === 'audit' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
-      document.getElementById('section-waste').classList.toggle('hidden', tab !== 'waste');
+      document.getElementById('section-live-stock').classList.toggle('hidden', tab !== 'live-stock');
       document.getElementById('section-audit').classList.toggle('hidden', tab !== 'audit');
     }
 
-    // Populate Data
+    // Mock theoretical stock generation (since we don't have a backend DB tracking it yet)
+    // Generates a random stock percentage between 10% and 100%
+    function getMockStockLevel(id) {
+      // Deterministic random based on ID for demo stability
+      const pseudoRandom = Math.sin(id * 9999) * 10000;
+      return 10 + Math.floor(Math.abs(pseudoRandom % 90));
+    }
+
     function init() {
-      const wasteSelect = document.getElementById('waste-ingredient');
+      const grid = document.getElementById('stock-grid');
       const auditTbody = document.getElementById('audit-tbody');
       
-      catalogData.forEach(item => {
-        // Pop Waste Dropdown
-        const opt = document.createElement('option');
-        opt.value = item.name;
-        opt.dataset.price = item.price;
-        opt.textContent = item.name;
-        wasteSelect.appendChild(opt);
+      let totalValue = 0;
 
-        // Pop Audit Table
+      // Slice first 30 for performance in demo
+      const demoCatalog = catalogData.slice(0, 30);
+
+      demoCatalog.forEach((item, index) => {
+        // Generate mock stock
+        const stockPct = getMockStockLevel(item.id);
+        const maxUnits = 20; 
+        const currentUnits = ((stockPct / 100) * maxUnits).toFixed(1);
+        const value = currentUnits * item.price;
+        totalValue += value;
+
+        // Determine Pot Color
+        let liquidColor = '#10b981'; // Emerald
+        let statusBadge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Optimal</span>`;
+        if (stockPct < 25) {
+          liquidColor = '#ef4444'; // Red
+          statusBadge = `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">Reorder Now</span>`;
+        } else if (stockPct < 50) {
+          liquidColor = '#f59e0b'; // Amber
+          statusBadge = `<span class="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Warning</span>`;
+        }
+
+        // Delay animation slightly for waterfall effect
+        const animDelay = index * 50;
+
+        // Populate Live Grid
+        const card = document.createElement('div');
+        card.className = 'glass-panel p-4 rounded-2xl hover-scale flex items-center gap-4';
+        card.innerHTML = `
+          <div class="pot-container shrink-0">
+            <div class="liquid" style="height: 0%; background-color: ${liquidColor}; transition-delay: ${animDelay}ms"></div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-start mb-1">
+              <h3 class="font-bold text-sm text-slate-800 truncate pr-2" title="${item.name}">${item.name}</h3>
+              ${statusBadge}
+            </div>
+            <p class="text-xs text-slate-500 mb-2 truncate">${item.category}</p>
+            <div class="flex justify-between items-end">
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase">Theoretical</p>
+                <p class="text-sm font-black text-slate-700">${currentUnits} units</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[10px] font-bold text-slate-400 uppercase">Value</p>
+                <p class="text-sm font-black text-slate-700">£${value.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+
+        // Trigger animation after mount
+        setTimeout(() => {
+          card.querySelector('.liquid').style.height = `${stockPct}%`;
+        }, 100);
+
+        // Populate Audit Table
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors';
         tr.innerHTML = `
-          <td class="p-3 font-medium text-slate-800 text-xs">${item.name}</td>
-          <td class="p-3 text-slate-500 text-xs">${item.category}</td>
+          <td class="p-3 font-medium text-slate-800 text-xs truncate max-w-xs" title="${item.name}">${item.name}</td>
           <td class="p-3 text-slate-700 text-xs text-right tabular-nums">£${item.price.toFixed(2)}</td>
+          <td class="p-3 text-slate-500 text-xs text-right tabular-nums font-bold" data-theo="${currentUnits}">${currentUnits}</td>
           <td class="p-3 text-right">
-            <input type="number" min="0" step="0.01" class="audit-input w-20 px-2 py-1 text-right border border-slate-300 rounded text-xs focus:ring-1 focus:ring-[#144D37] outline-none" data-id="${item.id}" data-price="${item.price}" onchange="calcVariance(this)">
+            <input type="number" min="0" step="0.01" placeholder="${currentUnits}" class="audit-input w-20 px-2 py-1 text-right border border-slate-300 rounded text-xs focus:ring-1 focus:ring-[#144D37] outline-none" data-id="${item.id}" data-price="${item.price}" data-theo="${currentUnits}" oninput="calcVariance(this)">
           </td>
           <td class="p-3 text-slate-500 text-xs text-right tabular-nums variance-val">£0.00</td>
         `;
         auditTbody.appendChild(tr);
       });
+
+      document.getElementById('total-stock-val').textContent = '£' + totalValue.toLocaleString('en-GB', {minimumFractionDigits: 2});
     }
 
     function calcVariance(input) {
       const price = parseFloat(input.dataset.price);
-      const actual = parseFloat(input.value) || 0;
-      const varianceCost = actual * price;
+      const theo = parseFloat(input.dataset.theo);
+      if (input.value === '') {
+        input.parentElement.nextElementSibling.textContent = '£0.00';
+        input.parentElement.nextElementSibling.className = 'p-3 text-slate-500 text-xs text-right tabular-nums variance-val';
+        return;
+      }
+      const actual = parseFloat(input.value);
+      const varianceUnits = actual - theo;
+      const varianceCost = varianceUnits * price;
+      
       const td = input.parentElement.nextElementSibling;
-      td.textContent = '£' + varianceCost.toFixed(2);
+      const sign = varianceCost > 0 ? '+' : '';
+      td.textContent = sign + '£' + varianceCost.toFixed(2);
+      
       if (varianceCost > 0) {
-        td.classList.add('text-emerald-600', 'font-bold');
+        td.className = 'p-3 text-emerald-600 text-xs text-right tabular-nums variance-val font-bold';
+      } else if (varianceCost < 0) {
+        td.className = 'p-3 text-red-600 text-xs text-right tabular-nums variance-val font-bold';
       } else {
-        td.classList.remove('text-emerald-600', 'font-bold');
+        td.className = 'p-3 text-slate-500 text-xs text-right tabular-nums variance-val font-bold';
       }
     }
 
-    // Dispatch Webhook Helper
     async function triggerAlaiyaWebhook(eventType, payload) {
-      if (!supabaseClient) {
-        alert("Supabase client not initialized.");
-        return false;
-      }
+      if (!supabaseClient) return alert("Supabase client not initialized."), false;
       try {
-        const { data, error } = await supabaseClient.functions.invoke('webhook-proxy', {
+        const { error } = await supabaseClient.functions.invoke('webhook-proxy', {
           body: { event_type: eventType, payload }
         });
         if (error) throw error;
         return true;
       } catch (err) {
         console.error("Webhook Error:", err);
-        alert("Failed to sync with ALAIYAOPS: " + err.message);
-        return false;
+        return alert("Failed to sync with ALAIYAOPS: " + err.message), false;
       }
-    }
-
-    async function submitWaste(e) {
-      e.preventDefault();
-      const name = document.getElementById('waste-ingredient').value;
-      const qty = parseFloat(document.getElementById('waste-qty').value);
-      const branch = document.getElementById('waste-branch').value;
-      const reason = document.getElementById('waste-reason').value;
-      
-      const selectedOption = document.getElementById('waste-ingredient').selectedOptions[0];
-      const price = parseFloat(selectedOption?.dataset?.price || 0);
-      const estCost = price * qty;
-
-      const payload = {
-        log_id: 'WST-' + Date.now(),
-        branch_id: branch,
-        recipe_name: name,
-        quantity: qty,
-        estimated_cost: estCost,
-        reason: reason
-      };
-
-      const btn = e.target.querySelector('button');
-      const origHTML = btn.innerHTML;
-      btn.innerHTML = 'Syncing...';
-      btn.disabled = true;
-
-      const success = await triggerAlaiyaWebhook('sop.waste_logged', payload);
-      
-      if (success) {
-        alert("Waste log synced securely to ALAIYAOPS.");
-        e.target.reset();
-      }
-      btn.innerHTML = origHTML;
-      btn.disabled = false;
     }
 
     async function submitAudit() {
@@ -276,21 +311,19 @@
       inputs.forEach(input => {
         if (input.value !== '') {
           const actual = parseFloat(input.value);
+          const theo = parseFloat(input.dataset.theo);
           const price = parseFloat(input.dataset.price);
           items.push({
             ingredient_id: input.dataset.id,
-            theoretical_qty: 0, 
+            theoretical_qty: theo,
             actual_qty: actual,
-            variance: actual,
-            variance_cost: actual * price
+            variance: actual - theo,
+            variance_cost: (actual - theo) * price
           });
         }
       });
 
-      if (items.length === 0) {
-        alert("Please enter actual counts for at least one item.");
-        return;
-      }
+      if (items.length === 0) return alert("Please enter actual counts for at least one item.");
 
       const payload = {
         audit_id: 'AUD-' + Date.now(),
@@ -304,14 +337,10 @@
       btn.innerHTML = 'Syncing...';
       btn.disabled = true;
 
-      const success = await triggerAlaiyaWebhook('inventory.audit_completed', payload);
-      if (success) {
-        alert("Audit completed and synced to ALAIYAOPS.");
-        inputs.forEach(input => input.value = '');
-        document.querySelectorAll('.variance-val').forEach(td => {
-          td.textContent = '£0.00';
-          td.classList.remove('text-emerald-600', 'font-bold');
-        });
+      if (await triggerAlaiyaWebhook('inventory.audit_completed', payload)) {
+        alert("Audit completed and securely synced to ALAIYAOPS.");
+        inputs.forEach(i => i.value = '');
+        document.querySelectorAll('.variance-val').forEach(td => td.textContent = '£0.00');
       }
       
       btn.innerHTML = origHTML;

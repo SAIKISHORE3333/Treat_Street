@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitchen Operations - Treat Street</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="catalog.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .watermark-bg {
+      background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .watermark-text {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-25deg);
+      font-size: 11vw; font-weight: 900; color: rgba(245, 158, 11, 0.03); /* Amber watermark */
+      pointer-events: none; user-select: none; z-index: 0; white-space: nowrap; text-align: center; line-height: 1;
+    }
+    .brand-amber-bg { background-color: #d97706; }
+    
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #fef3c7; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #fbbf24; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+    
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 8px 32px 0 rgba(217, 119, 6, 0.05);
+    }
+    
+    .hover-scale { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .hover-scale:hover { transform: translateY(-2px); box-shadow: 0 12px 25px -5px rgba(217, 119, 6, 0.1), 0 8px 10px -6px rgba(217, 119, 6, 0.1); }
+    
+    .animated-bg {
+      background: linear-gradient(120deg, #fffbeb, #fef3c7, #fde68a);
+      background-size: 200% 200%;
+      animation: gradientMove 8s ease infinite;
+    }
+    @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    
+    button { transition: all 0.2s ease; }
+    button:active { transform: scale(0.97); }
+    
+    .tab-active { border-bottom: 2px solid #d97706; color: #d97706; font-weight: 700; }
+    .tab-inactive { color: #92400e; font-weight: 500; border-bottom: 2px solid transparent; }
+    .tab-inactive:hover { color: #b45309; }
+  </style>
+</head>
+<body class="bg-amber-50 text-slate-800 watermark-bg min-h-screen font-sans relative animated-bg">
+
+  <div class="watermark-text">TREAT STREET<br/><span class="text-[0.6em] tracking-wider">KITCHEN</span></div>
+
+  <div class="relative z-10 flex flex-col min-h-screen">
+    <header class="brand-amber-bg text-white sticky top-0 z-30 shadow-md">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div class="bg-white text-[#d97706] px-2.5 py-1 rounded-lg shadow-inner font-black text-xl">TS</div>
+          <div>
+            <h1 class="font-extrabold text-base tracking-wide flex items-center gap-2">
+              Treat Street <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase">Kitchen Ops</span>
+            </h1>
+            <p class="text-[11px] text-amber-200">Production & Waste Logging</p>
+          </div>
+        </div>
+        <a href="index.html" class="px-3 py-1.5 bg-amber-800 hover:bg-amber-900 rounded-lg text-xs font-bold transition-colors flex items-center gap-2">
+          <i data-lucide="home" class="w-4 h-4"></i> Hub
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
+      
+      <div class="flex gap-4 border-b border-amber-200">
+        <button onclick="switchTab('production')" id="tab-production" class="tab-active pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="chef-hat" class="w-4 h-4"></i> Log Production</button>
+        <button onclick="switchTab('waste')" id="tab-waste" class="tab-inactive pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> Log Waste</button>
+      </div>
+
+      <!-- PRODUCTION TAB -->
+      <section id="section-production" class="glass-panel p-6 rounded-2xl hover-scale">
+        <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="chef-hat" class="w-5 h-5 text-amber-600"></i> Log Daily Production</h2>
+        <p class="text-xs text-slate-500 mb-6">Log batches of recipes you've produced. This deducts raw ingredients from virtual stock.</p>
+        
+        <form id="prod-form" onsubmit="submitProduction(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Branch</label>
+            <select id="prod-branch" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+              <option value="Sunderland">Sunderland</option>
+              <option value="Head Office">Head Office</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Recipe Made</label>
+            <select id="prod-recipe" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+              <option value="">Select Recipe...</option>
+              <option value="Signature Cookie Dough">Signature Cookie Dough</option>
+              <option value="Mac & Cheese Base">Mac & Cheese Base</option>
+              <option value="Chocolate Brownie Batter">Chocolate Brownie Batter</option>
+              <option value="Vanilla Frosting">Vanilla Frosting</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Batches Produced</label>
+            <input type="number" id="prod-qty" min="1" step="1" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none" placeholder="e.g. 2">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Staff Name (Optional)</label>
+            <input type="text" id="prod-staff" class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Who made this?">
+          </div>
+          <div class="md:col-span-2">
+            <button type="submit" class="w-full brand-amber-bg hover:bg-amber-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Log Production Batch
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- WASTE LOGGING TAB -->
+      <section id="section-waste" class="glass-panel p-6 rounded-2xl hidden hover-scale">
+        <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i> Log Waste / Spoilage</h2>
+        <p class="text-xs text-slate-500 mb-6">Record any dropped, spoiled, or written-off items to keep financial variance accurate.</p>
+        
+        <form id="waste-form" onsubmit="submitWaste(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Branch</label>
+            <select id="waste-branch" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+              <option value="Sunderland">Sunderland</option>
+              <option value="Head Office">Head Office</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Ingredient / Item</label>
+            <select id="waste-ingredient" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+              <option value="">Select Item...</option>
+              <!-- Populated by JS -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Quantity Wasted</label>
+            <input type="number" id="waste-qty" step="0.01" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none" placeholder="e.g. 2.5">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Reason</label>
+            <select id="waste-reason" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+              <option value="Spoilage">Spoilage</option>
+              <option value="Dropped/Spilled">Dropped / Spilled</option>
+              <option value="Over-prep">Over-prep</option>
+              <option value="Quality Issue">Quality Issue</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4"></i> Submit Waste Report
+            </button>
+          </div>
+        </form>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let SUPABASE_URL = 'https://sdlrwosjebiiztclsydu.supabase.co';
+    let SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw';
+    let supabaseClient = null;
+
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    const catalogData = window.tsCatalog || [];
+    
+    function switchTab(tab) {
+      document.getElementById('tab-production').className = tab === 'production' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
+      document.getElementById('tab-waste').className = tab === 'waste' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
+      document.getElementById('section-production').classList.toggle('hidden', tab !== 'production');
+      document.getElementById('section-waste').classList.toggle('hidden', tab !== 'waste');
+    }
+
+    function init() {
+      const wasteSelect = document.getElementById('waste-ingredient');
+      catalogData.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        opt.dataset.price = item.price;
+        opt.textContent = item.name;
+        wasteSelect.appendChild(opt);
+      });
+    }
+
+    async function triggerAlaiyaWebhook(eventType, payload) {
+      if (!supabaseClient) {
+        alert("Supabase client not initialized.");
+        return false;
+      }
+      try {
+        const { error } = await supabaseClient.functions.invoke('webhook-proxy', {
+          body: { event_type: eventType, payload }
+        });
+        if (error) throw error;
+        return true;
+      } catch (err) {
+        console.error("Webhook Error:", err);
+        alert("Failed to sync with ALAIYAOPS: " + err.message);
+        return false;
+      }
+    }
+
+    async function submitProduction(e) {
+      e.preventDefault();
+      const recipe = document.getElementById('prod-recipe').value;
+      const qty = parseInt(document.getElementById('prod-qty').value);
+      const branch = document.getElementById('prod-branch').value;
+      const staff = document.getElementById('prod-staff').value;
+
+      const payload = {
+        log_id: 'PRD-' + Date.now(),
+        branch_id: branch,
+        recipe_name: recipe,
+        batches_produced: qty,
+        staff_name: staff || 'Unknown',
+        timestamp: new Date().toISOString()
+      };
+
+      const btn = e.target.querySelector('button');
+      const origText = btn.innerHTML;
+      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Syncing...';
+      lucide.createIcons();
+      btn.disabled = true;
+
+      // Using the generic waste_logged webhook for now as a proxy, or ideally a new `sop.production_logged`
+      const success = await triggerAlaiyaWebhook('sop.waste_logged', { ...payload, type: 'PRODUCTION_LOG' });
+      
+      if (success) {
+        alert("Production logged! Raw ingredients have been theoretically deducted.");
+        e.target.reset();
+      }
+      btn.innerHTML = origText;
+      btn.disabled = false;
+    }
+
+    async function submitWaste(e) {
+      e.preventDefault();
+      const name = document.getElementById('waste-ingredient').value;
+      const qty = parseFloat(document.getElementById('waste-qty').value);
+      const branch = document.getElementById('waste-branch').value;
+      const reason = document.getElementById('waste-reason').value;
+      
+      const selectedOption = document.getElementById('waste-ingredient').selectedOptions[0];
+      const price = parseFloat(selectedOption?.dataset?.price || 0);
+      const estCost = price * qty;
+
+      const payload = {
+        log_id: 'WST-' + Date.now(),
+        branch_id: branch,
+        recipe_name: name,
+        quantity: qty,
+        estimated_cost: estCost,
+        reason: reason
+      };
+
+      const btn = e.target.querySelector('button');
+      const origHTML = btn.innerHTML;
+      btn.innerHTML = 'Syncing...';
+      btn.disabled = true;
+
+      const success = await triggerAlaiyaWebhook('sop.waste_logged', payload);
+      
+      if (success) {
+        alert("Waste log synced securely to ALAIYAOPS.");
+        e.target.reset();
+      }
+      btn.innerHTML = origHTML;
+      btn.disabled = false;
+    }
+
+    init();
+  </script>
+</body>
+</html>
