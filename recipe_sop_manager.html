@@ -915,9 +915,15 @@
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-slate-50 transition-colors';
                     tr.innerHTML = `
-                        <td class="px-6 py-3 font-medium text-slate-800">\${item.name}</td>
-                        <td class="px-6 py-3 text-slate-500">\${item.category || '-'}</td>
-                        <td class="px-6 py-3 text-slate-500">\${item.size || '-'}</td>
+                        <td class="px-6 py-3 font-medium text-slate-800">
+                            <input type="text" id="nameInput_\${item.id}" value="\${item.name.replace(/"/g, '&quot;')}" class="w-full px-2 py-1 border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none text-sm">
+                        </td>
+                        <td class="px-6 py-3 text-slate-500">
+                            <input type="text" id="catInput_\${item.id}" value="\${(item.category || '').replace(/"/g, '&quot;')}" class="w-24 px-2 py-1 border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none text-sm" placeholder="-">
+                        </td>
+                        <td class="px-6 py-3 text-slate-500">
+                            <input type="text" id="sizeInput_\${item.id}" value="\${(item.size || '-').replace(/"/g, '&quot;')}" class="w-24 px-2 py-1 border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none text-sm">
+                        </td>
                         <td class="px-6 py-3">
                             <div class="flex items-center">
                                 <span class="text-slate-500 mr-2">£</span>
@@ -935,29 +941,43 @@
             },
             
             updatePrice(id) {
-                const input = document.getElementById('priceInput_' + id);
-                const newPrice = parseFloat(input.value);
-                if (isNaN(newPrice) || newPrice < 0) {
-                    alert('Please enter a valid price');
+                const priceInput = document.getElementById('priceInput_' + id);
+                const nameInput = document.getElementById('nameInput_' + id);
+                const catInput = document.getElementById('catInput_' + id);
+                const sizeInput = document.getElementById('sizeInput_' + id);
+                
+                const newPrice = parseFloat(priceInput.value);
+                const newName = nameInput.value.trim();
+                const newCat = catInput.value.trim();
+                const newSize = sizeInput.value.trim();
+                
+                if (isNaN(newPrice) || newPrice < 0 || !newName) {
+                    alert('Please enter a valid price and name');
                     return;
                 }
                 
                 const item = this.catalog.find(i => i.id === id);
                 if (item) {
                     item.price = newPrice;
+                    item.name = newName;
+                    item.category = newCat;
+                    item.size = newSize;
+                    
                     // Save to local storage
                     const baseCatalog = this.catalog.filter(i => i.category !== 'Sub-Recipe');
                     localStorage.setItem('ts_shared_catalog', JSON.stringify(baseCatalog));
                     
                     // Show visual feedback
-                    const btn = input.closest('tr').querySelector('button');
-                    const originalText = btn.innerText;
-                    btn.innerText = 'Saved!';
-                    btn.classList.add('bg-success', 'text-white');
-                    setTimeout(() => {
-                        btn.innerText = 'Update';
-                        btn.classList.remove('bg-success', 'text-white');
-                    }, 2000);
+                    const btn = priceInput.closest('tr').querySelector('button');
+                    if (btn) {
+                        const originalText = btn.innerText;
+                        btn.innerText = 'Saved!';
+                        btn.classList.add('bg-success', 'text-white');
+                        setTimeout(() => {
+                            btn.innerText = 'Update';
+                            btn.classList.remove('bg-success', 'text-white');
+                        }, 2000);
+                    }
                 }
             },
 

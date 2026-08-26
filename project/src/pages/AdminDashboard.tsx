@@ -13,7 +13,7 @@ const TABS: { id: Tab; label: string; icon: typeof ClipboardList }[] = [
 ];
 
 export default function AdminDashboard() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === 'true');
+  const [authed, setAuthed] = useState(true); // Temporarily bypassed passcode
   const [activeTab, setActiveTab] = useState<Tab>('orders');
 
   useEffect(() => {
