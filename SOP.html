@@ -612,14 +612,20 @@
                 
                 tbody.innerHTML = filteredCatalog.map(item => `
                     <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-6 py-4 font-medium text-slate-900">${item.name}</td>
-                        <td class="px-6 py-4 text-slate-500">${item.category || '-'}</td>
-                        <td class="px-6 py-4 text-slate-500">${item.size || 'Unit'}</td>
+                        <td class="px-6 py-4">
+                            <input type="text" id="name_input_${item.id}" value="${item.name.replace(/"/g, '&quot;')}" class="w-full px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 font-medium text-slate-900">
+                        </td>
+                        <td class="px-6 py-4">
+                            <input type="text" id="cat_input_${item.id}" value="${(item.category || '').replace(/"/g, '&quot;')}" class="w-24 px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 text-slate-700" placeholder="-">
+                        </td>
+                        <td class="px-6 py-4">
+                            <input type="text" id="size_input_${item.id}" value="${(item.size || 'Unit').replace(/"/g, '&quot;')}" class="w-24 px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 text-slate-700">
+                        </td>
                         <td class="px-6 py-4 text-right">
                             <input type="number" step="0.01" min="0" id="price_input_${item.id}" value="${item.price || 0}" class="w-24 text-right px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-teal-500">
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <button onclick="sopApp.updatePrice(${item.id})" class="px-3 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 rounded font-medium text-sm transition-colors">
+                            <button onclick="sopApp.updatePrice(${item.id}, this)" class="px-3 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 rounded font-medium text-sm transition-colors">
                                 Update
                             </button>
                         </td>
@@ -627,38 +633,55 @@
                 `).join('');
             },
             
-            async updatePrice(id) {
+            async updatePrice(id, btnElement) {
                 const item = this.catalog.find(i => i.id === id);
                 if (!item) return;
                 
-                const input = document.getElementById(`price_input_${id}`);
-                const newPrice = parseFloat(input.value);
+                const priceInput = document.getElementById(`price_input_${id}`);
+                const nameInput = document.getElementById(`name_input_${id}`);
+                const catInput = document.getElementById(`cat_input_${id}`);
+                const sizeInput = document.getElementById(`size_input_${id}`);
                 
-                if (isNaN(newPrice) || newPrice < 0) {
-                    this.showToast('Invalid price', 'error');
+                const newPrice = parseFloat(priceInput.value);
+                const newName = nameInput.value.trim();
+                const newCat = catInput.value.trim();
+                const newSize = sizeInput.value.trim();
+                
+                if (isNaN(newPrice) || newPrice < 0 || !newName) {
+                    this.showToast('Invalid price or name', 'error');
                     return;
                 }
                 
                 item.price = newPrice;
+                item.name = newName;
+                item.category = newCat;
+                item.size = newSize;
                 
                 try {
                     if (this.supabaseClient) {
-                        const { error } = await this.supabaseClient.from('catalog').update({ price: newPrice }).eq('id', id);
+                        const { error } = await this.supabaseClient.from('catalog').update({ 
+                            price: newPrice,
+                            name: newName,
+                            category: newCat,
+                            size: newSize
+                        }).eq('id', id);
                         if (error) throw error;
                     }
                     localStorage.setItem('ts_shared_catalog', JSON.stringify(this.catalog));
-                    this.showToast(`Price updated for ${item.name}`, 'success');
+                    this.showToast(`Details updated for ${item.name}`, 'success');
                     
-                    const btn = event.currentTarget;
-                    const originalText = btn.innerText;
-                    btn.innerText = 'Saved!';
-                    btn.classList.add('bg-green-100', 'text-green-700');
-                    setTimeout(() => {
-                        btn.innerText = originalText;
-                        btn.classList.remove('bg-green-100', 'text-green-700');
-                    }, 2000);
+                    const btn = btnElement || (event && event.currentTarget);
+                    if (btn && btn.classList) {
+                        const originalText = btn.innerText;
+                        btn.innerText = 'Saved!';
+                        btn.classList.add('bg-green-100', 'text-green-700');
+                        setTimeout(() => {
+                            btn.innerText = originalText;
+                            btn.classList.remove('bg-green-100', 'text-green-700');
+                        }, 2000);
+                    }
                 } catch (error) {
-                    this.showToast('Failed to update price', 'error');
+                    this.showToast('Failed to update details', 'error');
                     console.error(error);
                 }
             },
@@ -1717,7 +1740,7 @@
                     const element = document.getElementById('sopPrintArea');
                     const recipe = this.recipes.find(r => r.id === this.currentRecipeId);
                     const safeTitle = (recipe.title || 'Untitled').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                    const filename = `recipe_${safeTitle}_${recipe.id}.pdf`;
+                    const filename = `recipe_${safeTitle}_${Date.now()}.pdf`;
 
                     const opt = {
                         margin:       0.5,
