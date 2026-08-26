@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { dispatchWebhook } from "../_shared/webhook.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -240,6 +241,27 @@ Deno.serve(async (req: Request) => {
 
     // Mark order as Ordered
     await supabase.from("orders").update({ status: "Ordered" }).eq("id", order_id);
+
+    // Dispatch webhook to ALAIYAOPS in the background
+    // We wrap it in a non-blocking promise or just await it. It handles its own retries.
+    // For each supplier group, we can dispatch a separate webhook or one big one. The payload implies one per PO.
+    const webhookPayload = {
+      po_number: order.id.slice(0, 8).toUpperCase(),
+      supplier_name: supplierNames.join(", "),
+      branch_id: order.branch_name ?? "Head Office",
+      total_amount: order.total_cost,
+      items: (order.order_items as OrderItem[]).map(item => ({
+        ingredient_id: item.product_name,
+        name: item.product_name,
+        quantity: item.quantity,
+        previous_unit_price: item.unit_price, // Fallback until historical data is attached
+        current_unit_price: item.unit_price,
+        price_variance_pct: 0
+      }))
+    };
+    
+    // Fire and forget (don't block the HTTP response)
+    dispatchWebhook("po.received", webhookPayload).catch(e => console.error("Webhook dispatcher error:", e));
 
     return new Response(JSON.stringify({ success: true, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
