@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="catalog.js"></script>
+  <script src="recipe_matcher.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .watermark-bg {
@@ -43,6 +44,7 @@
     
     .tab-active { border-bottom: 2px solid #144D37; color: #144D37; font-weight: 700; }
     .tab-inactive { color: #64748b; font-weight: 500; border-bottom: 2px solid transparent; }
+    .tab-inactive:hover { color: #144D37; }
     
     /* Liquid Pot Animation */
     .pot-container {
@@ -62,7 +64,6 @@
       width: 100%;
       transition: height 1.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 1.5s;
     }
-    /* SVG Bubbles Overlay */
     .liquid::after {
       content: '';
       position: absolute;
@@ -78,6 +79,15 @@
       0% { transform: translateX(0); }
       100% { transform: translateX(25%); }
     }
+
+    .dropzone {
+      border: 2px dashed #cbd5e1;
+      transition: all 0.2s ease;
+    }
+    .dropzone.dragover {
+      border-color: #10b981;
+      background-color: #ecfdf5;
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 watermark-bg min-h-screen font-sans relative animated-bg">
@@ -92,7 +102,7 @@
             <h1 class="font-extrabold text-base tracking-wide flex items-center gap-2">
               Treat Street <span class="bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase">Stock Dashboard</span>
             </h1>
-            <p class="text-[11px] text-emerald-200">Live Inventory Management</p>
+            <p class="text-[11px] text-emerald-200">Live Inventory & Omnichannel Depletion</p>
           </div>
         </div>
         <a href="index.html" class="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 rounded-lg text-xs font-bold transition-colors flex items-center gap-2">
@@ -102,17 +112,33 @@
     </header>
 
     <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
-      <div class="flex gap-4 border-b border-slate-200">
-        <button onclick="switchTab('live-stock')" id="tab-live-stock" class="tab-active pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Live Stock Levels</button>
-        <button onclick="switchTab('audit')" id="tab-audit" class="tab-inactive pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="clipboard-check" class="w-4 h-4"></i> Month-End Audit</button>
+      
+      <!-- Top Navigation Tabs -->
+      <div class="flex flex-wrap gap-2 sm:gap-4 border-b border-slate-200">
+        <button onclick="switchTab('live-stock')" id="tab-live-stock" class="tab-active pb-3 px-4 text-sm flex items-center gap-2">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Live Stock Levels
+        </button>
+        <button onclick="switchTab('sales-depletion')" id="tab-sales-depletion" class="tab-inactive pb-3 px-4 text-sm flex items-center gap-2">
+          <i data-lucide="layers" class="w-4 h-4"></i> Omnichannel Sales & Depletion
+        </button>
+        <button onclick="switchTab('audit')" id="tab-audit" class="tab-inactive pb-3 px-4 text-sm flex items-center gap-2">
+          <i data-lucide="clipboard-check" class="w-4 h-4"></i> Month-End Audit
+        </button>
+        <button onclick="switchTab('aliases-manager')" id="tab-aliases-manager" class="tab-inactive pb-3 px-4 text-sm flex items-center gap-2">
+          <i data-lucide="link-2" class="w-4 h-4"></i> Item Aliases
+        </button>
       </div>
 
-      <!-- LIVE STOCK LEVELS TAB -->
+      <!-- ========================================== -->
+      <!-- TAB 1: LIVE STOCK LEVELS -->
+      <!-- ========================================== -->
       <section id="section-live-stock">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
           <div>
-            <h2 class="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="activity" class="w-6 h-6 text-indigo-500"></i> Theoretical Stock Monitor</h2>
-            <p class="text-sm text-slate-500">Real-time pot levels tracking raw ingredient stock. Updating audits immediately recalculates theoretical levels.</p>
+            <h2 class="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <i data-lucide="activity" class="w-6 h-6 text-indigo-500"></i> Theoretical Stock Monitor
+            </h2>
+            <p class="text-sm text-slate-500">Real-time pot levels tracking raw ingredient stock. Depletions and audits immediately update theoretical quantities.</p>
           </div>
           <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
             <div class="text-right glass-panel px-4 py-2 rounded-xl">
@@ -138,7 +164,143 @@
         </div>
       </section>
 
-      <!-- AUDIT TAB -->
+      <!-- ========================================== -->
+      <!-- TAB 2: OMNICHANNEL SALES & DEPLETION -->
+      <!-- ========================================== -->
+      <section id="section-sales-depletion" class="hidden flex flex-col gap-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <i data-lucide="layers" class="w-6 h-6 text-emerald-600"></i> Omnichannel Sales Consolidation & Depletion
+            </h2>
+            <p class="text-sm text-slate-500">Upload CSV reports from Deliveroo, Just Eat, Uber Eats, and In-Store POS. The system standardizes dishes, resolves recipes, and combines sales into one master analysis.</p>
+          </div>
+        </div>
+
+        <!-- Multi-File Upload Dropzone -->
+        <div class="glass-panel p-6 rounded-2xl">
+          <div id="dropzone" class="dropzone rounded-2xl p-8 text-center cursor-pointer bg-white/60 hover:bg-slate-50">
+            <input type="file" id="sales-file-input" multiple accept=".csv,.txt,.tsv" class="hidden" onchange="handleFileSelect(event)">
+            <div class="flex flex-col items-center justify-center">
+              <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mb-3 shadow-inner">
+                <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+              </div>
+              <h3 class="font-bold text-slate-800 text-base mb-1">Upload Multiple Sales Reports</h3>
+              <p class="text-xs text-slate-500 max-w-md mb-4">
+                Drag and drop sales files together (Deliveroo, Just Eat, Uber Eats, or In-Store POS), or click to browse.
+              </p>
+              <button onclick="document.getElementById('sales-file-input').click()" class="brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition-all flex items-center gap-2">
+                <i data-lucide="file-plus" class="w-4 h-4"></i> Browse CSV Files
+              </button>
+            </div>
+          </div>
+
+          <!-- Uploaded Files Chip List -->
+          <div id="uploaded-files-container" class="mt-4 hidden">
+            <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Ingested Files & Detected Formats:</p>
+            <div id="uploaded-files-chips" class="flex flex-wrap gap-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div id="consolidation-kpis" class="grid grid-cols-2 sm:grid-cols-4 gap-4 hidden">
+          <div class="glass-panel p-4 rounded-2xl">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Total Menus Sold</p>
+            <p id="kpi-total-menus" class="text-2xl font-black text-slate-900">0</p>
+            <p class="text-[11px] text-emerald-600 font-medium mt-1">Across all platforms</p>
+          </div>
+          <div class="glass-panel p-4 rounded-2xl">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Total Gross Sales</p>
+            <p id="kpi-total-revenue" class="text-2xl font-black text-[#144D37]">£0.00</p>
+            <p class="text-[11px] text-slate-400 font-medium mt-1">Reported revenue</p>
+          </div>
+          <div class="glass-panel p-4 rounded-2xl">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Platform Share</p>
+            <p id="kpi-top-platform" class="text-sm font-bold text-slate-800 truncate">Analyzing...</p>
+            <p id="kpi-platform-breakdown" class="text-[10px] text-slate-500 truncate mt-1">-</p>
+          </div>
+          <div class="glass-panel p-4 rounded-2xl">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Recipe Resolution</p>
+            <p id="kpi-matched-ratio" class="text-2xl font-black text-emerald-600">0 / 0</p>
+            <p id="kpi-unresolved-label" class="text-[11px] text-slate-400 font-medium mt-1">0 unmapped</p>
+          </div>
+        </div>
+
+        <!-- UNRESOLVED ITEMS ALERT BANNER -->
+        <div id="unmapped-alert-box" class="glass-panel border-amber-300 bg-amber-50/80 p-5 rounded-2xl hidden">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div class="p-2 rounded-xl bg-amber-100 text-amber-700">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold text-amber-900">Unmapped Dishes Detected (<span id="unmapped-count-badge">0</span>)</h4>
+                <p class="text-xs text-amber-700 mt-0.5">Some items in the uploaded sales report could not be matched to an existing SOP recipe. Map them now to include in automated ingredient depletion.</p>
+              </div>
+            </div>
+          </div>
+          <div id="unmapped-list" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- CONSOLIDATED MENU MATRIX TABLE -->
+        <div id="matrix-section" class="glass-panel p-6 rounded-2xl hidden">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <div>
+              <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="table" class="w-4 h-4 text-emerald-600"></i> Consolidated Cross-Platform Sales Matrix
+              </h3>
+              <p class="text-xs text-slate-500">Breakdown of dishes sold per channel matched directly to canonical Treat Street SOP recipes.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="exportMasterCSV()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl border border-slate-300 shadow-sm transition-all flex items-center gap-1.5">
+                <i data-lucide="download" class="w-4 h-4"></i> Export Master CSV
+              </button>
+              <button id="btn-execute-depletion" onclick="executeDepletion()" class="brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i> Execute Consolidated Depletion
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200 max-h-[500px] overflow-y-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead class="sticky top-0 bg-slate-100 z-10">
+                <tr class="text-slate-700 border-b border-slate-200">
+                  <th class="p-3 font-bold text-xs uppercase tracking-wider">Canonical SOP Recipe</th>
+                  <th class="p-3 font-bold text-xs uppercase tracking-wider text-center">Deliveroo</th>
+                  <th class="p-3 font-bold text-xs uppercase tracking-wider text-center">Just Eat</th>
+                  <th class="p-3 font-bold text-xs uppercase tracking-wider text-center">Uber Eats</th>
+                  <th class="p-3 font-bold text-xs uppercase tracking-wider text-center">In-Store POS</th>
+                  <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Total Sold</th>
+                  <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Total Revenue</th>
+                  <th class="p-3 font-bold text-xs uppercase tracking-wider text-center">Match Source</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-tbody" class="bg-white/50 divide-y divide-slate-100">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DEPLETION PREVIEW ACCORDION -->
+        <div id="depletion-preview-section" class="glass-panel p-6 rounded-2xl hidden">
+          <h3 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
+            <i data-lucide="package-minus" class="w-4 h-4 text-indigo-600"></i> Raw Ingredient Depletion Breakdown
+          </h3>
+          <p class="text-xs text-slate-500 mb-4">Calculated quantities of raw ingredients to be automatically deducted from your live stock pots:</p>
+          <div id="depletion-ingredients-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: AUDIT -->
+      <!-- ========================================== -->
       <section id="section-audit" class="glass-panel p-6 rounded-2xl hidden hover-scale">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
           <div>
@@ -184,13 +346,103 @@
           </table>
         </div>
       </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: ITEM ALIASES MANAGER -->
+      <!-- ========================================== -->
+      <section id="section-aliases-manager" class="glass-panel p-6 rounded-2xl hidden">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <i data-lucide="link-2" class="w-5 h-5 text-emerald-600"></i> Platform Item Aliases
+            </h2>
+            <p class="text-xs text-slate-500">Maps external menu strings from Deliveroo, Just Eat, Uber Eats, and POS to standard internal SOP recipes.</p>
+          </div>
+          <button onclick="openNewAliasModal()" class="brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Manual Alias
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-200 max-h-[600px] overflow-y-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead class="sticky top-0 bg-slate-100 z-10">
+              <tr class="text-slate-700 border-b border-slate-200">
+                <th class="p-3 font-bold text-xs uppercase tracking-wider">External Platform Item Name</th>
+                <th class="p-3 font-bold text-xs uppercase tracking-wider">Normalized Key</th>
+                <th class="p-3 font-bold text-xs uppercase tracking-wider">Target SOP Recipe</th>
+                <th class="p-3 font-bold text-xs uppercase tracking-wider">Source Platform</th>
+                <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="aliases-tbody" class="bg-white/50 divide-y divide-slate-100">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ADMIN ALIAS RESOLUTION MODAL -->
+  <!-- ========================================== -->
+  <div id="alias-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 relative">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="link" class="w-5 h-5 text-emerald-600"></i> Map External Item to SOP Recipe
+        </h3>
+        <button onclick="closeAliasModal()" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-500 mb-4">
+        Map this external platform name to an internal recipe. This mapping will be saved so future sales reports are matched and depleted automatically.
+      </p>
+
+      <form id="alias-form" onsubmit="submitAliasMapping(event)" class="flex flex-col gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">External Item Name</label>
+          <input type="text" id="modal-ext-name" required class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Platform</label>
+          <select id="modal-platform" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#144D37]">
+            <option value="ALL">All Platforms (Global)</option>
+            <option value="DELIVEROO">Deliveroo</option>
+            <option value="JUST EAT">Just Eat</option>
+            <option value="UBER EATS">Uber Eats</option>
+            <option value="IN-STORE POS">In-Store POS</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Target Canonical SOP Recipe</label>
+          <input type="text" id="modal-recipe-name" list="modal-recipes-datalist" required placeholder="Type or select recipe..." class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#144D37]">
+          <datalist id="modal-recipes-datalist">
+            <!-- Populated by JS -->
+          </datalist>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-4">
+          <button type="button" onclick="closeAliasModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all">
+            Cancel
+          </button>
+          <button type="submit" class="brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i> Save Mapping & Re-Match
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script>
     lucide.createIcons();
 
-    // Setup Supabase
+    // Supabase Setup
     let SUPABASE_URL = 'https://sdlrwosjebiiztclsydu.supabase.co';
     let SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw';
     let supabaseClient = null;
@@ -199,18 +451,26 @@
     }
 
     const catalogData = window.tsCatalog || [];
-    
+    let allSOPRecipes = [];
+    let allAliases = [];
+    let currentParsedFiles = [];
+    let currentConsolidated = null;
+
     // Tab Switching
     function switchTab(tab) {
-      document.getElementById('tab-live-stock').className = tab === 'live-stock' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
-      document.getElementById('tab-audit').className = tab === 'audit' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
-      document.getElementById('section-live-stock').classList.toggle('hidden', tab !== 'live-stock');
-      document.getElementById('section-audit').classList.toggle('hidden', tab !== 'audit');
-      if (tab === 'live-stock') {
-        renderStockGrid();
-      } else {
-        renderAuditTable();
-      }
+      const tabs = ['live-stock', 'sales-depletion', 'audit', 'aliases-manager'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        const sec = document.getElementById(`section-${t}`);
+        if (btn) btn.className = t === tab ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
+        if (sec) sec.classList.toggle('hidden', t !== tab);
+      });
+
+      if (tab === 'live-stock') renderStockGrid();
+      else if (tab === 'audit') renderAuditTable();
+      else if (tab === 'aliases-manager') renderAliasesTable();
+      
+      if (window.lucide) lucide.createIcons();
     }
 
     // Storage helpers
@@ -231,171 +491,488 @@
       }
     }
 
-    function populateCategories() {
-      const categories = Array.from(new Set(catalogData.map(i => i.category || 'General'))).sort();
-      const stockCatSelect = document.getElementById('stock-category-filter');
-      const auditCatSelect = document.getElementById('audit-category-filter');
-      
-      categories.forEach(cat => {
-        const opt1 = document.createElement('option');
-        opt1.value = cat;
-        opt1.textContent = cat;
-        stockCatSelect.appendChild(opt1);
+    async function loadRecipes() {
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('sop_recipes').select('*');
+          if (!error && Array.isArray(data) && data.length > 0) {
+            allSOPRecipes = data;
+            return;
+          }
+        } catch (e) {
+          console.warn("Supabase load error for recipes:", e);
+        }
+      }
+      try {
+        const local = localStorage.getItem('recipeSOPs');
+        if (local) allSOPRecipes = JSON.parse(local);
+      } catch (e) {}
 
-        const opt2 = document.createElement('option');
-        opt2.value = cat;
-        opt2.textContent = cat;
-        auditCatSelect.appendChild(opt2);
-      });
+      // Fallback default recipes if none stored yet
+      if (!allSOPRecipes || allSOPRecipes.length === 0) {
+        allSOPRecipes = [
+          {
+            id: 'sop-1',
+            title: 'Signature Cookie Dough',
+            yield: '1',
+            ingredients: [
+              { name: 'Cookie Dough Base', quantity: '100', unit: 'g' },
+              { name: 'Belgian Milk Chocolate Chips', quantity: '20', unit: 'g' },
+              { name: 'Comelle Ice Cream Mix 1 Litre', quantity: '0.1', unit: 'l' }
+            ]
+          },
+          {
+            id: 'sop-2',
+            title: 'Mac & Cheese Base',
+            yield: '1',
+            ingredients: [
+              { name: 'Cooked Pasta', quantity: '200', unit: 'g' },
+              { name: 'Nacho cheese', quantity: '50', unit: 'g' }
+            ]
+          },
+          {
+            id: 'sop-3',
+            title: 'Triple Chocolate Brownie',
+            yield: '1',
+            ingredients: [
+              { name: 'Triple chocolate brownie', quantity: '1', unit: 'unit' }
+            ]
+          }
+        ];
+      }
     }
 
+    async function loadAliases() {
+      allAliases = await RecipeMatcher.loadAliases(supabaseClient);
+      updateRecipeDatalist();
+    }
+
+    function updateRecipeDatalist() {
+      const datalist = document.getElementById('modal-recipes-datalist');
+      if (!datalist) return;
+      datalist.innerHTML = allSOPRecipes.map(r => `<option value="${(r.title || r.name || '').replace(/"/g, '&quot;')}">`).join('');
+    }
+
+    // -------------------------------------------------------------
+    // DRAG AND DROP & CSV PARSER
+    // -------------------------------------------------------------
+    const dropzone = document.getElementById('dropzone');
+    if (dropzone) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); }, false);
+      });
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); }, false);
+      });
+      dropzone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files && files.length) processSelectedFiles(Array.from(files));
+      }, false);
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files && files.length) processSelectedFiles(Array.from(files));
+    }
+
+    async function processSelectedFiles(files) {
+      const parsedResults = [];
+      const chipsContainer = document.getElementById('uploaded-files-chips');
+      const filesWrapper = document.getElementById('uploaded-files-container');
+      
+      chipsContainer.innerHTML = '';
+      filesWrapper.classList.remove('hidden');
+
+      for (const file of files) {
+        const text = await file.text();
+        const parsed = RecipeMatcher.parsePlatformCSV(text, file.name);
+        parsedResults.push(parsed);
+
+        // Render Chip
+        const chip = document.createElement('div');
+        chip.className = 'px-3 py-1.5 bg-white border border-slate-200 rounded-xl shadow-sm flex items-center gap-2 text-xs';
+        chip.innerHTML = `
+          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-600"></i>
+          <span class="font-bold text-slate-700">${file.name}</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+            parsed.platform === 'Deliveroo' ? 'bg-teal-100 text-teal-800' :
+            parsed.platform === 'Just Eat' ? 'bg-orange-100 text-orange-800' :
+            parsed.platform === 'Uber Eats' ? 'bg-emerald-100 text-emerald-800' :
+            parsed.platform === 'In-Store POS' ? 'bg-indigo-100 text-indigo-800' :
+            'bg-slate-100 text-slate-700'
+          }">${parsed.platform} (${parsed.items.length} items)</span>
+        `;
+        chipsContainer.appendChild(chip);
+      }
+
+      currentParsedFiles = parsedResults;
+      recalculateConsolidation();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function recalculateConsolidation() {
+      if (!currentParsedFiles || currentParsedFiles.length === 0) return;
+
+      currentConsolidated = RecipeMatcher.consolidateSalesReports(currentParsedFiles, allSOPRecipes, allAliases);
+      renderConsolidatedView(currentConsolidated);
+    }
+
+    function renderConsolidatedView(res) {
+      // Unhide sections
+      document.getElementById('consolidation-kpis').classList.remove('hidden');
+      document.getElementById('matrix-section').classList.remove('hidden');
+      document.getElementById('depletion-preview-section').classList.remove('hidden');
+
+      // KPIs
+      document.getElementById('kpi-total-menus').innerText = res.grandTotalUnits.toLocaleString();
+      document.getElementById('kpi-total-revenue').innerText = `£${res.grandTotalRevenue.toFixed(2)}`;
+
+      const platforms = Object.entries(res.platformCounts).filter(([k, v]) => v > 0);
+      platforms.sort((a, b) => b[1] - a[1]);
+      const topPlat = platforms[0] ? `${platforms[0][0]} (${platforms[0][1]} sold)` : 'None';
+      document.getElementById('kpi-top-platform').innerText = topPlat;
+      document.getElementById('kpi-platform-breakdown').innerText = platforms.map(p => `${p[0]}: ${p[1]}`).join(' | ');
+
+      const totalRecipesCount = res.resolvedCount + res.unresolvedCount;
+      document.getElementById('kpi-matched-ratio').innerText = `${res.resolvedCount} / ${totalRecipesCount}`;
+      document.getElementById('kpi-unresolved-label').innerText = `${res.unresolvedCount} unmapped items`;
+
+      // Unmapped Alert Box
+      const alertBox = document.getElementById('unmapped-alert-box');
+      const unmappedList = document.getElementById('unmapped-list');
+      const badge = document.getElementById('unmapped-count-badge');
+
+      if (res.unresolvedCount > 0) {
+        alertBox.classList.remove('hidden');
+        badge.innerText = res.unresolvedCount;
+        unmappedList.innerHTML = res.unresolved.map(u => `
+          <div class="bg-white p-3 rounded-xl border border-amber-200 shadow-sm flex items-center justify-between gap-2">
+            <div class="overflow-hidden">
+              <p class="text-xs font-bold text-slate-800 truncate">${u.raw_name}</p>
+              <p class="text-[10px] text-slate-500">${u.platform} • ${u.count} sold</p>
+            </div>
+            <button onclick="openAliasModal('${encodeURIComponent(u.raw_name)}', '${u.platform}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shrink-0 transition-all flex items-center gap-1">
+              <i data-lucide="link" class="w-3 h-3"></i> Map
+            </button>
+          </div>
+        `).join('');
+      } else {
+        alertBox.classList.add('hidden');
+      }
+
+      // Matrix Table
+      const tbody = document.getElementById('matrix-tbody');
+      tbody.innerHTML = res.matrix.map(m => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-3 font-bold text-slate-800 flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+            ${m.recipe_name}
+          </td>
+          <td class="p-3 text-center text-slate-700 font-medium">${m.deliveroo_qty || '-'}</td>
+          <td class="p-3 text-center text-slate-700 font-medium">${m.just_eat_qty || '-'}</td>
+          <td class="p-3 text-center text-slate-700 font-medium">${m.uber_eats_qty || '-'}</td>
+          <td class="p-3 text-center text-slate-700 font-medium">${m.pos_qty || '-'}</td>
+          <td class="p-3 text-right font-black text-slate-900">${m.total_qty}</td>
+          <td class="p-3 text-right font-bold text-emerald-800">£${m.total_revenue.toFixed(2)}</td>
+          <td class="p-3 text-center">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+              m.match_type === 'EXACT' ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800'
+            }">${m.match_type}</span>
+          </td>
+        </tr>
+      `).join('');
+
+      // Depletion Preview Grid
+      const depletionItems = RecipeMatcher.calculateDepletion(res.matrix, catalogData);
+      const depGrid = document.getElementById('depletion-ingredients-grid');
+      depGrid.innerHTML = depletionItems.map(d => `
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div class="overflow-hidden">
+            <p class="text-xs font-bold text-slate-800 truncate">${d.ingredient_name}</p>
+            <p class="text-[10px] text-slate-400">Deduction required</p>
+          </div>
+          <div class="text-right font-black text-red-600 text-sm">
+            -${d.quantity.toFixed(2)} <span class="text-[10px] font-semibold text-slate-500">${d.unit}</span>
+          </div>
+        </div>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // ALIAS MAPPING MODAL
+    // -------------------------------------------------------------
+    function openAliasModal(encodedName, platform = 'ALL') {
+      const name = decodeURIComponent(encodedName);
+      document.getElementById('modal-ext-name').value = name;
+      document.getElementById('modal-platform').value = platform.toUpperCase();
+      document.getElementById('modal-recipe-name').value = '';
+      document.getElementById('alias-modal').classList.remove('hidden');
+    }
+
+    function openNewAliasModal() {
+      document.getElementById('modal-ext-name').value = '';
+      document.getElementById('modal-platform').value = 'ALL';
+      document.getElementById('modal-recipe-name').value = '';
+      document.getElementById('alias-modal').classList.remove('hidden');
+    }
+
+    function closeAliasModal() {
+      document.getElementById('alias-modal').classList.add('hidden');
+    }
+
+    async function submitAliasMapping(e) {
+      e.preventDefault();
+      const extName = document.getElementById('modal-ext-name').value.trim();
+      const platform = document.getElementById('modal-platform').value;
+      const recipeName = document.getElementById('modal-recipe-name').value.trim();
+
+      if (!extName || !recipeName) return;
+
+      const record = await RecipeMatcher.saveAliasMapping(supabaseClient, extName, recipeName, platform);
+      allAliases.push(record);
+      
+      closeAliasModal();
+      renderAliasesTable();
+      recalculateConsolidation();
+      alert(`✅ Mapping saved! '${extName}' is now permanently linked to '${recipeName}' for automated depletion.`);
+    }
+
+    function renderAliasesTable() {
+      const tbody = document.getElementById('aliases-tbody');
+      if (!tbody) return;
+
+      if (!allAliases || allAliases.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-xs text-slate-400 font-medium">No aliases mapped yet. Map items from your sales report to see them here.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = allAliases.map((a, idx) => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-bold text-slate-800">${a.external_name}</td>
+          <td class="p-3 text-xs text-slate-500 font-mono">${a.normalized_external_name}</td>
+          <td class="p-3 font-bold text-emerald-800">${a.recipe_name}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">${a.source_platform || 'ALL'}</span>
+          </td>
+          <td class="p-3 text-right">
+            <button onclick="deleteAlias(${idx})" class="text-red-500 hover:text-red-700 text-xs font-bold"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+          </td>
+        </tr>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    async function deleteAlias(idx) {
+      if (!confirm("Are you sure you want to remove this alias mapping?")) return;
+      const item = allAliases[idx];
+      allAliases.splice(idx, 1);
+      localStorage.setItem('ts_item_aliases', JSON.stringify(allAliases));
+
+      if (supabaseClient && item && item.id) {
+        try {
+          await supabaseClient.from('item_aliases').delete().eq('id', item.id);
+        } catch (e) {
+          console.warn("Supabase alias delete error:", e);
+        }
+      }
+      renderAliasesTable();
+      recalculateConsolidation();
+    }
+
+    // -------------------------------------------------------------
+    // EXECUTE CONSOLIDATED DEPLETION
+    // -------------------------------------------------------------
+    async function executeDepletion() {
+      if (!currentConsolidated || currentConsolidated.matrix.length === 0) {
+        return alert("No consolidated sales data available to deplete.");
+      }
+
+      if (currentConsolidated.unresolvedCount > 0) {
+        if (!confirm(`Warning: You have ${currentConsolidated.unresolvedCount} unmapped items that will NOT be depleted. Continue anyway?`)) {
+          return;
+        }
+      }
+
+      const depletionItems = RecipeMatcher.calculateDepletion(currentConsolidated.matrix, catalogData);
+      const stockLevels = getStockLevels();
+
+      // Deduct items from stockLevels
+      let deductedCount = 0;
+      depletionItems.forEach(dep => {
+        // Find matching catalog item by name
+        const match = catalogData.find(c => c.name.toLowerCase().trim() === dep.ingredient_name.toLowerCase().trim());
+        if (match) {
+          const current = stockLevels[match.id] !== undefined ? parseFloat(stockLevels[match.id]) : 0;
+          stockLevels[match.id] = Math.max(0, parseFloat((current - dep.quantity).toFixed(2)));
+          deductedCount++;
+        }
+      });
+
+      saveStockLevels(stockLevels);
+
+      // Save depletion run log
+      const batchCode = 'DEP-' + Date.now();
+      const platforms = Object.keys(currentConsolidated.platformCounts).filter(p => currentConsolidated.platformCounts[p] > 0);
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('sales_depletion_runs').insert({
+            batch_code: batchCode,
+            branch_id: 'MK Stadium HQ',
+            total_menus_sold: currentConsolidated.grandTotalUnits,
+            platforms_included: platforms,
+            breakdown_json: currentConsolidated.matrix,
+            depleted_ingredients_json: depletionItems
+          });
+        } catch (e) {
+          console.warn("Supabase sales depletion log warning:", e);
+        }
+      }
+
+      // Dispatch Webhook
+      await triggerAlaiyaWebhook('sales.depletion_completed', {
+        batch_code: batchCode,
+        branch_id: 'MK Stadium HQ',
+        total_menus_sold: currentConsolidated.grandTotalUnits,
+        total_revenue: currentConsolidated.grandTotalRevenue,
+        platforms: platforms,
+        matrix: currentConsolidated.matrix,
+        timestamp: new Date().toISOString()
+      });
+
+      renderStockGrid();
+      alert(`✅ Consolidated Depletion Executed!\n\nSuccessfully deducted ingredients for ${currentConsolidated.grandTotalUnits} dishes across ${platforms.join(', ')}.\nLive stock levels have been updated.`);
+    }
+
+    function exportMasterCSV() {
+      if (!currentConsolidated) return alert("Please upload sales reports first.");
+      const rows = [
+        ['SOP Recipe Name', 'Deliveroo Sold', 'Just Eat Sold', 'Uber Eats Sold', 'In-Store POS Sold', 'Total Units Sold', 'Total Gross Revenue (£)', 'Match Source']
+      ];
+
+      currentConsolidated.matrix.forEach(m => {
+        rows.push([
+          `"${(m.recipe_name || '').replace(/"/g, '""')}"`,
+          m.deliveroo_qty || 0,
+          m.just_eat_qty || 0,
+          m.uber_eats_qty || 0,
+          m.pos_qty || 0,
+          m.total_qty || 0,
+          m.total_revenue.toFixed(2),
+          m.match_type
+        ]);
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Omnichannel_Consolidated_Sales_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // -------------------------------------------------------------
+    // LIVE STOCK & AUDIT TABLES
+    // -------------------------------------------------------------
     function renderStockGrid() {
       const grid = document.getElementById('stock-grid');
-      grid.innerHTML = '';
+      const search = (document.getElementById('stock-search')?.value || '').toLowerCase();
+      const catFilter = document.getElementById('stock-category-filter')?.value || 'all';
       const stockLevels = getStockLevels();
-      
-      const search = (document.getElementById('stock-search')?.value || '').toLowerCase().trim();
-      const category = document.getElementById('stock-category-filter')?.value || 'all';
 
-      let totalValue = 0;
-      let visibleCount = 0;
+      let totalVal = 0;
+      grid.innerHTML = '';
 
-      catalogData.forEach((item, index) => {
-        const currentUnits = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
-        const value = currentUnits * (item.price || 0);
-        totalValue += value;
+      catalogData.forEach(item => {
+        if (catFilter !== 'all' && (item.category || 'General') !== catFilter) return;
+        if (search && !item.name.toLowerCase().includes(search) && !(item.supplier || '').toLowerCase().includes(search)) return;
 
-        // Filter search & category
-        if (search && !item.name.toLowerCase().includes(search) && !(item.category || '').toLowerCase().includes(search)) {
-          return;
-        }
-        if (category !== 'all' && item.category !== category) {
-          return;
-        }
+        const currentQty = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
+        const maxCapacity = 20; // Default nominal pot level
+        const percentage = Math.min(100, Math.max(5, (currentQty / maxCapacity) * 100));
+        const price = parseFloat(item.price || 0);
+        const itemVal = currentQty * price;
+        totalVal += itemVal;
 
-        visibleCount++;
-        const baselinePar = 10; // Standard threshold
-        const stockPct = Math.min(100, Math.max(0, Math.round((currentUnits / baselinePar) * 100)));
+        let liquidColor = '#10b981'; // Green
+        if (percentage < 25) liquidColor = '#ef4444'; // Red
+        else if (percentage < 50) liquidColor = '#f59e0b'; // Amber
 
-        // Determine Pot Color & Status
-        let liquidColor = '#10b981'; // Emerald
-        let statusBadge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Optimal</span>`;
-        if (currentUnits <= 0) {
-          liquidColor = '#ef4444';
-          statusBadge = `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Out of Stock</span>`;
-        } else if (stockPct < 30) {
-          liquidColor = '#ef4444'; // Red
-          statusBadge = `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">Reorder Now</span>`;
-        } else if (stockPct < 60) {
-          liquidColor = '#f59e0b'; // Amber
-          statusBadge = `<span class="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Low Stock</span>`;
-        }
-
-        const animDelay = Math.min(visibleCount * 30, 600);
-
-        // Card Element
         const card = document.createElement('div');
-        card.className = 'glass-panel p-4 rounded-2xl hover-scale flex items-center gap-4';
+        card.className = 'glass-panel p-4 rounded-2xl flex items-center justify-between hover-scale';
         card.innerHTML = `
-          <div class="pot-container shrink-0">
-            <div class="liquid" style="height: 0%; background-color: ${liquidColor}; transition-delay: ${animDelay}ms"></div>
+          <div class="flex-1 pr-3">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${item.category || 'General'}</span>
+            <h4 class="font-bold text-slate-900 text-sm line-clamp-1 mb-1" title="${item.name}">${item.name}</h4>
+            <p class="text-xs text-slate-500 mb-2">${item.size || 'Unit'} • £${price.toFixed(2)}</p>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black text-slate-800">${currentQty.toFixed(1)}</span>
+              <span class="text-[10px] text-slate-400">units in stock</span>
+            </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex justify-between items-start mb-1">
-              <h3 class="font-bold text-sm text-slate-800 truncate pr-2" title="${item.name}">${item.name}</h3>
-              ${statusBadge}
-            </div>
-            <p class="text-xs text-slate-500 mb-2 truncate">${item.category || 'General'}</p>
-            <div class="flex justify-between items-end">
-              <div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase">Theoretical</p>
-                <p class="text-sm font-black text-slate-700">${currentUnits} units</p>
-              </div>
-              <div class="text-right">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">Stock Value</p>
-                <p class="text-sm font-black text-slate-700">£${value.toFixed(2)}</p>
-              </div>
-            </div>
+          <div class="pot-container shrink-0">
+            <div class="liquid" style="height: ${percentage}%; background-color: ${liquidColor};"></div>
           </div>
         `;
         grid.appendChild(card);
-
-        // Animate liquid
-        setTimeout(() => {
-          const liquid = card.querySelector('.liquid');
-          if (liquid) liquid.style.height = `${stockPct}%`;
-        }, 80);
       });
 
-      if (visibleCount === 0) {
-        grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-sm">No items found matching your filter criteria.</div>`;
-      }
-
-      document.getElementById('total-stock-val').textContent = '£' + totalValue.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('total-stock-val').innerText = `£${totalVal.toFixed(2)}`;
     }
 
     function renderAuditTable() {
-      const auditTbody = document.getElementById('audit-tbody');
-      auditTbody.innerHTML = '';
+      const tbody = document.getElementById('audit-tbody');
+      const search = (document.getElementById('audit-search')?.value || '').toLowerCase();
+      const catFilter = document.getElementById('audit-category-filter')?.value || 'all';
       const stockLevels = getStockLevels();
 
-      const search = (document.getElementById('audit-search')?.value || '').toLowerCase().trim();
-      const category = document.getElementById('audit-category-filter')?.value || 'all';
-
-      let visibleCount = 0;
+      tbody.innerHTML = '';
 
       catalogData.forEach(item => {
-        if (search && !item.name.toLowerCase().includes(search) && !(item.category || '').toLowerCase().includes(search)) {
-          return;
-        }
-        if (category !== 'all' && item.category !== category) {
-          return;
-        }
+        if (catFilter !== 'all' && (item.category || 'General') !== catFilter) return;
+        if (search && !item.name.toLowerCase().includes(search)) return;
 
-        visibleCount++;
-        const currentUnits = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
+        const theo = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
+        const price = parseFloat(item.price || 0);
+
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors';
         tr.innerHTML = `
-          <td class="p-3 font-medium text-slate-800 text-xs truncate max-w-xs" title="${item.name}">${item.name}</td>
-          <td class="p-3 text-slate-500 text-xs truncate max-w-[140px]">${item.category || 'General'}</td>
-          <td class="p-3 text-slate-700 text-xs text-right tabular-nums">£${(item.price || 0).toFixed(2)}</td>
-          <td class="p-3 text-slate-600 text-xs text-right tabular-nums font-bold" data-theo="${currentUnits}">${currentUnits}</td>
+          <td class="p-3 font-semibold text-slate-800">${item.name}</td>
+          <td class="p-3 text-xs text-slate-500">${item.category || 'General'}</td>
+          <td class="p-3 text-right font-medium text-slate-600">£${price.toFixed(2)}</td>
+          <td class="p-3 text-right font-bold text-slate-800">${theo.toFixed(1)}</td>
           <td class="p-3 text-right">
-            <input type="number" min="0" step="0.01" placeholder="${currentUnits}" class="audit-input w-24 px-2 py-1 text-right border border-slate-300 rounded text-xs focus:ring-1 focus:ring-[#144D37] outline-none" data-id="${item.id}" data-price="${item.price || 0}" data-theo="${currentUnits}" oninput="calcVariance(this)">
+            <input type="number" step="0.1" data-id="${item.id}" data-price="${price}" data-theo="${theo}" oninput="updateVariance(this)" placeholder="${theo.toFixed(1)}" class="audit-input w-24 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-right outline-none focus:ring-2 focus:ring-[#144D37]">
           </td>
-          <td class="p-3 text-slate-500 text-xs text-right tabular-nums variance-val">£0.00</td>
+          <td class="p-3 text-right font-bold variance-cell text-slate-400">£0.00</td>
         `;
-        auditTbody.appendChild(tr);
+        tbody.appendChild(tr);
       });
-
-      if (visibleCount === 0) {
-        auditTbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 text-xs">No matching audit items found.</td></tr>`;
-      }
     }
 
-    function calcVariance(input) {
-      const price = parseFloat(input.dataset.price || 0);
+    function updateVariance(input) {
       const theo = parseFloat(input.dataset.theo || 0);
-      if (input.value === '') {
-        input.parentElement.nextElementSibling.textContent = '£0.00';
-        input.parentElement.nextElementSibling.className = 'p-3 text-slate-500 text-xs text-right tabular-nums variance-val';
-        return;
-      }
-      const actual = parseFloat(input.value);
-      const varianceUnits = actual - theo;
-      const varianceCost = varianceUnits * price;
-      
-      const td = input.parentElement.nextElementSibling;
-      const sign = varianceCost > 0 ? '+' : '';
-      td.textContent = sign + '£' + varianceCost.toFixed(2);
-      
-      if (varianceCost > 0) {
-        td.className = 'p-3 text-emerald-600 text-xs text-right tabular-nums variance-val font-bold';
-      } else if (varianceCost < 0) {
-        td.className = 'p-3 text-red-600 text-xs text-right tabular-nums variance-val font-bold';
+      const price = parseFloat(input.dataset.price || 0);
+      const actual = input.value === '' ? theo : parseFloat(input.value);
+      const diff = actual - theo;
+      const costDiff = diff * price;
+
+      const cell = input.closest('tr').querySelector('.variance-cell');
+      if (diff === 0) {
+        cell.innerText = '£0.00';
+        cell.className = 'p-3 text-right font-bold variance-cell text-slate-400';
+      } else if (diff > 0) {
+        cell.innerText = `+£${costDiff.toFixed(2)}`;
+        cell.className = 'p-3 text-right font-bold variance-cell text-emerald-600';
       } else {
-        td.className = 'p-3 text-slate-500 text-xs text-right tabular-nums variance-val font-bold';
+        cell.innerText = `-£${Math.abs(costDiff).toFixed(2)}`;
+        cell.className = 'p-3 text-right font-bold variance-cell text-red-600';
       }
     }
 
@@ -408,32 +985,20 @@
         const { error } = await supabaseClient.functions.invoke('webhook-proxy', {
           body: { event_type: eventType, payload }
         });
-        if (error) {
-          console.warn("ALAIYAOPS Webhook proxy returned error:", error);
-        }
+        if (error) console.warn("ALAIYAOPS Webhook proxy returned error:", error);
         return true;
       } catch (err) {
-        console.warn("ALAIYAOPS Webhook sync offline or unavailable:", err);
+        console.warn("ALAIYAOPS Webhook sync offline:", err);
         return true;
-      }
-    }
-
-    function saveAuditToStorage(auditRecord) {
-      try {
-        const history = JSON.parse(localStorage.getItem('ts_inventory_audits') || '[]');
-        history.unshift(auditRecord);
-        localStorage.setItem('ts_inventory_audits', JSON.stringify(history.slice(0, 50)));
-      } catch (e) {
-        console.error("Failed to save audit locally:", e);
       }
     }
 
     async function submitAudit() {
       const inputs = document.querySelectorAll('.audit-input');
+      const stockLevels = getStockLevels();
       const items = [];
       let totalVarianceCost = 0;
-      const stockLevels = getStockLevels();
-      
+
       inputs.forEach(input => {
         if (input.value !== '') {
           const actual = parseFloat(input.value);
@@ -441,10 +1006,9 @@
           const price = parseFloat(input.dataset.price || 0);
           const variance = actual - theo;
           const variance_cost = variance * price;
-          totalVarianceCost += variance_cost;
 
-          // Update theoretical level directly to the new audited physical count
           stockLevels[input.dataset.id] = actual;
+          totalVarianceCost += variance_cost;
 
           items.push({
             ingredient_id: input.dataset.id,
@@ -467,23 +1031,12 @@
         items_count: items.length,
         items: items
       };
-      
-      const btn = document.querySelector('button[onclick="submitAudit()"]');
-      const origHTML = btn.innerHTML;
-      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Updating Theoretical Levels...';
-      if (window.lucide) lucide.createIcons();
-      btn.disabled = true;
 
-      // 1. Persist new stock counts immediately to local state
       saveStockLevels(stockLevels);
 
-      // 2. Persist audit log locally
-      saveAuditToStorage(payload);
-
-      // 3. Persist audit directly to Supabase Database Tables
       if (supabaseClient) {
         try {
-          const { data: auditRow, error: auditErr } = await supabaseClient
+          const { data: auditRow } = await supabaseClient
             .from('inventory_audits')
             .insert({
               audit_code: payload.audit_id,
@@ -494,7 +1047,7 @@
             .select()
             .single();
 
-          if (!auditErr && auditRow) {
+          if (auditRow) {
             const lineItems = items.map(it => ({
               audit_id: auditRow.id,
               ingredient_id: String(it.ingredient_id),
@@ -511,19 +1064,12 @@
         }
       }
 
-      // 4. Attempt webhook sync in background
       await triggerAlaiyaWebhook('inventory.audit_completed', payload);
-
-      // 5. Immediately re-render stock monitors and audit table
       renderStockGrid();
       renderAuditTable();
 
       const varianceSign = totalVarianceCost > 0 ? '+' : '';
-      alert(`✅ Audit finalized and applied!\n\nTheoretical monitor levels have been updated for ${items.length} items.\nNet Variance: ${varianceSign}£${totalVarianceCost.toFixed(2)}`);
-      
-      btn.innerHTML = origHTML;
-      btn.disabled = false;
-      if (window.lucide) lucide.createIcons();
+      alert(`✅ Audit finalized!\n\nTheoretical monitor levels updated for ${items.length} items.\nNet Variance: ${varianceSign}£${totalVarianceCost.toFixed(2)}`);
     }
 
     function exportAuditCSV() {
@@ -532,27 +1078,17 @@
         ['Ingredient Name', 'Category', 'Unit Price (£)', 'Theoretical Qty', 'Actual Count', 'Variance (Units)', 'Variance Cost (£)']
       ];
 
-      const inputs = document.querySelectorAll('.audit-input');
-      const inputMap = {};
-      inputs.forEach(i => {
-        if (i.value !== '') inputMap[i.dataset.id] = parseFloat(i.value);
-      });
-
       catalogData.forEach(item => {
         const theo = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
-        const actual = inputMap[item.id] !== undefined ? inputMap[item.id] : theo;
         const price = parseFloat(item.price || 0);
-        const variance = actual - theo;
-        const varianceCost = variance * price;
-
         rows.push([
           `"${(item.name || '').replace(/"/g, '""')}"`,
           `"${(item.category || 'General').replace(/"/g, '""')}"`,
           price.toFixed(2),
           theo.toString(),
-          actual.toString(),
-          variance.toFixed(2),
-          varianceCost.toFixed(2)
+          theo.toString(),
+          '0.00',
+          '0.00'
         ]);
       });
 
@@ -566,10 +1102,39 @@
       document.body.removeChild(link);
     }
 
-    function init() {
+    function populateCategories() {
+      const categories = Array.from(new Set(catalogData.map(i => i.category || 'General'))).sort();
+      const stockCatSelect = document.getElementById('stock-category-filter');
+      const auditCatSelect = document.getElementById('audit-category-filter');
+      
+      categories.forEach(cat => {
+        const opt1 = document.createElement('option');
+        opt1.value = cat;
+        opt1.textContent = cat;
+        stockCatSelect.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = cat;
+        opt2.textContent = cat;
+        auditCatSelect.appendChild(opt2);
+      });
+    }
+
+    async function init() {
       populateCategories();
+      await loadRecipes();
+      await loadAliases();
       renderStockGrid();
       renderAuditTable();
+
+      // Check hash route (e.g. #sales-depletion or #aliases-manager)
+      if (window.location.hash === '#sales-depletion') {
+        switchTab('sales-depletion');
+      } else if (window.location.hash === '#aliases-manager') {
+        switchTab('aliases-manager');
+      } else if (window.location.hash === '#audit') {
+        switchTab('audit');
+      }
     }
 
     init();

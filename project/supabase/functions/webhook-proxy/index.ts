@@ -25,7 +25,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Validate allowed event types to prevent abuse
-    const allowedEvents = ["inventory.audit_completed", "sop.waste_logged"];
+    const allowedEvents = ["inventory.audit_completed", "sop.waste_logged", "sales.depletion_completed"];
     if (!allowedEvents.includes(event_type)) {
       throw new Error(`Unsupported event_type: ${event_type}`);
     }
