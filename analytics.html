@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Franchise Analytics & Executive Insights - Treat Street</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="catalog.js"></script>
+  <script src="analytics_engine.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-primary: #0f3d2e;
+      --brand-accent: #10b981;
+      --brand-gold: #f59e0b;
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    h1, h2, h3, h4, .heading-font { font-family: 'Outfit', sans-serif; }
+
+    /* Ambient Background */
+    .ambient-bg {
+      background-color: #071712;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(5, 150, 105, 0.15) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(15, 61, 46, 0.3) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+    .glass-card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card-hover:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(52, 211, 153, 0.3);
+      box-shadow: 0 20px 35px -10px rgba(16, 185, 129, 0.15);
+    }
+
+    .glass-nav-dock {
+      background: rgba(7, 23, 18, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(52, 211, 153, 0.2);
+    }
+
+    /* Print Styles for Executive Briefing */
+    @media print {
+      body { background: white !important; color: black !important; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      .glass-panel { background: white !important; border: 1px solid #ccc !important; color: black !important; box-shadow: none !important; }
+      canvas { max-width: 100% !important; }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+    ::-webkit-scrollbar-thumb { background: rgba(52, 211, 153, 0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(52, 211, 153, 0.4); }
+  </style>
+</head>
+<body class="ambient-bg text-slate-100 min-h-screen flex flex-col justify-between relative selection:bg-emerald-500 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-40 glass-nav-dock no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-3.5">
+        <a href="index.html" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-emerald-500/30 heading-font hover:scale-105 transition-transform">
+          TS
+        </a>
+        <div>
+          <h1 class="text-base font-extrabold tracking-wide text-white flex items-center gap-2">
+            Executive Analytics & AI Insights <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">Enterprise</span>
+          </h1>
+          <p class="text-[11px] text-emerald-400/80 font-medium">Franchise Performance & Profitability Optimization</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2.5">
+        <button onclick="openUploadModal()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-600/30">
+          <i data-lucide="upload-cloud" class="w-4 h-4"></i> Ingest Daily CSVs
+        </button>
+
+        <button onclick="triggerPendriveExport()" class="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm" title="Save offline copy to USB Pendrive">
+          <i data-lucide="hard-drive" class="w-4 h-4 text-amber-400"></i> Backup to USB
+        </button>
+
+        <a href="index.html" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1.5">
+          <i data-lucide="home" class="w-3.5 h-3.5 text-emerald-400"></i> Hub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 relative z-10">
+    
+    <!-- CONTROL & FILTER BAR -->
+    <div class="glass-panel p-4 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      
+      <!-- Date Range Controls -->
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Period:</span>
+        <button onclick="setDateFilter('today')" id="date-btn-today" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all">Today</button>
+        <button onclick="setDateFilter('yesterday')" id="date-btn-yesterday" class="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white/5 text-slate-400 hover:text-white border border-white/10 transition-all">Yesterday</button>
+        <button onclick="setDateFilter('7days')" id="date-btn-7days" class="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white/5 text-slate-400 hover:text-white border border-white/10 transition-all">Last 7 Days</button>
+        <button onclick="setDateFilter('month')" id="date-btn-month" class="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white/5 text-slate-400 hover:text-white border border-white/10 transition-all">Month-to-Date</button>
+      </div>
+
+      <!-- Branch Selector & Export Tools -->
+      <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+        <select id="branch-select" onchange="reloadAnalysis()" class="px-3.5 py-1.5 bg-[#0a231b] border border-white/15 rounded-xl text-xs text-white outline-none focus:ring-2 focus:ring-emerald-500">
+          <option value="MK Stadium HQ">MK Stadium HQ (Central)</option>
+          <option value="All Branches">All Franchise Locations</option>
+        </select>
+
+        <button onclick="printExecutiveReport()" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-slate-300 transition-all flex items-center gap-1.5">
+          <i data-lucide="printer" class="w-3.5 h-3.5 text-emerald-400"></i> PDF Briefing
+        </button>
+      </div>
+    </div>
+
+    <!-- TOP EXECUTIVE KPI SCORECARDS -->
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      
+      <!-- 1. Gross Revenue -->
+      <div class="glass-panel p-5 rounded-3xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Gross Revenue</p>
+        <p id="kpi-gross-revenue" class="text-2xl sm:text-3xl font-black text-white heading-font">£0.00</p>
+        <p id="kpi-orders-count" class="text-[11px] text-emerald-400 font-medium mt-1">0 orders recorded</p>
+      </div>
+
+      <!-- 2. Blended Net Margin -->
+      <div class="glass-panel p-5 rounded-3xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
+        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Blended Net Margin</p>
+        <p id="kpi-net-margin" class="text-2xl sm:text-3xl font-black text-emerald-300 heading-font">0.0%</p>
+        <p id="kpi-net-profit" class="text-[11px] text-slate-400 font-medium mt-1">£0.00 net cash profit</p>
+      </div>
+
+      <!-- 3. Food Cost & Spoilage Leakage -->
+      <div class="glass-panel p-5 rounded-3xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-red-400"></div>
+        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Waste & Spoilage</p>
+        <p id="kpi-waste-cost" class="text-2xl sm:text-3xl font-black text-rose-400 heading-font">£0.00</p>
+        <p class="text-[11px] text-red-300/80 font-medium mt-1">Daily kitchen leakage</p>
+      </div>
+
+      <!-- 4. Delivery Commissions Overhead -->
+      <div class="glass-panel p-5 rounded-3xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-400"></div>
+        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Platform Commission</p>
+        <p id="kpi-commissions" class="text-2xl sm:text-3xl font-black text-amber-300 heading-font">£0.00</p>
+        <p id="kpi-commission-pct" class="text-[11px] text-amber-400/80 font-medium mt-1">0% blended rate</p>
+      </div>
+
+      <!-- 5. Average Prep Speed -->
+      <div class="glass-panel p-5 rounded-3xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-400"></div>
+        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Avg Kitchen Prep</p>
+        <p id="kpi-prep-time" class="text-2xl sm:text-3xl font-black text-indigo-300 heading-font">12.4m</p>
+        <p class="text-[11px] text-slate-400 font-medium mt-1">Target: &lt; 15 mins</p>
+      </div>
+
+      <!-- 6. Customer Rating Score -->
+      <div class="glass-panel p-5 rounded-3xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-400"></div>
+        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Store Quality Score</p>
+        <p id="kpi-rating" class="text-2xl sm:text-3xl font-black text-yellow-300 heading-font">4.88 ★</p>
+        <p class="text-[11px] text-yellow-400/80 font-medium mt-1">From delivery feedback</p>
+      </div>
+
+    </div>
+
+    <!-- EXECUTIVE AI SYNTHESIS SUMMARY -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      
+      <!-- Top 3 Strengths -->
+      <div class="glass-panel p-6 rounded-3xl border-emerald-500/30 bg-emerald-500/5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2.5 mb-4 text-emerald-400">
+            <div class="p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30">
+              <i data-lucide="trending-up" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white heading-font">Top 3 Strengths Today</h3>
+          </div>
+          <ul id="ai-strengths-list" class="flex flex-col gap-2.5 text-xs text-slate-300">
+            <li class="flex items-start gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i> In-Store POS delivered high margins with zero commission drag.</li>
+            <li class="flex items-start gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i> Signature Cookie Dough was the top profit contributor.</li>
+            <li class="flex items-start gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i> Kitchen food waste remained tightly below target thresholds.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Top 3 Operational Leaks -->
+      <div class="glass-panel p-6 rounded-3xl border-rose-500/30 bg-rose-500/5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2.5 mb-4 text-rose-400">
+            <div class="p-2 rounded-xl bg-rose-500/20 border border-rose-500/30">
+              <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white heading-font">Top 3 Operational Leaks</h3>
+          </div>
+          <ul id="ai-leaks-list" class="flex flex-col gap-2.5 text-xs text-slate-300">
+            <li class="flex items-start gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i> Deliveroo margins compressed to 26% due to high promotional discounting.</li>
+            <li class="flex items-start gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i> Cookie Dough Base represented 55% of all recorded kitchen prep waste.</li>
+            <li class="flex items-start gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i> Rush hour prep delays surged to 19 minutes around 19:00 peak.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Recommended Next Steps -->
+      <div class="glass-panel p-6 rounded-3xl border-amber-500/30 bg-amber-500/5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2.5 mb-4 text-amber-400">
+            <div class="p-2 rounded-xl bg-amber-500/20 border border-amber-500/30">
+              <i data-lucide="lightbulb" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white heading-font">Recommended Next Steps</h3>
+          </div>
+          <ul id="ai-actions-list" class="flex flex-col gap-2.5 text-xs text-slate-300">
+            <li class="flex items-start gap-2"><i data-lucide="arrow-right-circle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i> Cap delivery promotional discounts to 10% on Deliveroo.</li>
+            <li class="flex items-start gap-2"><i data-lucide="arrow-right-circle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i> Reduce evening prep batch size for Cookie Dough base to prevent spoilage.</li>
+            <li class="flex items-start gap-2"><i data-lucide="arrow-right-circle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i> Adjust 18:00 - 20:00 prep staffing roster to maintain 12-min speed.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VISUAL INTELLIGENCE CHARTS GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Chart 1: Channel Net Margin Breakdown -->
+      <div class="glass-panel p-6 rounded-3xl flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-bold text-white heading-font flex items-center gap-2">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i> Channel Profitability & Net Margins
+            </h3>
+            <p class="text-xs text-slate-400">Gross Sales vs. Commission vs. Net Cash Profit Margin (%)</p>
+          </div>
+        </div>
+        <div class="relative h-64 w-full">
+          <canvas id="channelChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: BCG Menu Engineering 4-Quadrant Matrix -->
+      <div class="glass-panel p-6 rounded-3xl flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-bold text-white heading-font flex items-center gap-2">
+              <i data-lucide="layout-grid" class="w-4 h-4 text-amber-400"></i> BCG Menu Engineering Matrix
+            </h3>
+            <p class="text-xs text-slate-400">Stars (Top Right) vs. Workhorses vs. Puzzles vs. Dogs</p>
+          </div>
+        </div>
+        <div class="relative h-64 w-full">
+          <canvas id="bcgChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Peak Hourly Volume vs Kitchen Delay -->
+      <div class="glass-panel p-6 rounded-3xl flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-bold text-white heading-font flex items-center gap-2">
+              <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i> Peak Demand & Prep Delay Bottlenecks
+            </h3>
+            <p class="text-xs text-slate-400">Hourly order load vs average kitchen prep duration (mins)</p>
+          </div>
+        </div>
+        <div class="relative h-64 w-full">
+          <canvas id="hourlyChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 4: Top 5 Food Waste & Spoilage Impact -->
+      <div class="glass-panel p-6 rounded-3xl flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-base font-bold text-white heading-font flex items-center gap-2">
+                <i data-lucide="trash-2" class="w-4 h-4 text-rose-400"></i> Top 5 Food Waste & Spoilage Leaks
+              </h3>
+              <p class="text-xs text-slate-400">Financial impact of prep spoilage and ingredient shrinkage</p>
+            </div>
+          </div>
+          <div id="waste-impact-list" class="flex flex-col gap-3.5 mt-2">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- DAILY OPERATIONAL ACTION FEED -->
+    <div class="glass-panel p-6 rounded-3xl">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h3 class="text-base font-bold text-white heading-font flex items-center gap-2">
+            <i data-lucide="check-square" class="w-4 h-4 text-emerald-400"></i> Operational Action Feed & Manager Directives
+          </h3>
+          <p class="text-xs text-slate-400">Automated rule-based directives to protect margins and eliminate food waste</p>
+        </div>
+      </div>
+
+      <div id="action-feed-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- HIGH-VOLUME CSV UPLOAD MODAL -->
+  <div id="upload-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden no-print">
+    <div class="glass-panel bg-[#0b221a]/95 border-emerald-500/30 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl relative">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-white heading-font flex items-center gap-2">
+          <i data-lucide="upload-cloud" class="w-5 h-5 text-emerald-400"></i> Ingest Daily High-Volume CSVs
+        </h3>
+        <button onclick="closeUploadModal()" class="text-slate-400 hover:text-white transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 mb-5 leading-relaxed">
+        Upload high-volume CSV exports for <strong>Sales & Revenue</strong>, <strong>Kitchen Spoilage</strong>, or <strong>Operations & Speed</strong>. The streaming engine parses files in chunks without memory limits.
+      </p>
+
+      <div class="border-2 border-dashed border-emerald-500/30 hover:border-emerald-400 rounded-2xl p-8 text-center cursor-pointer bg-white/[0.02] flex flex-col items-center justify-center group" onclick="document.getElementById('modal-file-input').click()">
+        <input type="file" id="modal-file-input" multiple accept=".csv,.txt,.tsv" class="hidden" onchange="handleModalUpload(event)">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+          <i data-lucide="file-spreadsheet" class="w-7 h-7"></i>
+        </div>
+        <p class="font-bold text-white text-sm mb-1">Click to select or drag daily CSV files here</p>
+        <p class="text-[11px] text-slate-400">Supports Deliveroo, Just Eat, Uber Eats, POS, Inventory & Waste exports</p>
+      </div>
+
+      <!-- Upload Progress Indicator -->
+      <div id="upload-progress-container" class="mt-4 hidden">
+        <div class="flex justify-between text-xs font-bold text-slate-300 mb-1">
+          <span id="upload-progress-label">Processing rows...</span>
+          <span id="upload-progress-pct" class="text-emerald-400">0%</span>
+        </div>
+        <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+          <div id="upload-progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-2 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-white/10">
+        <button type="button" onclick="closeUploadModal()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold rounded-xl transition-all">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="w-full border-t border-white/10 py-6 text-center text-xs text-slate-500 no-print">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> Treat Street Franchise Executive Intelligence Suite • Powered by ALAIYA
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+
+    // Supabase Initialization
+    let SUPABASE_URL = 'https://sdlrwosjebiiztclsydu.supabase.co';
+    let SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw';
+    let supabaseClient = null;
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    let chartInstances = {};
+    let currentAnalysisData = null;
+
+    // -------------------------------------------------------------
+    // DEFAULT SIMULATED DATA GENERATOR (If no files uploaded yet)
+    // -------------------------------------------------------------
+    function getSampleDataset() {
+      const sampleSales = [
+        { item_name: 'Signature Cookie Dough', channel: 'In-Store POS', units_sold: 45, gross_sales: 337.50, discount_amount: 0, platform_commission: 0, timestamp: '14:30' },
+        { item_name: 'Signature Cookie Dough', channel: 'Deliveroo', units_sold: 35, gross_sales: 280.00, discount_amount: 35.00, platform_commission: 68.60, timestamp: '19:15' },
+        { item_name: 'Signature Cookie Dough', channel: 'Just Eat', units_sold: 25, gross_sales: 200.00, discount_amount: 10.00, platform_commission: 47.50, timestamp: '18:40' },
+        { item_name: 'Signature Cookie Dough', channel: 'Uber Eats', units_sold: 20, gross_sales: 160.00, discount_amount: 15.00, platform_commission: 43.50, timestamp: '20:10' },
+        { item_name: 'Mac & Cheese Base', channel: 'In-Store POS', units_sold: 40, gross_sales: 280.00, discount_amount: 0, platform_commission: 0, timestamp: '13:10' },
+        { item_name: 'Mac & Cheese Base', channel: 'Just Eat', units_sold: 15, gross_sales: 120.00, discount_amount: 5.00, platform_commission: 28.75, timestamp: '17:50' },
+        { item_name: 'Triple Chocolate Brownie', channel: 'Deliveroo', units_sold: 22, gross_sales: 110.00, discount_amount: 12.00, platform_commission: 27.44, timestamp: '19:30' },
+        { item_name: 'Triple Chocolate Brownie', channel: 'In-Store POS', units_sold: 30, gross_sales: 150.00, discount_amount: 0, platform_commission: 0, timestamp: '15:20' },
+        { item_name: 'Seasonal Crepe', channel: 'Deliveroo', units_sold: 5, gross_sales: 42.50, discount_amount: 8.00, platform_commission: 9.66, timestamp: '12:30' },
+        { item_name: 'Mystery Shake', channel: 'In-Store POS', units_sold: 8, gross_sales: 48.00, discount_amount: 0, platform_commission: 0, timestamp: '16:00' }
+      ];
+
+      const sampleInventory = [
+        { ingredient_name: 'Cookie Dough Base', actual_waste_qty: 4.5, unit_cost: 6.20 },
+        { ingredient_name: 'Comelle Ice Cream Mix', actual_waste_qty: 2.0, unit_cost: 3.80 },
+        { ingredient_name: 'Belgian Milk Chocolate Chips', actual_waste_qty: 1.2, unit_cost: 8.50 },
+        { ingredient_name: 'Mac & Cheese Pasta', actual_waste_qty: 1.5, unit_cost: 2.10 },
+        { ingredient_name: 'Nacho Cheese Sauce', actual_waste_qty: 0.8, unit_cost: 4.50 }
+      ];
+
+      const sampleOps = [
+        { prep_time_minutes: 11, rating_score: 5, order_time: '12:30' },
+        { prep_time_minutes: 12, rating_score: 5, order_time: '13:10' },
+        { prep_time_minutes: 13, rating_score: 5, order_time: '14:30' },
+        { prep_time_minutes: 14, rating_score: 5, order_time: '15:20' },
+        { prep_time_minutes: 12, rating_score: 5, order_time: '16:00' },
+        { prep_time_minutes: 16, rating_score: 4, order_time: '17:50' },
+        { prep_time_minutes: 19, rating_score: 4, order_time: '18:40' },
+        { prep_time_minutes: 21, rating_score: 3, order_time: '19:15' },
+        { prep_time_minutes: 20, rating_score: 4, order_time: '19:30' },
+        { prep_time_minutes: 14, rating_score: 5, order_time: '20:10' }
+      ];
+
+      return { sampleSales, sampleInventory, sampleOps };
+    }
+
+    // -------------------------------------------------------------
+    // RENDER DASHBOARD
+    // -------------------------------------------------------------
+    function renderDashboard(data) {
+      currentAnalysisData = data;
+
+      // Scorecards
+      document.getElementById('kpi-gross-revenue').innerText = `£${data.gross_sales.toFixed(2)}`;
+      document.getElementById('kpi-orders-count').innerText = `${data.total_orders} total orders recorded`;
+      document.getElementById('kpi-net-margin').innerText = `${data.net_margin_pct}%`;
+      document.getElementById('kpi-net-profit').innerText = `£${data.net_profit.toFixed(2)} net cash profit`;
+      document.getElementById('kpi-waste-cost').innerText = `£${data.waste_cost.toFixed(2)}`;
+      document.getElementById('kpi-commissions').innerText = `£${data.commissions.toFixed(2)}`;
+      document.getElementById('kpi-commission-pct').innerText = `${data.blended_commission_pct}% blended rate`;
+      document.getElementById('kpi-prep-time').innerText = `${data.avg_prep_time_min}m`;
+      document.getElementById('kpi-rating').innerText = `${data.avg_rating} ★`;
+
+      // AI Synthesis Lists
+      const strengthsList = document.getElementById('ai-strengths-list');
+      strengthsList.innerHTML = data.insights.top_3_strengths.map(s => `
+        <li class="flex items-start gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i> <span>${s}</span></li>
+      `).join('');
+
+      const leaksList = document.getElementById('ai-leaks-list');
+      leaksList.innerHTML = data.insights.top_3_leaks.map(l => `
+        <li class="flex items-start gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i> <span>${l}</span></li>
+      `).join('');
+
+      const actionsList = document.getElementById('ai-actions-list');
+      actionsList.innerHTML = data.insights.recommended_next_steps.map(a => `
+        <li class="flex items-start gap-2"><i data-lucide="arrow-right-circle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i> <span>${a}</span></li>
+      `).join('');
+
+      // Top 5 Waste Bars
+      const wasteList = document.getElementById('waste-impact-list');
+      const maxWasteCost = Math.max(...data.waste_top5.map(w => w.waste_cost), 1);
+      wasteList.innerHTML = data.waste_top5.map(w => {
+        const pct = Math.min(100, (w.waste_cost / maxWasteCost) * 100);
+        return `
+          <div>
+            <div class="flex justify-between text-xs font-bold text-slate-300 mb-1">
+              <span class="truncate">${w.ingredient_name}</span>
+              <span class="text-rose-400">£${w.waste_cost.toFixed(2)}</span>
+            </div>
+            <div class="w-full bg-white/5 rounded-full h-2 overflow-hidden">
+              <div class="bg-gradient-to-r from-rose-600 to-red-400 h-2 rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Action Feed Cards
+      const actionFeedContainer = document.getElementById('action-feed-container');
+      actionFeedContainer.innerHTML = data.insights.action_feed.map(af => `
+        <div class="bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                af.severity === 'CRITICAL' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                af.severity === 'WARNING' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+              }">${af.severity}</span>
+              <span class="text-[10px] text-slate-400 font-bold uppercase">${af.type}</span>
+            </div>
+            <h4 class="text-sm font-bold text-white heading-font mb-1">${af.title}</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">${af.description}</p>
+          </div>
+          <button class="mt-4 w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-emerald-300 transition-all flex items-center justify-center gap-1.5">
+            ${af.action} <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      `).join('');
+
+      renderCharts(data);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // CHART.JS VISUALIZATIONS
+    // -------------------------------------------------------------
+    function renderCharts(data) {
+      // Destroy existing instances
+      Object.values(chartInstances).forEach(c => c.destroy());
+
+      // 1. Channel Profitability Chart
+      const ctxChannel = document.getElementById('channelChart').getContext('2d');
+      chartInstances.channel = new Chart(ctxChannel, {
+        type: 'bar',
+        data: {
+          labels: data.channel_metrics.map(c => c.channel_name),
+          datasets: [
+            {
+              label: 'Gross Sales (£)',
+              data: data.channel_metrics.map(c => c.gross_sales),
+              backgroundColor: 'rgba(52, 211, 153, 0.4)',
+              borderColor: '#10b981',
+              borderWidth: 1.5,
+              borderRadius: 6
+            },
+            {
+              label: 'Commission Paid (£)',
+              data: data.channel_metrics.map(c => c.commission),
+              backgroundColor: 'rgba(245, 158, 11, 0.4)',
+              borderColor: '#f59e0b',
+              borderWidth: 1.5,
+              borderRadius: 6
+            },
+            {
+              label: 'Net Cash Profit (£)',
+              data: data.channel_metrics.map(c => c.net_profit),
+              backgroundColor: 'rgba(59, 130, 246, 0.5)',
+              borderColor: '#3b82f6',
+              borderWidth: 1.5,
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#94a3b8', font: { size: 11, family: 'Plus Jakarta Sans' } } }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+
+      // 2. BCG Menu Engineering Matrix (Scatter)
+      const ctxBCG = document.getElementById('bcgChart').getContext('2d');
+      const colorsMap = {
+        'STAR': '#10b981',
+        'WORKHORSE': '#3b82f6',
+        'PUZZLE': '#f59e0b',
+        'DOG': '#ef4444'
+      };
+
+      chartInstances.bcg = new Chart(ctxBCG, {
+        type: 'scatter',
+        data: {
+          datasets: data.menu_matrix.map(m => ({
+            label: `${m.item_name} [${m.category}]`,
+            data: [{ x: m.units_sold, y: m.unit_margin }],
+            backgroundColor: colorsMap[m.category] || '#10b981',
+            borderColor: '#ffffff',
+            borderWidth: 1.5,
+            pointRadius: 7,
+            pointHoverRadius: 9
+          }))
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.x} sold | Margin: £${ctx.raw.y.toFixed(2)}`
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Sales Popularity (Units Sold)', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { title: { display: true, text: 'Unit Contribution Margin (£)', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+
+      // 3. Hourly Heatmap & Prep Delays
+      const ctxHourly = document.getElementById('hourlyChart').getContext('2d');
+      chartInstances.hourly = new Chart(ctxHourly, {
+        type: 'line',
+        data: {
+          labels: data.hourly_trends.map(h => h.label),
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Orders Volume',
+              data: data.hourly_trends.map(h => h.orders),
+              backgroundColor: 'rgba(52, 211, 153, 0.3)',
+              borderColor: '#10b981',
+              borderWidth: 1,
+              borderRadius: 4,
+              yAxisID: 'y'
+            },
+            {
+              type: 'line',
+              label: 'Avg Prep Time (Mins)',
+              data: data.hourly_trends.map(h => h.avgPrepTime || 12),
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              borderWidth: 2,
+              tension: 0.3,
+              fill: false,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#94a3b8', font: { size: 11 } } }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { title: { display: true, text: 'Order Count', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y1: { position: 'right', title: { display: true, text: 'Prep Minutes', color: '#f59e0b' }, ticks: { color: '#f59e0b' }, grid: { drawOnChartArea: false } }
+          }
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // MODAL & INGESTION
+    // -------------------------------------------------------------
+    function openUploadModal() {
+      document.getElementById('upload-modal').classList.remove('hidden');
+    }
+    function closeUploadModal() {
+      document.getElementById('upload-modal').classList.add('hidden');
+    }
+
+    async function handleModalUpload(e) {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      const progressContainer = document.getElementById('upload-progress-container');
+      const progressBar = document.getElementById('upload-progress-bar');
+      const progressLabel = document.getElementById('upload-progress-label');
+      const progressPct = document.getElementById('upload-progress-pct');
+
+      progressContainer.classList.remove('hidden');
+      progressBar.style.width = '20%';
+      progressPct.innerText = '20%';
+      progressLabel.innerText = `Ingesting ${files.length} daily reports...`;
+
+      let allSalesRows = [];
+      let allInvRows = [];
+      let allOpsRows = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const text = await file.text();
+        
+        await new Promise((resolve) => {
+          FranchiseAnalytics.parseChunkedCSV(
+            text,
+            (row, schema) => {
+              if (schema.type === 'SALES') allSalesRows.push(row);
+              else if (schema.type === 'INVENTORY') allInvRows.push(row);
+              else allOpsRows.push(row);
+            },
+            () => resolve()
+          );
+        });
+
+        const pct = Math.round(((i + 1) / files.length) * 100);
+        progressBar.style.width = `${pct}%`;
+        progressPct.innerText = `${pct}%`;
+      }
+
+      progressLabel.innerText = "Generating AI insights & financial rollups...";
+
+      const analysis = FranchiseAnalytics.analyzeDailyPerformance(
+        allSalesRows,
+        allInvRows,
+        allOpsRows,
+        window.tsCatalog || []
+      );
+
+      await FranchiseAnalytics.saveDailySummary(supabaseClient, analysis);
+      renderDashboard(analysis);
+
+      setTimeout(() => {
+        closeUploadModal();
+        progressContainer.classList.add('hidden');
+        alert("✅ Daily High-Volume Reports successfully ingested & aggregated!");
+      }, 500);
+    }
+
+    function triggerPendriveExport() {
+      const list = currentAnalysisData ? [currentAnalysisData] : [];
+      FranchiseAnalytics.exportPendriveArchive(list);
+    }
+
+    function printExecutiveReport() {
+      window.print();
+    }
+
+    function setDateFilter(filter) {
+      ['today', 'yesterday', '7days', 'month'].forEach(f => {
+        const btn = document.getElementById(`date-btn-${f}`);
+        if (btn) {
+          btn.className = f === filter 
+            ? 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all'
+            : 'px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white/5 text-slate-400 hover:text-white border border-white/10 transition-all';
+        }
+      });
+      reloadAnalysis();
+    }
+
+    async function reloadAnalysis() {
+      const { sampleSales, sampleInventory, sampleOps } = getSampleDataset();
+      const analysis = FranchiseAnalytics.analyzeDailyPerformance(sampleSales, sampleInventory, sampleOps, window.tsCatalog || []);
+      renderDashboard(analysis);
+    }
+
+    function init() {
+      reloadAnalysis();
+    }
+
+    init();
+  </script>
+</body>
+</html>
