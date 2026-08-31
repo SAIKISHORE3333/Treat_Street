@@ -251,9 +251,25 @@
         console.error("Local save error:", err);
       }
 
+      // Save to Supabase production_logs table
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('production_logs').insert({
+            log_code: payload.log_id,
+            branch_id: payload.branch_id,
+            recipe_name: payload.recipe_name,
+            batches_produced: payload.batches_produced,
+            staff_name: payload.staff_name,
+            expiry_date: payload.expiry_date || null
+          });
+        } catch (e) {
+          console.warn("Supabase production log insert error:", e);
+        }
+      }
+
       await triggerAlaiyaWebhook('sop.waste_logged', { ...payload, type: 'PRODUCTION_LOG' });
       
-      alert("✅ Production logged successfully! Raw ingredients have been theoretical deducted.");
+      alert("✅ Production logged successfully! Raw ingredients have been theoretically deducted.");
       e.target.reset();
 
       btn.innerHTML = origText;
@@ -304,6 +320,23 @@
         }
       } catch (err) {
         console.error("Local save error:", err);
+      }
+
+      // Save to Supabase waste_logs table
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('waste_logs').insert({
+            log_code: payload.log_id,
+            branch_id: payload.branch_id,
+            recipe_name: payload.recipe_name,
+            quantity: payload.quantity,
+            estimated_cost: payload.estimated_cost,
+            reason: payload.reason,
+            expiry_date: payload.expiry_date || null
+          });
+        } catch (e) {
+          console.warn("Supabase waste log insert error:", e);
+        }
       }
 
       await triggerAlaiyaWebhook('sop.waste_logged', payload);

@@ -477,13 +477,44 @@
       // 1. Persist new stock counts immediately to local state
       saveStockLevels(stockLevels);
 
-      // 2. Persist audit log
+      // 2. Persist audit log locally
       saveAuditToStorage(payload);
 
-      // 3. Attempt webhook sync in background
+      // 3. Persist audit directly to Supabase Database Tables
+      if (supabaseClient) {
+        try {
+          const { data: auditRow, error: auditErr } = await supabaseClient
+            .from('inventory_audits')
+            .insert({
+              audit_code: payload.audit_id,
+              branch_id: payload.branch_id,
+              total_variance_cost: payload.total_variance_cost,
+              items_count: payload.items_count
+            })
+            .select()
+            .single();
+
+          if (!auditErr && auditRow) {
+            const lineItems = items.map(it => ({
+              audit_id: auditRow.id,
+              ingredient_id: String(it.ingredient_id),
+              ingredient_name: it.ingredient_name,
+              theoretical_qty: it.theoretical_qty,
+              actual_qty: it.actual_qty,
+              variance: it.variance,
+              variance_cost: it.variance_cost
+            }));
+            await supabaseClient.from('inventory_audit_items').insert(lineItems);
+          }
+        } catch (e) {
+          console.warn("Supabase database audit insert error:", e);
+        }
+      }
+
+      // 4. Attempt webhook sync in background
       await triggerAlaiyaWebhook('inventory.audit_completed', payload);
 
-      // 4. Immediately re-render stock monitors and audit table
+      // 5. Immediately re-render stock monitors and audit table
       renderStockGrid();
       renderAuditTable();
 
