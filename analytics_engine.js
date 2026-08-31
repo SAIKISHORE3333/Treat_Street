@@ -166,6 +166,165 @@
     },
 
     // -------------------------------------------------------------
+    // Universal Field Extractor (Handles any POS / Delivery platform header format)
+    // -------------------------------------------------------------
+    extractSalesFields(row) {
+      const keys = Object.keys(row || {});
+      const normalizedMap = {};
+      for (const k of keys) {
+        normalizedMap[this.normalizeHeader(k)] = (row[k] !== undefined && row[k] !== null) ? row[k].toString().trim() : '';
+      }
+
+      // 1. Item Name
+      let itemName = '';
+      for (const k in normalizedMap) {
+        if (k.includes('item_name') || k.includes('product_name') || k.includes('dish') || k.includes('item') || k.includes('product') || k.includes('description') || k.includes('title') || k === 'name') {
+          const val = normalizedMap[k];
+          if (val && isNaN(val) && val.length > 1) {
+            itemName = val;
+            break;
+          }
+        }
+      }
+      if (!itemName) {
+        for (const k of keys) {
+          const v = (row[k] || '').toString().trim();
+          if (v && isNaN(v) && !v.includes(':') && !v.match(/^\d{4}-\d{2}-\d{2}/) && v.length > 1) {
+            itemName = v;
+            break;
+          }
+        }
+      }
+      if (!itemName) itemName = 'Unspecified Item';
+
+      // 2. Units Sold
+      let units = null;
+      for (const k in normalizedMap) {
+        if (k.includes('qty_sold') || k.includes('quantity') || k.includes('item_count') || k.includes('units') || k.includes('count') || k.includes('qty') || k.includes('volume')) {
+          const n = this.cleanNumber(normalizedMap[k], null);
+          if (n !== null && n > 0) {
+            units = n;
+            break;
+          }
+        }
+      }
+      if (units === null) units = 1;
+
+      // 3. Gross Sales / Revenue (2-Pass Line Total & Unit Price Parser)
+      let gross = 0;
+      // Pass 1: Line total headers
+      for (const k in normalizedMap) {
+        if (k.includes('gross') || k.includes('total') || k.includes('subtotal') || k.includes('sales') || k.includes('revenue') || k.includes('amount') || k === 'value') {
+          if (!k.includes('discount') && !k.includes('commission') && !k.includes('fee')) {
+            const n = this.cleanNumber(normalizedMap[k], 0);
+            if (n > 0) {
+              gross = n;
+              break;
+            }
+          }
+        }
+      }
+      // Pass 2: Unit price headers (multiplied by units)
+      if (gross === 0) {
+        for (const k in normalizedMap) {
+          if (k.includes('price') || k.includes('cost') || k.includes('rate')) {
+            if (!k.includes('discount') && !k.includes('commission') && !k.includes('fee')) {
+              const n = this.cleanNumber(normalizedMap[k], 0);
+              if (n > 0) {
+                gross = n * units;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // 4. Discounts
+      let discounts = 0;
+      for (const k in normalizedMap) {
+        if (k.includes('discount') || k.includes('promo') || k.includes('voucher') || k.includes('offer')) {
+          discounts = Math.abs(this.cleanNumber(normalizedMap[k], 0));
+          break;
+        }
+      }
+
+      // 5. Commission
+      let commission = 0;
+      for (const k in normalizedMap) {
+        if (k.includes('commission') || k.includes('fee') || k.includes('charge')) {
+          commission = Math.abs(this.cleanNumber(normalizedMap[k], 0));
+          break;
+        }
+      }
+
+      // 6. Time
+      let timeStr = '';
+      for (const k in normalizedMap) {
+        if (k.includes('time') || k.includes('date') || k.includes('created')) {
+          timeStr = normalizedMap[k];
+          break;
+        }
+      }
+
+      // 7. Channel
+      let channelStr = row.channel || '';
+      if (!channelStr) {
+        for (const k in normalizedMap) {
+          if (k.includes('channel') || k.includes('platform') || k.includes('source')) {
+            channelStr = normalizedMap[k];
+            break;
+          }
+        }
+      }
+
+      return {
+        item_name: itemName,
+        units_sold: units,
+        gross_sales: gross,
+        discount_amount: discounts,
+        platform_commission: commission,
+        timestamp: timeStr,
+        channel: channelStr,
+        commission_rate_override: row.commission_rate_override
+      };
+    },
+
+    extractInventoryFields(row) {
+      const keys = Object.keys(row || {});
+      const normalizedMap = {};
+      for (const k of keys) {
+        normalizedMap[this.normalizeHeader(k)] = (row[k] !== undefined && row[k] !== null) ? row[k].toString().trim() : '';
+      }
+
+      let ingredient = '';
+      for (const k in normalizedMap) {
+        if (k.includes('ingredient') || k.includes('item') || k.includes('product') || k.includes('description') || k.includes('name')) {
+          const val = normalizedMap[k];
+          if (val && isNaN(val)) { ingredient = val; break; }
+        }
+      }
+      if (!ingredient) ingredient = 'Ingredient Item';
+
+      let wasteQty = 0;
+      for (const k in normalizedMap) {
+        if (k.includes('waste') || k.includes('spoilage') || k.includes('damaged') || k.includes('loss')) {
+          wasteQty = Math.abs(this.cleanNumber(normalizedMap[k], 0));
+          if (wasteQty > 0) break;
+        }
+      }
+
+      let unitCost = 1.0;
+      for (const k in normalizedMap) {
+        if (k.includes('unit_cost') || k.includes('cost') || k.includes('price')) {
+          const c = this.cleanNumber(normalizedMap[k], 0);
+          if (c > 0) { unitCost = c; break; }
+        }
+      }
+
+      return { ingredient_name: ingredient, actual_waste_qty: wasteQty, unit_cost: unitCost };
+    },
+
+    // -------------------------------------------------------------
     // 4. Core Analytics Aggregator & Normalizer
     // -------------------------------------------------------------
     analyzeDailyPerformance(salesRows = [], inventoryRows = [], opsRows = [], recipeCatalog = []) {
@@ -177,7 +336,7 @@
         'Uber Eats': { gross: 0, discounts: 0, commission: 0, netSales: 0, cogs: 0, orders: 0, commissionRate: 0.30 }
       };
 
-      const itemPerformance = new Map(); // item_name -> { units, gross, discounts, commissions, cogs, channelBreakdown }
+      const itemPerformance = new Map();
       const hourlyDistribution = Array.from({ length: 15 }, (_, i) => ({
         hour: i + 9, // 09:00 to 23:00
         label: `${(i + 9).toString().padStart(2, '0')}:00`,
@@ -196,24 +355,32 @@
       let totalOrders = salesRows.length || 0;
 
       // Process Sales Stream
-      for (const row of salesRows) {
-        const item = (row.item_name || row.item || row.description || 'Unknown Item').trim();
-        const units = this.cleanNumber(row.units_sold || row.quantity || row.qty || 1, 1);
-        const gross = this.cleanNumber(row.gross_sales || row.price || row.amount || 0, 0);
-        const disc = this.cleanNumber(row.discount_amount || row.discounts || 0, 0);
+      for (const rawRow of salesRows) {
+        const row = this.extractSalesFields(rawRow);
+        const item = row.item_name;
+        const units = row.units_sold;
+        const gross = row.gross_sales;
+        const disc = row.discount_amount;
         
         // Detect or normalize channel
         let channel = 'In-Store POS';
-        const rawChan = (row.channel || row.platform || row.source || '').toLowerCase();
+        const rawChan = (row.channel || '').toLowerCase();
         if (rawChan.includes('deliv')) channel = 'Deliveroo';
         else if (rawChan.includes('just')) channel = 'Just Eat';
         else if (rawChan.includes('uber')) channel = 'Uber Eats';
         else if (rawChan.includes('pos') || rawChan.includes('instore') || rawChan.includes('till')) channel = 'In-Store POS';
+        else if (rawChan) channel = row.channel; // Custom platform
+
+        if (!channels[channel]) {
+          const rate = row.commission_rate_override !== undefined ? row.commission_rate_override : 0.20;
+          channels[channel] = { gross: 0, discounts: 0, commission: 0, netSales: 0, cogs: 0, orders: 0, commissionRate: rate };
+        }
 
         // Auto-calculate platform commission if not explicitly in row
-        let comm = this.cleanNumber(row.platform_commission || row.commission || 0, 0);
+        let comm = row.platform_commission;
         if (comm === 0 && channels[channel]) {
-          comm = (gross - disc) * channels[channel].commissionRate;
+          const commRate = row.commission_rate_override !== undefined ? row.commission_rate_override : channels[channel].commissionRate;
+          comm = (gross - disc) * commRate;
         }
 
         // Estimate COGS from catalog / recipes (default ~28% food cost if not explicitly cataloged)
@@ -228,9 +395,6 @@
         totalFoodCost += cogs;
 
         // Channel Aggregations
-        if (!channels[channel]) {
-          channels[channel] = { gross: 0, discounts: 0, commission: 0, netSales: 0, cogs: 0, orders: 0, commissionRate: 0.25 };
-        }
         channels[channel].gross += gross;
         channels[channel].discounts += disc;
         channels[channel].commission += comm;
@@ -258,10 +422,9 @@
         itemAgg.channels[channel] = (itemAgg.channels[channel] || 0) + units;
 
         // Time / Hourly distribution
-        let hour = 14; // Default mid-day if no timestamp
-        const timeStr = row.timestamp || row.order_time || row.date || '';
-        if (timeStr) {
-          const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+        let hour = 14;
+        if (row.timestamp) {
+          const match = row.timestamp.match(/(\d{1,2}):(\d{2})/);
           if (match) {
             hour = parseInt(match[1], 10);
           }
@@ -282,12 +445,12 @@
 
         return {
           channel_name: name,
-          gross_sales: data.gross,
-          discounts: data.discounts,
-          commission: data.commission,
-          net_payout: netPayout,
-          cogs: data.cogs,
-          net_profit: netProfit,
+          gross_sales: parseFloat(data.gross.toFixed(2)),
+          discounts: parseFloat(data.discounts.toFixed(2)),
+          commission: parseFloat(data.commission.toFixed(2)),
+          net_payout: parseFloat(netPayout.toFixed(2)),
+          cogs: parseFloat(data.cogs.toFixed(2)),
+          net_profit: parseFloat(netProfit.toFixed(2)),
           net_margin_pct: parseFloat(netMarginPct.toFixed(1)),
           discount_ratio_pct: parseFloat(discountRatio.toFixed(1)),
           orders_count: data.orders
@@ -304,10 +467,10 @@
         return {
           item_name: it.item_name,
           units_sold: it.units,
-          gross_revenue: it.grossRevenue,
-          food_cost: it.cogs,
-          contribution_margin: totalContributionMargin,
-          unit_margin: unitMargin,
+          gross_revenue: parseFloat(it.grossRevenue.toFixed(2)),
+          food_cost: parseFloat(it.cogs.toFixed(2)),
+          contribution_margin: parseFloat(totalContributionMargin.toFixed(2)),
+          unit_margin: parseFloat(unitMargin.toFixed(2)),
           margin_pct: parseFloat(marginPct.toFixed(1)),
           channels: it.channels,
           category: 'STAR' // will be assigned below
@@ -335,11 +498,10 @@
       let totalWasteCost = 0;
       const wasteMap = new Map();
 
-      for (const inv of inventoryRows) {
-        const ing = inv.ingredient_name || inv.item_name || 'Ingredient';
-        const wasteQty = this.cleanNumber(inv.actual_waste_qty || inv.waste || 0, 0);
-        const unitCost = this.cleanNumber(inv.unit_cost || inv.price || 1, 1);
-        const wasteCost = wasteQty * unitCost;
+      for (const rawInv of inventoryRows) {
+        const inv = this.extractInventoryFields(rawInv);
+        const ing = inv.ingredient_name;
+        const wasteCost = inv.actual_waste_qty * inv.unit_cost;
 
         if (wasteCost > 0) {
           totalWasteCost += wasteCost;
@@ -349,7 +511,7 @@
 
       // Top 5 High-Waste Culprits
       const top5Waste = Array.from(wasteMap.entries())
-        .map(([name, cost]) => ({ ingredient_name: name, waste_cost: cost }))
+        .map(([name, cost]) => ({ ingredient_name: name, waste_cost: parseFloat(cost.toFixed(2)) }))
         .sort((a, b) => b.waste_cost - a.waste_cost)
         .slice(0, 5);
 
