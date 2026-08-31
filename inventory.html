@@ -109,15 +109,28 @@
 
       <!-- LIVE STOCK LEVELS TAB -->
       <section id="section-live-stock">
-        <div class="flex justify-between items-end mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
           <div>
             <h2 class="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="activity" class="w-6 h-6 text-indigo-500"></i> Theoretical Stock Monitor</h2>
-            <p class="text-sm text-slate-500">Real-time pot levels tracking raw ingredient depletion. Levels turning red signify a reorder is required.</p>
+            <p class="text-sm text-slate-500">Real-time pot levels tracking raw ingredient stock. Updating audits immediately recalculates theoretical levels.</p>
           </div>
-          <div class="text-right glass-panel px-4 py-2 rounded-xl">
-            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total Stock Value</p>
-            <p id="total-stock-val" class="text-2xl font-black text-[#144D37]">£0.00</p>
+          <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+            <div class="text-right glass-panel px-4 py-2 rounded-xl">
+              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Total Stock Value</p>
+              <p id="total-stock-val" class="text-2xl font-black text-[#144D37]">£0.00</p>
+            </div>
           </div>
+        </div>
+
+        <!-- Controls: Search & Category -->
+        <div class="glass-panel p-3 rounded-xl mb-6 flex flex-col sm:flex-row items-center gap-3">
+          <div class="relative flex-1 w-full">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="stock-search" oninput="renderStockGrid()" placeholder="Search ingredient or brand..." class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-[#144D37]">
+          </div>
+          <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full sm:w-56 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-[#144D37]">
+            <option value="all">All Categories</option>
+          </select>
         </div>
         
         <div id="stock-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -127,29 +140,41 @@
 
       <!-- AUDIT TAB -->
       <section id="section-audit" class="glass-panel p-6 rounded-2xl hidden hover-scale">
-        <div class="flex justify-between items-end mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
           <div>
             <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="clipboard-check" class="w-5 h-5 text-indigo-500"></i> Physical Inventory Audit</h2>
-            <p class="text-xs text-slate-500">Record physical counts to reconcile against theoretical stock levels.</p>
+            <p class="text-xs text-slate-500">Record physical counts to reconcile and automatically update theoretical stock monitors.</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 w-full md:w-auto justify-end">
             <button onclick="exportAuditCSV()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl border border-slate-300 shadow-sm transition-all flex items-center gap-1.5">
               <i data-lucide="download" class="w-4 h-4"></i> Export CSV
             </button>
             <button onclick="submitAudit()" class="brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-2">
-              <i data-lucide="upload-cloud" class="w-4 h-4"></i> Finalize Audit
+              <i data-lucide="upload-cloud" class="w-4 h-4"></i> Finalize Audit & Sync Levels
             </button>
           </div>
         </div>
+
+        <!-- Audit Search & Category -->
+        <div class="glass-panel p-3 rounded-xl mb-4 flex flex-col sm:flex-row items-center gap-3">
+          <div class="relative flex-1 w-full">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="audit-search" oninput="renderAuditTable()" placeholder="Filter audit ingredients..." class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-[#144D37]">
+          </div>
+          <select id="audit-category-filter" onchange="renderAuditTable()" class="w-full sm:w-56 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-[#144D37]">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
         
-        <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <div class="overflow-x-auto rounded-xl border border-slate-200 max-h-[600px] overflow-y-auto">
           <table class="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+            <thead class="sticky top-0 bg-slate-100 z-10">
+              <tr class="text-slate-700 border-b border-slate-200">
                 <th class="p-3 font-bold text-xs uppercase tracking-wider">Ingredient</th>
+                <th class="p-3 font-bold text-xs uppercase tracking-wider">Category</th>
                 <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Unit Price (£)</th>
-                <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Theo. Qty</th>
-                <th class="p-3 font-bold text-xs uppercase tracking-wider text-right w-32">Actual Count</th>
+                <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Current Theo.</th>
+                <th class="p-3 font-bold text-xs uppercase tracking-wider text-right w-36">Actual Count</th>
                 <th class="p-3 font-bold text-xs uppercase tracking-wider text-right">Variance (£)</th>
               </tr>
             </thead>
@@ -181,39 +206,94 @@
       document.getElementById('tab-audit').className = tab === 'audit' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
       document.getElementById('section-live-stock').classList.toggle('hidden', tab !== 'live-stock');
       document.getElementById('section-audit').classList.toggle('hidden', tab !== 'audit');
+      if (tab === 'live-stock') {
+        renderStockGrid();
+      } else {
+        renderAuditTable();
+      }
     }
 
-    function init() {
-      const grid = document.getElementById('stock-grid');
-      const auditTbody = document.getElementById('audit-tbody');
+    // Storage helpers
+    function getStockLevels() {
+      try {
+        const stored = localStorage.getItem('ts_stock_levels');
+        return stored ? JSON.parse(stored) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveStockLevels(levels) {
+      try {
+        localStorage.setItem('ts_stock_levels', JSON.stringify(levels));
+      } catch (e) {
+        console.error("Failed to save stock levels:", e);
+      }
+    }
+
+    function populateCategories() {
+      const categories = Array.from(new Set(catalogData.map(i => i.category || 'General'))).sort();
+      const stockCatSelect = document.getElementById('stock-category-filter');
+      const auditCatSelect = document.getElementById('audit-category-filter');
       
+      categories.forEach(cat => {
+        const opt1 = document.createElement('option');
+        opt1.value = cat;
+        opt1.textContent = cat;
+        stockCatSelect.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = cat;
+        opt2.textContent = cat;
+        auditCatSelect.appendChild(opt2);
+      });
+    }
+
+    function renderStockGrid() {
+      const grid = document.getElementById('stock-grid');
+      grid.innerHTML = '';
+      const stockLevels = getStockLevels();
+      
+      const search = (document.getElementById('stock-search')?.value || '').toLowerCase().trim();
+      const category = document.getElementById('stock-category-filter')?.value || 'all';
+
       let totalValue = 0;
+      let visibleCount = 0;
 
-      // Render all items in catalog
-      const demoCatalog = catalogData;
-
-      demoCatalog.forEach((item, index) => {
-        // Since we are not using fake data, theoretical stock is 0 until we connect to a live backend.
-        const stockPct = 0;
-        const currentUnits = 0;
-        const value = 0;
+      catalogData.forEach((item, index) => {
+        const currentUnits = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
+        const value = currentUnits * (item.price || 0);
         totalValue += value;
 
-        // Determine Pot Color
-        let liquidColor = '#10b981'; // Emerald
-        let statusBadge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Optimal</span>`;
-        if (stockPct < 25) {
-          liquidColor = '#ef4444'; // Red
-          statusBadge = `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">Reorder Now</span>`;
-        } else if (stockPct < 50) {
-          liquidColor = '#f59e0b'; // Amber
-          statusBadge = `<span class="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Warning</span>`;
+        // Filter search & category
+        if (search && !item.name.toLowerCase().includes(search) && !(item.category || '').toLowerCase().includes(search)) {
+          return;
+        }
+        if (category !== 'all' && item.category !== category) {
+          return;
         }
 
-        // Delay animation slightly for waterfall effect
-        const animDelay = index * 50;
+        visibleCount++;
+        const baselinePar = 10; // Standard threshold
+        const stockPct = Math.min(100, Math.max(0, Math.round((currentUnits / baselinePar) * 100)));
 
-        // Populate Live Grid
+        // Determine Pot Color & Status
+        let liquidColor = '#10b981'; // Emerald
+        let statusBadge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Optimal</span>`;
+        if (currentUnits <= 0) {
+          liquidColor = '#ef4444';
+          statusBadge = `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Out of Stock</span>`;
+        } else if (stockPct < 30) {
+          liquidColor = '#ef4444'; // Red
+          statusBadge = `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">Reorder Now</span>`;
+        } else if (stockPct < 60) {
+          liquidColor = '#f59e0b'; // Amber
+          statusBadge = `<span class="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Low Stock</span>`;
+        }
+
+        const animDelay = Math.min(visibleCount * 30, 600);
+
+        // Card Element
         const card = document.createElement('div');
         card.className = 'glass-panel p-4 rounded-2xl hover-scale flex items-center gap-4';
         card.innerHTML = `
@@ -225,14 +305,14 @@
               <h3 class="font-bold text-sm text-slate-800 truncate pr-2" title="${item.name}">${item.name}</h3>
               ${statusBadge}
             </div>
-            <p class="text-xs text-slate-500 mb-2 truncate">${item.category}</p>
+            <p class="text-xs text-slate-500 mb-2 truncate">${item.category || 'General'}</p>
             <div class="flex justify-between items-end">
               <div>
                 <p class="text-[10px] font-bold text-slate-400 uppercase">Theoretical</p>
                 <p class="text-sm font-black text-slate-700">${currentUnits} units</p>
               </div>
               <div class="text-right">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">Value</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase">Stock Value</p>
                 <p class="text-sm font-black text-slate-700">£${value.toFixed(2)}</p>
               </div>
             </div>
@@ -240,32 +320,63 @@
         `;
         grid.appendChild(card);
 
-        // Trigger animation after mount
+        // Animate liquid
         setTimeout(() => {
-          card.querySelector('.liquid').style.height = `${stockPct}%`;
-        }, 100);
+          const liquid = card.querySelector('.liquid');
+          if (liquid) liquid.style.height = `${stockPct}%`;
+        }, 80);
+      });
 
-        // Populate Audit Table
+      if (visibleCount === 0) {
+        grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-sm">No items found matching your filter criteria.</div>`;
+      }
+
+      document.getElementById('total-stock-val').textContent = '£' + totalValue.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function renderAuditTable() {
+      const auditTbody = document.getElementById('audit-tbody');
+      auditTbody.innerHTML = '';
+      const stockLevels = getStockLevels();
+
+      const search = (document.getElementById('audit-search')?.value || '').toLowerCase().trim();
+      const category = document.getElementById('audit-category-filter')?.value || 'all';
+
+      let visibleCount = 0;
+
+      catalogData.forEach(item => {
+        if (search && !item.name.toLowerCase().includes(search) && !(item.category || '').toLowerCase().includes(search)) {
+          return;
+        }
+        if (category !== 'all' && item.category !== category) {
+          return;
+        }
+
+        visibleCount++;
+        const currentUnits = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors';
         tr.innerHTML = `
           <td class="p-3 font-medium text-slate-800 text-xs truncate max-w-xs" title="${item.name}">${item.name}</td>
-          <td class="p-3 text-slate-700 text-xs text-right tabular-nums">£${item.price.toFixed(2)}</td>
-          <td class="p-3 text-slate-500 text-xs text-right tabular-nums font-bold" data-theo="${currentUnits}">${currentUnits}</td>
+          <td class="p-3 text-slate-500 text-xs truncate max-w-[140px]">${item.category || 'General'}</td>
+          <td class="p-3 text-slate-700 text-xs text-right tabular-nums">£${(item.price || 0).toFixed(2)}</td>
+          <td class="p-3 text-slate-600 text-xs text-right tabular-nums font-bold" data-theo="${currentUnits}">${currentUnits}</td>
           <td class="p-3 text-right">
-            <input type="number" min="0" step="0.01" placeholder="${currentUnits}" class="audit-input w-20 px-2 py-1 text-right border border-slate-300 rounded text-xs focus:ring-1 focus:ring-[#144D37] outline-none" data-id="${item.id}" data-price="${item.price}" data-theo="${currentUnits}" oninput="calcVariance(this)">
+            <input type="number" min="0" step="0.01" placeholder="${currentUnits}" class="audit-input w-24 px-2 py-1 text-right border border-slate-300 rounded text-xs focus:ring-1 focus:ring-[#144D37] outline-none" data-id="${item.id}" data-price="${item.price || 0}" data-theo="${currentUnits}" oninput="calcVariance(this)">
           </td>
           <td class="p-3 text-slate-500 text-xs text-right tabular-nums variance-val">£0.00</td>
         `;
         auditTbody.appendChild(tr);
       });
 
-      document.getElementById('total-stock-val').textContent = '£' + totalValue.toLocaleString('en-GB', {minimumFractionDigits: 2});
+      if (visibleCount === 0) {
+        auditTbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 text-xs">No matching audit items found.</td></tr>`;
+      }
     }
 
     function calcVariance(input) {
-      const price = parseFloat(input.dataset.price);
-      const theo = parseFloat(input.dataset.theo);
+      const price = parseFloat(input.dataset.price || 0);
+      const theo = parseFloat(input.dataset.theo || 0);
       if (input.value === '') {
         input.parentElement.nextElementSibling.textContent = '£0.00';
         input.parentElement.nextElementSibling.className = 'p-3 text-slate-500 text-xs text-right tabular-nums variance-val';
@@ -321,6 +432,7 @@
       const inputs = document.querySelectorAll('.audit-input');
       const items = [];
       let totalVarianceCost = 0;
+      const stockLevels = getStockLevels();
       
       inputs.forEach(input => {
         if (input.value !== '') {
@@ -330,6 +442,9 @@
           const variance = actual - theo;
           const variance_cost = variance * price;
           totalVarianceCost += variance_cost;
+
+          // Update theoretical level directly to the new audited physical count
+          stockLevels[input.dataset.id] = actual;
 
           items.push({
             ingredient_id: input.dataset.id,
@@ -355,24 +470,25 @@
       
       const btn = document.querySelector('button[onclick="submitAudit()"]');
       const origHTML = btn.innerHTML;
-      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Finalizing...';
+      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Updating Theoretical Levels...';
       if (window.lucide) lucide.createIcons();
       btn.disabled = true;
 
-      // Save locally first
+      // 1. Persist new stock counts immediately to local state
+      saveStockLevels(stockLevels);
+
+      // 2. Persist audit log
       saveAuditToStorage(payload);
 
-      // Attempt background webhook sync without blocking UI
+      // 3. Attempt webhook sync in background
       await triggerAlaiyaWebhook('inventory.audit_completed', payload);
 
+      // 4. Immediately re-render stock monitors and audit table
+      renderStockGrid();
+      renderAuditTable();
+
       const varianceSign = totalVarianceCost > 0 ? '+' : '';
-      alert(`✅ Audit completed and saved successfully!\n\nAudited Items: ${items.length}\nNet Variance: ${varianceSign}£${totalVarianceCost.toFixed(2)}`);
-      
-      inputs.forEach(i => i.value = '');
-      document.querySelectorAll('.variance-val').forEach(td => {
-        td.textContent = '£0.00';
-        td.className = 'p-3 text-slate-500 text-xs text-right tabular-nums variance-val';
-      });
+      alert(`✅ Audit finalized and applied!\n\nTheoretical monitor levels have been updated for ${items.length} items.\nNet Variance: ${varianceSign}£${totalVarianceCost.toFixed(2)}`);
       
       btn.innerHTML = origHTML;
       btn.disabled = false;
@@ -380,22 +496,27 @@
     }
 
     function exportAuditCSV() {
-      const inputs = document.querySelectorAll('.audit-input');
+      const stockLevels = getStockLevels();
       const rows = [
-        ['Ingredient Name', 'Unit Price (£)', 'Theoretical Qty', 'Actual Count', 'Variance (Units)', 'Variance Cost (£)']
+        ['Ingredient Name', 'Category', 'Unit Price (£)', 'Theoretical Qty', 'Actual Count', 'Variance (Units)', 'Variance Cost (£)']
       ];
 
-      inputs.forEach(input => {
-        const tr = input.closest('tr');
-        const name = tr?.children[0]?.textContent?.trim() || input.dataset.id;
-        const price = parseFloat(input.dataset.price || 0);
-        const theo = parseFloat(input.dataset.theo || 0);
-        const actual = input.value !== '' ? parseFloat(input.value) : theo;
+      const inputs = document.querySelectorAll('.audit-input');
+      const inputMap = {};
+      inputs.forEach(i => {
+        if (i.value !== '') inputMap[i.dataset.id] = parseFloat(i.value);
+      });
+
+      catalogData.forEach(item => {
+        const theo = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
+        const actual = inputMap[item.id] !== undefined ? inputMap[item.id] : theo;
+        const price = parseFloat(item.price || 0);
         const variance = actual - theo;
         const varianceCost = variance * price;
 
         rows.push([
-          `"${name.replace(/"/g, '""')}"`,
+          `"${(item.name || '').replace(/"/g, '""')}"`,
+          `"${(item.category || 'General').replace(/"/g, '""')}"`,
           price.toFixed(2),
           theo.toString(),
           actual.toString(),
@@ -412,6 +533,12 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+
+    function init() {
+      populateCategories();
+      renderStockGrid();
+      renderAuditTable();
     }
 
     init();

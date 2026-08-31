@@ -294,13 +294,21 @@
         const history = JSON.parse(localStorage.getItem('ts_waste_logs') || '[]');
         history.unshift(payload);
         localStorage.setItem('ts_waste_logs', JSON.stringify(history.slice(0, 50)));
+
+        // Deduct from stock levels in real time
+        const stockLevels = JSON.parse(localStorage.getItem('ts_stock_levels') || '{}');
+        const matchedItem = catalogData.find(i => i.name === name);
+        if (matchedItem && stockLevels[matchedItem.id] !== undefined) {
+          stockLevels[matchedItem.id] = Math.max(0, parseFloat((parseFloat(stockLevels[matchedItem.id]) - qty).toFixed(2)));
+          localStorage.setItem('ts_stock_levels', JSON.stringify(stockLevels));
+        }
       } catch (err) {
         console.error("Local save error:", err);
       }
 
       await triggerAlaiyaWebhook('sop.waste_logged', payload);
       
-      alert(`✅ Waste log recorded! Estimated cost: £${estCost.toFixed(2)}.`);
+      alert(`✅ Waste log recorded and stock level depleted! Estimated cost: £${estCost.toFixed(2)}.`);
       e.target.reset();
 
       btn.innerHTML = origHTML;
