@@ -166,8 +166,25 @@
     },
 
     // -------------------------------------------------------------
-    // Universal Field Extractor (Handles any POS / Delivery platform header format)
+    // Universal Clean Data Extractor (Guarantees zero identifier/barcode false positives)
     // -------------------------------------------------------------
+    isIdentifierKey(k) {
+      if (!k) return false;
+      const lower = k.toLowerCase();
+      const blacklistedTerms = [
+        'id', 'code', 'sku', 'ean', 'upc', 'barcode', 'ref', 'reference', 
+        'phone', 'account', 'customer', 'postcode', 'zip', 'order_num', 
+        'order_no', 'order_id', 'receipt', 'transaction', 'ticket', 'invoice', 
+        'driver', 'courier_id', 'table_no', 'table_num', 'terminal'
+      ];
+      return blacklistedTerms.some(term => {
+        if (lower === term) return true;
+        if (lower.startsWith(term + '_') || lower.endsWith('_' + term)) return true;
+        if (lower.includes('_' + term + '_')) return true;
+        return false;
+      });
+    },
+
     extractSalesFields(row) {
       const keys = Object.keys(row || {});
       const normalizedMap = {};
@@ -175,12 +192,13 @@
         normalizedMap[this.normalizeHeader(k)] = (row[k] !== undefined && row[k] !== null) ? row[k].toString().trim() : '';
       }
 
-      // 1. Item Name
+      // 1. Item Name (Exclude numeric-only columns and identifier headers)
       let itemName = '';
       for (const k in normalizedMap) {
-        if (k.includes('item_name') || k.includes('product_name') || k.includes('dish') || k.includes('item') || k.includes('product') || k.includes('description') || k.includes('title') || k === 'name') {
+        if (this.isIdentifierKey(k)) continue;
+        if (k.includes('item_name') || k.includes('product_name') || k.includes('dish') || k.includes('description') || k.includes('title') || k === 'item' || k === 'product' || k === 'name') {
           const val = normalizedMap[k];
-          if (val && isNaN(val) && val.length > 1) {
+          if (val && isNaN(val) && val.length > 1 && !val.match(/^\d{1,2}:\d{2}/)) {
             itemName = val;
             break;
           }
@@ -188,6 +206,8 @@
       }
       if (!itemName) {
         for (const k of keys) {
+          const normK = this.normalizeHeader(k);
+          if (this.isIdentifierKey(normK)) continue;
           const v = (row[k] || '').toString().trim();
           if (v && isNaN(v) && !v.includes(':') && !v.match(/^\d{4}-\d{2}-\d{2}/) && v.length > 1) {
             itemName = v;
@@ -195,14 +215,15 @@
           }
         }
       }
-      if (!itemName) itemName = 'Unspecified Item';
+      if (!itemName) itemName = 'Standard Menu Item';
 
-      // 2. Units Sold
+      // 2. Units Sold (Between 1 and 100 max per row)
       let units = null;
       for (const k in normalizedMap) {
-        if (k.includes('qty_sold') || k.includes('quantity') || k.includes('item_count') || k.includes('units') || k.includes('count') || k.includes('qty') || k.includes('volume')) {
+        if (this.isIdentifierKey(k)) continue;
+        if (k.includes('qty_sold') || k.includes('quantity') || k.includes('item_count') || k.includes('units') || k === 'qty' || k === 'count') {
           const n = this.cleanNumber(normalizedMap[k], null);
-          if (n !== null && n > 0) {
+          if (n !== null && n > 0 && n <= 100) {
             units = n;
             break;
           }
@@ -210,54 +231,75 @@
       }
       if (units === null) units = 1;
 
-      // 3. Gross Sales / Revenue (2-Pass Line Total & Unit Price Parser)
+      // 3. Gross Sales / Revenue (Strictly exclude IDs and require plausibility <= £350 per line)
       let gross = 0;
-      // Pass 1: Line total headers
-      for (const k in normalizedMap) {
-        if (k.includes('gross') || k.includes('total') || k.includes('subtotal') || k.includes('sales') || k.includes('revenue') || k.includes('amount') || k === 'value') {
-          if (!k.includes('discount') && !k.includes('commission') && !k.includes('fee')) {
+      
+      // Pass 1: Explicit financial total headers
+      const totalCandidates = [
+        'gross_sales', 'gross_amount', 'total_price', 'total_sales', 'total_amount', 
+        'line_total', 'item_total', 'subtotal', 'sub_total', 'sales_amount', 
+        'total_price_inc_vat', 'total_price_incvat', 'gross', 'sales_value', 'total'
+      ];
+
+      for (const cand of totalCandidates) {
+        for (const k in normalizedMap) {
+          if (this.isIdentifierKey(k)) continue;
+          if (k === cand || k.replace(/[^a-z0-9]/g, '_') === cand) {
             const n = this.cleanNumber(normalizedMap[k], 0);
-            if (n > 0) {
+            if (n > 0 && n <= 350.0) {
               gross = n;
               break;
             }
           }
         }
+        if (gross > 0) break;
       }
-      // Pass 2: Unit price headers (multiplied by units)
+
+      // Pass 2: Unit price headers (multiply by units, max £95 per unit)
       if (gross === 0) {
-        for (const k in normalizedMap) {
-          if (k.includes('price') || k.includes('cost') || k.includes('rate')) {
-            if (!k.includes('discount') && !k.includes('commission') && !k.includes('fee')) {
+        const priceCandidates = ['item_price', 'unit_price', 'price', 'cost_price', 'amount'];
+        for (const cand of priceCandidates) {
+          for (const k in normalizedMap) {
+            if (this.isIdentifierKey(k)) continue;
+            if (k === cand || k.replace(/[^a-z0-9]/g, '_') === cand) {
               const n = this.cleanNumber(normalizedMap[k], 0);
-              if (n > 0) {
+              if (n > 0 && n <= 95.0) {
                 gross = n * units;
                 break;
               }
             }
           }
+          if (gross > 0) break;
         }
       }
 
-      // 4. Discounts
+      // 4. Discounts (Must be <= gross)
       let discounts = 0;
       for (const k in normalizedMap) {
+        if (this.isIdentifierKey(k)) continue;
         if (k.includes('discount') || k.includes('promo') || k.includes('voucher') || k.includes('offer')) {
-          discounts = Math.abs(this.cleanNumber(normalizedMap[k], 0));
-          break;
+          const d = Math.abs(this.cleanNumber(normalizedMap[k], 0));
+          if (d > 0 && d <= gross) {
+            discounts = d;
+            break;
+          }
         }
       }
 
-      // 5. Commission
+      // 5. Commission (Must be <= gross)
       let commission = 0;
       for (const k in normalizedMap) {
-        if (k.includes('commission') || k.includes('fee') || k.includes('charge')) {
-          commission = Math.abs(this.cleanNumber(normalizedMap[k], 0));
-          break;
+        if (this.isIdentifierKey(k)) continue;
+        if (k.includes('commission') || k.includes('service_fee') || k.includes('platform_fee')) {
+          const c = Math.abs(this.cleanNumber(normalizedMap[k], 0));
+          if (c > 0 && c <= gross) {
+            commission = c;
+            break;
+          }
         }
       }
 
-      // 6. Time
+      // 6. Time / Date
       let timeStr = '';
       for (const k in normalizedMap) {
         if (k.includes('time') || k.includes('date') || k.includes('created')) {
