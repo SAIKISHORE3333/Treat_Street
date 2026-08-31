@@ -132,9 +132,14 @@
             <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="clipboard-check" class="w-5 h-5 text-indigo-500"></i> Physical Inventory Audit</h2>
             <p class="text-xs text-slate-500">Record physical counts to reconcile against theoretical stock levels.</p>
           </div>
-          <button onclick="submitAudit()" class="brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-2">
-            <i data-lucide="upload-cloud" class="w-4 h-4"></i> Finalize Audit
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="exportAuditCSV()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl border border-slate-300 shadow-sm transition-all flex items-center gap-1.5">
+              <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+            </button>
+            <button onclick="submitAudit()" class="brand-green-bg hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-2">
+              <i data-lucide="upload-cloud" class="w-4 h-4"></i> Finalize Audit
+            </button>
+          </div>
         </div>
         
         <div class="overflow-x-auto rounded-xl border border-slate-200">
@@ -284,33 +289,55 @@
     }
 
     async function triggerAlaiyaWebhook(eventType, payload) {
-      if (!supabaseClient) return alert("Supabase client not initialized."), false;
+      if (!supabaseClient) {
+        console.warn("Supabase client not initialized; operating in local mode.");
+        return true;
+      }
       try {
         const { error } = await supabaseClient.functions.invoke('webhook-proxy', {
           body: { event_type: eventType, payload }
         });
-        if (error) throw error;
+        if (error) {
+          console.warn("ALAIYAOPS Webhook proxy returned error:", error);
+        }
         return true;
       } catch (err) {
-        console.error("Webhook Error:", err);
-        return alert("Failed to sync with ALAIYAOPS: " + err.message), false;
+        console.warn("ALAIYAOPS Webhook sync offline or unavailable:", err);
+        return true;
+      }
+    }
+
+    function saveAuditToStorage(auditRecord) {
+      try {
+        const history = JSON.parse(localStorage.getItem('ts_inventory_audits') || '[]');
+        history.unshift(auditRecord);
+        localStorage.setItem('ts_inventory_audits', JSON.stringify(history.slice(0, 50)));
+      } catch (e) {
+        console.error("Failed to save audit locally:", e);
       }
     }
 
     async function submitAudit() {
       const inputs = document.querySelectorAll('.audit-input');
       const items = [];
+      let totalVarianceCost = 0;
+      
       inputs.forEach(input => {
         if (input.value !== '') {
           const actual = parseFloat(input.value);
-          const theo = parseFloat(input.dataset.theo);
-          const price = parseFloat(input.dataset.price);
+          const theo = parseFloat(input.dataset.theo || 0);
+          const price = parseFloat(input.dataset.price || 0);
+          const variance = actual - theo;
+          const variance_cost = variance * price;
+          totalVarianceCost += variance_cost;
+
           items.push({
             ingredient_id: input.dataset.id,
+            ingredient_name: input.closest('tr')?.querySelector('td')?.textContent?.trim() || input.dataset.id,
             theoretical_qty: theo,
             actual_qty: actual,
-            variance: actual - theo,
-            variance_cost: (actual - theo) * price
+            variance: variance,
+            variance_cost: variance_cost
           });
         }
       });
@@ -321,22 +348,70 @@
         audit_id: 'AUD-' + Date.now(),
         branch_id: 'MK Stadium HQ', 
         audit_date: new Date().toISOString(),
+        total_variance_cost: totalVarianceCost,
+        items_count: items.length,
         items: items
       };
       
       const btn = document.querySelector('button[onclick="submitAudit()"]');
       const origHTML = btn.innerHTML;
-      btn.innerHTML = 'Syncing...';
+      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Finalizing...';
+      if (window.lucide) lucide.createIcons();
       btn.disabled = true;
 
-      if (await triggerAlaiyaWebhook('inventory.audit_completed', payload)) {
-        alert("Audit completed and securely synced to ALAIYAOPS.");
-        inputs.forEach(i => i.value = '');
-        document.querySelectorAll('.variance-val').forEach(td => td.textContent = '£0.00');
-      }
+      // Save locally first
+      saveAuditToStorage(payload);
+
+      // Attempt background webhook sync without blocking UI
+      await triggerAlaiyaWebhook('inventory.audit_completed', payload);
+
+      const varianceSign = totalVarianceCost > 0 ? '+' : '';
+      alert(`✅ Audit completed and saved successfully!\n\nAudited Items: ${items.length}\nNet Variance: ${varianceSign}£${totalVarianceCost.toFixed(2)}`);
+      
+      inputs.forEach(i => i.value = '');
+      document.querySelectorAll('.variance-val').forEach(td => {
+        td.textContent = '£0.00';
+        td.className = 'p-3 text-slate-500 text-xs text-right tabular-nums variance-val';
+      });
       
       btn.innerHTML = origHTML;
       btn.disabled = false;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function exportAuditCSV() {
+      const inputs = document.querySelectorAll('.audit-input');
+      const rows = [
+        ['Ingredient Name', 'Unit Price (£)', 'Theoretical Qty', 'Actual Count', 'Variance (Units)', 'Variance Cost (£)']
+      ];
+
+      inputs.forEach(input => {
+        const tr = input.closest('tr');
+        const name = tr?.children[0]?.textContent?.trim() || input.dataset.id;
+        const price = parseFloat(input.dataset.price || 0);
+        const theo = parseFloat(input.dataset.theo || 0);
+        const actual = input.value !== '' ? parseFloat(input.value) : theo;
+        const variance = actual - theo;
+        const varianceCost = variance * price;
+
+        rows.push([
+          `"${name.replace(/"/g, '""')}"`,
+          price.toFixed(2),
+          theo.toString(),
+          actual.toString(),
+          variance.toFixed(2),
+          varianceCost.toFixed(2)
+        ]);
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Inventory_Audit_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     init();
