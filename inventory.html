@@ -164,15 +164,20 @@
     
     <!-- FLOATING SEGMENTED TAB DOCK -->
     <div class="glass-panel p-1.5 rounded-2xl flex flex-wrap gap-1.5 items-center">
-      <button onclick="switchTab('sales-depletion')" id="tab-sales-depletion" class="nav-tab-active flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
-        <i data-lucide="layers" class="w-4 h-4"></i>
-        <span>Omnichannel Sales Depletion</span>
-        <span class="px-1.5 py-0.5 rounded-md bg-emerald-400/20 text-emerald-300 text-[10px] font-black uppercase">NEW</span>
-      </button>
-
-      <button onclick="switchTab('live-stock')" id="tab-live-stock" class="nav-tab-inactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+      <button onclick="switchTab('live-stock')" id="tab-live-stock" class="nav-tab-active flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
         <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
         <span>Live Stock Levels</span>
+      </button>
+
+      <button onclick="switchTab('purchase-orders')" id="tab-purchase-orders" class="nav-tab-inactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all relative">
+        <i data-lucide="truck" class="w-4 h-4 text-amber-400"></i>
+        <span>Purchase Orders & Deliveries</span>
+        <span id="tab-po-badge" class="hidden px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase">0</span>
+      </button>
+
+      <button onclick="switchTab('sales-depletion')" id="tab-sales-depletion" class="nav-tab-inactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+        <i data-lucide="layers" class="w-4 h-4"></i>
+        <span>Omnichannel Sales Depletion</span>
       </button>
 
       <button onclick="switchTab('audit')" id="tab-audit" class="nav-tab-inactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
@@ -187,9 +192,9 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- TAB 1: OMNICHANNEL SALES & DEPLETION -->
+    <!-- TAB 3: OMNICHANNEL SALES & DEPLETION -->
     <!-- ========================================== -->
-    <section id="section-sales-depletion" class="flex flex-col gap-6">
+    <section id="section-sales-depletion" class="hidden flex flex-col gap-6">
       
       <!-- Section Header -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
@@ -338,9 +343,9 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- TAB 2: LIVE STOCK LEVELS -->
+    <!-- TAB 1: LIVE STOCK LEVELS -->
     <!-- ========================================== -->
-    <section id="section-live-stock" class="hidden flex flex-col gap-6">
+    <section id="section-live-stock" class="flex flex-col gap-6">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h2 class="text-2xl font-bold text-white heading-font flex items-center gap-2.5">
@@ -349,7 +354,7 @@
             </span>
             Theoretical Stock Pot Monitor
           </h2>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">Real-time pot levels tracking raw ingredients. Sales depletions, kitchen waste, and audits update these theoretical levels in real time.</p>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Real-time pot levels tracking raw ingredients. Sales depletions, purchase order deliveries, kitchen waste, and audits update these theoretical levels in real time.</p>
         </div>
         <div class="glass-panel px-5 py-3 rounded-2xl text-right">
           <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Valuation</p>
@@ -370,6 +375,83 @@
 
       <!-- Stock Grid -->
       <div id="stock-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: PURCHASE ORDERS & DELIVERIES SYNC -->
+    <!-- ========================================== -->
+    <section id="section-purchase-orders" class="hidden flex flex-col gap-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white heading-font flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+              <i data-lucide="truck" class="w-5 h-5"></i>
+            </span>
+            Inbound Purchase Orders & Delivery Sync
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Directly integrated with the Purchase Portal. Mark delivered orders to automatically replenish your theoretical stock pot levels.</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <button onclick="renderPurchaseOrdersView()" class="px-3.5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i> Refresh Orders
+          </button>
+          <a href="purchase.html" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Purchase Order
+          </a>
+        </div>
+      </div>
+
+      <!-- PO Status & KPI Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Orders Placed</p>
+          <p id="po-kpi-total" class="text-3xl font-black text-white heading-font">0</p>
+          <p class="text-[11px] text-slate-400 font-medium mt-1">In order history</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Pending Deliveries</p>
+          <p id="po-kpi-pending" class="text-3xl font-black text-amber-400 heading-font">0</p>
+          <p class="text-[11px] text-amber-300/80 font-medium mt-1">Awaiting kitchen receipt</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Received & Synced</p>
+          <p id="po-kpi-received" class="text-3xl font-black text-emerald-400 heading-font">0</p>
+          <p class="text-[11px] text-emerald-300 font-medium mt-1">Pots replenished</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Inbound Order Value</p>
+          <p id="po-kpi-value" class="text-3xl font-black text-white heading-font">£0.00</p>
+          <p class="text-[11px] text-slate-400 font-medium mt-1">Total procurement spend</p>
+        </div>
+      </div>
+
+      <!-- PO Filters -->
+      <div class="glass-panel p-3.5 rounded-2xl flex flex-col sm:flex-row items-center gap-3">
+        <div class="relative flex-1 w-full">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="po-search" oninput="renderPurchaseOrdersView()" placeholder="Search PO ref, supplier, item, requester..." class="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white/10 transition-all">
+        </div>
+        <select id="po-supplier-filter" onchange="renderPurchaseOrdersView()" class="w-full sm:w-48 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-amber-500">
+          <option value="ALL">All Suppliers</option>
+        </select>
+        <select id="po-status-filter" onchange="renderPurchaseOrdersView()" class="w-full sm:w-48 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-amber-500">
+          <option value="ALL">All Statuses</option>
+          <option value="PENDING">Pending Delivery</option>
+          <option value="RECEIVED">Received & Synced</option>
+        </select>
+      </div>
+
+      <!-- PO List Container -->
+      <div id="po-list-container" class="space-y-4">
         <!-- Populated by JS -->
       </div>
     </section>
@@ -538,9 +620,27 @@
     let currentParsedFiles = [];
     let currentConsolidated = null;
 
+    // Toast notification
+    function showInventoryToast(message) {
+      let toast = document.getElementById('inventory-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'inventory-toast';
+        toast.className = 'fixed bottom-6 right-6 z-50 px-4 py-3 bg-[#0c2e22]/95 text-white text-xs font-bold rounded-2xl border border-emerald-500/40 shadow-2xl shadow-emerald-950 backdrop-blur-md flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4 text-amber-400 shrink-0"></i> <span>${message}</span>`;
+      if (window.lucide) lucide.createIcons();
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
     // Tab Switching
     function switchTab(tab) {
-      const tabs = ['sales-depletion', 'live-stock', 'audit', 'aliases-manager'];
+      const tabs = ['live-stock', 'purchase-orders', 'sales-depletion', 'audit', 'aliases-manager'];
       tabs.forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
         const sec = document.getElementById(`section-${t}`);
@@ -551,6 +651,7 @@
       });
 
       if (tab === 'live-stock') renderStockGrid();
+      else if (tab === 'purchase-orders') renderPurchaseOrdersView();
       else if (tab === 'audit') renderAuditTable();
       else if (tab === 'aliases-manager') renderAliasesTable();
       
@@ -572,6 +673,23 @@
         localStorage.setItem('ts_stock_levels', JSON.stringify(levels));
       } catch (e) {
         console.error("Failed to save stock levels:", e);
+      }
+    }
+
+    function getPurchaseOrders() {
+      try {
+        const stored = localStorage.getItem('ts_orders');
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function savePurchaseOrders(orders) {
+      try {
+        localStorage.setItem('ts_orders', JSON.stringify(orders));
+      } catch (e) {
+        console.error("Failed to save orders:", e);
       }
     }
 
@@ -1184,22 +1302,344 @@
       document.body.removeChild(link);
     }
 
+    // -------------------------------------------------------------
+    // PURCHASE ORDERS & INBOUND DELIVERIES SYNC
+    // -------------------------------------------------------------
+    function renderPurchaseOrdersView() {
+      const container = document.getElementById('po-list-container');
+      const search = (document.getElementById('po-search')?.value || '').toLowerCase().trim();
+      const supplierFilter = document.getElementById('po-supplier-filter')?.value || 'ALL';
+      const statusFilter = document.getElementById('po-status-filter')?.value || 'ALL';
+
+      const orders = getPurchaseOrders();
+
+      // Compute Global PO KPIs
+      let totalOrdersCount = orders.length;
+      let totalInboundValue = 0;
+      let pendingItemsCount = 0;
+      let receivedItemsCount = 0;
+
+      orders.forEach(o => {
+        totalInboundValue += (o.total || (o.items || []).reduce((acc, i) => acc + (i.price * i.qty), 0));
+        (o.items || []).forEach(i => {
+          if (i.stockSynced || i.trackingStatus === 'Received') {
+            receivedItemsCount++;
+          } else {
+            pendingItemsCount++;
+          }
+        });
+      });
+
+      if (document.getElementById('po-kpi-total')) document.getElementById('po-kpi-total').innerText = totalOrdersCount.toLocaleString();
+      if (document.getElementById('po-kpi-pending')) document.getElementById('po-kpi-pending').innerText = pendingItemsCount.toLocaleString();
+      if (document.getElementById('po-kpi-received')) document.getElementById('po-kpi-received').innerText = receivedItemsCount.toLocaleString();
+      if (document.getElementById('po-kpi-value')) document.getElementById('po-kpi-value').innerText = `£${totalInboundValue.toFixed(2)}`;
+
+      // Update badge on tab dock
+      const badge = document.getElementById('tab-po-badge');
+      if (badge) {
+        if (pendingItemsCount > 0) {
+          badge.classList.remove('hidden');
+          badge.innerText = pendingItemsCount;
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      if (!container) return;
+
+      // Filter orders
+      const filteredOrders = orders.filter(o => {
+        const matchesSearch = !search || 
+          (o.primaryRef && o.primaryRef.toLowerCase().includes(search)) ||
+          (o.requestedBy && o.requestedBy.toLowerCase().includes(search)) ||
+          (o.targetLocation && o.targetLocation.toLowerCase().includes(search)) ||
+          (o.items || []).some(i => (i.name && i.name.toLowerCase().includes(search)) || (i.supplier && i.supplier.toLowerCase().includes(search)));
+
+        const matchesSupplier = supplierFilter === 'ALL' || (o.items || []).some(i => i.supplier === supplierFilter);
+        
+        let matchesStatus = true;
+        if (statusFilter === 'PENDING') {
+          matchesStatus = (o.items || []).some(i => !i.stockSynced && i.trackingStatus !== 'Received');
+        } else if (statusFilter === 'RECEIVED') {
+          matchesStatus = (o.items || []).some(i => i.stockSynced || i.trackingStatus === 'Received');
+        }
+
+        return matchesSearch && matchesSupplier && matchesStatus;
+      });
+
+      if (filteredOrders.length === 0) {
+        if (orders.length === 0) {
+          container.innerHTML = `
+            <div class="glass-panel p-10 rounded-3xl text-center flex flex-col items-center justify-center">
+              <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
+                <i data-lucide="shopping-cart" class="w-8 h-8"></i>
+              </div>
+              <h3 class="font-bold text-white text-lg mb-1 heading-font">No Purchase Orders Placed Yet</h3>
+              <p class="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+                When you create supplier purchase orders in the Purchase Portal, they will appear here ready to be received and automatically synced into your theoretical stock pots.
+              </p>
+              <a href="purchase.html" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20">
+                <i data-lucide="external-link" class="w-4 h-4"></i> Open Purchase Portal
+              </a>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="glass-panel p-8 rounded-3xl text-center text-slate-400 text-xs">
+              No purchase orders match your search and filter criteria.
+            </div>
+          `;
+        }
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = filteredOrders.map(o => {
+        const suppliers = [...new Set((o.items || []).map(i => i.supplier))];
+        const allOrderReceived = (o.items || []).length > 0 && (o.items || []).every(i => i.stockSynced || i.trackingStatus === 'Received');
+
+        return `
+          <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4 border ${allOrderReceived ? 'border-emerald-500/30' : 'border-white/10'}">
+            <!-- Order Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-black text-amber-400 text-base heading-font">Ref: ${o.primaryRef}</span>
+                  <span class="text-xs text-slate-400 ml-1">${o.date || ''}</span>
+                  ${allOrderReceived ? `
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase flex items-center gap-1">
+                      <i data-lucide="check-circle" class="w-3 h-3"></i> ALL ITEMS DELIVERED & SYNCED
+                    </span>
+                  ` : `
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-black uppercase flex items-center gap-1">
+                      <i data-lucide="clock" class="w-3 h-3"></i> AWAITING DELIVERY
+                    </span>
+                  `}
+                </div>
+                <div class="text-xs text-slate-400">
+                  <span class="text-slate-300">Requested by:</span> <strong class="text-white">${o.requestedBy || 'Store Manager'}</strong> • 
+                  <span class="text-slate-300">Location:</span> <strong class="text-white">${o.targetLocation || 'MK Stadium HQ'}</strong>
+                </div>
+              </div>
+              <div class="text-left sm:text-right">
+                <span class="text-xs text-slate-400 block mb-0.5">Order Total (Gross)</span>
+                <span class="text-lg font-black text-emerald-400 heading-font">£${(o.total || (o.items || []).reduce((acc, i) => acc + (i.price * i.qty), 0)).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <!-- Suppliers Sub-sections -->
+            <div class="space-y-3">
+              ${suppliers.map(s => {
+                const supplierItems = (o.items || []).filter(i => i.supplier === s);
+                const isSupplierAllReceived = supplierItems.every(i => i.stockSynced || i.trackingStatus === 'Received');
+                const poNumber = `TSMK-${(s || 'UNKNOWN').toUpperCase().replace(/\\s+/g, '')}-${o.ddmmyy || '000000'}-${o.serial || '000'}`;
+
+                return `
+                  <div class="bg-black/20 rounded-2xl border border-white/10 overflow-hidden">
+                    <div class="p-3 bg-white/5 border-b border-white/10 flex flex-wrap justify-between items-center gap-2">
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-white text-xs uppercase tracking-wider">${s}</span>
+                        <span class="px-2 py-0.5 rounded bg-white/10 text-slate-300 font-mono text-[10px]">${poNumber}</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        ${!isSupplierAllReceived ? `
+                          <button onclick="receiveEntireSupplierPOInInventory('${o.primaryRef}', '${s}')" class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                            <i data-lucide="package-check" class="w-3.5 h-3.5"></i> Receive All from ${s} (Sync Stock)
+                          </button>
+                        ` : `
+                          <span class="text-emerald-400 text-xs font-bold flex items-center gap-1">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i> Supplier Delivered & Synced
+                          </span>
+                        `}
+                      </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                      <table class="w-full text-left text-xs">
+                        <thead class="bg-white/[0.02] text-slate-400 border-b border-white/5 text-[10px] uppercase font-bold tracking-wider">
+                          <tr>
+                            <th class="p-3">Item Description</th>
+                            <th class="p-3 text-center">Pack Size</th>
+                            <th class="p-3 text-center">Qty Ordered</th>
+                            <th class="p-3 text-center">Unit Price</th>
+                            <th class="p-3 text-center">Stock Sync Status</th>
+                            <th class="p-3 text-right">Delivery Action</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                          ${supplierItems.map(item => {
+                            const isReceived = item.stockSynced || item.trackingStatus === 'Received';
+                            const price = parseFloat(item.price || 0);
+                            return `
+                              <tr class="hover:bg-white/[0.03] transition-colors">
+                                <td class="p-3 font-semibold text-white">
+                                  ${item.name}
+                                </td>
+                                <td class="p-3 text-center text-slate-400">${item.size || 'Unit'}</td>
+                                <td class="p-3 text-center font-black text-amber-300 text-sm">${item.qty}</td>
+                                <td class="p-3 text-center text-slate-300">£${price.toFixed(2)}</td>
+                                <td class="p-3 text-center">
+                                  ${isReceived ? `
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                      <i data-lucide="check-circle" class="w-3 h-3"></i> Synced to Pots
+                                    </span>
+                                  ` : `
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                      <i data-lucide="clock" class="w-3 h-3"></i> Pending
+                                    </span>
+                                  `}
+                                </td>
+                                <td class="p-3 text-right">
+                                  ${!isReceived ? `
+                                    <button onclick="receivePOItemInInventory('${o.primaryRef}', ${item.id})" class="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition-all flex items-center gap-1 ml-auto shadow-sm">
+                                      <i data-lucide="plus" class="w-3 h-3"></i> Receive (+${item.qty})
+                                    </button>
+                                  ` : `
+                                    <button onclick="undoPOItemReceiveInInventory('${o.primaryRef}', ${item.id})" class="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-red-300 border border-white/10 rounded-xl text-[11px] font-medium transition-all inline-flex items-center gap-1">
+                                      <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Undo
+                                    </button>
+                                  `}
+                                </td>
+                              </tr>
+                            `;
+                          }).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Direct Receiving Actions
+    function receivePOItemInInventory(primaryRef, itemId) {
+      const orders = getPurchaseOrders();
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      const item = (order.items || []).find(i => i.id === itemId);
+      if (!item) return;
+
+      if (item.stockSynced) {
+        showInventoryToast(`"${item.name}" has already been received.`);
+        return;
+      }
+
+      const stockLevels = getStockLevels();
+      const qty = parseFloat(item.qty || 1);
+      const cur = parseFloat(stockLevels[item.id] || 0);
+      stockLevels[item.id] = parseFloat((cur + qty).toFixed(2));
+      saveStockLevels(stockLevels);
+
+      item.trackingStatus = 'Received';
+      item.stockSynced = true;
+      item.receivedAt = new Date().toISOString();
+      savePurchaseOrders(orders);
+
+      renderPurchaseOrdersView();
+      renderStockGrid();
+      showInventoryToast(`✅ Received: +${qty} units of "${item.name}" added to stock pots!`);
+    }
+
+    function undoPOItemReceiveInInventory(primaryRef, itemId) {
+      if (!confirm("Are you sure you want to revert this delivery? This will deduct the received quantity from live stock pots.")) return;
+      const orders = getPurchaseOrders();
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      const item = (order.items || []).find(i => i.id === itemId);
+      if (!item || !item.stockSynced) return;
+
+      const stockLevels = getStockLevels();
+      const qty = parseFloat(item.qty || 1);
+      const cur = parseFloat(stockLevels[item.id] || 0);
+      stockLevels[item.id] = Math.max(0, parseFloat((cur - qty).toFixed(2)));
+      saveStockLevels(stockLevels);
+
+      item.trackingStatus = 'Not Received';
+      item.stockSynced = false;
+      delete item.receivedAt;
+      savePurchaseOrders(orders);
+
+      renderPurchaseOrdersView();
+      renderStockGrid();
+      showInventoryToast(`ℹ️ Reverted: -${qty} units of "${item.name}" deducted from stock pots.`);
+    }
+
+    function receiveEntireSupplierPOInInventory(primaryRef, supplierName) {
+      const orders = getPurchaseOrders();
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      const stockLevels = getStockLevels();
+      let count = 0;
+      let totalQty = 0;
+
+      (order.items || []).forEach(item => {
+        if (item.supplier === supplierName && !item.stockSynced) {
+          const qty = parseFloat(item.qty || 1);
+          const cur = parseFloat(stockLevels[item.id] || 0);
+          stockLevels[item.id] = parseFloat((cur + qty).toFixed(2));
+          item.trackingStatus = 'Received';
+          item.stockSynced = true;
+          item.receivedAt = new Date().toISOString();
+          count++;
+          totalQty += qty;
+        }
+      });
+
+      if (count === 0) {
+        showInventoryToast("All items for this supplier have already been received.");
+        return;
+      }
+
+      saveStockLevels(stockLevels);
+      savePurchaseOrders(orders);
+
+      renderPurchaseOrdersView();
+      renderStockGrid();
+      showInventoryToast(`✅ Supplier PO Received: ${count} item types (+${totalQty} total units) synced to stock pots!`);
+    }
+
     function populateCategories() {
       const categories = Array.from(new Set(catalogData.map(i => i.category || 'General'))).sort();
       const stockCatSelect = document.getElementById('stock-category-filter');
       const auditCatSelect = document.getElementById('audit-category-filter');
       
       categories.forEach(cat => {
-        const opt1 = document.createElement('option');
-        opt1.value = cat;
-        opt1.textContent = cat;
-        stockCatSelect.appendChild(opt1);
+        if (stockCatSelect) {
+          const opt1 = document.createElement('option');
+          opt1.value = cat;
+          opt1.textContent = cat;
+          stockCatSelect.appendChild(opt1);
+        }
 
-        const opt2 = document.createElement('option');
-        opt2.value = cat;
-        opt2.textContent = cat;
-        auditCatSelect.appendChild(opt2);
+        if (auditCatSelect) {
+          const opt2 = document.createElement('option');
+          opt2.value = cat;
+          opt2.textContent = cat;
+          auditCatSelect.appendChild(opt2);
+        }
       });
+
+      // Populate PO Suppliers filter
+      const suppliers = Array.from(new Set(catalogData.map(i => i.supplier).filter(Boolean))).sort();
+      const poSupplierSelect = document.getElementById('po-supplier-filter');
+      if (poSupplierSelect) {
+        suppliers.forEach(sup => {
+          const opt = document.createElement('option');
+          opt.value = sup;
+          opt.textContent = sup;
+          poSupplierSelect.appendChild(opt);
+        });
+      }
     }
 
     async function init() {
@@ -1207,16 +1647,19 @@
       await loadRecipes();
       await loadAliases();
       renderStockGrid();
+      renderPurchaseOrdersView();
       renderAuditTable();
 
       // Check hash route
-      if (window.location.hash === '#sales-depletion') {
+      if (window.location.hash === '#purchase-orders') {
+        switchTab('purchase-orders');
+      } else if (window.location.hash === '#sales-depletion') {
         switchTab('sales-depletion');
       } else if (window.location.hash === '#aliases-manager') {
         switchTab('aliases-manager');
       } else if (window.location.hash === '#audit') {
         switchTab('audit');
-      } else if (window.location.hash === '#live-stock') {
+      } else {
         switchTab('live-stock');
       }
     }

@@ -181,53 +181,30 @@
         </div>
       </div>
 
-      <!-- 2. Omnichannel Sales & Depletion -->
-      <div data-category="inventory" onclick="openPasswordModal('inventory.html#sales-depletion', 'Omnichannel Sales Depletion')" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-emerald-500/30 hover:border-emerald-400">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/25 transition-all"></div>
+      <!-- 2. Stock & Inventory Control (UNIFIED) -->
+      <div data-category="inventory" onclick="openPasswordModal('inventory.html', 'Stock & Inventory Control')" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-indigo-500/40 hover:border-indigo-400 bg-gradient-to-br from-indigo-950/40 to-slate-900/60 shadow-xl">
+        <div class="absolute top-0 right-0 w-36 h-36 bg-indigo-500/15 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all"></div>
         <div class="flex items-center justify-between mb-5">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition-transform">
-            <i data-lucide="layers" class="w-6 h-6"></i>
-          </div>
-          <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-black text-[10px] uppercase tracking-wider border border-emerald-500/30">
-            DEPLETION
-          </span>
-        </div>
-        <h3 class="text-xl font-bold text-white mb-2 heading-font group-hover:text-emerald-300 transition-colors">
-          Sales Depletion
-        </h3>
-        <p class="text-slate-400 text-xs leading-relaxed mb-6">
-          Drop Deliveroo, Just Eat, Uber Eats & POS reports. Auto-match recipes and deduct ingredients across all channels with 1 click.
-        </p>
-        <div class="mt-auto pt-4 border-t border-white/5 flex items-center justify-between text-xs font-bold text-emerald-400">
-          <span>Open Matcher</span>
-          <i data-lucide="arrow-up-right" class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
-        </div>
-      </div>
-
-      <!-- 3. Stock & Theoretical Inventory -->
-      <div data-category="inventory" onclick="openPasswordModal('inventory.html', 'Live Stock Dashboard')" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
-        <div class="flex items-center justify-between mb-5">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-400 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-110 transition-transform">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-blue-500 to-teal-400 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-110 transition-transform">
             <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
           </div>
-          <span class="text-slate-500 group-hover:text-indigo-400 transition-colors">
-            <i data-lucide="lock" class="w-4 h-4"></i>
+          <span class="px-2.5 py-0.5 rounded-full bg-indigo-400/20 text-indigo-300 font-black text-[10px] uppercase tracking-wider border border-indigo-500/30">
+            CORE INVENTORY
           </span>
         </div>
         <h3 class="text-xl font-bold text-white mb-2 heading-font group-hover:text-indigo-300 transition-colors">
-          Stock Dashboard
+          Stock & Inventory Control
         </h3>
         <p class="text-slate-400 text-xs leading-relaxed mb-6">
-          Real-time theoretical ingredient tracking, liquid pot monitors, valuation, and physical month-end variance audits.
+          Real-time theoretical stock pot tracking, omnichannel sales depletion & recipe matcher, purchase order receiving sync, and month-end audits.
         </p>
         <div class="mt-auto pt-4 border-t border-white/5 flex items-center justify-between text-xs font-bold text-indigo-400">
-          <span>Monitor Pots</span>
+          <span>Manage Stock & PO Sync</span>
           <i data-lucide="arrow-up-right" class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
         </div>
       </div>
 
-      <!-- 4. Purchase Orders Portal -->
+      <!-- 3. Purchase Orders Portal -->
       <div data-category="inventory" onclick="openPasswordModal('purchase.html', 'Purchase Orders Portal')" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer">
         <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all"></div>
         <div class="flex items-center justify-between mb-5">
@@ -242,7 +219,7 @@
           Purchase Orders
         </h3>
         <p class="text-slate-400 text-xs leading-relaxed mb-6">
-          Browse ingredient catalog, add items to cart, auto-generate official supplier PDF orders, and sync with ALAIYA.
+          Browse ingredient catalog, add items to cart, auto-generate official supplier PDF orders, and track supplier fulfillment.
         </p>
         <div class="mt-auto pt-4 border-t border-white/5 flex items-center justify-between text-xs font-bold text-amber-400">
           <span>Order Stock</span>
@@ -250,7 +227,7 @@
         </div>
       </div>
 
-      <!-- 5. Internal SOPs & Recipe Manager -->
+      <!-- 4. Internal SOPs & Recipe Manager -->
       <div data-category="kitchen" onclick="openPasswordModal('SOP.html', 'Internal SOPs & Recipe System')" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer">
         <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl group-hover:bg-teal-500/20 transition-all"></div>
         <div class="flex items-center justify-between mb-5">
@@ -273,7 +250,7 @@
         </div>
       </div>
 
-      <!-- 6. Kitchen Operations (Waste & Production) -->
+      <!-- 5. Kitchen Operations (Waste & Production) -->
       <div data-category="kitchen" onclick="openPasswordModal('kitchen_ops.html', 'Kitchen Ops')" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer">
         <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all"></div>
         <div class="flex items-center justify-between mb-5">

@@ -874,56 +874,56 @@
       return `${dd}${mm}${yy}`;
     }
 
-    // INITIAL SAMPLE DATASET (16 ORDERS FOR 15-ORDER PAGINATION DEMO)
-    function generateInitialSampleOrders() {
-      const ddmmyy = getDDMMYY();
-      const locations = ['MILTON KEYNES', 'LONDON', 'MANCHESTER', 'BIRMINGHAM'];
-      const requesters = ['SAI KISHORE (MANAGER)', 'ALIA (PROCUREMENT)', 'DAVID (STORE MGR)', 'SARAH (OPERATIONS)'];
-      const statuses = ['Not Received', 'Partially Received', 'Received'];
-
-      const initialOrders = [];
-      const now = Date.now();
-
-      for (let i = 1; i <= 16; i++) {
-        const serialNum = String(17 - i).padStart(3, '0');
-        const primaryRef = `TSMK-MULTI-${ddmmyy}-${serialNum}`;
-        const location = locations[i % locations.length];
-        const requester = requesters[i % requesters.length];
-        const timestamp = now - (i * 3600000);
-        const dateStr = new Date(timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        const supplierItems = [
-          { ...catalog[(i * 3) % catalog.length], qty: (i % 4) + 1, trackingStatus: statuses[i % 3] },
-          { ...catalog[(i * 5 + 1) % catalog.length], qty: (i % 3) + 1, trackingStatus: statuses[(i + 1) % 3] }
-        ];
-
-        const total = supplierItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
-
-        initialOrders.push({
-          primaryRef,
-          ddmmyy,
-          serial: serialNum,
-          timestamp,
-          date: dateStr,
-          requestedBy: requester,
-          targetLocation: location,
-          items: supplierItems,
-          total,
-          supabaseUrls: {}
-        });
-      }
-      return initialOrders;
-    }
-
+    // REAL DATA STORAGE & STOCK SYNCHRONIZATION
     let storedOrders = localStorage.getItem('ts_orders');
-    if (storedOrders) {
-      orders = JSON.parse(storedOrders);
-    } else {
-      orders = generateInitialSampleOrders();
-    }
+    orders = storedOrders ? JSON.parse(storedOrders) : [];
     
     function saveOrdersToStorage() {
       localStorage.setItem('ts_orders', JSON.stringify(orders));
+    }
+
+    // Direct bidirectional sync with Stock & Inventory Control
+    function getStockLevels() {
+      try {
+        const stored = localStorage.getItem('ts_stock_levels');
+        return stored ? JSON.parse(stored) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveStockLevels(levels) {
+      try {
+        localStorage.setItem('ts_stock_levels', JSON.stringify(levels));
+      } catch (e) {
+        console.error("Failed to save stock levels:", e);
+      }
+    }
+
+    function syncItemStockOnReceive(item, isReceiving) {
+      const stockLevels = getStockLevels();
+      const itemId = String(item.id);
+      const qty = parseFloat(item.qty || 1);
+      const currentQty = parseFloat(stockLevels[itemId] || 0);
+
+      if (isReceiving) {
+        if (!item.stockSynced) {
+          stockLevels[itemId] = parseFloat((currentQty + qty).toFixed(2));
+          item.stockSynced = true;
+          item.receivedAt = new Date().toISOString();
+          saveStockLevels(stockLevels);
+          return { adjusted: true, change: +qty, name: item.name };
+        }
+      } else {
+        if (item.stockSynced) {
+          stockLevels[itemId] = Math.max(0, parseFloat((currentQty - qty).toFixed(2)));
+          item.stockSynced = false;
+          delete item.receivedAt;
+          saveStockLevels(stockLevels);
+          return { adjusted: true, change: -qty, name: item.name };
+        }
+      }
+      return { adjusted: false };
     }
 
     async function confirmAndSubmitOrder(e) {
@@ -953,7 +953,7 @@
         date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         requestedBy: requesterName,
         targetLocation: targetLocation,
-        items: cart.map(i => ({ ...i, trackingStatus: 'Pending', vatRate: i.vatRate !== undefined ? i.vatRate : 20 })),
+        items: cart.map(i => ({ ...i, trackingStatus: 'Pending', stockSynced: false, vatRate: i.vatRate !== undefined ? i.vatRate : 20 })),
         netTotal: netTotal,
         vatTotal: vatTotal,
         overriddenVat: overriddenVat,
@@ -983,7 +983,7 @@
       document.getElementById('order-user-branch').value = '';
       closeOrderDetailsModal();
 
-      alert(`Order submitted successfully! ${uniqueSuppliers.length} Purchase Order(s) generated and uploaded to Supabase Storage.`);
+      alert(`Order submitted successfully! ${uniqueSuppliers.length} Purchase Order(s) generated and stored.`);
     }
 
     function updateItemTrackingStatus(primaryRef, itemId, newStatus) {
@@ -992,10 +992,47 @@
 
       const item = order.items.find(i => i.id === itemId);
       if (item) {
+        const oldStatus = item.trackingStatus;
         item.trackingStatus = newStatus;
+
+        if (newStatus === 'Received') {
+          const res = syncItemStockOnReceive(item, true);
+          if (res.adjusted) {
+            showToast(`✅ Stock updated: +${res.change} units for "${res.name}" synced to Stock & Inventory Control!`);
+          }
+        } else if (oldStatus === 'Received' && newStatus !== 'Received') {
+          const res = syncItemStockOnReceive(item, false);
+          if (res.adjusted) {
+            showToast(`ℹ️ Stock adjusted: ${res.change} units for "${res.name}" in Stock & Inventory Control.`);
+          }
+        }
+
         saveOrdersToStorage();
         filterAndRenderAdminOrders();
       }
+    }
+
+    function receiveSupplierPO(primaryRef, supplierName) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      let totalAdded = 0;
+      let itemsCount = 0;
+
+      order.items.forEach(item => {
+        if (item.supplier === supplierName) {
+          item.trackingStatus = 'Received';
+          const res = syncItemStockOnReceive(item, true);
+          if (res.adjusted) {
+            totalAdded += res.change;
+            itemsCount++;
+          }
+        }
+      });
+
+      saveOrdersToStorage();
+      filterAndRenderAdminOrders();
+      showToast(`✅ Received PO for ${supplierName}: ${itemsCount} items synced to Stock & Inventory Control!`);
     }
 
     // ADMIN SORTING & FILTERING LOGIC
@@ -1135,6 +1172,11 @@
                       <span>SUPPLIER: ${s.toUpperCase()}</span>
                       <div class="flex items-center gap-2">
                         <span class="bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded text-[10px]">PO: ${poNumber}</span>
+                        ${supplierItems.every(i => i.trackingStatus === 'Received') ? `
+                          <span class="bg-emerald-500 text-slate-950 font-black px-2 py-0.5 rounded text-[10px] flex items-center gap-1 shadow-sm">
+                            <i data-lucide="check" class="w-3 h-3"></i> DELIVERED & SYNCED
+                          </span>
+                        ` : ''}
                       </div>
                     </div>
 
@@ -1148,7 +1190,7 @@
                             <th class="p-2 text-center">VAT</th>
                             <th class="p-2 text-center">Qty</th>
                             <th class="p-2 text-right">Gross Subtotal</th>
-                            ${isAdminUnlocked ? `<th class="p-2 text-center">Tracking</th>` : ''}
+                            ${isAdminUnlocked ? `<th class="p-2 text-center">Tracking & Stock Sync</th>` : ''}
                           </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -1159,7 +1201,10 @@
                             const grossPrice = i.price + vatAmount;
                             return `
                               <tr>
-                                <td class="p-2 font-medium text-slate-800">${i.name}</td>
+                                <td class="p-2 font-medium text-slate-800">
+                                  ${i.name}
+                                  ${i.stockSynced ? `<span class="inline-block ml-1.5 px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">⚡ Synced to Pots</span>` : ''}
+                                </td>
                                 <td class="p-2 text-center text-slate-500">${i.size || 'N/A'}</td>
                                 <td class="p-2 text-center text-slate-600">£${i.price.toFixed(2)}</td>
                                 <td class="p-2 text-center text-slate-500 text-[10px]">£${vatAmount.toFixed(2)} (${vatRate}%)</td>
@@ -1169,11 +1214,11 @@
                                   <td class="p-2 text-center">
                                     <select 
                                       onchange="updateItemTrackingStatus('${o.primaryRef}', ${i.id}, this.value)"
-                                      class="px-2 py-1 text-[11px] font-bold rounded border bg-slate-50 text-slate-700 border-slate-300 focus:outline-none cursor-pointer">
+                                      class="px-2 py-1 text-[11px] font-bold rounded border ${status === 'Received' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-slate-50 text-slate-700 border-slate-300'} focus:outline-none cursor-pointer">
                                       <option value="Pending" ${status === 'Pending' ? 'selected' : ''} disabled hidden>Pending</option>
                                       <option value="Not Received" ${status === 'Not Received' ? 'selected' : ''}>Not Received</option>
                                       <option value="Partially Received" ${status === 'Partially Received' ? 'selected' : ''}>Partially Received</option>
-                                      <option value="Received" ${status === 'Received' ? 'selected' : ''}>Received</option>
+                                      <option value="Received" ${status === 'Received' ? 'selected' : ''}>Received (Sync)</option>
                                     </select>
                                   </td>
                                 ` : ''}
@@ -1191,6 +1236,11 @@
                                 class="px-2.5 py-1 ${hasStatusChanged ? 'bg-slate-900 hover:bg-slate-800' : 'bg-slate-300 cursor-not-allowed'} text-white rounded text-xs font-bold flex items-center gap-1 transition-colors">
                           <i data-lucide="download" class="w-3 h-3"></i> Download PO PDF
                         </button>
+                        ${isAdminUnlocked && !supplierItems.every(i => i.trackingStatus === 'Received') ? `
+                          <button onclick="receiveSupplierPO('${o.primaryRef}', '${s}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors shadow-sm">
+                            <i data-lucide="check-circle" class="w-3 h-3"></i> Receive PO (Sync Stock)
+                          </button>
+                        ` : ''}
                       </div>
                       <div class="text-right">
                         <div class="text-[10px] text-slate-500 font-bold mb-0.5">Net: £${supplierTotalNet.toFixed(2)} | VAT: £${supplierTotalVat.toFixed(2)}</div>
