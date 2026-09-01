@@ -3,171 +3,606 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kitchen Operations - Treat Street</title>
+  <title>Kitchen Operations & Production Batches - Treat Street</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="catalog.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .watermark-bg {
-      background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-      background-size: 20px 20px;
+    :root {
+      --brand-primary: #0f3d2e;
+      --brand-accent: #10b981;
+      --brand-amber: #f59e0b;
+      --brand-rose: #f43f5e;
     }
-    .watermark-text {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-25deg);
-      font-size: 11vw; font-weight: 900; color: rgba(245, 158, 11, 0.03); /* Amber watermark */
-      pointer-events: none; user-select: none; z-index: 0; white-space: nowrap; text-align: center; line-height: 1;
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    h1, h2, h3, h4, .heading-font { font-family: 'Outfit', sans-serif; }
+
+    /* Ambient Mesh Gradient Background */
+    .ambient-bg {
+      background-color: #0c1c15;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(245, 158, 11, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(244, 63, 94, 0.1) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(15, 61, 46, 0.35) 0px, transparent 50%);
+      background-attachment: fixed;
     }
-    .brand-amber-bg { background-color: #d97706; }
-    
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #fef3c7; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb { background: #fbbf24; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
-    
+
+    /* Glass Panels */
     .glass-panel {
-      background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 8px 32px 0 rgba(217, 119, 6, 0.05);
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
     }
-    
-    .hover-scale { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .hover-scale:hover { transform: translateY(-2px); box-shadow: 0 12px 25px -5px rgba(217, 119, 6, 0.1), 0 8px 10px -6px rgba(217, 119, 6, 0.1); }
-    
-    .animated-bg {
-      background: linear-gradient(120deg, #fffbeb, #fef3c7, #fde68a);
-      background-size: 200% 200%;
-      animation: gradientMove 8s ease infinite;
+    .glass-card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-    
-    button { transition: all 0.2s ease; }
-    button:active { transform: scale(0.97); }
-    
-    .tab-active { border-bottom: 2px solid #d97706; color: #d97706; font-weight: 700; }
-    .tab-inactive { color: #92400e; font-weight: 500; border-bottom: 2px solid transparent; }
-    .tab-inactive:hover { color: #b45309; }
+    .glass-card-hover:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(245, 158, 11, 0.3);
+      box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.15);
+    }
+
+    .glass-nav-dock {
+      background: rgba(12, 28, 21, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+    ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.25); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.45); }
+
+    /* Segmented Tab Dock */
+    .nav-tab-active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(217, 119, 6, 0.2));
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      box-shadow: 0 4px 15px -3px rgba(245, 158, 11, 0.3);
+      font-weight: 700;
+    }
+    .nav-tab-inactive {
+      background: transparent;
+      color: #94a3b8;
+      border: 1px solid transparent;
+      font-weight: 500;
+    }
+    .nav-tab-inactive:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+    }
+
+    /* Filter pills */
+    .pill-active {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.5);
+      font-weight: 700;
+    }
+    .pill-inactive {
+      background: rgba(255, 255, 255, 0.04);
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .pill-inactive:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+    }
+
+    /* Label Print Styling */
+    @media print {
+      body * { visibility: hidden; }
+      #printable-label, #printable-label * { visibility: visible; }
+      #printable-label {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100mm;
+        height: 65mm;
+        margin: 0;
+        padding: 8mm;
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: 2px solid #000000 !important;
+      }
+    }
   </style>
 </head>
-<body class="bg-amber-50 text-slate-800 watermark-bg min-h-screen font-sans relative animated-bg">
+<body class="ambient-bg text-slate-100 min-h-screen flex flex-col justify-between relative selection:bg-amber-500 selection:text-slate-950">
 
-  <div class="watermark-text">TREAT STREET<br/><span class="text-[0.6em] tracking-wider">KITCHEN</span></div>
-
-  <div class="relative z-10 flex flex-col min-h-screen">
-    <header class="brand-amber-bg text-white sticky top-0 z-30 shadow-md">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        <div class="flex items-center gap-3">
-          <div class="bg-white text-[#d97706] px-2.5 py-1 rounded-lg shadow-inner font-black text-xl">TS</div>
-          <div>
-            <h1 class="font-extrabold text-base tracking-wide flex items-center gap-2">
-              Treat Street <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase">Kitchen Ops</span>
-            </h1>
-            <p class="text-[11px] text-amber-200">Production & Waste Logging</p>
-          </div>
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-40 border-b border-white/10 glass-nav-dock">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3.5">
+        <a href="index.html" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-emerald-400 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-amber-500/20 heading-font hover:scale-105 transition-transform">
+          TS
+        </a>
+        <div>
+          <h1 class="text-base font-extrabold tracking-wide text-white flex items-center gap-2">
+            Kitchen Operations & Production <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">HACCP Pro</span>
+          </h1>
+          <p class="text-[11px] text-amber-400/80 font-medium">SOP Synced Batch Planner, Food Safety & Depletions</p>
         </div>
-        <a href="index.html" class="px-3 py-1.5 bg-amber-800 hover:bg-amber-900 rounded-lg text-xs font-bold transition-colors flex items-center gap-2">
+      </div>
+
+      <!-- Hub & SOP Quick Nav -->
+      <div class="flex items-center gap-3">
+        <a href="SOP.html" class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold transition-all shadow-sm">
+          <i data-lucide="file-text" class="w-3.5 h-3.5 text-teal-400"></i> Open SOPs
+        </a>
+        <a href="inventory.html" class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold transition-all shadow-sm">
+          <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-400"></i> Stock Pots
+        </a>
+        <a href="index.html" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all flex items-center gap-2 shadow-md shadow-amber-500/20">
           <i data-lucide="home" class="w-4 h-4"></i> Hub
         </a>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 relative z-10">
+    
+    <!-- FLOATING SEGMENTED TAB DOCK -->
+    <div class="glass-panel p-1.5 rounded-2xl flex flex-wrap gap-1.5 items-center">
+      <button onclick="switchTab('production')" id="tab-production" class="nav-tab-active flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+        <i data-lucide="chef-hat" class="w-4 h-4"></i>
+        <span>Log Production Batches</span>
+      </button>
+
+      <button onclick="switchTab('batch-history')" id="tab-batch-history" class="nav-tab-inactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all relative">
+        <i data-lucide="history" class="w-4 h-4"></i>
+        <span>Batch History & Traceability</span>
+        <span id="tab-batch-badge" class="hidden px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-300 text-[10px] font-black">0</span>
+      </button>
+
+      <button onclick="switchTab('waste')" id="tab-waste" class="nav-tab-inactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+        <span>Log Waste & Spoilage</span>
+      </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 1: LOG PRODUCTION & PREP BATCHES -->
+    <!-- ========================================== -->
+    <section id="section-production" class="flex flex-col gap-6">
       
-      <div class="flex gap-4 border-b border-amber-200">
-        <button onclick="switchTab('production')" id="tab-production" class="tab-active pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="chef-hat" class="w-4 h-4"></i> Log Production</button>
-        <button onclick="switchTab('waste')" id="tab-waste" class="tab-inactive pb-3 px-4 text-sm flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> Log Waste</button>
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white heading-font flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+              <i data-lucide="chef-hat" class="w-5 h-5"></i>
+            </span>
+            SOP-Integrated Production Batch Planner
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Select any Sub-Recipe (prep batch) or Main Recipe from your SOP portal. Raw ingredient quantities scale dynamically and automatically deplete from live stock pots.</p>
+        </div>
+        <button onclick="syncSOPRecipes()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 transition-all flex items-center gap-2">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-amber-400"></i> Sync from SOP Portal
+        </button>
       </div>
 
-      <!-- PRODUCTION TAB -->
-      <section id="section-production" class="glass-panel p-6 rounded-2xl hover-scale">
-        <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="chef-hat" class="w-5 h-5 text-amber-600"></i> Log Daily Production</h2>
-        <p class="text-xs text-slate-500 mb-6">Log batches of recipes you've produced. This deducts raw ingredients from virtual stock.</p>
+      <!-- Main Production Form Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <form id="prod-form" onsubmit="submitProduction(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Branch</label>
-            <select id="prod-branch" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-              <option value="MK Stadium HQ">MK Stadium HQ</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Recipe Made</label>
-            <select id="prod-recipe" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-              <option value="">Select Recipe...</option>
-              <option value="Signature Cookie Dough">Signature Cookie Dough</option>
-              <option value="Mac & Cheese Base">Mac & Cheese Base</option>
-              <option value="Chocolate Brownie Batter">Chocolate Brownie Batter</option>
-              <option value="Vanilla Frosting">Vanilla Frosting</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Batches Produced</label>
-            <input type="number" id="prod-qty" min="1" step="1" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none" placeholder="e.g. 2">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Expiry / Use-By Date</label>
-            <input type="date" id="prod-expiry" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Staff Name (Optional)</label>
-            <input type="text" id="prod-staff" class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Who made this?">
-          </div>
-          <div class="md:col-span-2">
-            <button type="submit" class="w-full brand-amber-bg hover:bg-amber-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
-              <i data-lucide="send" class="w-4 h-4"></i> Log Production Batch
-            </button>
-          </div>
-        </form>
-      </section>
+        <!-- Left 7 cols: Recipe Selection & Batch Sizing -->
+        <div class="lg:col-span-7 space-y-5">
+          
+          <!-- Step 1: Filter & Recipe Selection Box -->
+          <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black flex items-center justify-center">1</span>
+                Select Production Target
+              </span>
+              <!-- Recipe Type Filter Pills -->
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="filterRecipeType('ALL')" id="filter-recipe-all" class="pill-active px-3 py-1 rounded-lg text-[11px] border transition-all">All</button>
+                <button type="button" onclick="filterRecipeType('Sub-Recipe')" id="filter-recipe-sub" class="pill-inactive px-3 py-1 rounded-lg text-[11px] border transition-all flex items-center gap-1">
+                  <i data-lucide="layers" class="w-3 h-3 text-teal-400"></i> Sub-Recipes (Prep)
+                </button>
+                <button type="button" onclick="filterRecipeType('Main Recipe')" id="filter-recipe-main" class="pill-inactive px-3 py-1 rounded-lg text-[11px] border transition-all">Main Recipes</button>
+              </div>
+            </div>
 
-      <!-- WASTE LOGGING TAB -->
-      <section id="section-waste" class="glass-panel p-6 rounded-2xl hidden hover-scale">
-        <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i> Log Waste / Spoilage</h2>
-        <p class="text-xs text-slate-500 mb-6">Record any dropped, spoiled, or written-off items to keep financial variance accurate.</p>
-        
-        <form id="waste-form" onsubmit="submitWaste(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Branch</label>
-            <select id="waste-branch" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-              <option value="MK Stadium HQ">MK Stadium HQ</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Ingredient / Item</label>
-            <select id="waste-ingredient" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-              <option value="">Select Item...</option>
-              <!-- Populated by JS -->
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Quantity Wasted</label>
-            <input type="number" id="waste-qty" step="0.01" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none" placeholder="e.g. 2.5">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Expiry Date of Item (Optional)</label>
-            <input type="date" id="waste-expiry" class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Reason</label>
-            <select id="waste-reason" required class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-              <option value="Spoilage">Spoilage</option>
-              <option value="Dropped/Spilled">Dropped / Spilled</option>
-              <option value="Expired">Expired (Past Date)</option>
-              <option value="Over-prep">Over-prep</option>
-              <option value="Quality Issue">Quality Issue</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="md:col-span-2">
-            <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
-              <i data-lucide="alert-triangle" class="w-4 h-4"></i> Submit Waste Report
-            </button>
-          </div>
-        </form>
-      </section>
+            <!-- Recipe Dropdown -->
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">Choose Recipe / Sub-Recipe from SOP</label>
+              <select id="prod-recipe-select" onchange="handleRecipeSelected()" class="w-full px-4 py-3 bg-[#0c2e22] border border-white/15 rounded-2xl text-xs sm:text-sm text-white font-medium focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
+                <option value="">-- Choose Sub-Recipe or Finished Recipe --</option>
+                <!-- Populated by JS -->
+              </select>
+            </div>
 
-    </main>
+            <!-- Selected Recipe Summary Card -->
+            <div id="recipe-meta-card" class="hidden p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h4 id="meta-recipe-title" class="font-bold text-white text-base heading-font">Recipe Title</h4>
+                  <p id="meta-recipe-station" class="text-xs text-slate-400">Station: Bakery Prep</p>
+                </div>
+                <span id="meta-recipe-badge" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                  Sub-Recipe
+                </span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-white/5 text-xs">
+                <div>
+                  <span class="text-[10px] text-slate-400 uppercase font-bold block">Base Yield</span>
+                  <span id="meta-recipe-yield" class="font-black text-amber-300">1 Batch</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-400 uppercase font-bold block">Shelf Life</span>
+                  <span id="meta-recipe-shelflife" class="font-bold text-slate-200">3 Days</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-400 uppercase font-bold block">Prep Time</span>
+                  <span id="meta-recipe-preptime" class="font-bold text-slate-200">15 min</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-400 uppercase font-bold block">Base Cost</span>
+                  <span id="meta-recipe-cost" class="font-bold text-emerald-400">£0.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Batch Sizing & Multiplier -->
+          <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4">
+            <span class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black flex items-center justify-center">2</span>
+              Batch Sizing & Production Multiplier
+            </span>
+
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Number of Batches to Produce</label>
+                <div class="flex items-center gap-2">
+                  <button type="button" onclick="adjustBatchQty(-1)" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-lg flex items-center justify-center transition-all">-</button>
+                  <input type="number" id="prod-batch-qty" min="0.1" step="0.5" value="1" oninput="recalculateIngredientScaling()" class="w-24 px-3 py-2 bg-[#0c2e22] border border-white/15 rounded-xl text-center text-sm font-black text-white focus:ring-2 focus:ring-amber-500 outline-none">
+                  <button type="button" onclick="adjustBatchQty(1)" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-lg flex items-center justify-center transition-all">+</button>
+                </div>
+              </div>
+
+              <!-- Quick Multiplier Chips -->
+              <div class="space-y-1.5">
+                <span class="text-[10px] font-bold text-slate-400 uppercase block">Quick Multipliers:</span>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="setBatchQty(0.5)" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 font-bold">0.5x</button>
+                  <button type="button" onclick="setBatchQty(1)" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-xs text-amber-300 font-bold">1x</button>
+                  <button type="button" onclick="setBatchQty(2)" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 font-bold">2x</button>
+                  <button type="button" onclick="setBatchQty(3)" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 font-bold">3x</button>
+                  <button type="button" onclick="setBatchQty(5)" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 font-bold">5x</button>
+                  <button type="button" onclick="setBatchQty(10)" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 font-bold">10x</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Scaled Yield & Production Value Output -->
+            <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between text-xs">
+              <div>
+                <span class="text-[10px] text-amber-300 font-bold uppercase tracking-wider block">Estimated Total Output:</span>
+                <span id="scaled-yield-output" class="font-extrabold text-white text-sm">Select a recipe...</span>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-amber-300 font-bold uppercase tracking-wider block">Calculated Batch Cost:</span>
+                <span id="scaled-cost-output" class="font-black text-emerald-400 text-sm">£0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Scaled Raw Ingredient Breakdown -->
+          <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black flex items-center justify-center">3</span>
+                Scaled Ingredients & Live Stock Pot Check
+              </span>
+              <span id="ingredients-count-badge" class="text-[10px] text-slate-400 font-bold">0 ingredients</span>
+            </div>
+
+            <div id="scaled-ingredients-container" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              <p class="text-xs text-slate-400 text-center py-6">Select a recipe above to view scaled ingredients.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right 5 cols: Commercial HACCP, Safety Checks & Submission -->
+        <div class="lg:col-span-5 space-y-5">
+          
+          <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4">
+            <span class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black flex items-center justify-center">4</span>
+              HACCP, Quality & Traceability Controls
+            </span>
+
+            <form id="prod-submit-form" onsubmit="submitProductionBatch(event)" class="space-y-4 text-xs">
+              
+              <!-- Auto Generated Batch Code -->
+              <div>
+                <label class="block font-bold text-slate-300 mb-1">Batch / Lot Code (Traceability)</label>
+                <div class="flex items-center gap-2">
+                  <input type="text" id="prod-batch-code" required class="flex-1 px-3.5 py-2.5 bg-black/40 border border-white/15 rounded-xl font-mono text-xs font-black text-amber-300 outline-none focus:ring-2 focus:ring-amber-500">
+                  <button type="button" onclick="generateNewBatchCode()" title="Regenerate Code" class="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 text-slate-300">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Branch & Chef -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Branch / Kitchen</label>
+                  <select id="prod-branch" required class="w-full px-3 py-2 bg-[#0c2e22] border border-white/15 rounded-xl text-white font-medium outline-none">
+                    <option value="MK Stadium HQ">MK Stadium HQ</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Prepared By (Chef/Staff)</label>
+                  <input type="text" id="prod-staff" required placeholder="e.g. Sai / Chef Dave" class="w-full px-3 py-2 bg-white/5 border border-white/15 rounded-xl text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+              </div>
+
+              <!-- Dates: Production Date & Auto Best Before -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Production Date</label>
+                  <input type="date" id="prod-prep-date" required onchange="calculateUseByDate()" class="w-full px-3 py-2 bg-[#0c2e22] border border-white/15 rounded-xl text-white outline-none">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Use-By / Expiry Date</label>
+                  <input type="date" id="prod-useby-date" required class="w-full px-3 py-2 bg-[#0c2e22] border border-white/15 rounded-xl text-white font-bold outline-none">
+                </div>
+              </div>
+
+              <!-- CCP Temperature & Storage -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Core / Prep Temp (°C)</label>
+                  <input type="number" step="0.1" id="prod-temp" placeholder="e.g. 4.5 or 75.0" class="w-full px-3 py-2 bg-white/5 border border-white/15 rounded-xl text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Storage Condition</label>
+                  <select id="prod-storage" class="w-full px-3 py-2 bg-[#0c2e22] border border-white/15 rounded-xl text-white outline-none">
+                    <option value="Refrigerated (< 5°C)">Refrigerated (&lt; 5°C)</option>
+                    <option value="Ambient / Dry Store">Ambient / Dry Store</option>
+                    <option value="Frozen (< -18°C)">Frozen (&lt; -18°C)</option>
+                    <option value="Hot Hold (> 63°C)">Hot Hold (&gt; 63°C)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- CCP Checkbox -->
+              <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="prod-ccp-check" required class="w-4 h-4 rounded bg-[#0c2e22] border-white/20 text-amber-500 focus:ring-0">
+                  <span class="text-slate-200 font-bold">HACCP & Hygiene Compliance Confirmed</span>
+                </label>
+                <p class="text-[10px] text-slate-400 pl-6">Verified clean equipment, allergen segregation, and temperature specs.</p>
+              </div>
+
+              <!-- Submit & Deduct Button -->
+              <button type="submit" id="btn-submit-batch" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400 hover:from-amber-400 hover:to-emerald-300 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i> Log Production & Deduct Stock Pots
+              </button>
+
+            </form>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: BATCH HISTORY & TRACEABILITY -->
+    <!-- ========================================== -->
+    <section id="section-batch-history" class="hidden flex flex-col gap-6">
+      
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white heading-font flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-teal-500/20 border border-teal-500/30 text-teal-400 flex items-center justify-center">
+              <i data-lucide="history" class="w-5 h-5"></i>
+            </span>
+            Batch Traceability & Production History
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Audit log of all prepared batches. Revert batches to restore stock pots or print food prep stickers for kitchen tubs.</p>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="glass-panel p-3.5 rounded-2xl flex flex-col sm:flex-row items-center gap-3">
+        <div class="relative flex-1 w-full">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="history-search" oninput="renderBatchHistory()" placeholder="Search batch code, recipe name, chef..." class="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white/10 transition-all">
+        </div>
+        <select id="history-type-filter" onchange="renderBatchHistory()" class="w-full sm:w-48 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-amber-500">
+          <option value="ALL">All Types</option>
+          <option value="Sub-Recipe">Sub-Recipes Only</option>
+          <option value="Main Recipe">Main Recipes Only</option>
+        </select>
+      </div>
+
+      <!-- History Container -->
+      <div id="batch-history-container" class="space-y-3">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: WASTE & SPOILAGE LOG -->
+    <!-- ========================================== -->
+    <section id="section-waste" class="hidden flex flex-col gap-6">
+      
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white heading-font flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 flex items-center justify-center">
+              <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </span>
+            Kitchen Waste & Spoilage Log
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Record dropped ingredients, expired prep, or quality write-offs to maintain financial variance accuracy.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Waste Form -->
+        <div class="lg:col-span-5 glass-panel p-5 sm:p-6 rounded-3xl space-y-4">
+          <span class="text-xs font-black uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i> Record Waste Entry
+          </span>
+
+          <form id="waste-form" onsubmit="submitWaste(event)" class="space-y-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Ingredient / Item</label>
+              <select id="waste-ingredient" required onchange="handleWasteIngredientChange()" class="w-full px-3.5 py-2.5 bg-[#0c2e22] border border-white/15 rounded-xl text-white outline-none focus:ring-2 focus:ring-rose-500">
+                <option value="">Select Catalog Ingredient...</option>
+                <!-- Populated by JS -->
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-300 mb-1">Quantity Wasted</label>
+                <input type="number" id="waste-qty" step="0.01" min="0.01" required oninput="calculateWasteCost()" placeholder="e.g. 1.5" class="w-full px-3 py-2 bg-white/5 border border-white/15 rounded-xl text-white outline-none focus:ring-2 focus:ring-rose-500">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-300 mb-1">Est. Financial Loss</label>
+                <div id="waste-cost-display" class="px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-rose-400 font-black text-sm">£0.00</div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Reason for Waste</label>
+              <select id="waste-reason" required class="w-full px-3.5 py-2.5 bg-[#0c2e22] border border-white/15 rounded-xl text-white outline-none focus:ring-2 focus:ring-rose-500">
+                <option value="Spoilage / Expired">Spoilage / Expired (Past Date)</option>
+                <option value="Dropped / Spilled">Dropped / Spilled during Prep</option>
+                <option value="Over-prep / Unsold">Over-prep / Unsold</option>
+                <option value="Burnt / Cooking Error">Burnt / Cooking Error</option>
+                <option value="Quality Inspection Fail">Quality Inspection Fail</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Logged by Staff</label>
+              <input type="text" id="waste-staff" placeholder="Staff Name" class="w-full px-3 py-2 bg-white/5 border border-white/15 rounded-xl text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-rose-500">
+            </div>
+
+            <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-black text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center justify-center gap-2">
+              <i data-lucide="trash-2" class="w-4 h-4"></i> Submit Waste & Deplete Stock
+            </button>
+          </form>
+        </div>
+
+        <!-- Waste History Table -->
+        <div class="lg:col-span-7 glass-panel p-5 sm:p-6 rounded-3xl space-y-4">
+          <span class="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i data-lucide="clipboard-list" class="w-4 h-4 text-rose-400"></i> Recent Waste Logs
+          </span>
+
+          <div id="waste-history-container" class="space-y-2.5 max-h-[450px] overflow-y-auto pr-1">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- PRINTABLE FOOD SAFETY LABEL MODAL -->
+  <div id="label-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel p-6 rounded-3xl max-w-md w-full space-y-5 border border-amber-500/30">
+      
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="font-bold text-white text-base heading-font flex items-center gap-2">
+          <i data-lucide="printer" class="w-4 h-4 text-amber-400"></i> Food Prep Label
+        </h3>
+        <button onclick="closeLabelModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Visual Label Container (Printed area) -->
+      <div id="printable-label" class="bg-white text-slate-950 p-4 rounded-xl border-2 border-slate-900 space-y-2 text-xs shadow-lg font-mono">
+        <div class="flex items-center justify-between border-b border-slate-900 pb-1.5">
+          <span class="font-black text-sm tracking-wider">TREAT STREET HQ</span>
+          <span id="lbl-type" class="px-1.5 py-0.5 bg-slate-900 text-white text-[9px] font-bold uppercase rounded">SUB-RECIPE</span>
+        </div>
+
+        <div>
+          <h4 id="lbl-title" class="font-black text-base uppercase leading-tight">COOKIE DOUGH BASE</h4>
+          <p id="lbl-batch" class="text-[11px] font-bold text-slate-700">BATCH: BATCH-260901-001</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-1 border-t border-b border-slate-200 py-1 text-[11px]">
+          <div>
+            <span class="text-[9px] uppercase font-bold text-slate-500 block">PREP DATE:</span>
+            <span id="lbl-prep" class="font-bold">01/09/2026</span>
+          </div>
+          <div>
+            <span class="text-[9px] uppercase font-bold text-red-600 block">USE BY:</span>
+            <span id="lbl-useby" class="font-black text-red-600">04/09/2026</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-1 text-[10px]">
+          <div>
+            <span class="text-[9px] uppercase font-bold text-slate-500 block">PREPARED BY:</span>
+            <span id="lbl-staff" class="font-bold">Sai Kishore</span>
+          </div>
+          <div>
+            <span class="text-[9px] uppercase font-bold text-slate-500 block">STORAGE:</span>
+            <span id="lbl-storage" class="font-bold">Refrigerated (&lt;5°C)</span>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-900 pt-1 text-[9px] flex justify-between items-center">
+          <span>HACCP COMPLIANT • MK STADIUM</span>
+          <span id="lbl-yield">10 Portions</span>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex gap-2">
+        <button onclick="window.print()" class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="printer" class="w-4 h-4"></i> Print Label (Sticker)
+        </button>
+        <button onclick="closeLabelModal()" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs">
+          Close
+        </button>
+      </div>
+
+    </div>
   </div>
+
+  <!-- Toast Notification -->
+  <div id="kitchen-toast" class="fixed bottom-6 right-6 z-50 px-4 py-3 bg-[#0c2e22]/95 text-white text-xs font-bold rounded-2xl border border-amber-500/40 shadow-2xl backdrop-blur-md flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none"></div>
+
+  <!-- FOOTER -->
+  <footer class="w-full relative z-20 border-t border-white/10 py-6 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400 text-xs font-medium">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+      <span>Treat Street Kitchen Operations • HACCP & SOP Synchronization Engine</span>
+    </div>
+  </footer>
 
   <script>
     lucide.createIcons();
@@ -181,172 +616,767 @@
     }
 
     const catalogData = window.tsCatalog || [];
-    
+    let allSOPRecipes = [];
+    let currentSelectedRecipe = null;
+    let currentRecipeFilter = 'ALL';
+
+    function showToast(msg) {
+      const toast = document.getElementById('kitchen-toast');
+      toast.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4 text-amber-400 shrink-0"></i> <span>${msg}</span>`;
+      if (window.lucide) lucide.createIcons();
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
     function switchTab(tab) {
-      document.getElementById('tab-production').className = tab === 'production' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
-      document.getElementById('tab-waste').className = tab === 'waste' ? 'tab-active pb-3 px-4 text-sm flex items-center gap-2' : 'tab-inactive pb-3 px-4 text-sm flex items-center gap-2';
-      document.getElementById('section-production').classList.toggle('hidden', tab !== 'production');
-      document.getElementById('section-waste').classList.toggle('hidden', tab !== 'waste');
-    }
-
-    function init() {
-      const wasteSelect = document.getElementById('waste-ingredient');
-      catalogData.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.name;
-        opt.dataset.price = item.price;
-        opt.textContent = item.name;
-        wasteSelect.appendChild(opt);
+      ['production', 'batch-history', 'waste'].forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        const sec = document.getElementById(`section-${t}`);
+        if (btn) btn.className = t === tab ? 'nav-tab-active flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all' : 'nav-tab-inactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all';
+        if (sec) sec.classList.toggle('hidden', t !== tab);
       });
+
+      if (tab === 'batch-history') renderBatchHistory();
+      else if (tab === 'waste') renderWasteHistory();
+
+      if (window.lucide) lucide.createIcons();
     }
 
-    async function triggerAlaiyaWebhook(eventType, payload) {
-      if (!supabaseClient) {
-        console.warn("Supabase client not initialized; operating in local mode.");
-        return true;
-      }
+    // Storage helpers
+    function getStockLevels() {
       try {
-        const { error } = await supabaseClient.functions.invoke('webhook-proxy', {
-          body: { event_type: eventType, payload }
-        });
-        if (error) {
-          console.warn("ALAIYAOPS Webhook proxy returned error:", error);
-        }
-        return true;
-      } catch (err) {
-        console.warn("ALAIYAOPS Webhook sync offline or unavailable:", err);
-        return true;
+        const stored = localStorage.getItem('ts_stock_levels');
+        return stored ? JSON.parse(stored) : {};
+      } catch (e) {
+        return {};
       }
     }
 
-    async function submitProduction(e) {
-      e.preventDefault();
-      const recipe = document.getElementById('prod-recipe').value;
-      const qty = parseInt(document.getElementById('prod-qty').value);
-      const expiry = document.getElementById('prod-expiry').value;
-      const branch = document.getElementById('prod-branch').value;
-      const staff = document.getElementById('prod-staff').value;
+    function saveStockLevels(levels) {
+      try {
+        localStorage.setItem('ts_stock_levels', JSON.stringify(levels));
+      } catch (e) {}
+    }
 
-      const payload = {
-        log_id: 'PRD-' + Date.now(),
+    function getProductionLogs() {
+      try {
+        const stored = localStorage.getItem('ts_production_logs');
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveProductionLogs(logs) {
+      try {
+        localStorage.setItem('ts_production_logs', JSON.stringify(logs));
+      } catch (e) {}
+    }
+
+    function getWasteLogs() {
+      try {
+        const stored = localStorage.getItem('ts_waste_logs');
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveWasteLogs(logs) {
+      try {
+        localStorage.setItem('ts_waste_logs', JSON.stringify(logs));
+      } catch (e) {}
+    }
+
+    // -------------------------------------------------------------
+    // SOP RECIPES LOADER & SYNC
+    // -------------------------------------------------------------
+    async function loadSOPRecipes() {
+      let recipes = [];
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('sop_recipes').select('*');
+          if (!error && Array.isArray(data) && data.length > 0) {
+            recipes = data.map(row => ({
+              id: row.id,
+              title: row.title || row.name,
+              recipeType: row.recipeType || (row.category === 'Sub-Recipe' ? 'Sub-Recipe' : 'Main Recipe'),
+              category: row.category || 'General',
+              station: row.station || 'Prep Station',
+              prepTime: row.prepTime || '15 min',
+              cookTime: row.cookTime || '0 min',
+              yield: row.yield || '1 batch',
+              shelfLife: row.shelfLife || '3 Days',
+              totalCost: row.totalCost || '0.00',
+              ingredients: typeof row.ingredients === 'string' ? JSON.parse(row.ingredients) : (row.ingredients || [])
+            }));
+          }
+        } catch (e) {
+          console.warn("Supabase recipe load error:", e);
+        }
+      }
+
+      if (!recipes || recipes.length === 0) {
+        try {
+          const local = localStorage.getItem('recipeSOPs');
+          if (local) {
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              recipes = parsed.map(r => ({
+                ...r,
+                title: r.title || r.name,
+                recipeType: r.recipeType || (r.category === 'Sub-Recipe' ? 'Sub-Recipe' : 'Main Recipe'),
+                ingredients: Array.isArray(r.ingredients) ? r.ingredients : []
+              }));
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Default baseline fallback if empty
+      if (!recipes || recipes.length === 0) {
+        recipes = [
+          {
+            id: 'sop-sub-1',
+            title: 'Signature Cookie Dough Base',
+            recipeType: 'Sub-Recipe',
+            category: 'Dough & Batter',
+            station: 'Bakery Prep Station',
+            yield: '10 Portions (1.2 kg)',
+            shelfLife: '5 Days',
+            prepTime: '20 min',
+            cookTime: '0 min',
+            totalCost: '6.45',
+            ingredients: [
+              { name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", qty: '300', unit: 'g' },
+              { name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g", qty: '200', unit: 'g' },
+              { name: "Biscoff Biscuit Crumbs 750g", qty: '150', unit: 'g' }
+            ]
+          },
+          {
+            id: 'sop-sub-2',
+            title: 'Triple Chocolate Brownie Batter',
+            recipeType: 'Sub-Recipe',
+            category: 'Dough & Batter',
+            station: 'Bakery Prep Station',
+            yield: '1 Tray (12 Slices)',
+            shelfLife: '4 Days',
+            prepTime: '25 min',
+            cookTime: '30 min',
+            totalCost: '8.20',
+            ingredients: [
+              { name: "Cadbury Drinking Hot Chocolate Cocoa Powder Large Tub 2KG", qty: '250', unit: 'g' },
+              { name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", qty: '350', unit: 'g' }
+            ]
+          },
+          {
+            id: 'sop-sub-3',
+            title: 'Mac & Cheese Base',
+            recipeType: 'Sub-Recipe',
+            category: 'Hot Kitchen Prep',
+            station: 'Cook Prep Station',
+            yield: '2 Litres (8 Portions)',
+            shelfLife: '3 Days',
+            prepTime: '15 min',
+            cookTime: '20 min',
+            totalCost: '5.10',
+            ingredients: [
+              { name: "Chef's Essentials Chopped Tomatoes in Tomato Juice 2.5kg", qty: '500', unit: 'g' },
+              { name: "Chef's Larder Salt 6kg", qty: '15', unit: 'g' }
+            ]
+          },
+          {
+            id: 'sop-main-1',
+            title: 'Signature Warm Cookie Dough Skillet',
+            recipeType: 'Main Recipe',
+            category: 'Desserts',
+            station: 'Dessert Assembly',
+            yield: '1 Dish',
+            shelfLife: 'Immediate Service',
+            prepTime: '5 min',
+            cookTime: '8 min',
+            totalCost: '1.85',
+            ingredients: [
+              { name: "Signature Cookie Dough Base", qty: '120', unit: 'g', isSubRecipe: true },
+              { name: "Biscoff Biscuit Crumbs 750g", qty: '20', unit: 'g' }
+            ]
+          }
+        ];
+      }
+
+      allSOPRecipes = recipes;
+      populateRecipeDropdown();
+    }
+
+    async function syncSOPRecipes() {
+      await loadSOPRecipes();
+      showToast("✅ Synced latest recipes and sub-recipes from SOP Portal!");
+    }
+
+    function filterRecipeType(type) {
+      currentRecipeFilter = type;
+      ['all', 'sub', 'main'].forEach(t => {
+        const btn = document.getElementById(`filter-recipe-${t}`);
+        if (btn) {
+          const isActive = (type === 'ALL' && t === 'all') || (type === 'Sub-Recipe' && t === 'sub') || (type === 'Main Recipe' && t === 'main');
+          btn.className = isActive ? 'pill-active px-3 py-1 rounded-lg text-[11px] border transition-all' : 'pill-inactive px-3 py-1 rounded-lg text-[11px] border transition-all';
+        }
+      });
+      populateRecipeDropdown();
+    }
+
+    function populateRecipeDropdown() {
+      const select = document.getElementById('prod-recipe-select');
+      if (!select) return;
+
+      select.innerHTML = '<option value="">-- Choose Sub-Recipe or Finished Recipe --</option>';
+
+      let filtered = allSOPRecipes;
+      if (currentRecipeFilter !== 'ALL') {
+        filtered = allSOPRecipes.filter(r => (r.recipeType || 'Main Recipe') === currentRecipeFilter);
+      }
+
+      const subRecipes = filtered.filter(r => r.recipeType === 'Sub-Recipe');
+      const mainRecipes = filtered.filter(r => r.recipeType !== 'Sub-Recipe');
+
+      if (subRecipes.length > 0 && currentRecipeFilter !== 'Main Recipe') {
+        const grp = document.createElement('optgroup');
+        grp.label = "⚡ SUB-RECIPES (PREP BATCHES)";
+        subRecipes.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.id || r.title;
+          opt.textContent = `[Sub-Recipe] ${r.title} (${r.yield || '1 batch'})`;
+          grp.appendChild(opt);
+        });
+        select.appendChild(grp);
+      }
+
+      if (mainRecipes.length > 0 && currentRecipeFilter !== 'Sub-Recipe') {
+        const grp = document.createElement('optgroup');
+        grp.label = "🍽️ MAIN RECIPES & DISHES";
+        mainRecipes.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.id || r.title;
+          opt.textContent = `${r.title} (${r.yield || '1 dish'})`;
+          grp.appendChild(opt);
+        });
+        select.appendChild(grp);
+      }
+    }
+
+    function handleRecipeSelected() {
+      const select = document.getElementById('prod-recipe-select');
+      const val = select.value;
+      currentSelectedRecipe = allSOPRecipes.find(r => r.id === val || r.title === val);
+
+      const metaCard = document.getElementById('recipe-meta-card');
+      if (!currentSelectedRecipe) {
+        metaCard.classList.add('hidden');
+        document.getElementById('scaled-ingredients-container').innerHTML = '<p class="text-xs text-slate-400 text-center py-6">Select a recipe above to view scaled ingredients.</p>';
+        document.getElementById('scaled-yield-output').innerText = 'Select a recipe...';
+        document.getElementById('scaled-cost-output').innerText = '£0.00';
+        return;
+      }
+
+      metaCard.classList.remove('hidden');
+      document.getElementById('meta-recipe-title').innerText = currentSelectedRecipe.title;
+      document.getElementById('meta-recipe-station').innerText = `Station: ${currentSelectedRecipe.station || 'Prep Station'}`;
+      
+      const isSub = currentSelectedRecipe.recipeType === 'Sub-Recipe';
+      const badge = document.getElementById('meta-recipe-badge');
+      badge.innerText = isSub ? 'Sub-Recipe (Prep)' : 'Main Recipe';
+      badge.className = isSub 
+        ? 'px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30'
+        : 'px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30';
+
+      document.getElementById('meta-recipe-yield').innerText = currentSelectedRecipe.yield || '1 Batch';
+      document.getElementById('meta-recipe-shelflife').innerText = currentSelectedRecipe.shelfLife || '3 Days';
+      document.getElementById('meta-recipe-preptime').innerText = currentSelectedRecipe.prepTime || '15 min';
+      document.getElementById('meta-recipe-cost').innerText = `£${parseFloat(currentSelectedRecipe.totalCost || 0).toFixed(2)}`;
+
+      calculateUseByDate();
+      recalculateIngredientScaling();
+    }
+
+    function adjustBatchQty(delta) {
+      const input = document.getElementById('prod-batch-qty');
+      let current = parseFloat(input.value) || 1;
+      let next = Math.max(0.1, parseFloat((current + delta).toFixed(1)));
+      input.value = next;
+      recalculateIngredientScaling();
+    }
+
+    function setBatchQty(qty) {
+      document.getElementById('prod-batch-qty').value = qty;
+      recalculateIngredientScaling();
+    }
+
+    function recalculateIngredientScaling() {
+      if (!currentSelectedRecipe) return;
+
+      const batchMultiplier = parseFloat(document.getElementById('prod-batch-qty').value) || 1;
+      const stockLevels = getStockLevels();
+      const ingredients = currentSelectedRecipe.ingredients || [];
+
+      // Scaled Yield Text
+      document.getElementById('scaled-yield-output').innerText = `${batchMultiplier}x [${currentSelectedRecipe.yield || '1 Batch'}]`;
+      const baseCost = parseFloat(currentSelectedRecipe.totalCost || 0);
+      document.getElementById('scaled-cost-output').innerText = `£${(baseCost * batchMultiplier).toFixed(2)}`;
+      document.getElementById('ingredients-count-badge').innerText = `${ingredients.length} ingredients`;
+
+      const container = document.getElementById('scaled-ingredients-container');
+      if (ingredients.length === 0) {
+        container.innerHTML = `<p class="text-xs text-amber-300 py-4 text-center">No raw ingredients defined in SOP for this recipe.</p>`;
+        return;
+      }
+
+      container.innerHTML = ingredients.map(ing => {
+        const rawQty = parseFloat(ing.quantity || ing.qty || 0);
+        const scaledQty = parseFloat((rawQty * batchMultiplier).toFixed(2));
+        const unit = ing.unit || 'g';
+
+        // Check against catalog & stock pot levels
+        const matchedItem = catalogData.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim());
+        let onHandStock = 0;
+        let hasMatchedCatalog = false;
+
+        if (matchedItem) {
+          hasMatchedCatalog = true;
+          onHandStock = stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
+        }
+
+        const isLow = hasMatchedCatalog && onHandStock < (scaledQty > 10 ? scaledQty / 100 : scaledQty); // heuristic check
+
+        return `
+          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-3 text-xs">
+            <div class="flex-1 overflow-hidden">
+              <p class="font-bold text-white truncate flex items-center gap-1.5">
+                ${ing.isSubRecipe ? '<span class="px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-300 text-[9px] font-extrabold">SUB</span>' : ''}
+                ${ing.name}
+              </p>
+              <p class="text-[10px] text-slate-400 mt-0.5">
+                On-hand pot: <strong class="${onHandStock > 0 ? 'text-emerald-400' : 'text-slate-500'}">${onHandStock.toFixed(1)} units</strong>
+              </p>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="text-sm font-black text-amber-400">${scaledQty}</span>
+              <span class="text-[10px] text-slate-400 font-bold ml-0.5">${unit}</span>
+              <div class="mt-0.5">
+                <span class="px-2 py-0.5 rounded-md text-[9px] font-bold ${onHandStock > 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-white/10 text-slate-400'}">
+                  ${onHandStock > 0 ? 'Deductible' : 'Available'}
+                </span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function generateNewBatchCode() {
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(-2);
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const randomSeq = String(Math.floor(100 + Math.random() * 900));
+      const code = `BATCH-${yy}${mm}${dd}-${randomSeq}`;
+      document.getElementById('prod-batch-code').value = code;
+    }
+
+    function calculateUseByDate() {
+      const prepDateInput = document.getElementById('prod-prep-date');
+      const useByInput = document.getElementById('prod-useby-date');
+      
+      const prepDateVal = prepDateInput.value ? new Date(prepDateInput.value) : new Date();
+      let daysToAdd = 3; // default
+
+      if (currentSelectedRecipe && currentSelectedRecipe.shelfLife) {
+        const str = currentSelectedRecipe.shelfLife.toLowerCase();
+        const match = str.match(/(\d+)\s*(day|hour|month|week)/);
+        if (match) {
+          const num = parseInt(match[1]);
+          const unit = match[2];
+          if (unit === 'day') daysToAdd = num;
+          else if (unit === 'week') daysToAdd = num * 7;
+          else if (unit === 'month') daysToAdd = num * 30;
+          else if (unit === 'hour') daysToAdd = Math.max(1, Math.ceil(num / 24));
+        }
+      }
+
+      const expiryDate = new Date(prepDateVal.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+      useByInput.value = expiryDate.toISOString().split('T')[0];
+    }
+
+    // -------------------------------------------------------------
+    // PRODUCTION SUBMISSION & STOCK DEPLETION
+    // -------------------------------------------------------------
+    async function submitProductionBatch(e) {
+      e.preventDefault();
+
+      if (!currentSelectedRecipe) {
+        alert("Please select a recipe or sub-recipe from the SOP catalog.");
+        return;
+      }
+
+      const batchCode = document.getElementById('prod-batch-code').value.trim();
+      const branch = document.getElementById('prod-branch').value;
+      const staff = document.getElementById('prod-staff').value.trim();
+      const prepDate = document.getElementById('prod-prep-date').value;
+      const useByDate = document.getElementById('prod-useby-date').value;
+      const temp = document.getElementById('prod-temp').value;
+      const storage = document.getElementById('prod-storage').value;
+      const batchQty = parseFloat(document.getElementById('prod-batch-qty').value) || 1;
+
+      const btn = document.getElementById('btn-submit-batch');
+      const origText = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Depleting Stock & Syncing...`;
+      btn.disabled = true;
+
+      // 1. Calculate and Deduct Raw Ingredients from Stock Pots
+      const stockLevels = getStockLevels();
+      const deductedIngredients = [];
+
+      (currentSelectedRecipe.ingredients || []).forEach(ing => {
+        const rawQty = parseFloat(ing.quantity || ing.qty || 0);
+        const scaledQty = parseFloat((rawQty * batchQty).toFixed(2));
+        const matchedItem = catalogData.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim());
+
+        if (matchedItem) {
+          const cur = stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
+          // Deduct quantity (converted if necessary)
+          const deductionAmount = scaledQty > 50 ? scaledQty / 1000 : scaledQty; // kg vs units approximation
+          stockLevels[matchedItem.id] = Math.max(0, parseFloat((cur - deductionAmount).toFixed(2)));
+          deductedIngredients.push({
+            id: matchedItem.id,
+            name: matchedItem.name,
+            deducted: deductionAmount,
+            unit: ing.unit || 'g'
+          });
+        }
+      });
+
+      saveStockLevels(stockLevels);
+
+      // 2. Create Production Record
+      const newBatchLog = {
+        log_id: batchCode,
         branch_id: branch,
-        recipe_name: recipe,
-        batches_produced: qty,
-        expiry_date: expiry,
-        staff_name: staff || 'Unknown',
+        recipe_id: currentSelectedRecipe.id,
+        recipe_name: currentSelectedRecipe.title,
+        recipe_type: currentSelectedRecipe.recipeType || 'Main Recipe',
+        batches_produced: batchQty,
+        yield_output: `${batchQty}x [${currentSelectedRecipe.yield || '1 Batch'}]`,
+        prep_date: prepDate,
+        use_by_date: useByDate,
+        staff_name: staff,
+        core_temp: temp ? `${temp} °C` : 'N/A',
+        storage_condition: storage,
+        total_cost: (parseFloat(currentSelectedRecipe.totalCost || 0) * batchQty).toFixed(2),
+        deducted_ingredients: deductedIngredients,
         timestamp: new Date().toISOString()
       };
 
-      const btn = e.target.querySelector('button');
-      const origText = btn.innerHTML;
-      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Syncing...';
-      if (window.lucide) lucide.createIcons();
-      btn.disabled = true;
+      const history = getProductionLogs();
+      history.unshift(newBatchLog);
+      saveProductionLogs(history);
 
-      try {
-        const history = JSON.parse(localStorage.getItem('ts_production_logs') || '[]');
-        history.unshift(payload);
-        localStorage.setItem('ts_production_logs', JSON.stringify(history.slice(0, 50)));
-      } catch (err) {
-        console.error("Local save error:", err);
-      }
-
-      // Save to Supabase production_logs table
+      // 3. Supabase Sync
       if (supabaseClient) {
         try {
           await supabaseClient.from('production_logs').insert({
-            log_code: payload.log_id,
-            branch_id: payload.branch_id,
-            recipe_name: payload.recipe_name,
-            batches_produced: payload.batches_produced,
-            staff_name: payload.staff_name,
-            expiry_date: payload.expiry_date || null
+            log_code: newBatchLog.log_id,
+            branch_id: newBatchLog.branch_id,
+            recipe_name: newBatchLog.recipe_name,
+            batches_produced: newBatchLog.batches_produced,
+            staff_name: newBatchLog.staff_name,
+            expiry_date: newBatchLog.use_by_date,
+            created_at: newBatchLog.timestamp
           });
-        } catch (e) {
-          console.warn("Supabase production log insert error:", e);
+        } catch (err) {
+          console.warn("Supabase production log sync warning:", err);
         }
       }
 
-      await triggerAlaiyaWebhook('sop.waste_logged', { ...payload, type: 'PRODUCTION_LOG' });
-      
-      alert("✅ Production logged successfully! Raw ingredients have been theoretically deducted.");
-      e.target.reset();
+      await triggerAlaiyaWebhook('kitchen.production_batch_logged', newBatchLog);
 
       btn.innerHTML = origText;
       btn.disabled = false;
       if (window.lucide) lucide.createIcons();
+
+      showToast(`✅ Batch ${batchCode} Logged! Raw ingredients depleted from Stock Pots.`);
+      openLabelModal(newBatchLog);
+      updateBatchHistoryBadge();
+      generateNewBatchCode();
+    }
+
+    // -------------------------------------------------------------
+    // BATCH HISTORY & REVERT ACTION
+    // -------------------------------------------------------------
+    function renderBatchHistory() {
+      const container = document.getElementById('batch-history-container');
+      const search = (document.getElementById('history-search')?.value || '').toLowerCase().trim();
+      const typeFilter = document.getElementById('history-type-filter')?.value || 'ALL';
+
+      const logs = getProductionLogs();
+      updateBatchHistoryBadge();
+
+      if (!container) return;
+
+      const filtered = logs.filter(l => {
+        const matchesSearch = !search ||
+          (l.log_id && l.log_id.toLowerCase().includes(search)) ||
+          (l.recipe_name && l.recipe_name.toLowerCase().includes(search)) ||
+          (l.staff_name && l.staff_name.toLowerCase().includes(search));
+
+        const matchesType = typeFilter === 'ALL' || l.recipe_type === typeFilter;
+        return matchesSearch && matchesType;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="glass-panel p-10 rounded-3xl text-center text-slate-400 text-xs">
+            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-500"></i>
+            No production batches logged yet. Log batches in the Planner tab.
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = filtered.map(log => {
+        const isExpired = new Date(log.use_by_date) < new Date();
+        const isSub = log.recipe_type === 'Sub-Recipe';
+
+        return `
+          <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card-hover">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-black text-amber-400 text-sm">${log.log_id}</span>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                  isSub ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                }">${log.recipe_type || 'Main Recipe'}</span>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                  isExpired ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                }">${isExpired ? 'Expired' : 'Fresh & Active'}</span>
+              </div>
+              <h4 class="font-bold text-white text-sm sm:text-base heading-font">${log.recipe_name}</h4>
+              <p class="text-xs text-slate-400">
+                <strong>${log.batches_produced} Batches</strong> (${log.yield_output}) • Prepared by <strong class="text-white">${log.staff_name}</strong> on ${log.prep_date}
+              </p>
+              <div class="flex items-center gap-3 text-[11px] text-slate-400 pt-1">
+                <span>Use By: <strong class="${isExpired ? 'text-red-400' : 'text-amber-300'}">${log.use_by_date}</strong></span>
+                <span>Temp: <strong class="text-white">${log.core_temp || 'N/A'}</strong></span>
+                <span>Storage: <strong class="text-slate-300">${log.storage_condition || 'Refrigerated'}</strong></span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-2 self-end sm:self-center">
+              <button onclick='openLabelModal(${JSON.stringify(log)})' class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-amber-300 border border-white/10 text-xs font-bold transition-all flex items-center gap-1.5">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print Sticker
+              </button>
+              <button onclick="revertProductionBatch('${log.log_id}')" title="Revert Batch & Restore Stock" class="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-all flex items-center gap-1">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Revert
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function updateBatchHistoryBadge() {
+      const logs = getProductionLogs();
+      const badge = document.getElementById('tab-batch-badge');
+      if (badge) {
+        if (logs.length > 0) {
+          badge.classList.remove('hidden');
+          badge.innerText = logs.length;
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+    }
+
+    function revertProductionBatch(logId) {
+      if (!confirm(`Are you sure you want to revert Batch "${logId}"?\n\nThis will restore the deducted raw ingredients back to your live stock pots.`)) return;
+
+      const logs = getProductionLogs();
+      const target = logs.find(l => l.log_id === logId);
+      if (!target) return;
+
+      // Restore raw ingredients
+      if (target.deducted_ingredients && target.deducted_ingredients.length > 0) {
+        const stockLevels = getStockLevels();
+        target.deducted_ingredients.forEach(item => {
+          if (item.id && stockLevels[item.id] !== undefined) {
+            stockLevels[item.id] = parseFloat((parseFloat(stockLevels[item.id]) + item.deducted).toFixed(2));
+          }
+        });
+        saveStockLevels(stockLevels);
+      }
+
+      const updated = logs.filter(l => l.log_id !== logId);
+      saveProductionLogs(updated);
+      renderBatchHistory();
+      showToast(`ℹ️ Batch ${logId} reverted and stock pot levels restored.`);
+    }
+
+    // -------------------------------------------------------------
+    // FOOD SAFETY LABEL MODAL
+    // -------------------------------------------------------------
+    function openLabelModal(log) {
+      document.getElementById('lbl-type').innerText = (log.recipe_type || 'SUB-RECIPE').toUpperCase();
+      document.getElementById('lbl-title').innerText = (log.recipe_name || 'RECIPE').toUpperCase();
+      document.getElementById('lbl-batch').innerText = `BATCH: ${log.log_id || 'N/A'}`;
+      document.getElementById('lbl-prep').innerText = log.prep_date || new Date().toISOString().split('T')[0];
+      document.getElementById('lbl-useby').innerText = log.use_by_date || 'N/A';
+      document.getElementById('lbl-staff').innerText = log.staff_name || 'Kitchen Staff';
+      document.getElementById('lbl-storage').innerText = log.storage_condition || 'Refrigerated (<5°C)';
+      document.getElementById('lbl-yield').innerText = log.yield_output || `${log.batches_produced} batches`;
+
+      document.getElementById('label-modal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeLabelModal() {
+      document.getElementById('label-modal').classList.add('hidden');
+    }
+
+    // -------------------------------------------------------------
+    // WASTE LOGGING & DEPLETION
+    // -------------------------------------------------------------
+    function populateWasteIngredients() {
+      const select = document.getElementById('waste-ingredient');
+      if (!select) return;
+      select.innerHTML = '<option value="">Select Catalog Ingredient...</option>';
+
+      catalogData.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        opt.dataset.id = item.id;
+        opt.dataset.price = item.price || 0;
+        opt.textContent = `${item.name} (£${parseFloat(item.price || 0).toFixed(2)})`;
+        select.appendChild(opt);
+      });
+    }
+
+    function handleWasteIngredientChange() {
+      calculateWasteCost();
+    }
+
+    function calculateWasteCost() {
+      const select = document.getElementById('waste-ingredient');
+      const selectedOption = select.selectedOptions[0];
+      const price = parseFloat(selectedOption?.dataset?.price || 0);
+      const qty = parseFloat(document.getElementById('waste-qty').value || 0);
+      const cost = price * qty;
+      document.getElementById('waste-cost-display').innerText = `£${cost.toFixed(2)}`;
     }
 
     async function submitWaste(e) {
       e.preventDefault();
-      const name = document.getElementById('waste-ingredient').value;
-      const qty = parseFloat(document.getElementById('waste-qty').value);
-      const expiry = document.getElementById('waste-expiry').value;
-      const branch = document.getElementById('waste-branch').value;
-      const reason = document.getElementById('waste-reason').value;
-      
-      const selectedOption = document.getElementById('waste-ingredient').selectedOptions[0];
+      const select = document.getElementById('waste-ingredient');
+      const name = select.value;
+      const selectedOption = select.selectedOptions[0];
+      const itemId = selectedOption?.dataset?.id;
       const price = parseFloat(selectedOption?.dataset?.price || 0);
+      const qty = parseFloat(document.getElementById('waste-qty').value);
+      const reason = document.getElementById('waste-reason').value;
+      const staff = document.getElementById('waste-staff').value.trim() || 'Staff';
       const estCost = price * qty;
 
-      const payload = {
+      const wasteLog = {
         log_id: 'WST-' + Date.now(),
-        branch_id: branch,
-        recipe_name: name,
+        branch_id: 'MK Stadium HQ',
+        ingredient_id: itemId,
+        ingredient_name: name,
         quantity: qty,
-        expiry_date: expiry || null,
         estimated_cost: estCost,
         reason: reason,
+        staff_name: staff,
         timestamp: new Date().toISOString()
       };
 
-      const btn = e.target.querySelector('button');
-      const origHTML = btn.innerHTML;
-      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Syncing...';
-      if (window.lucide) lucide.createIcons();
-      btn.disabled = true;
-
-      try {
-        const history = JSON.parse(localStorage.getItem('ts_waste_logs') || '[]');
-        history.unshift(payload);
-        localStorage.setItem('ts_waste_logs', JSON.stringify(history.slice(0, 50)));
-
-        // Deduct from stock levels in real time
-        const stockLevels = JSON.parse(localStorage.getItem('ts_stock_levels') || '{}');
-        const matchedItem = catalogData.find(i => i.name === name);
-        if (matchedItem && stockLevels[matchedItem.id] !== undefined) {
-          stockLevels[matchedItem.id] = Math.max(0, parseFloat((parseFloat(stockLevels[matchedItem.id]) - qty).toFixed(2)));
-          localStorage.setItem('ts_stock_levels', JSON.stringify(stockLevels));
+      // Deduct from stock levels
+      if (itemId) {
+        const stockLevels = getStockLevels();
+        if (stockLevels[itemId] !== undefined) {
+          stockLevels[itemId] = Math.max(0, parseFloat((parseFloat(stockLevels[itemId]) - qty).toFixed(2)));
+          saveStockLevels(stockLevels);
         }
-      } catch (err) {
-        console.error("Local save error:", err);
       }
 
-      // Save to Supabase waste_logs table
+      const history = getWasteLogs();
+      history.unshift(wasteLog);
+      saveWasteLogs(history);
+
       if (supabaseClient) {
         try {
           await supabaseClient.from('waste_logs').insert({
-            log_code: payload.log_id,
-            branch_id: payload.branch_id,
-            recipe_name: payload.recipe_name,
-            quantity: payload.quantity,
-            estimated_cost: payload.estimated_cost,
-            reason: payload.reason,
-            expiry_date: payload.expiry_date || null
+            log_code: wasteLog.log_id,
+            branch_id: wasteLog.branch_id,
+            recipe_name: wasteLog.ingredient_name,
+            quantity: wasteLog.quantity,
+            estimated_cost: wasteLog.estimated_cost,
+            reason: wasteLog.reason
           });
         } catch (e) {
-          console.warn("Supabase waste log insert error:", e);
+          console.warn("Supabase waste log insert warning:", e);
         }
       }
 
-      await triggerAlaiyaWebhook('sop.waste_logged', payload);
-      
-      alert(`✅ Waste log recorded and stock level depleted! Estimated cost: £${estCost.toFixed(2)}.`);
-      e.target.reset();
+      await triggerAlaiyaWebhook('kitchen.waste_logged', wasteLog);
 
-      btn.innerHTML = origHTML;
-      btn.disabled = false;
-      if (window.lucide) lucide.createIcons();
+      showToast(`🗑️ Waste of ${qty}x ${name} recorded and deducted from stock.`);
+      document.getElementById('waste-form').reset();
+      document.getElementById('waste-cost-display').innerText = '£0.00';
+      renderWasteHistory();
+    }
+
+    function renderWasteHistory() {
+      const container = document.getElementById('waste-history-container');
+      const logs = getWasteLogs();
+      if (!container) return;
+
+      if (logs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">No waste entries recorded yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = logs.map((w, idx) => `
+        <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between text-xs">
+          <div>
+            <p class="font-bold text-white">${w.ingredient_name}</p>
+            <p class="text-[10px] text-rose-300/80">Reason: ${w.reason} • ${new Date(w.timestamp).toLocaleDateString('en-GB')}</p>
+          </div>
+          <div class="text-right">
+            <span class="font-black text-rose-400 text-sm">-${w.quantity}</span>
+            <span class="text-[10px] text-slate-400 block">Est: £${parseFloat(w.estimated_cost || 0).toFixed(2)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function triggerAlaiyaWebhook(eventType, payload) {
+      if (!supabaseClient) return true;
+      try {
+        await supabaseClient.functions.invoke('webhook-proxy', {
+          body: { event_type: eventType, payload }
+        });
+      } catch (err) {}
+      return true;
+    }
+
+    async function init() {
+      document.getElementById('prod-prep-date').value = new Date().toISOString().split('T')[0];
+      generateNewBatchCode();
+      await loadSOPRecipes();
+      populateWasteIngredients();
+      updateBatchHistoryBadge();
     }
 
     init();
