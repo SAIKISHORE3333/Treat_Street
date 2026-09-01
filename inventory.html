@@ -1422,9 +1422,15 @@
                   <span class="text-slate-300">Location:</span> <strong class="text-white">${o.targetLocation || 'MK Stadium HQ'}</strong>
                 </div>
               </div>
-              <div class="text-left sm:text-right">
-                <span class="text-xs text-slate-400 block mb-0.5">Order Total (Gross)</span>
-                <span class="text-lg font-black text-emerald-400 heading-font">£${(o.total || (o.items || []).reduce((acc, i) => acc + (i.price * i.qty), 0)).toFixed(2)}</span>
+              <div class="flex items-center gap-3">
+                <div class="text-left sm:text-right">
+                  <span class="text-xs text-slate-400 block mb-0.5">Order Total (Gross)</span>
+                  <span class="text-lg font-black text-emerald-400 heading-font">£${(o.total || (o.items || []).reduce((acc, i) => acc + (i.price * i.qty), 0)).toFixed(2)}</span>
+                </div>
+                <button onclick="deletePurchaseOrderInInventory('${o.primaryRef}')" title="Delete Purchase Order" class="px-2.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all flex items-center gap-1.5 text-xs font-bold shrink-0">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  <span class="hidden sm:inline">Delete PO</span>
+                </button>
               </div>
             </div>
 
@@ -1606,6 +1612,39 @@
       renderPurchaseOrdersView();
       renderStockGrid();
       showInventoryToast(`✅ Supplier PO Received: ${count} item types (+${totalQty} total units) synced to stock pots!`);
+    }
+
+    function deletePurchaseOrderInInventory(primaryRef) {
+      const orders = getPurchaseOrders();
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      const hasSyncedItems = (order.items || []).some(i => i.stockSynced);
+      const confirmMsg = hasSyncedItems
+        ? `Are you sure you want to delete Purchase Order "${primaryRef}"?\n\n⚠️ Note: Any synced items in this order will have their delivered quantities deducted from live stock pots automatically.`
+        : `Are you sure you want to delete Purchase Order "${primaryRef}"?`;
+
+      if (!confirm(confirmMsg)) return;
+
+      // Revert any synced stock
+      if (hasSyncedItems) {
+        const stockLevels = getStockLevels();
+        (order.items || []).forEach(item => {
+          if (item.stockSynced) {
+            const itemId = String(item.id);
+            const qty = parseFloat(item.qty || 1);
+            const cur = parseFloat(stockLevels[itemId] || 0);
+            stockLevels[itemId] = Math.max(0, parseFloat((cur - qty).toFixed(2)));
+          }
+        });
+        saveStockLevels(stockLevels);
+      }
+
+      const updatedOrders = orders.filter(o => o.primaryRef !== primaryRef);
+      savePurchaseOrders(updatedOrders);
+      renderPurchaseOrdersView();
+      renderStockGrid();
+      showInventoryToast(`🗑️ Purchase Order "${primaryRef}" deleted.`);
     }
 
     function populateCategories() {

@@ -1035,6 +1035,38 @@
       showToast(`✅ Received PO for ${supplierName}: ${itemsCount} items synced to Stock & Inventory Control!`);
     }
 
+    function deletePurchaseOrder(primaryRef) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+
+      const hasSyncedItems = (order.items || []).some(i => i.stockSynced);
+      const confirmMsg = hasSyncedItems
+        ? `Are you sure you want to delete Purchase Order "${primaryRef}"?\n\n⚠️ Note: Synced items in this order will have their delivered quantities deducted from live stock pots automatically.`
+        : `Are you sure you want to delete Purchase Order "${primaryRef}"?`;
+
+      if (!confirm(confirmMsg)) return;
+
+      // Revert any synced stock
+      if (hasSyncedItems) {
+        const stockLevels = getStockLevels();
+        (order.items || []).forEach(item => {
+          if (item.stockSynced) {
+            const itemId = String(item.id);
+            const qty = parseFloat(item.qty || 1);
+            const cur = parseFloat(stockLevels[itemId] || 0);
+            stockLevels[itemId] = Math.max(0, parseFloat((cur - qty).toFixed(2)));
+          }
+        });
+        saveStockLevels(stockLevels);
+      }
+
+      orders = orders.filter(o => o.primaryRef !== primaryRef);
+      saveOrdersToStorage();
+      filterAndRenderAdminOrders();
+      updateAdminBadge();
+      showToast(`🗑️ Purchase Order "${primaryRef}" deleted successfully.`);
+    }
+
     // ADMIN SORTING & FILTERING LOGIC
     function filterAndRenderAdminOrders() {
       const searchInput = document.getElementById('admin-search-input');
@@ -1150,9 +1182,17 @@
                   <strong>Requested By:</strong> ${o.requestedBy} • <strong>Target Location:</strong> ${o.targetLocation}
                 </div>
               </div>
-              <span class="font-extrabold brand-green-text text-base" title="Displays based on Tax Display Mode Setting">
-                ${taxDisplayMode === 'NET' ? `Total (VAT Excluded): £${o.netTotal.toFixed(2)}` : `Total (VAT Included): £${o.total.toFixed(2)}`}
-              </span>
+              <div class="flex items-center gap-3">
+                <span class="font-extrabold brand-green-text text-base" title="Displays based on Tax Display Mode Setting">
+                  ${taxDisplayMode === 'NET' ? `Total (VAT Excluded): £${o.netTotal.toFixed(2)}` : `Total (VAT Included): £${o.total.toFixed(2)}`}
+                </span>
+                ${isAdminUnlocked ? `
+                  <button onclick="deletePurchaseOrder('${o.primaryRef}')" title="Delete Purchase Order" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-all border border-red-200 flex items-center gap-1">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span>Delete PO</span>
+                  </button>
+                ` : ''}
+              </div>
             </div>
 
             <!-- ORDER ITEMS & SUPPLIER SECTIONS -->
