@@ -231,6 +231,8 @@
               <select id="admin-status-filter" onchange="filterAndRenderAdminOrders()" class="py-1.5 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37]">
                 <option value="ALL">All Statuses</option>
                 <option value="Not Received">Not Received</option>
+                <option value="Delayed">Delayed / Rescheduled</option>
+                <option value="Unavailable">Out of Stock / Unavailable</option>
                 <option value="Partially Received">Partially Received</option>
                 <option value="Received">Received</option>
               </select>
@@ -449,6 +451,76 @@
         <div class="flex gap-2 pt-2">
           <button type="button" onclick="closeEditPriceModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Cancel</button>
           <button type="submit" class="flex-1 py-2 brand-green-bg text-white text-xs font-bold rounded-xl transition-colors">Save Price</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PURCHASE DELIVERY DELAY / STATUS MODAL -->
+  <div id="purchase-delay-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm">Delivery Status & Delay</h3>
+            <p class="text-[11px] text-slate-500">Record arrival ETA and unavailability reasons</p>
+          </div>
+        </div>
+        <button type="button" onclick="closePurchaseDelayModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+        <p id="purchase-delay-item-name" class="font-bold text-slate-800 text-xs"></p>
+        <p id="purchase-delay-meta" class="text-[10px] text-slate-500 mt-0.5"></p>
+      </div>
+
+      <form id="purchase-delay-form" onsubmit="savePurchaseDelayDetails(event)" class="space-y-3">
+        <input type="hidden" id="purchase-delay-ref">
+        <input type="hidden" id="purchase-delay-item-id">
+
+        <div>
+          <label class="text-[11px] font-bold text-slate-500 block mb-1">Tracking Status</label>
+          <select id="purchase-delay-status" onchange="togglePurchaseDelayFields(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37]">
+            <option value="Delayed">Delayed / Rescheduled</option>
+            <option value="Unavailable">Out of Stock / Unavailable</option>
+            <option value="Not Received">Not Received (Pending)</option>
+          </select>
+        </div>
+
+        <div id="purchase-delay-eta-group">
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-[11px] font-bold text-slate-500 block">Expected Arrival Date</label>
+            <span id="purchase-delay-relative-hint" class="text-[10px] text-amber-700 font-bold"></span>
+          </div>
+          <div class="flex gap-1 mb-2">
+            <button type="button" onclick="setPurchaseQuickDays(1)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg">+1 Day</button>
+            <button type="button" onclick="setPurchaseQuickDays(2)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg">+2 Days</button>
+            <button type="button" onclick="setPurchaseQuickDays(3)" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-black rounded-lg">+3 Days</button>
+            <button type="button" onclick="setPurchaseQuickDays(7)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg">+1 Week</button>
+          </div>
+          <input type="date" id="purchase-delay-date-input" oninput="updatePurchaseDelayHint()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37]">
+        </div>
+
+        <div>
+          <label class="text-[11px] font-bold text-slate-500 block mb-1">Reason</label>
+          <select id="purchase-delay-reason-preset" onchange="handlePurchaseReasonPreset(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37] mb-1.5">
+            <option value="">-- Select or write reason --</option>
+            <option value="Supplier stock delay - arriving in 3 days">Supplier stock delay - arriving in 3 days</option>
+            <option value="Driver / Logistics transit reschedule">Driver / Logistics transit reschedule</option>
+            <option value="Supplier depot backordered">Supplier depot backordered</option>
+            <option value="Supplier out of stock">Supplier out of stock</option>
+            <option value="Short-shipped by supplier">Short-shipped by supplier</option>
+            <option value="Custom">Custom note...</option>
+          </select>
+          <input type="text" id="purchase-delay-reason-text" placeholder="Reason details..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#144D37]">
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closePurchaseDelayModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Cancel</button>
+          <button type="submit" class="flex-1 py-2 brand-green-bg text-white text-xs font-bold rounded-xl transition-colors">Save Details</button>
         </div>
       </form>
     </div>
@@ -1012,6 +1084,169 @@
       }
     }
 
+    function handlePurchaseTrackingChange(primaryRef, itemId, newStatus) {
+      if (newStatus === 'Delayed' || newStatus === 'Unavailable') {
+        openPurchaseDelayModal(primaryRef, itemId, newStatus);
+      } else {
+        updateItemTrackingStatus(primaryRef, itemId, newStatus);
+      }
+    }
+
+    function openPurchaseDelayModal(primaryRef, itemId, preselectedStatus) {
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+      const item = order.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      document.getElementById('purchase-delay-ref').value = primaryRef;
+      document.getElementById('purchase-delay-item-id').value = itemId;
+      document.getElementById('purchase-delay-item-name').innerText = item.name || 'Item';
+      document.getElementById('purchase-delay-meta').innerText = `${item.supplier || 'Supplier'} • ${primaryRef} • Qty: ${item.qty || 1}`;
+
+      const statusSelect = document.getElementById('purchase-delay-status');
+      const targetStatus = preselectedStatus || item.trackingStatus || 'Delayed';
+      statusSelect.value = (targetStatus === 'Unavailable' || targetStatus === 'Delayed' || targetStatus === 'Not Received') ? targetStatus : 'Delayed';
+      togglePurchaseDelayFields(statusSelect.value);
+
+      const dateInput = document.getElementById('purchase-delay-date-input');
+      if (item.expectedDeliveryDate) {
+        dateInput.value = item.expectedDeliveryDate.split('T')[0];
+      } else {
+        setPurchaseQuickDays(3);
+      }
+      updatePurchaseDelayHint();
+
+      const reasonSelect = document.getElementById('purchase-delay-reason-preset');
+      const reasonText = document.getElementById('purchase-delay-reason-text');
+      const existingReason = item.delayReason || '';
+
+      let matched = false;
+      for (let opt of reasonSelect.options) {
+        if (opt.value && opt.value === existingReason) {
+          reasonSelect.value = existingReason;
+          matched = true;
+          break;
+        }
+      }
+      if (matched) {
+        reasonText.value = '';
+      } else {
+        reasonSelect.value = existingReason ? 'Custom' : 'Supplier stock delay - arriving in 3 days';
+        reasonText.value = existingReason || (reasonSelect.value === 'Supplier stock delay - arriving in 3 days' ? 'Supplier stock delay - arriving in 3 days' : '');
+      }
+
+      document.getElementById('purchase-delay-modal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closePurchaseDelayModal() {
+      document.getElementById('purchase-delay-modal').classList.add('hidden');
+    }
+
+    function togglePurchaseDelayFields(status) {
+      const etaGroup = document.getElementById('purchase-delay-eta-group');
+      if (etaGroup) etaGroup.classList.toggle('hidden', status !== 'Delayed');
+    }
+
+    function setPurchaseQuickDays(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const input = document.getElementById('purchase-delay-date-input');
+      if (input) input.value = `${yyyy}-${mm}-${dd}`;
+      updatePurchaseDelayHint();
+    }
+
+    function updatePurchaseDelayHint() {
+      const input = document.getElementById('purchase-delay-date-input');
+      const hint = document.getElementById('purchase-delay-relative-hint');
+      if (!input || !hint) return;
+      if (!input.value) { hint.innerText = ''; return; }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const target = new Date(input.value + 'T00:00:00');
+      const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+      const formatted = target.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      if (diffDays === 0) hint.innerText = `Today (${formatted})`;
+      else if (diffDays === 1) hint.innerText = `Tomorrow (${formatted})`;
+      else if (diffDays > 1) hint.innerText = `In ${diffDays} days (${formatted})`;
+      else hint.innerText = `${Math.abs(diffDays)}d overdue (${formatted})`;
+    }
+
+    function handlePurchaseReasonPreset(val) {
+      const textInput = document.getElementById('purchase-delay-reason-text');
+      if (!textInput) return;
+      if (val && val !== 'Custom') {
+        textInput.value = val;
+      } else if (val === 'Custom') {
+        textInput.value = '';
+        textInput.focus();
+      }
+    }
+
+    function savePurchaseDelayDetails(e) {
+      if (e) e.preventDefault();
+      const primaryRef = document.getElementById('purchase-delay-ref').value;
+      const itemId = parseFloat(document.getElementById('purchase-delay-item-id').value);
+      const status = document.getElementById('purchase-delay-status').value;
+
+      const order = orders.find(o => o.primaryRef === primaryRef);
+      if (!order) return;
+      const item = order.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      const oldStatus = item.trackingStatus;
+      item.trackingStatus = status;
+
+      if (status === 'Delayed') {
+        item.expectedDeliveryDate = document.getElementById('purchase-delay-date-input').value || '';
+        item.delayReason = document.getElementById('purchase-delay-reason-text').value.trim() || document.getElementById('purchase-delay-reason-preset').value || 'Delivery delayed';
+      } else if (status === 'Unavailable') {
+        item.delayReason = document.getElementById('purchase-delay-reason-text').value.trim() || document.getElementById('purchase-delay-reason-preset').value || 'Supplier out of stock';
+        delete item.expectedDeliveryDate;
+      } else {
+        item.delayReason = '';
+        delete item.expectedDeliveryDate;
+      }
+
+      if (oldStatus === 'Received' && status !== 'Received') {
+        syncItemStockOnReceive(item, false);
+      }
+
+      item.delayReportedAt = new Date().toISOString();
+      saveOrdersToStorage();
+      closePurchaseDelayModal();
+      filterAndRenderAdminOrders();
+      showToast(`Saved status "${status}" for ${item.name}`);
+    }
+
+    function escapeHtmlPurchase(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function formatExpectedDatePurchase(dateStr) {
+      if (!dateStr) return 'Soon';
+      try {
+        const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+        if (isNaN(d.getTime())) return dateStr;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const target = new Date(d);
+        target.setHours(0,0,0,0);
+        const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+        const formatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        if (diffDays === 0) return `Today (${formatted})`;
+        if (diffDays === 1) return `Tomorrow (${formatted})`;
+        if (diffDays > 1) return `In ${diffDays}d (${formatted})`;
+        return formatted;
+      } catch(e) {
+        return dateStr;
+      }
+    }
+
     function receiveSupplierPO(primaryRef, supplierName) {
       const order = orders.find(o => o.primaryRef === primaryRef);
       if (!order) return;
@@ -1242,8 +1477,26 @@
                             return `
                               <tr>
                                 <td class="p-2 font-medium text-slate-800">
-                                  ${i.name}
-                                  ${i.stockSynced ? `<span class="inline-block ml-1.5 px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">⚡ Synced to Pots</span>` : ''}
+                                  <div>
+                                    ${i.name}
+                                    ${i.stockSynced ? `<span class="inline-block ml-1.5 px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">⚡ Synced to Pots</span>` : ''}
+                                    ${status === 'Delayed' ? `
+                                      <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[9px]">
+                                          ⏳ Arriving: ${formatExpectedDatePurchase(i.expectedDeliveryDate)}
+                                        </span>
+                                        ${i.delayReason ? `<span class="text-[9px] text-amber-700 font-normal italic">(${escapeHtmlPurchase(i.delayReason)})</span>` : ''}
+                                      </div>
+                                    ` : ''}
+                                    ${status === 'Unavailable' ? `
+                                      <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-bold text-[9px]">
+                                          🚫 Out of Stock
+                                        </span>
+                                        ${i.delayReason ? `<span class="text-[9px] text-rose-700 font-normal italic">(${escapeHtmlPurchase(i.delayReason)})</span>` : ''}
+                                      </div>
+                                    ` : ''}
+                                  </div>
                                 </td>
                                 <td class="p-2 text-center text-slate-500">${i.size || 'N/A'}</td>
                                 <td class="p-2 text-center text-slate-600">£${i.price.toFixed(2)}</td>
@@ -1252,14 +1505,23 @@
                                 <td class="p-2 text-right font-bold text-slate-800">£${(grossPrice * i.qty).toFixed(2)}</td>
                                 ${isAdminUnlocked ? `
                                   <td class="p-2 text-center">
-                                    <select 
-                                      onchange="updateItemTrackingStatus('${o.primaryRef}', ${i.id}, this.value)"
-                                      class="px-2 py-1 text-[11px] font-bold rounded border ${status === 'Received' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-slate-50 text-slate-700 border-slate-300'} focus:outline-none cursor-pointer">
-                                      <option value="Pending" ${status === 'Pending' ? 'selected' : ''} disabled hidden>Pending</option>
-                                      <option value="Not Received" ${status === 'Not Received' ? 'selected' : ''}>Not Received</option>
-                                      <option value="Partially Received" ${status === 'Partially Received' ? 'selected' : ''}>Partially Received</option>
-                                      <option value="Received" ${status === 'Received' ? 'selected' : ''}>Received (Sync)</option>
-                                    </select>
+                                    <div class="flex items-center justify-center gap-1">
+                                      <select 
+                                        onchange="handlePurchaseTrackingChange('${o.primaryRef}', ${i.id}, this.value)"
+                                        class="px-2 py-1 text-[11px] font-bold rounded border ${status === 'Received' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : status === 'Delayed' ? 'bg-amber-50 text-amber-800 border-amber-300' : status === 'Unavailable' ? 'bg-rose-50 text-rose-800 border-rose-300' : 'bg-slate-50 text-slate-700 border-slate-300'} focus:outline-none cursor-pointer">
+                                        <option value="Pending" ${status === 'Pending' ? 'selected' : ''} disabled hidden>Pending</option>
+                                        <option value="Not Received" ${status === 'Not Received' ? 'selected' : ''}>Not Received</option>
+                                        <option value="Delayed" ${status === 'Delayed' ? 'selected' : ''}>Delayed / Rescheduled</option>
+                                        <option value="Unavailable" ${status === 'Unavailable' ? 'selected' : ''}>Out of Stock</option>
+                                        <option value="Partially Received" ${status === 'Partially Received' ? 'selected' : ''}>Partially Received</option>
+                                        <option value="Received" ${status === 'Received' ? 'selected' : ''}>Received (Sync)</option>
+                                      </select>
+                                      ${(status === 'Delayed' || status === 'Unavailable') ? `
+                                        <button onclick="openPurchaseDelayModal('${o.primaryRef}', ${i.id})" title="Edit Delay or ETA" class="p-1 rounded hover:bg-slate-200 text-amber-700 transition-colors">
+                                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                      ` : ''}
+                                    </div>
                                   </td>
                                 ` : ''}
                               </tr>
