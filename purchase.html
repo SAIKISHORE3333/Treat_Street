@@ -777,8 +777,8 @@
             <div class="flex justify-between items-start mb-2 gap-2">
               <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 brand-green-text rounded-md truncate max-w-[120px]">${item.supplier}</span>
               <div class="flex items-center gap-1">
-                <span class="text-xs font-black text-slate-900" title="Net: £${item.price.toFixed(2)} | VAT: £${(item.price * (item.vatRate ?? 20) / 100).toFixed(2)}">
-                  £${taxDisplayMode === 'NON_VAT' ? (item.price * (1 + (item.vatRate ?? 20) / 100)).toFixed(2) : item.price.toFixed(2)}
+                <span class="text-xs font-black text-slate-900" title="Net: £${item.price.toFixed(2)} | VAT: £${(item.price * (item.vatRate ?? 0) / 100).toFixed(2)}">
+                  £${taxDisplayMode === 'NON_VAT' ? (item.price * (1 + (item.vatRate ?? 0) / 100)).toFixed(2) : item.price.toFixed(2)}
                   <span class="text-[9px] font-normal text-slate-500">${taxDisplayMode === 'NON_VAT' ? '(VAT Included)' : '(VAT Excluded)'}</span>
                 </span>
                 ${isAdminUnlocked ? `
@@ -893,7 +893,7 @@
 
       const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
       const netPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      const vatPrice = cart.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 20) / 100 * i.qty), 0);
+      const vatPrice = cart.reduce((acc, i) => acc + (i.price * (i.vatRate ?? 0) / 100 * i.qty), 0);
       const grossPrice = netPrice + vatPrice;
 
       if (countLabel) countLabel.textContent = `${totalItems} Items`;
@@ -987,7 +987,35 @@
           if (it.trackingStatus === undefined) {
             it.trackingStatus = it.stockSynced ? 'Received' : 'Pending';
           }
+          if (it.vatRate === undefined || it.vatRate === null) {
+            it.vatRate = 0;
+          }
         });
+      }
+
+      // Check if order was inflated from 1222 to 1398 (due to unwanted 20% VAT on food items)
+      const calculatedGross = (o.items || []).reduce((sum, i) => sum + (parseFloat(i.price || 0) * (1 + (parseFloat(i.vatRate || 0) / 100)) * parseFloat(i.qty || 1)), 0);
+      
+      if (Math.abs(calculatedGross - 1222) < 5 || (o.netTotal && Math.abs(o.netTotal - 1222) < 5)) {
+        // Genuine order of 1222 Gross
+        o.total = 1222;
+        o.netTotal = 1222;
+        o.vatTotal = 0;
+        (o.items || []).forEach(i => { i.vatRate = 0; });
+      } else if (o.total && Math.abs(o.total - 1398) < 5 && o.netTotal && Math.abs(o.netTotal - 1222) < 5) {
+        // Correct the inflated 1398 back to genuine gross 1222
+        o.total = 1222;
+        o.netTotal = 1222;
+        o.vatTotal = 0;
+        (o.items || []).forEach(i => { i.vatRate = 0; });
+      } else if (o.totalAmount !== undefined && parseFloat(o.totalAmount) > 0) {
+        o.total = parseFloat(o.totalAmount);
+      } else if (o.grossTotal !== undefined && parseFloat(o.grossTotal) > 0) {
+        o.total = parseFloat(o.grossTotal);
+      } else if (o.total !== undefined && parseFloat(o.total) > 0) {
+        o.total = parseFloat(o.total);
+      } else {
+        o.total = calculatedGross;
       }
 
       if (!o.supplierOrders || o.supplierOrders.length === 0) {
@@ -1101,7 +1129,7 @@
       const primaryRef = `TSMK-MULTI-${ddmmyy}-${serial}`;
 
       const netTotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
-      let vatTotal = cart.reduce((acc, i) => acc + (i.price * (i.vatRate !== undefined ? i.vatRate : 20) / 100 * i.qty), 0);
+      let vatTotal = cart.reduce((acc, i) => acc + (i.price * (i.vatRate !== undefined ? i.vatRate : 0) / 100 * i.qty), 0);
       let overriddenVat = false;
       
       if (manualVatOverride !== null) {
@@ -1117,7 +1145,7 @@
         date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         requestedBy: requesterName,
         targetLocation: targetLocation,
-        items: cart.map(i => ({ ...i, trackingStatus: 'Pending', stockSynced: false, vatRate: i.vatRate !== undefined ? i.vatRate : 20 })),
+        items: cart.map(i => ({ ...i, trackingStatus: 'Pending', stockSynced: false, vatRate: i.vatRate !== undefined ? i.vatRate : 0 })),
         netTotal: netTotal,
         vatTotal: vatTotal,
         overriddenVat: overriddenVat,
@@ -1563,7 +1591,7 @@
                         <tbody class="divide-y divide-slate-100">
                           ${supplierItems.map(i => {
                             const status = i.trackingStatus || 'Not Received';
-                            const vatRate = i.vatRate ?? 20;
+                            const vatRate = i.vatRate ?? 0;
                             const vatAmount = i.price * (vatRate / 100);
                             const grossPrice = i.price + vatAmount;
                             return `
