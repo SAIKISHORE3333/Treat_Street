@@ -349,12 +349,12 @@
       <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h2 class="text-2xl font-bold text-white heading-font flex items-center gap-2.5">
-            <span class="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center">
-              <i data-lucide="activity" class="w-5 h-5"></i>
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
             </span>
             Theoretical Stock Pot Monitor
           </h2>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">Real-time pot levels tracking raw ingredients. Sales depletions, purchase order deliveries, kitchen waste, and audits update these theoretical levels in real time.</p>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Real-time pot levels for genuine store ingredients. <span class="text-emerald-300 font-bold">Max: 5 Units</span> • <span class="text-amber-300 font-bold">Moderate: 3 Units</span> • <span class="text-rose-400 font-bold">Min Alarm: ≤2 Units</span>.</p>
         </div>
         <div class="glass-panel px-5 py-3 rounded-2xl text-right">
           <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Valuation</p>
@@ -366,18 +366,14 @@
       <div class="glass-panel p-3.5 rounded-2xl flex flex-col sm:flex-row items-center gap-3">
         <div class="relative flex-1 w-full">
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-          <input type="text" id="stock-search" oninput="renderStockGrid()" placeholder="Search genuine ingredient or supplier..." class="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white/10 transition-all">
+          <input type="text" id="stock-search" oninput="renderStockGrid()" placeholder="Search ingredient or supplier..." class="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white/10 transition-all">
         </div>
-        <select id="stock-view-mode" onchange="renderStockGrid()" class="w-full sm:w-56 px-3.5 py-2 bg-[#0c2e22] border border-emerald-500/40 rounded-xl text-xs text-emerald-300 font-bold outline-none focus:ring-2 focus:ring-emerald-500">
-          <option value="GENUINE" selected>✅ Genuine Active Stocks Only</option>
-          <option value="ALL_CATALOG">📦 All Wholesale Catalog (300)</option>
-        </select>
-        <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full sm:w-44 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
+        <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full sm:w-52 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
           <option value="all">All Categories</option>
         </select>
-        <button type="button" onclick="syncGenuineStockLevels(true)" title="Re-sync stock levels with all received Purchase Orders" class="w-full sm:w-auto px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
-          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-          <span>Sync Genuine Stocks</span>
+        <button type="button" onclick="purgeFakeDataAndRebuildGenuineStocks(true)" title="Purge fake/sample data and rebuild pot levels strictly from genuine received orders" class="w-full sm:w-auto px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Purge Fake Data & Sync Pots</span>
         </button>
       </div>
 
@@ -1026,11 +1022,11 @@
       }
     }
 
-    function syncGenuineStockLevels(isUserTriggered) {
+    function purgeFakeDataAndRebuildGenuineStocks(isUserTriggered) {
       const orders = getPurchaseOrders();
-      const stockLevels = getStockLevels();
-      let syncedCount = 0;
-      let totalQtySynced = 0;
+      const genuineStockLevels = {};
+      let totalReceivedItems = 0;
+      let totalReceivedUnits = 0;
 
       orders.forEach(o => {
         (o.items || []).forEach(item => {
@@ -1042,33 +1038,38 @@
             item.trackingStatus = 'Received';
             if (!item.receivedAt) item.receivedAt = o.date || new Date().toISOString();
 
-            const cur = parseFloat(stockLevels[strId] !== undefined ? stockLevels[strId] : (stockLevels[item.id] !== undefined ? stockLevels[item.id] : 0));
-            if (cur < qty) {
-              const newQty = parseFloat((cur + qty).toFixed(2));
-              stockLevels[strId] = newQty;
-              stockLevels[item.id] = newQty;
-              syncedCount++;
-              totalQtySynced += qty;
+            const cur = parseFloat(genuineStockLevels[strId] || 0);
+            const newQty = parseFloat((cur + qty).toFixed(2));
+            genuineStockLevels[strId] = newQty;
+            if (item.id !== undefined) {
+              genuineStockLevels[item.id] = newQty;
             }
+            totalReceivedItems++;
+            totalReceivedUnits += qty;
           }
         });
       });
 
-      saveStockLevels(stockLevels);
+      // Overwrite storage completely with ONLY verified genuine stock from orders
+      saveStockLevels(genuineStockLevels);
       savePurchaseOrders(orders);
 
       renderStockGrid();
       renderPurchaseOrdersView();
 
       if (isUserTriggered) {
-        showInventoryToast(`✅ Genuine Stocks Synced: ${syncedCount > 0 ? `Updated ${syncedCount} items (+${totalQtySynced} units)` : 'All received order quantities are accurately recorded in stock pots.'}`);
+        showInventoryToast(`🧹 Fake data purged! Pots strictly synced to ${totalReceivedItems} received item types (${totalReceivedUnits.toFixed(1)} units).`);
       }
-      return { syncedCount, stockLevels };
+      return genuineStockLevels;
+    }
+
+    // Alias for backward compatibility
+    function syncGenuineStockLevels(isUserTriggered) {
+      return purgeFakeDataAndRebuildGenuineStocks(isUserTriggered);
     }
 
     function getGenuineInventoryItems() {
       const orders = getPurchaseOrders();
-      const stockLevels = getStockLevels();
 
       const orderedItemIds = new Set();
       const orderedNames = new Set();
@@ -1077,11 +1078,6 @@
           if (i.id !== undefined) orderedItemIds.add(String(i.id));
           if (i.name) orderedNames.add(i.name.toLowerCase().trim());
         });
-      });
-
-      const stockedItemIds = new Set();
-      Object.entries(stockLevels).forEach(([id, qty]) => {
-        if (parseFloat(qty) > 0) stockedItemIds.add(String(id));
       });
 
       const sopIngredientNames = new Set();
@@ -1094,7 +1090,7 @@
       const genuineItems = [];
       const addedKeys = new Set();
 
-      // 1. Items from actual orders
+      // 1. Items from actual orders (Priority)
       orders.forEach(o => {
         (o.items || []).forEach(i => {
           const key = (i.name || '').toLowerCase().trim();
@@ -1104,7 +1100,7 @@
             genuineItems.push({
               id: i.id || (catItem ? catItem.id : Date.now()),
               name: i.name || (catItem ? catItem.name : 'Unknown Item'),
-              category: (catItem && catItem.category) || i.category || 'Kitchen Stock',
+              category: (catItem && catItem.category) || i.category || 'Store Stock',
               size: (catItem && catItem.size) || i.size || 'Unit',
               supplier: i.supplier || (catItem && catItem.supplier) || 'Supplier',
               price: parseFloat(i.price || (catItem ? catItem.price : 0)),
@@ -1114,16 +1110,16 @@
         });
       });
 
-      // 2. Items with actual positive stock or part of SOP recipes
+      // 2. Ingredients from SOP recipes that exist in catalog or store
       catalogData.forEach(c => {
         const cNameLower = (c.name || '').toLowerCase().trim();
         const strId = String(c.id);
 
-        const hasStock = stockedItemIds.has(strId);
         const wasOrdered = orderedItemIds.has(strId) || orderedNames.has(cNameLower);
         const isInSOP = Array.from(sopIngredientNames).some(ingName => cNameLower.includes(ingName) || ingName.includes(cNameLower));
 
-        if ((hasStock || wasOrdered || isInSOP) && !addedKeys.has(cNameLower)) {
+        // ONLY include if it was actually ordered OR is explicitly an active SOP recipe ingredient
+        if ((wasOrdered || isInSOP) && !addedKeys.has(cNameLower)) {
           addedKeys.add(cNameLower);
           genuineItems.push({
             ...c,
@@ -1522,25 +1518,25 @@
       const grid = document.getElementById('stock-grid');
       const search = (document.getElementById('stock-search')?.value || '').toLowerCase();
       const catFilter = document.getElementById('stock-category-filter')?.value || 'all';
-      const viewMode = document.getElementById('stock-view-mode')?.value || 'GENUINE';
       const stockLevels = getStockLevels();
 
       let totalVal = 0;
       grid.innerHTML = '';
 
-      const itemsToRender = viewMode === 'ALL_CATALOG' ? catalogData : getGenuineInventoryItems();
+      // The monitor ONLY renders genuine store inventory
+      const itemsToRender = getGenuineInventoryItems();
 
       if (itemsToRender.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full glass-panel p-8 rounded-3xl text-center flex flex-col items-center justify-center">
             <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
-              <i data-lucide="package-search" class="w-6 h-6"></i>
+              <i data-lucide="shield-check" class="w-6 h-6"></i>
             </div>
-            <h4 class="font-bold text-white text-base mb-1 heading-font">No Genuine Stocks Found</h4>
-            <p class="text-xs text-slate-400 max-w-md mb-4">You have not received any purchase orders or registered recipes yet. You can view all wholesale catalog items or receive purchase orders to stock your pots.</p>
-            <button onclick="document.getElementById('stock-view-mode').value='ALL_CATALOG'; renderStockGrid();" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all">
-              View Wholesale Catalog (300 items)
-            </button>
+            <h4 class="font-bold text-white text-base mb-1 heading-font">No Active Stock In Pots</h4>
+            <p class="text-xs text-slate-400 max-w-md mb-4">Stock pots display genuine received purchase orders. When you receive an order in Purchase Orders & Deliveries, it will automatically appear here.</p>
+            <a href="#purchase-orders" onclick="switchTab('purchase-orders')" class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5">
+              <i data-lucide="truck" class="w-3.5 h-3.5"></i> Open Purchase Orders & Deliveries
+            </a>
           </div>
         `;
         if (window.lucide) lucide.createIcons();
@@ -1554,20 +1550,29 @@
 
         const strId = String(item.id);
         const currentQty = stockLevels[strId] !== undefined ? parseFloat(stockLevels[strId]) : (stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0);
-        const maxCapacity = 20;
+        
+        // Exact Pot Rules: Max 5 units, Moderate 3 units, Minimum stock level alarm <= 2 units
+        const maxCapacity = 5.0;
         const percentage = Math.min(100, Math.max(5, (currentQty / maxCapacity) * 100));
         const price = parseFloat(item.price || 0);
         const itemVal = currentQty * price;
         totalVal += itemVal;
 
-        let liquidColor = '#10b981';
-        let statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Optimal</span>`;
-        if (percentage < 25) {
-          liquidColor = '#ef4444';
-          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-red-500/20 text-red-300 border border-red-500/30 animate-pulse">Low Stock</span>`;
-        } else if (percentage < 50) {
-          liquidColor = '#f59e0b';
-          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Reorder Soon</span>`;
+        let liquidColor = '#10b981'; // Optimal (Green)
+        let statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i data-lucide="check" class="w-2.5 h-2.5"></i> Optimal</span>`;
+
+        if (currentQty <= 2) {
+          // 2 units and below = Minimum Stock Level Alarm
+          liquidColor = '#ef4444'; // Red
+          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2.5 h-2.5"></i> Min Stock Alarm (≤2)</span>`;
+        } else if (currentQty <= 3) {
+          // 3 units = Moderate Level
+          liquidColor = '#f59e0b'; // Amber
+          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1"><i data-lucide="clock" class="w-2.5 h-2.5"></i> Moderate (3 units)</span>`;
+        } else if (currentQty >= 5) {
+          // 5 units = Full Maximum Capacity
+          liquidColor = '#10b981'; // Green
+          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i data-lucide="shield-check" class="w-2.5 h-2.5"></i> Full (5.0 Max)</span>`;
         }
 
         const card = document.createElement('div');
@@ -1588,7 +1593,7 @@
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-1.5">
                 <span class="text-base font-black text-white heading-font">${currentQty.toFixed(1)}</span>
-                <span class="text-[10px] text-slate-400">units in pot</span>
+                <span class="text-[10px] text-slate-400">/ 5.0 units</span>
               </div>
               <span class="text-[10px] text-emerald-400 font-bold opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
                 Inward & Rates <i data-lucide="chevron-right" class="w-3 h-3"></i>
@@ -2414,16 +2419,16 @@
       document.getElementById('inward-modal-subtitle').innerText = `${item.size || 'Unit'} • Current Registered Supplier: ${item.supplier || 'Unknown'}`;
       document.getElementById('inward-modal-category').innerText = item.category || 'General';
 
-      let statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Optimal Stock</span>`;
-      if (currentQty <= 5) {
-        statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30">Low Stock</span>`;
-      } else if (currentQty <= 10) {
-        statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Reorder Soon</span>`;
+      let statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Optimal (3-5 Units)</span>`;
+      if (currentQty <= 2) {
+        statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Min Stock Alarm (≤2 Units)</span>`;
+      } else if (currentQty <= 3) {
+        statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> Moderate (3 Units)</span>`;
       }
       document.getElementById('inward-modal-stock-badge').innerHTML = statusBadge;
 
-      document.getElementById('inward-metric-stock').innerText = currentQty.toFixed(1);
-      document.getElementById('inward-metric-stock-val').innerText = `£${potVal.toFixed(2)} pot value`;
+      document.getElementById('inward-metric-stock').innerText = `${currentQty.toFixed(1)} / 5.0`;
+      document.getElementById('inward-metric-stock-val').innerText = `£${potVal.toFixed(2)} pot valuation`;
 
       // Query POs for Inward Records
       const orders = getPurchaseOrders();
@@ -2809,7 +2814,7 @@
       populateCategories();
       await loadRecipes();
       await loadAliases();
-      syncGenuineStockLevels(false);
+      purgeFakeDataAndRebuildGenuineStocks(false);
       renderStockGrid();
       renderPurchaseOrdersView();
       renderAuditTable();
