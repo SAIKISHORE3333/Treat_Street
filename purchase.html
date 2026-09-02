@@ -947,10 +947,97 @@
     }
 
     // REAL DATA STORAGE & STOCK SYNCHRONIZATION
+    function normalizeOrder(o) {
+      if (!o) return o;
+      o.primaryRef = o.primaryRef || o.id || 'TSMK-ORDER';
+      o.date = o.date || o.dateStr || (o.timestamp ? new Date(o.timestamp).toLocaleDateString('en-GB') : '');
+      o.requestedBy = o.requestedBy || o.userName || 'Store Manager';
+      o.targetLocation = o.targetLocation || o.location || 'Milton Keynes';
+
+      if (!o.items || o.items.length === 0) {
+        o.items = [];
+        if (Array.isArray(o.supplierOrders)) {
+          o.supplierOrders.forEach(so => {
+            (so.items || []).forEach(it => {
+              const isRec = it.stockSynced || it.trackingStatus === 'Received' || so.status === 'Received';
+              const isDel = it.trackingStatus === 'Delayed' || so.status === 'Delayed / Rescheduled' || so.status === 'Delayed';
+              const isUnav = it.trackingStatus === 'Unavailable' || so.status === 'Unavailable';
+              const trkStatus = isRec ? 'Received' : isDel ? 'Delayed' : isUnav ? 'Unavailable' : (it.trackingStatus || 'Pending');
+
+              o.items.push({
+                id: it.id,
+                name: it.name,
+                size: it.size || it.packSize || 'Unit',
+                category: it.category || 'General',
+                supplier: so.supplier || it.supplier || 'Supplier',
+                price: parseFloat(it.price || 0),
+                vatRate: it.vatRate !== undefined ? it.vatRate : 0,
+                qty: parseFloat(it.qty || 1),
+                trackingStatus: trkStatus,
+                stockSynced: isRec,
+                delayReason: it.delayReason || so.delayReason || '',
+                expectedDeliveryDate: it.expectedDeliveryDate || so.expectedDeliveryDate || so.eta || '',
+                receivedAt: it.receivedAt || so.receivedAt || (isRec ? (o.date || new Date().toISOString()) : null)
+              });
+            });
+          });
+        }
+      } else {
+        o.items.forEach(it => {
+          if (it.trackingStatus === undefined) {
+            it.trackingStatus = it.stockSynced ? 'Received' : 'Pending';
+          }
+        });
+      }
+
+      if (!o.supplierOrders || o.supplierOrders.length === 0) {
+        const suppliers = [...new Set((o.items || []).map(i => i.supplier || 'Supplier'))];
+        o.supplierOrders = suppliers.map(s => {
+          const sItems = (o.items || []).filter(i => (i.supplier || 'Supplier') === s);
+          const isAllRec = sItems.length > 0 && sItems.every(i => i.stockSynced || i.trackingStatus === 'Received');
+          const isAnyDelayed = sItems.some(i => i.trackingStatus === 'Delayed');
+          const dReason = (sItems.find(i => i.delayReason) || {}).delayReason || '';
+          const dEta = (sItems.find(i => i.expectedDeliveryDate) || {}).expectedDeliveryDate || '';
+          return {
+            supplier: s,
+            poRef: `TSMK-${s.toUpperCase().replace(/\s+/g, '')}-${o.primaryRef.replace(/[^0-9]/g, '').slice(-6) || '000000'}-001`,
+            items: sItems,
+            grossTotal: sItems.reduce((sum, i) => sum + (i.price * (1 + (i.vatRate || 0)/100) * i.qty), 0),
+            status: isAllRec ? 'Received' : isAnyDelayed ? 'Delayed / Rescheduled' : 'Awaiting Delivery',
+            delayReason: dReason,
+            eta: dEta
+          };
+        });
+      }
+
+      return o;
+    }
+
     let storedOrders = localStorage.getItem('ts_orders');
-    orders = storedOrders ? JSON.parse(storedOrders) : [];
+    orders = (storedOrders ? JSON.parse(storedOrders) : []).map(normalizeOrder);
     
     function saveOrdersToStorage() {
+      orders.forEach(o => {
+        if (Array.isArray(o.supplierOrders)) {
+          o.supplierOrders.forEach(so => {
+            so.items = (o.items || []).filter(i => (i.supplier || '').toUpperCase() === (so.supplier || '').toUpperCase());
+            const allRec = so.items.length > 0 && so.items.every(i => i.stockSynced || i.trackingStatus === 'Received');
+            const anyDelayed = so.items.some(i => i.trackingStatus === 'Delayed');
+            const delayItem = so.items.find(i => i.trackingStatus === 'Delayed');
+            if (allRec) {
+              so.status = 'Received';
+            } else if (anyDelayed) {
+              so.status = 'Delayed / Rescheduled';
+              if (delayItem) {
+                so.delayReason = delayItem.delayReason || so.delayReason;
+                so.eta = delayItem.expectedDeliveryDate ? `Arriving: ${formatExpectedDatePurchase(delayItem.expectedDeliveryDate)}` : so.eta;
+              }
+            } else {
+              so.status = 'Awaiting Delivery';
+            }
+          });
+        }
+      });
       localStorage.setItem('ts_orders', JSON.stringify(orders));
     }
 
@@ -976,19 +1063,24 @@
       const stockLevels = getStockLevels();
       const itemId = String(item.id);
       const qty = parseFloat(item.qty || 1);
-      const currentQty = parseFloat(stockLevels[itemId] || 0);
+      const currentQty = parseFloat(stockLevels[itemId] !== undefined ? stockLevels[itemId] : (stockLevels[item.id] !== undefined ? stockLevels[item.id] : 0));
 
       if (isReceiving) {
         if (!item.stockSynced) {
-          stockLevels[itemId] = parseFloat((currentQty + qty).toFixed(2));
+          const newQty = parseFloat((currentQty + qty).toFixed(2));
+          stockLevels[itemId] = newQty;
+          stockLevels[item.id] = newQty;
           item.stockSynced = true;
+          item.trackingStatus = 'Received';
           item.receivedAt = new Date().toISOString();
           saveStockLevels(stockLevels);
           return { adjusted: true, change: +qty, name: item.name };
         }
       } else {
         if (item.stockSynced) {
-          stockLevels[itemId] = Math.max(0, parseFloat((currentQty - qty).toFixed(2)));
+          const newQty = Math.max(0, parseFloat((currentQty - qty).toFixed(2)));
+          stockLevels[itemId] = newQty;
+          stockLevels[item.id] = newQty;
           item.stockSynced = false;
           delete item.receivedAt;
           saveStockLevels(stockLevels);
@@ -1059,10 +1151,10 @@
     }
 
     function updateItemTrackingStatus(primaryRef, itemId, newStatus) {
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
 
-      const item = order.items.find(i => i.id === itemId);
+      const item = (order.items || []).find(i => String(i.id) === String(itemId));
       if (item) {
         const oldStatus = item.trackingStatus;
         item.trackingStatus = newStatus;
@@ -1093,9 +1185,9 @@
     }
 
     function openPurchaseDelayModal(primaryRef, itemId, preselectedStatus) {
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
-      const item = order.items.find(i => i.id === itemId);
+      const item = (order.items || []).find(i => String(i.id) === String(itemId));
       if (!item) return;
 
       document.getElementById('purchase-delay-ref').value = primaryRef;
@@ -1192,9 +1284,9 @@
       const itemId = parseFloat(document.getElementById('purchase-delay-item-id').value);
       const status = document.getElementById('purchase-delay-status').value;
 
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
-      const item = order.items.find(i => i.id === itemId);
+      const item = (order.items || []).find(i => String(i.id) === String(itemId));
       if (!item) return;
 
       const oldStatus = item.trackingStatus;
@@ -1248,14 +1340,14 @@
     }
 
     function receiveSupplierPO(primaryRef, supplierName) {
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
 
       let totalAdded = 0;
       let itemsCount = 0;
 
-      order.items.forEach(item => {
-        if (item.supplier === supplierName) {
+      (order.items || []).forEach(item => {
+        if ((item.supplier || '').toUpperCase() === (supplierName || '').toUpperCase()) {
           item.trackingStatus = 'Received';
           const res = syncItemStockOnReceive(item, true);
           if (res.adjusted) {
@@ -1271,7 +1363,7 @@
     }
 
     function deletePurchaseOrder(primaryRef) {
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
 
       const hasSyncedItems = (order.items || []).some(i => i.stockSynced);
@@ -1295,7 +1387,7 @@
         saveStockLevels(stockLevels);
       }
 
-      orders = orders.filter(o => o.primaryRef !== primaryRef);
+      orders = orders.filter(o => o.primaryRef !== primaryRef && o.id !== primaryRef);
       saveOrdersToStorage();
       filterAndRenderAdminOrders();
       updateAdminBadge();

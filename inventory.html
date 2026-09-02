@@ -366,11 +366,19 @@
       <div class="glass-panel p-3.5 rounded-2xl flex flex-col sm:flex-row items-center gap-3">
         <div class="relative flex-1 w-full">
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-          <input type="text" id="stock-search" oninput="renderStockGrid()" placeholder="Search ingredient or supplier..." class="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white/10 transition-all">
+          <input type="text" id="stock-search" oninput="renderStockGrid()" placeholder="Search genuine ingredient or supplier..." class="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white/10 transition-all">
         </div>
-        <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full sm:w-56 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
+        <select id="stock-view-mode" onchange="renderStockGrid()" class="w-full sm:w-56 px-3.5 py-2 bg-[#0c2e22] border border-emerald-500/40 rounded-xl text-xs text-emerald-300 font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+          <option value="GENUINE" selected>✅ Genuine Active Stocks Only</option>
+          <option value="ALL_CATALOG">📦 All Wholesale Catalog (300)</option>
+        </select>
+        <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full sm:w-44 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
           <option value="all">All Categories</option>
         </select>
+        <button type="button" onclick="syncGenuineStockLevels(true)" title="Re-sync stock levels with all received Purchase Orders" class="w-full sm:w-auto px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          <span>Sync Genuine Stocks</span>
+        </button>
       </div>
 
       <!-- Stock Grid -->
@@ -913,10 +921,77 @@
       }
     }
 
+    function normalizeOrder(o) {
+      if (!o) return o;
+      o.primaryRef = o.primaryRef || o.id || 'TSMK-ORDER';
+      o.date = o.date || o.dateStr || (o.timestamp ? new Date(o.timestamp).toLocaleDateString('en-GB') : '');
+      o.requestedBy = o.requestedBy || o.userName || 'Store Manager';
+      o.targetLocation = o.targetLocation || o.location || 'Milton Keynes';
+
+      if (!o.items || o.items.length === 0) {
+        o.items = [];
+        if (Array.isArray(o.supplierOrders)) {
+          o.supplierOrders.forEach(so => {
+            (so.items || []).forEach(it => {
+              const isRec = it.stockSynced || it.trackingStatus === 'Received' || so.status === 'Received';
+              const isDel = it.trackingStatus === 'Delayed' || so.status === 'Delayed / Rescheduled' || so.status === 'Delayed';
+              const isUnav = it.trackingStatus === 'Unavailable' || so.status === 'Unavailable';
+              const trkStatus = isRec ? 'Received' : isDel ? 'Delayed' : isUnav ? 'Unavailable' : (it.trackingStatus || 'Pending');
+
+              o.items.push({
+                id: it.id,
+                name: it.name,
+                size: it.size || it.packSize || 'Unit',
+                category: it.category || 'General',
+                supplier: so.supplier || it.supplier || 'Supplier',
+                price: parseFloat(it.price || 0),
+                vatRate: it.vatRate !== undefined ? it.vatRate : 0,
+                qty: parseFloat(it.qty || 1),
+                trackingStatus: trkStatus,
+                stockSynced: isRec,
+                delayReason: it.delayReason || so.delayReason || '',
+                expectedDeliveryDate: it.expectedDeliveryDate || so.expectedDeliveryDate || so.eta || '',
+                receivedAt: it.receivedAt || so.receivedAt || (isRec ? (o.date || new Date().toISOString()) : null)
+              });
+            });
+          });
+        }
+      } else {
+        o.items.forEach(it => {
+          if (it.trackingStatus === undefined) {
+            it.trackingStatus = it.stockSynced ? 'Received' : 'Pending';
+          }
+        });
+      }
+
+      if (!o.supplierOrders || o.supplierOrders.length === 0) {
+        const suppliers = [...new Set((o.items || []).map(i => i.supplier || 'Supplier'))];
+        o.supplierOrders = suppliers.map(s => {
+          const sItems = (o.items || []).filter(i => (i.supplier || 'Supplier') === s);
+          const isAllRec = sItems.length > 0 && sItems.every(i => i.stockSynced || i.trackingStatus === 'Received');
+          const isAnyDelayed = sItems.some(i => i.trackingStatus === 'Delayed');
+          const dReason = (sItems.find(i => i.delayReason) || {}).delayReason || '';
+          const dEta = (sItems.find(i => i.expectedDeliveryDate) || {}).expectedDeliveryDate || '';
+          return {
+            supplier: s,
+            poRef: `TSMK-${s.toUpperCase().replace(/\s+/g, '')}-${o.primaryRef.replace(/[^0-9]/g, '').slice(-6) || '000000'}-001`,
+            items: sItems,
+            grossTotal: sItems.reduce((sum, i) => sum + (i.price * (1 + (i.vatRate || 0)/100) * i.qty), 0),
+            status: isAllRec ? 'Received' : isAnyDelayed ? 'Delayed / Rescheduled' : 'Awaiting Delivery',
+            delayReason: dReason,
+            eta: dEta
+          };
+        });
+      }
+
+      return o;
+    }
+
     function getPurchaseOrders() {
       try {
         const stored = localStorage.getItem('ts_orders');
-        return stored ? JSON.parse(stored) : [];
+        const list = stored ? JSON.parse(stored) : [];
+        return list.map(normalizeOrder);
       } catch (e) {
         return [];
       }
@@ -924,10 +999,141 @@
 
     function savePurchaseOrders(orders) {
       try {
+        orders.forEach(o => {
+          if (Array.isArray(o.supplierOrders)) {
+            o.supplierOrders.forEach(so => {
+              so.items = (o.items || []).filter(i => (i.supplier || '').toUpperCase() === (so.supplier || '').toUpperCase());
+              const allRec = so.items.length > 0 && so.items.every(i => i.stockSynced || i.trackingStatus === 'Received');
+              const anyDelayed = so.items.some(i => i.trackingStatus === 'Delayed');
+              const delayItem = so.items.find(i => i.trackingStatus === 'Delayed');
+              if (allRec) {
+                so.status = 'Received';
+              } else if (anyDelayed) {
+                so.status = 'Delayed / Rescheduled';
+                if (delayItem) {
+                  so.delayReason = delayItem.delayReason || so.delayReason;
+                  so.eta = delayItem.expectedDeliveryDate ? `Arriving: ${formatExpectedDate(delayItem.expectedDeliveryDate)}` : so.eta;
+                }
+              } else {
+                so.status = 'Awaiting Delivery';
+              }
+            });
+          }
+        });
         localStorage.setItem('ts_orders', JSON.stringify(orders));
       } catch (e) {
         console.error("Failed to save orders:", e);
       }
+    }
+
+    function syncGenuineStockLevels(isUserTriggered) {
+      const orders = getPurchaseOrders();
+      const stockLevels = getStockLevels();
+      let syncedCount = 0;
+      let totalQtySynced = 0;
+
+      orders.forEach(o => {
+        (o.items || []).forEach(item => {
+          const isReceived = item.trackingStatus === 'Received' || item.stockSynced;
+          if (isReceived) {
+            const strId = String(item.id);
+            const qty = parseFloat(item.qty || 1);
+            item.stockSynced = true;
+            item.trackingStatus = 'Received';
+            if (!item.receivedAt) item.receivedAt = o.date || new Date().toISOString();
+
+            const cur = parseFloat(stockLevels[strId] !== undefined ? stockLevels[strId] : (stockLevels[item.id] !== undefined ? stockLevels[item.id] : 0));
+            if (cur < qty) {
+              const newQty = parseFloat((cur + qty).toFixed(2));
+              stockLevels[strId] = newQty;
+              stockLevels[item.id] = newQty;
+              syncedCount++;
+              totalQtySynced += qty;
+            }
+          }
+        });
+      });
+
+      saveStockLevels(stockLevels);
+      savePurchaseOrders(orders);
+
+      renderStockGrid();
+      renderPurchaseOrdersView();
+
+      if (isUserTriggered) {
+        showInventoryToast(`✅ Genuine Stocks Synced: ${syncedCount > 0 ? `Updated ${syncedCount} items (+${totalQtySynced} units)` : 'All received order quantities are accurately recorded in stock pots.'}`);
+      }
+      return { syncedCount, stockLevels };
+    }
+
+    function getGenuineInventoryItems() {
+      const orders = getPurchaseOrders();
+      const stockLevels = getStockLevels();
+
+      const orderedItemIds = new Set();
+      const orderedNames = new Set();
+      orders.forEach(o => {
+        (o.items || []).forEach(i => {
+          if (i.id !== undefined) orderedItemIds.add(String(i.id));
+          if (i.name) orderedNames.add(i.name.toLowerCase().trim());
+        });
+      });
+
+      const stockedItemIds = new Set();
+      Object.entries(stockLevels).forEach(([id, qty]) => {
+        if (parseFloat(qty) > 0) stockedItemIds.add(String(id));
+      });
+
+      const sopIngredientNames = new Set();
+      (allSOPRecipes || []).forEach(r => {
+        (r.ingredients || []).forEach(ing => {
+          if (ing.name) sopIngredientNames.add(ing.name.toLowerCase().trim());
+        });
+      });
+
+      const genuineItems = [];
+      const addedKeys = new Set();
+
+      // 1. Items from actual orders
+      orders.forEach(o => {
+        (o.items || []).forEach(i => {
+          const key = (i.name || '').toLowerCase().trim();
+          if (!addedKeys.has(key)) {
+            addedKeys.add(key);
+            const catItem = catalogData.find(c => String(c.id) === String(i.id) || (c.name && c.name.toLowerCase().trim() === key));
+            genuineItems.push({
+              id: i.id || (catItem ? catItem.id : Date.now()),
+              name: i.name || (catItem ? catItem.name : 'Unknown Item'),
+              category: (catItem && catItem.category) || i.category || 'Kitchen Stock',
+              size: (catItem && catItem.size) || i.size || 'Unit',
+              supplier: i.supplier || (catItem && catItem.supplier) || 'Supplier',
+              price: parseFloat(i.price || (catItem ? catItem.price : 0)),
+              isFromOrder: true
+            });
+          }
+        });
+      });
+
+      // 2. Items with actual positive stock or part of SOP recipes
+      catalogData.forEach(c => {
+        const cNameLower = (c.name || '').toLowerCase().trim();
+        const strId = String(c.id);
+
+        const hasStock = stockedItemIds.has(strId);
+        const wasOrdered = orderedItemIds.has(strId) || orderedNames.has(cNameLower);
+        const isInSOP = Array.from(sopIngredientNames).some(ingName => cNameLower.includes(ingName) || ingName.includes(cNameLower));
+
+        if ((hasStock || wasOrdered || isInSOP) && !addedKeys.has(cNameLower)) {
+          addedKeys.add(cNameLower);
+          genuineItems.push({
+            ...c,
+            isFromOrder: wasOrdered,
+            isInSOP: isInSOP
+          });
+        }
+      });
+
+      return genuineItems;
     }
 
     async function loadRecipes() {
@@ -1316,16 +1522,38 @@
       const grid = document.getElementById('stock-grid');
       const search = (document.getElementById('stock-search')?.value || '').toLowerCase();
       const catFilter = document.getElementById('stock-category-filter')?.value || 'all';
+      const viewMode = document.getElementById('stock-view-mode')?.value || 'GENUINE';
       const stockLevels = getStockLevels();
 
       let totalVal = 0;
       grid.innerHTML = '';
 
-      catalogData.forEach(item => {
+      const itemsToRender = viewMode === 'ALL_CATALOG' ? catalogData : getGenuineInventoryItems();
+
+      if (itemsToRender.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full glass-panel p-8 rounded-3xl text-center flex flex-col items-center justify-center">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
+              <i data-lucide="package-search" class="w-6 h-6"></i>
+            </div>
+            <h4 class="font-bold text-white text-base mb-1 heading-font">No Genuine Stocks Found</h4>
+            <p class="text-xs text-slate-400 max-w-md mb-4">You have not received any purchase orders or registered recipes yet. You can view all wholesale catalog items or receive purchase orders to stock your pots.</p>
+            <button onclick="document.getElementById('stock-view-mode').value='ALL_CATALOG'; renderStockGrid();" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all">
+              View Wholesale Catalog (300 items)
+            </button>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        document.getElementById('total-stock-val').innerText = '£0.00';
+        return;
+      }
+
+      itemsToRender.forEach(item => {
         if (catFilter !== 'all' && (item.category || 'General') !== catFilter) return;
         if (search && !item.name.toLowerCase().includes(search) && !(item.supplier || '').toLowerCase().includes(search)) return;
 
-        const currentQty = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
+        const strId = String(item.id);
+        const currentQty = stockLevels[strId] !== undefined ? parseFloat(stockLevels[strId]) : (stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0);
         const maxCapacity = 20;
         const percentage = Math.min(100, Math.max(5, (currentQty / maxCapacity) * 100));
         const price = parseFloat(item.price || 0);
@@ -1783,15 +2011,15 @@
                                 <td class="p-3 text-right">
                                   <div class="flex items-center justify-end gap-1.5">
                                     ${!isReceived ? `
-                                      <button onclick="openDeliveryExceptionModal('${o.primaryRef}', ${item.id})" class="px-2.5 py-1 ${isDelayed ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : isUnavailable ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-white/5 text-slate-300 border-white/10'} hover:bg-white/10 border rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1" title="Report delay or unavailability">
+                                      <button onclick="openDeliveryExceptionModal('${o.primaryRef}', '${item.id}')" class="px-2.5 py-1 ${isDelayed ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : isUnavailable ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-white/5 text-slate-300 border-white/10'} hover:bg-white/10 border rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1" title="Report delay or unavailability">
                                         <i data-lucide="${isDelayed ? 'clock' : isUnavailable ? 'slash' : 'alert-circle'}" class="w-3 h-3"></i>
                                         <span>${isDelayed ? 'Edit Delay' : isUnavailable ? 'Edit Issue' : 'Delay / Issue'}</span>
                                       </button>
-                                      <button onclick="receivePOItemInInventory('${o.primaryRef}', ${item.id})" class="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition-all inline-flex items-center gap-1 shadow-sm">
+                                      <button onclick="receivePOItemInInventory('${o.primaryRef}', '${item.id}')" class="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition-all inline-flex items-center gap-1 shadow-sm">
                                         <i data-lucide="plus" class="w-3 h-3"></i> Receive (+${item.qty})
                                       </button>
                                     ` : `
-                                      <button onclick="undoPOItemReceiveInInventory('${o.primaryRef}', ${item.id})" class="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-red-300 border border-white/10 rounded-xl text-[11px] font-medium transition-all inline-flex items-center gap-1">
+                                      <button onclick="undoPOItemReceiveInInventory('${o.primaryRef}', '${item.id}')" class="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-red-300 border border-white/10 rounded-xl text-[11px] font-medium transition-all inline-flex items-center gap-1">
                                         <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Undo
                                       </button>
                                     `}
@@ -1817,10 +2045,10 @@
     // Direct Receiving Actions
     function receivePOItemInInventory(primaryRef, itemId) {
       const orders = getPurchaseOrders();
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
 
-      const item = (order.items || []).find(i => i.id === itemId);
+      const item = (order.items || []).find(i => String(i.id) === String(itemId));
       if (!item) return;
 
       if (item.stockSynced) {
@@ -1830,8 +2058,11 @@
 
       const stockLevels = getStockLevels();
       const qty = parseFloat(item.qty || 1);
-      const cur = parseFloat(stockLevels[item.id] || 0);
-      stockLevels[item.id] = parseFloat((cur + qty).toFixed(2));
+      const strId = String(item.id);
+      const cur = parseFloat(stockLevels[strId] !== undefined ? stockLevels[strId] : (stockLevels[item.id] !== undefined ? stockLevels[item.id] : 0));
+      const newQty = parseFloat((cur + qty).toFixed(2));
+      stockLevels[strId] = newQty;
+      stockLevels[item.id] = newQty;
       saveStockLevels(stockLevels);
 
       item.trackingStatus = 'Received';
@@ -1841,22 +2072,25 @@
 
       renderPurchaseOrdersView();
       renderStockGrid();
-      showInventoryToast(`✅ Received: +${qty} units of "${item.name}" added to stock pots!`);
+      showInventoryToast(`✅ Received: +${qty} units of "${item.name}" added to stock pots! (New level: ${newQty})`);
     }
 
     function undoPOItemReceiveInInventory(primaryRef, itemId) {
       if (!confirm("Are you sure you want to revert this delivery? This will deduct the received quantity from live stock pots.")) return;
       const orders = getPurchaseOrders();
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
 
-      const item = (order.items || []).find(i => i.id === itemId);
+      const item = (order.items || []).find(i => String(i.id) === String(itemId));
       if (!item || !item.stockSynced) return;
 
       const stockLevels = getStockLevels();
       const qty = parseFloat(item.qty || 1);
-      const cur = parseFloat(stockLevels[item.id] || 0);
-      stockLevels[item.id] = Math.max(0, parseFloat((cur - qty).toFixed(2)));
+      const strId = String(item.id);
+      const cur = parseFloat(stockLevels[strId] !== undefined ? stockLevels[strId] : (stockLevels[item.id] !== undefined ? stockLevels[item.id] : 0));
+      const newQty = Math.max(0, parseFloat((cur - qty).toFixed(2)));
+      stockLevels[strId] = newQty;
+      stockLevels[item.id] = newQty;
       saveStockLevels(stockLevels);
 
       item.trackingStatus = 'Not Received';
@@ -1871,7 +2105,7 @@
 
     function receiveEntireSupplierPOInInventory(primaryRef, supplierName) {
       const orders = getPurchaseOrders();
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
 
       const stockLevels = getStockLevels();
@@ -1879,10 +2113,13 @@
       let totalQty = 0;
 
       (order.items || []).forEach(item => {
-        if (item.supplier === supplierName && !item.stockSynced) {
+        if ((item.supplier || '').toUpperCase() === (supplierName || '').toUpperCase() && !item.stockSynced) {
           const qty = parseFloat(item.qty || 1);
-          const cur = parseFloat(stockLevels[item.id] || 0);
-          stockLevels[item.id] = parseFloat((cur + qty).toFixed(2));
+          const strId = String(item.id);
+          const cur = parseFloat(stockLevels[strId] !== undefined ? stockLevels[strId] : (stockLevels[item.id] !== undefined ? stockLevels[item.id] : 0));
+          const newQty = parseFloat((cur + qty).toFixed(2));
+          stockLevels[strId] = newQty;
+          stockLevels[item.id] = newQty;
           item.trackingStatus = 'Received';
           item.stockSynced = true;
           item.receivedAt = new Date().toISOString();
@@ -1906,7 +2143,7 @@
 
     function deletePurchaseOrderInInventory(primaryRef) {
       const orders = getPurchaseOrders();
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
 
       const hasSyncedItems = (order.items || []).some(i => i.stockSynced);
@@ -1921,16 +2158,18 @@
         const stockLevels = getStockLevels();
         (order.items || []).forEach(item => {
           if (item.stockSynced) {
-            const itemId = String(item.id);
+            const strId = String(item.id);
             const qty = parseFloat(item.qty || 1);
-            const cur = parseFloat(stockLevels[itemId] || 0);
-            stockLevels[itemId] = Math.max(0, parseFloat((cur - qty).toFixed(2)));
+            const cur = parseFloat(stockLevels[strId] !== undefined ? stockLevels[strId] : (stockLevels[item.id] !== undefined ? stockLevels[item.id] : 0));
+            const newQty = Math.max(0, parseFloat((cur - qty).toFixed(2)));
+            stockLevels[strId] = newQty;
+            stockLevels[item.id] = newQty;
           }
         });
         saveStockLevels(stockLevels);
       }
 
-      const updatedOrders = orders.filter(o => o.primaryRef !== primaryRef);
+      const updatedOrders = orders.filter(o => o.primaryRef !== primaryRef && o.id !== primaryRef);
       savePurchaseOrders(updatedOrders);
       renderPurchaseOrdersView();
       renderStockGrid();
@@ -1976,9 +2215,9 @@
     // -------------------------------------------------------------
     function openDeliveryExceptionModal(primaryRef, itemId) {
       const orders = getPurchaseOrders();
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
-      const item = (order.items || []).find(i => i.id === itemId);
+      const item = (order.items || []).find(i => String(i.id) === String(itemId));
       if (!item) return;
 
       document.getElementById('delay-modal-order-ref').value = primaryRef;
@@ -2119,9 +2358,9 @@
       const status = document.getElementById('delay-selected-status').value;
 
       const orders = getPurchaseOrders();
-      const order = orders.find(o => o.primaryRef === primaryRef);
+      const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
       if (!order) return;
-      const item = (order.items || []).find(i => i.id === itemId);
+      const item = (order.items || []).find(i => String(i.id) === String(itemId));
       if (!item) return;
 
       item.trackingStatus = status;
@@ -2570,6 +2809,7 @@
       populateCategories();
       await loadRecipes();
       await loadAliases();
+      syncGenuineStockLevels(false);
       renderStockGrid();
       renderPurchaseOrdersView();
       renderAuditTable();
