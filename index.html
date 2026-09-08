@@ -119,19 +119,12 @@
         </div>
       </div>
 
-      <!-- Perspective Switch & Station Telemetry -->
+      <!-- Mode Switch & Station Telemetry -->
       <div class="flex items-center gap-2.5 sm:gap-3">
         
-        <!-- Smooth View Perspective Switcher -->
-        <div class="bg-black/30 p-1 rounded-2xl border border-white/10 flex items-center gap-1">
-          <button id="view-btn-staff" onclick="setHubPerspective('staff')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm">
-            <i data-lucide="chef-hat" class="w-3.5 h-3.5 text-amber-400"></i>
-            <span>Kitchen Staff</span>
-          </button>
-          <button id="view-btn-manager" onclick="setHubPerspective('manager')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
-            <i data-lucide="shield" class="w-3.5 h-3.5"></i>
-            <span>Manager</span>
-          </button>
+        <!-- Role Mode Switcher Container -->
+        <div id="nav-role-container">
+          <!-- Dynamically populated: Staff Button vs Manager Badge -->
         </div>
 
         <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-slate-300">
@@ -159,7 +152,7 @@
       <div class="text-center max-w-2xl mx-auto">
         <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-emerald-500/15 via-teal-500/20 to-amber-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-bold mb-3 shadow-sm">
           <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i>
-          <span>Store & Kitchen Purchasing Station • Quick Requisitions</span>
+          <span>Store & Kitchen Purchasing Station • Staff Active Portal</span>
         </div>
         <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight heading-font mb-2">
           Kitchen <span class="bg-gradient-to-r from-amber-400 via-yellow-300 to-emerald-300 bg-clip-text text-transparent">Purchasing Terminal</span>
@@ -179,7 +172,7 @@
           <div>
             <div class="flex flex-wrap items-center gap-2 mb-2">
               <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Active Terminal
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Active Staff Terminal
               </span>
               <span class="text-slate-400 text-xs font-semibold">100+ Catalog Ingredients</span>
               <span class="text-slate-500 text-xs">•</span>
@@ -300,7 +293,7 @@
         <div>
           <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold mb-2 shadow-sm">
             <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
-            <span>Executive Operations Command • MK Stadium</span>
+            <span>Executive Operations Command • Passcode ALAIYA Active</span>
           </div>
           <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight heading-font">
             Operations <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">Management Suite</span>
@@ -311,7 +304,11 @@
         </div>
 
         <div class="flex items-center gap-2.5">
-          <button onclick="restoreVerifiedHubData()" class="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
+          <button onclick="lockToStaffMode()" class="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span>Lock to Staff View</span>
+          </button>
+          <button onclick="restoreVerifiedHubData()" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
             <span>Restore Whole Orders Data</span>
           </button>
@@ -351,9 +348,9 @@
         <div>
           <h3 class="text-xl sm:text-2xl font-extrabold text-white heading-font flex items-center gap-2">
             <span>Operations & Kitchen Suite</span>
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-400 font-bold">All 6 Systems</span>
+            <span id="suite-status-tag" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">Purchasing Accessible</span>
           </h3>
-          <p class="text-xs text-slate-400 mt-0.5">Click any portal below to launch full module immediately.</p>
+          <p id="suite-status-desc" class="text-xs text-slate-400 mt-0.5">Staff access is enabled for Purchase Orders. Manager passcode unlocks other modules.</p>
         </div>
 
         <!-- Category Filter Pills -->
@@ -370,18 +367,18 @@
         </div>
       </div>
 
-      <!-- PORTALS GRID (All 6 Active & Clickable) -->
+      <!-- PORTALS GRID (Staff Accessible: Purchase. Other: Click triggers passcode ALAIYA) -->
       <div id="portals-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         
-        <!-- 1. Purchase Orders Portal -->
-        <div data-category="inventory" onclick="window.location.href='purchase.html'" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-amber-500/40 hover:border-amber-400 bg-gradient-to-br from-amber-950/40 to-slate-900/60 shadow-xl">
+        <!-- 1. Purchase Orders Portal (ALWAYS ACCESSIBLE TO STAFF) -->
+        <div data-category="inventory" onclick="openPortal('purchase.html', false)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-amber-500/40 hover:border-amber-400 bg-gradient-to-br from-amber-950/40 to-slate-900/60 shadow-xl">
           <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/15 rounded-full blur-2xl group-hover:bg-amber-500/30 transition-all"></div>
           <div class="flex items-center justify-between mb-4">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
               <i data-lucide="shopping-bag" class="w-6 h-6"></i>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30">
-              PURCHASING TERMINAL
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
+              <i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> STAFF ACCESSIBLE
             </span>
           </div>
           <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-amber-300 transition-colors">
@@ -391,20 +388,20 @@
             Order stock from Bookers Wholesale and Brakes Foodservice. Auto-generate official PDF requisition orders, manage delivery statuses, and sync to stock.
           </p>
           <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-amber-400">
-            <span>Order Stock & View Deliveries</span>
+            <span>Open Purchasing Portal</span>
             <i data-lucide="arrow-up-right" class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
           </div>
         </div>
 
-        <!-- 2. Stock & Inventory Control -->
-        <div data-category="inventory" onclick="window.location.href='inventory.html'" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-indigo-500/40 hover:border-indigo-400 bg-gradient-to-br from-indigo-950/40 to-slate-900/60 shadow-xl">
+        <!-- 2. Stock & Inventory Control (MANAGER REQUIRED) -->
+        <div data-category="inventory" onclick="openPortal('inventory.html', true)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-indigo-500/40 hover:border-indigo-400 bg-gradient-to-br from-indigo-950/40 to-slate-900/60 shadow-xl">
           <div class="absolute top-0 right-0 w-36 h-36 bg-indigo-500/15 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all"></div>
           <div class="flex items-center justify-between mb-4">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-blue-500 to-teal-400 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-110 transition-transform">
               <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full bg-indigo-400/20 text-indigo-300 font-extrabold text-[10px] uppercase tracking-wider border border-indigo-500/30">
-              STOCK POTS MONITOR
+            <span class="portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> MANAGER ACCESS
             </span>
           </div>
           <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-indigo-300 transition-colors">
@@ -414,20 +411,20 @@
             Real-time animated stock pots (5.0 Max / 3.0 Moderate / ≤2.0 Min Stock Alarm). Track inward supplier deliveries, ingredient prices, and monthly audits.
           </p>
           <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-indigo-400">
-            <span>Manage Stock & PO Sync</span>
-            <i data-lucide="arrow-up-right" class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+            <span class="portal-cta-text">Manager Access Required</span>
+            <i data-lucide="lock" class="portal-cta-icon w-4 h-4 text-amber-400"></i>
           </div>
         </div>
 
-        <!-- 3. Internal SOPs & Recipe System -->
-        <div data-category="kitchen" onclick="window.location.href='SOP.html'" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-teal-500/30 hover:border-teal-400 bg-gradient-to-br from-teal-950/30 to-slate-900/60 shadow-xl">
+        <!-- 3. Internal SOPs & Recipe System (MANAGER REQUIRED) -->
+        <div data-category="kitchen" onclick="openPortal('SOP.html', true)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-teal-500/30 hover:border-teal-400 bg-gradient-to-br from-teal-950/30 to-slate-900/60 shadow-xl">
           <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl group-hover:bg-teal-500/20 transition-all"></div>
           <div class="flex items-center justify-between mb-4">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-400 text-slate-950 flex items-center justify-center shadow-lg shadow-teal-600/30 group-hover:scale-110 transition-transform">
               <i data-lucide="file-text" class="w-6 h-6"></i>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full bg-teal-400/20 text-teal-300 font-extrabold text-[10px] uppercase tracking-wider border border-teal-500/30">
-              RECIPES & SOPS
+            <span class="portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> MANAGER ACCESS
             </span>
           </div>
           <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-teal-300 transition-colors">
@@ -437,20 +434,20 @@
             Standard kitchen operating procedures, step-by-step waffle & crepe preparation guidelines, equipment settings, and yield cost breakdowns.
           </p>
           <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-teal-400">
-            <span>Open SOP Manual</span>
-            <i data-lucide="arrow-up-right" class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+            <span class="portal-cta-text">Manager Access Required</span>
+            <i data-lucide="lock" class="portal-cta-icon w-4 h-4 text-amber-400"></i>
           </div>
         </div>
 
-        <!-- 4. Kitchen Operations (Waste & Batch Production) -->
-        <div data-category="kitchen" onclick="window.location.href='kitchen_ops.html'" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-rose-500/30 hover:border-rose-400 bg-gradient-to-br from-rose-950/30 to-slate-900/60 shadow-xl">
+        <!-- 4. Kitchen Operations (MANAGER REQUIRED) -->
+        <div data-category="kitchen" onclick="openPortal('kitchen_ops.html', true)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-rose-500/30 hover:border-rose-400 bg-gradient-to-br from-rose-950/30 to-slate-900/60 shadow-xl">
           <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all"></div>
           <div class="flex items-center justify-between mb-4">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-400 text-white flex items-center justify-center shadow-lg shadow-rose-600/30 group-hover:scale-110 transition-transform">
               <i data-lucide="chef-hat" class="w-6 h-6"></i>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full bg-rose-400/20 text-rose-300 font-extrabold text-[10px] uppercase tracking-wider border border-rose-500/30">
-              KITCHEN LOGS
+            <span class="portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> MANAGER ACCESS
             </span>
           </div>
           <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-rose-300 transition-colors">
@@ -460,20 +457,20 @@
             Log daily batch preparation of dough & sauces with dynamic recipe ingredient depletion. Record dropped or spoiled stock for HACCP compliance.
           </p>
           <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-rose-400">
-            <span>Log Prep & Waste</span>
-            <i data-lucide="arrow-up-right" class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+            <span class="portal-cta-text">Manager Access Required</span>
+            <i data-lucide="lock" class="portal-cta-icon w-4 h-4 text-amber-400"></i>
           </div>
         </div>
 
-        <!-- 5. Omnichannel Sales Depletion & Recipe Matcher -->
-        <div data-category="inventory" onclick="window.location.href='inventory.html#sales-depletion'" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-cyan-500/30 hover:border-cyan-400 bg-gradient-to-br from-cyan-950/30 to-slate-900/60 shadow-xl">
+        <!-- 5. Omnichannel Sales Depletion & Recipe Matcher (MANAGER REQUIRED) -->
+        <div data-category="inventory" onclick="openPortal('inventory.html#sales-depletion', true)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-cyan-500/30 hover:border-cyan-400 bg-gradient-to-br from-cyan-950/30 to-slate-900/60 shadow-xl">
           <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
           <div class="flex items-center justify-between mb-4">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-400 text-slate-950 flex items-center justify-center shadow-lg shadow-cyan-600/30 group-hover:scale-110 transition-transform">
               <i data-lucide="cpu" class="w-6 h-6"></i>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 font-extrabold text-[10px] uppercase tracking-wider border border-cyan-500/30">
-              CSV SALES DEPLETION
+            <span class="portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> MANAGER ACCESS
             </span>
           </div>
           <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-cyan-300 transition-colors">
@@ -483,20 +480,20 @@
             Upload Square, UberEats, Deliveroo & JustEat CSV reports. Automatically deduct stock pots based on recipe SOP bills of materials with alias resolution.
           </p>
           <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-cyan-400">
-            <span>Deplete Stocks from CSV</span>
-            <i data-lucide="arrow-up-right" class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+            <span class="portal-cta-text">Manager Access Required</span>
+            <i data-lucide="lock" class="portal-cta-icon w-4 h-4 text-amber-400"></i>
           </div>
         </div>
 
-        <!-- 6. Executive AI Insights & Omnichannel Analytics -->
-        <div data-category="inventory" onclick="window.location.href='analytics.html'" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-emerald-500/40 hover:border-emerald-400 bg-gradient-to-br from-emerald-950/40 to-slate-900/60 shadow-xl">
+        <!-- 6. Executive AI Insights & Omnichannel Analytics (MANAGER REQUIRED) -->
+        <div data-category="inventory" onclick="openPortal('analytics.html', true)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-emerald-500/40 hover:border-emerald-400 bg-gradient-to-br from-emerald-950/40 to-slate-900/60 shadow-xl">
           <div class="absolute top-0 right-0 w-36 h-36 bg-emerald-500/15 rounded-full blur-2xl group-hover:bg-emerald-500/30 transition-all"></div>
           <div class="flex items-center justify-between mb-4">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-300 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition-transform">
               <i data-lucide="trending-up" class="w-6 h-6"></i>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-sm">
-              AI EXECUTIVE
+            <span class="portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> MANAGER ACCESS
             </span>
           </div>
           <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-emerald-300 transition-colors">
@@ -506,14 +503,49 @@
             High-volume daily sales analytics engine, BCG menu matrix (Stars, Dogs, Puzzles, Plowhorses), channel margin breakdown, and AI insights feed.
           </p>
           <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-emerald-400">
-            <span>Open Executive Suite</span>
-            <i data-lucide="arrow-up-right" class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+            <span class="portal-cta-text">Manager Access Required</span>
+            <i data-lucide="lock" class="portal-cta-icon w-4 h-4 text-amber-400"></i>
           </div>
         </div>
 
       </div>
     </div>
   </main>
+
+  <!-- MANAGER PASSCODE MODAL -->
+  <div id="manager-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel bg-[#0b221a]/95 border border-amber-500/40 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center space-y-5">
+      <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-lg shadow-amber-950">
+        <i data-lucide="shield" class="w-7 h-7"></i>
+      </div>
+      <div>
+        <h3 class="text-xl font-bold text-white heading-font">Manager Passcode Required</h3>
+        <p class="text-xs text-slate-300 mt-1">Staff access is restricted to the Kitchen Purchasing Portal. Enter passcode to access operations suite.</p>
+      </div>
+
+      <div class="space-y-2 text-left">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager Passcode</label>
+        <div class="relative">
+          <input type="password" id="manager-passcode-input" placeholder="Enter Passcode" class="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-xl text-center text-sm font-semibold text-white tracking-widest outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500/50 transition-all">
+          <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors">
+            <i data-lucide="eye" id="manager-eye-icon" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <p id="manager-passcode-error" class="text-xs text-rose-400 font-semibold hidden text-center flex items-center justify-center gap-1">
+          <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Incorrect passcode. Try again.
+        </p>
+      </div>
+
+      <div class="flex gap-2.5 pt-2">
+        <button type="button" onclick="closeManagerModal()" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold rounded-xl text-xs transition-all">
+          Cancel
+        </button>
+        <button type="button" onclick="verifyManagerPasscode()" class="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20">
+          Unlock Suite
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- FOOTER -->
   <footer class="w-full relative z-20 border-t border-white/10 py-6 text-center">
@@ -525,6 +557,91 @@
 
   <script>
     lucide.createIcons();
+
+    let pendingTargetUrl = null;
+
+    function isManagerMode() {
+      return sessionStorage.getItem('ts_hub_manager_mode') === 'true';
+    }
+
+    function openPortal(url, requiresManager) {
+      if (requiresManager && !isManagerMode()) {
+        openManagerModal(url);
+      } else {
+        window.location.href = url;
+      }
+    }
+
+    function handleManagerClick() {
+      openManagerModal();
+    }
+
+    function openManagerModal(targetUrl) {
+      pendingTargetUrl = targetUrl || null;
+      const modal = document.getElementById('manager-modal');
+      const input = document.getElementById('manager-passcode-input');
+      const errorMsg = document.getElementById('manager-passcode-error');
+      if (errorMsg) errorMsg.classList.add('hidden');
+      if (input) input.value = '';
+      modal.classList.remove('hidden');
+      setTimeout(() => { if (input) input.focus(); }, 100);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeManagerModal() {
+      const modal = document.getElementById('manager-modal');
+      const input = document.getElementById('manager-passcode-input');
+      const errorMsg = document.getElementById('manager-passcode-error');
+      modal.classList.add('hidden');
+      if (input) input.value = '';
+      if (errorMsg) errorMsg.classList.add('hidden');
+      pendingTargetUrl = null;
+    }
+
+    function verifyManagerPasscode() {
+      const input = document.getElementById('manager-passcode-input');
+      const errorMsg = document.getElementById('manager-passcode-error');
+      const val = (input?.value || '').trim().toUpperCase();
+
+      if (val === 'ALAIYA') {
+        sessionStorage.setItem('ts_hub_manager_mode', 'true');
+        closeManagerModal();
+        setHubPerspective('manager');
+        showHubToast('🔓 Manager Access Granted! Operations Suite Unlocked.');
+
+        if (pendingTargetUrl) {
+          const url = pendingTargetUrl;
+          pendingTargetUrl = null;
+          setTimeout(() => { window.location.href = url; }, 300);
+        }
+      } else {
+        if (errorMsg) errorMsg.classList.remove('hidden');
+        if (input) {
+          input.classList.add('ring-2', 'ring-rose-500');
+          setTimeout(() => input.classList.remove('ring-2', 'ring-rose-500'), 1500);
+        }
+      }
+    }
+
+    function lockToStaffMode() {
+      sessionStorage.removeItem('ts_hub_manager_mode');
+      setHubPerspective('staff');
+      showHubToast('🔒 Locked to Staff View. Passcode ALAIYA required for Manager View.');
+    }
+
+    function togglePasscodeVisibility() {
+      const input = document.getElementById('manager-passcode-input');
+      const icon = document.getElementById('manager-eye-icon');
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        if (icon) icon.setAttribute('data-lucide', 'eye');
+      }
+      if (window.lucide) lucide.createIcons();
+    }
 
     function ensureInitialData() {
       try {
@@ -555,35 +672,85 @@
     }
 
     function setHubPerspective(mode) {
-      sessionStorage.setItem('ts_hub_perspective', mode);
-      const staffBtn = document.getElementById('view-btn-staff');
-      const managerBtn = document.getElementById('view-btn-manager');
+      const isManager = isManagerMode();
       const staffBanner = document.getElementById('staff-hero-banner');
       const managerBanner = document.getElementById('manager-hero-banner');
       const navSubtitle = document.getElementById('nav-subtitle');
+      const roleContainer = document.getElementById('nav-role-container');
+      const suiteTag = document.getElementById('suite-status-tag');
+      const suiteDesc = document.getElementById('suite-status-desc');
 
-      if (mode === 'manager') {
+      // Update Top Nav Mode Switcher
+      if (isManager && mode === 'manager') {
         if (staffBanner) staffBanner.classList.add('hidden');
         if (managerBanner) managerBanner.classList.remove('hidden');
         if (navSubtitle) navSubtitle.innerText = 'Executive Operations Command & Management';
-        if (managerBtn) {
-          managerBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm';
+        if (suiteTag) {
+          suiteTag.innerText = 'All Portals Unlocked';
+          suiteTag.className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30';
         }
-        if (staffBtn) {
-          staffBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+        if (suiteDesc) suiteDesc.innerText = 'Manager Mode active. Full operations suite unlocked.';
+        
+        if (roleContainer) {
+          roleContainer.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> Manager Active
+              </span>
+              <button onclick="lockToStaffMode()" class="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                <span>Staff View</span>
+              </button>
+            </div>
+          `;
         }
-        showHubToast('👑 Switched to Operations Manager Perspective');
+
+        // Update cards to show unlocked
+        document.querySelectorAll('.portal-lock-badge').forEach(b => {
+          b.innerHTML = '<i data-lucide="shield-check" class="w-3 h-3 text-emerald-400"></i> MANAGER UNLOCKED';
+          b.className = 'portal-lock-badge px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1';
+        });
+        document.querySelectorAll('.portal-cta-text').forEach(t => t.innerText = 'Launch Management Module');
+        document.querySelectorAll('.portal-cta-icon').forEach(i => {
+          i.setAttribute('data-lucide', 'arrow-up-right');
+          i.className = 'portal-cta-icon w-4 h-4 text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform';
+        });
+
       } else {
         if (staffBanner) staffBanner.classList.remove('hidden');
         if (managerBanner) managerBanner.classList.add('hidden');
-        if (navSubtitle) navSubtitle.innerText = 'Kitchen Operations & Purchasing Terminal';
-        if (staffBtn) {
-          staffBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm';
+        if (navSubtitle) navSubtitle.innerText = 'Store Staff View • Purchasing Terminal Only';
+        if (suiteTag) {
+          suiteTag.innerText = 'Staff: Purchase Only';
+          suiteTag.className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30';
         }
-        if (managerBtn) {
-          managerBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+        if (suiteDesc) suiteDesc.innerText = 'In Staff View, only the Purchase Portal is accessible. Manager passcode (ALAIYA) required for other modules.';
+
+        if (roleContainer) {
+          roleContainer.innerHTML = `
+            <div class="bg-black/40 p-1 rounded-2xl border border-white/10 flex items-center gap-1.5 shadow-sm">
+              <span class="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm">
+                <i data-lucide="chef-hat" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Staff View</span>
+              </span>
+              <button onclick="handleManagerClick()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-500/40 transition-all flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Manager View</span>
+              </button>
+            </div>
+          `;
         }
-        showHubToast('👨‍🍳 Switched to Kitchen Staff Terminal Perspective');
+
+        // Update cards to show locked
+        document.querySelectorAll('.portal-lock-badge').forEach(b => {
+          b.innerHTML = '<i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> RESTRICTED • MANAGER ONLY';
+          b.className = 'portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1';
+        });
+        document.querySelectorAll('.portal-cta-text').forEach(t => t.innerText = 'Locked (Passcode ALAIYA)');
+        document.querySelectorAll('.portal-cta-icon').forEach(i => {
+          i.setAttribute('data-lucide', 'lock');
+          i.className = 'portal-cta-icon w-4 h-4 text-amber-400';
+        });
       }
 
       if (window.lucide) lucide.createIcons();
@@ -639,12 +806,22 @@
       }, 3500);
     }
 
+    // Keyboard support for Enter key in modal
+    const passInput = document.getElementById('manager-passcode-input');
+    if (passInput) {
+      passInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          verifyManagerPasscode();
+        }
+      });
+    }
+
     // Auto initialize data on hub load
     ensureInitialData();
 
-    // Remember previous perspective if chosen, default to staff
-    const savedPerspective = sessionStorage.getItem('ts_hub_perspective') || 'staff';
-    setHubPerspective(savedPerspective);
+    // Default to manager if already authenticated in this session, otherwise staff
+    setHubPerspective(isManagerMode() ? 'manager' : 'staff');
   </script>
 </body>
 </html>
