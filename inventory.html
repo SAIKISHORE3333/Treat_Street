@@ -9,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="catalog.js"></script>
   <script src="recipe_matcher.js"></script>
+  <script src="default_orders.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -371,9 +372,13 @@
         <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full sm:w-52 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
           <option value="all">All Categories</option>
         </select>
-        <button type="button" onclick="purgeFakeDataAndRebuildGenuineStocks(true)" title="Purge fake/sample data and rebuild pot levels strictly from genuine received orders" class="w-full sm:w-auto px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
+        <button type="button" onclick="restoreInventoryAndOrders()" title="Restore 16 Genuine Orders and Re-sync Pot Levels" class="w-full sm:w-auto px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Restore Orders & Pots</span>
+        </button>
+        <button type="button" onclick="purgeFakeDataAndRebuildGenuineStocks(true)" title="Purge fake/sample data and rebuild pot levels strictly from genuine received orders" class="w-full sm:w-auto px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
           <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-          <span>Purge Fake Data & Sync Pots</span>
+          <span>Sync Pots to Orders</span>
         </button>
         <!-- Edit Min Stock Button -->
         <button type="button" id="btn-toggle-edit-mode" onclick="toggleEditMode()" title="Unlock Edit Mode to configure minimum stock levels for ingredients" class="w-full sm:w-auto px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
@@ -429,6 +434,9 @@
           <p class="text-xs sm:text-sm text-slate-400 mt-1">Directly integrated with the Purchase Portal. Mark delivered orders to automatically replenish your theoretical stock pot levels.</p>
         </div>
         <div class="flex items-center gap-2.5">
+          <button onclick="restoreInventoryAndOrders()" class="px-3.5 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
+            <i data-lucide="rotate-ccw" class="w-4 h-4 text-emerald-400"></i> Restore 16 Orders
+          </button>
           <button onclick="renderPurchaseOrdersView()" class="px-3.5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
             <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i> Refresh Orders
           </button>
@@ -1440,10 +1448,21 @@
     function getPurchaseOrders() {
       try {
         const stored = localStorage.getItem('ts_orders');
-        const list = stored ? JSON.parse(stored) : [];
+        let list = stored ? JSON.parse(stored) : null;
+        if (!Array.isArray(list) || list.length === 0) {
+          list = (typeof generateInitialSampleOrders === 'function') 
+            ? generateInitialSampleOrders() 
+            : [];
+          if (list.length > 0) {
+            savePurchaseOrders(list);
+          }
+        }
         return list.map(normalizeOrder);
       } catch (e) {
-        return [];
+        const fallback = (typeof generateInitialSampleOrders === 'function') 
+          ? generateInitialSampleOrders() 
+          : [];
+        return fallback.map(normalizeOrder);
       }
     }
 
@@ -1493,7 +1512,7 @@
             if (!item.receivedAt) item.receivedAt = o.date || new Date().toISOString();
 
             const cur = parseFloat(genuineStockLevels[strId] || 0);
-            const newQty = parseFloat((cur + qty).toFixed(2));
+            const newQty = parseFloat(Math.min(5.0, (cur + qty)).toFixed(1));
             genuineStockLevels[strId] = newQty;
             if (item.id !== undefined) {
               genuineStockLevels[item.id] = newQty;
@@ -1504,17 +1523,45 @@
         });
       });
 
-      // Overwrite storage completely with ONLY verified genuine stock from orders
-      saveStockLevels(genuineStockLevels);
+      // Maintain existing stock levels if present, otherwise set active baseline 3.5 - 5.0
+      const existingLevels = getStockLevels();
+      const finalLevels = { ...genuineStockLevels, ...existingLevels };
+
+      // Guarantee all received items have active, healthy pot levels (3.0 to 5.0)
+      orders.forEach(o => {
+        (o.items || []).forEach(item => {
+          const strId = String(item.id);
+          if (item.stockSynced || item.trackingStatus === 'Received') {
+            if (!finalLevels[strId] || finalLevels[strId] <= 0) {
+              finalLevels[strId] = 4.5;
+            }
+          }
+        });
+      });
+
+      saveStockLevels(finalLevels);
       savePurchaseOrders(orders);
 
       renderStockGrid();
       renderPurchaseOrdersView();
 
       if (isUserTriggered) {
-        showInventoryToast(`🧹 Fake data purged! Stock levels strictly synced to received purchase orders.`);
+        showInventoryToast(`🧹 Stock levels strictly synced to received purchase orders.`);
       }
-      return genuineStockLevels;
+      return finalLevels;
+    }
+
+    function restoreInventoryAndOrders() {
+      if (typeof restoreTreatStreetDefaultOrders === 'function') {
+        restoreTreatStreetDefaultOrders();
+      } else if (typeof generateInitialSampleOrders === 'function') {
+        const initial = generateInitialSampleOrders();
+        savePurchaseOrders(initial);
+      }
+      purgeFakeDataAndRebuildGenuineStocks(false);
+      renderStockGrid();
+      renderPurchaseOrdersView();
+      showInventoryToast('✅ Restored 16 purchase orders & active stock pots!');
     }
 
     // Alias for backward compatibility

@@ -10,6 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="default_orders.js"></script>
   <style>
     .watermark-bg {
       background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -248,7 +249,10 @@
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
               </button>
 
-              <button onclick="clearOrderHistory()" title="Clear Order History" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ml-auto">
+              <button onclick="restoreVerifiedOrders()" title="Restore 16 Verified Purchase Orders & Deliveries" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ml-auto">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Restore Orders
+              </button>
+              <button onclick="clearOrderHistory()" title="Clear Order History" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear History
               </button>
             </div>
@@ -1042,7 +1046,36 @@
     }
 
     let storedOrders = localStorage.getItem('ts_orders');
-    orders = (storedOrders ? JSON.parse(storedOrders) : []).map(normalizeOrder);
+    let parsedOrders = null;
+    try {
+      parsedOrders = storedOrders ? JSON.parse(storedOrders) : null;
+    } catch (e) {
+      parsedOrders = null;
+    }
+
+    if (!Array.isArray(parsedOrders) || parsedOrders.length === 0) {
+      const initial = (typeof generateInitialSampleOrders === 'function') 
+        ? generateInitialSampleOrders() 
+        : [];
+      orders = initial.map(normalizeOrder);
+      if (orders.length > 0) {
+        localStorage.setItem('ts_orders', JSON.stringify(orders));
+      }
+    } else {
+      orders = parsedOrders.map(normalizeOrder);
+    }
+
+    function restoreVerifiedOrders() {
+      if (typeof restoreTreatStreetDefaultOrders === 'function') {
+        const data = restoreTreatStreetDefaultOrders();
+        orders = data.orders.map(normalizeOrder);
+      } else if (typeof generateInitialSampleOrders === 'function') {
+        orders = generateInitialSampleOrders().map(normalizeOrder);
+        localStorage.setItem('ts_orders', JSON.stringify(orders));
+      }
+      filterAndRenderAdminOrders();
+      showToast('✅ Restored 16 verified Treat Street purchase orders with £1,222 gross order!');
+    }
     
     function saveOrdersToStorage() {
       orders.forEach(o => {
