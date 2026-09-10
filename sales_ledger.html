@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Sales & Depletion Ledger - Treat Street</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="catalog.js"></script>
+  <script src="sales_engine.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-primary: #0f3d2e;
+      --brand-accent: #10b981;
+      --brand-gold: #f59e0b;
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    h1, h2, h3, h4, .heading-font { font-family: 'Outfit', sans-serif; }
+
+    /* Ambient Background */
+    .ambient-bg {
+      background-color: #061510;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(5, 150, 105, 0.18) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(15, 61, 46, 0.35) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.035);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    .glass-nav-dock {
+      background: rgba(6, 21, 16, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(52, 211, 153, 0.2);
+    }
+
+    .dropzone-box {
+      border: 2px dashed rgba(52, 211, 153, 0.35);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dropzone-box.dragover, .dropzone-box:hover {
+      border-color: rgba(52, 211, 153, 0.8);
+      background: rgba(16, 185, 129, 0.06);
+      transform: translateY(-2px);
+    }
+
+    /* Pulsing Critical Alarm */
+    @keyframes pulseAlarm {
+      0%, 100% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.35); border-color: rgba(244, 63, 94, 0.6); }
+      50% { box-shadow: 0 0 35px rgba(244, 63, 94, 0.65); border-color: rgba(244, 63, 94, 0.9); }
+    }
+    .alarm-glow {
+      animation: pulseAlarm 2.5s infinite ease-in-out;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+    ::-webkit-scrollbar-thumb { background: rgba(52, 211, 153, 0.25); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(52, 211, 153, 0.45); }
+  </style>
+</head>
+<body class="ambient-bg text-slate-100 min-h-screen flex flex-col justify-between relative selection:bg-emerald-500 selection:text-white">
+
+  <!-- TOP STATUS NAVBAR -->
+  <header class="sticky top-0 z-40 glass-nav-dock">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center gap-3.5">
+        <a href="index.html" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-300 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-emerald-500/30 heading-font hover:scale-105 transition-transform">
+          TS
+        </a>
+        <div>
+          <h1 class="text-base font-extrabold tracking-wide text-white flex items-center gap-2">
+            Master Sales & Depletion Ledger
+            <span id="nav-mode-tag" class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30">
+              🟢 LIVE PRODUCTION
+            </span>
+          </h1>
+          <p class="text-[11px] text-emerald-400/80 font-medium">Multi-Platform Ingestion • Recipe Portion Depletion • MOQ Alarms</p>
+        </div>
+      </div>
+
+      <!-- Action Nav Items -->
+      <div class="flex items-center gap-3">
+        <!-- Live vs Demo Mode Toggle Button -->
+        <button id="nav-mode-toggle-btn" onclick="toggleDeploymentMode()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-black shadow-sm transition-all">
+          <i data-lucide="zap" id="nav-mode-icon" class="w-4 h-4 text-emerald-400"></i>
+          <span id="nav-mode-label">LIVE PRODUCTION</span>
+        </button>
+
+        <button onclick="loadDemoBatch()" class="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-white/10 shadow-sm">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Sample Batch
+        </button>
+
+        <a href="inventory.html" class="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors">
+          <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-400"></i> Stock Pots
+        </a>
+
+        <a href="index.html" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1">
+          <i data-lucide="home" class="w-3.5 h-3.5 text-emerald-400"></i> Hub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- DYNAMIC MODE HERO BANNER (LIVE OR DEMO) -->
+  <!-- ========================================== -->
+  <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2 relative z-10">
+    <div id="mode-hero-banner" class="glass-panel p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-teal-950/40 to-slate-900/60 border border-emerald-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div id="mode-banner-icon" class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950">
+          <i data-lucide="shield-check" class="w-6 h-6 text-emerald-400"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="mode-banner-title" class="text-xs font-extrabold text-emerald-300 tracking-wider uppercase">Live Production Engine Deployed</span>
+            <span id="mode-banner-badge" class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Live Operations Synchronized</span>
+          </div>
+          <p id="mode-banner-desc" class="text-xs text-slate-300 mt-0.5 leading-relaxed">
+            Connected to genuine store inventory pots (<code class="text-emerald-300">ts_stock_levels</code>). Theoretical recipe stock depletions interface directly with live inventory and audit records.
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0 w-full md:w-auto">
+        <button onclick="toggleDeploymentMode()" id="mode-switch-btn" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-bold border border-white/15 transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Switch to Demo Sandbox</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6 relative z-10">
+
+    <!-- ======================================================== -->
+    <!-- 1. MULTI-FORMAT FILE INGESTION & DROPZONE STUDIO -->
+    <!-- ======================================================== -->
+    <div class="glass-panel p-6 rounded-3xl border-emerald-500/30 bg-emerald-950/15">
+      
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-extrabold text-white heading-font flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+              <i data-lucide="layers" class="w-5 h-5"></i>
+            </span>
+            Multi-Platform Sales Ingestion Studio
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-300 mt-1">
+            Drop CSV, TSV, or Excel (.xlsx / .xls) reports for <strong>Square, Uber Eats, Just Eat, and Deliveroo</strong>.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <button onclick="loadDemoBatch()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4"></i> 1-Click Multi-Channel Demo
+          </button>
+        </div>
+      </div>
+
+      <!-- File Dropzone -->
+      <div id="dropzone" class="dropzone-box rounded-2xl p-8 text-center cursor-pointer bg-white/[0.02] flex flex-col items-center justify-center group" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" multiple accept=".csv,.tsv,.txt,.xlsx,.xls" class="hidden" onchange="handleFileSelect(event)">
+        
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-400/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center mb-3.5 shadow-lg group-hover:scale-110 transition-transform">
+          <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+        </div>
+
+        <h3 class="font-bold text-white text-base sm:text-lg mb-1 heading-font">
+          Drop Square, Uber Eats, Just Eat & Deliveroo Reports Here
+        </h3>
+        <p class="text-xs text-slate-400 max-w-lg mb-4 leading-relaxed">
+          Drop single files or batch drops all 4 platforms together. Supports CSV, TSV, and native Excel workbooks. Schema adapters automatically normalize timestamps, commissions, gross, and net payouts.
+        </p>
+
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold">Square POS</span>
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">Uber Eats</span>
+          <span class="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30 text-[11px] font-bold">Just Eat</span>
+          <span class="px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[11px] font-bold">Deliveroo</span>
+        </div>
+      </div>
+
+      <!-- Ingested Files Chips -->
+      <div id="ingested-files-panel" class="mt-5 hidden">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ingested Platform Feeds:</p>
+          <button onclick="clearIngestedFiles()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1">
+            <i data-lucide="trash-2" class="w-3 h-3"></i> Clear Ingested Feeds
+          </button>
+        </div>
+        <div id="ingested-files-list" class="flex flex-wrap gap-2.5">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- UNMAPPED ITEMS RESOLUTION QUEUE (AUTO-FLAG ALERT) -->
+    <!-- ======================================================== -->
+    <div id="unmapped-queue-banner" class="glass-panel border-amber-500/50 bg-amber-500/10 p-5 rounded-3xl hidden">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+        <div class="flex items-start gap-3">
+          <div class="p-2.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="text-base font-bold text-white heading-font flex items-center gap-2">
+              Unmapped Items Resolution Queue (<span id="unmapped-count-badge">0</span> detected)
+              <span class="px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 text-[10px] font-extrabold uppercase">Action Required</span>
+            </h4>
+            <p class="text-xs text-amber-200/80 mt-0.5 leading-relaxed">
+              Disparate external aggregator strings were detected that are not yet mapped to Master SOP Recipes.
+              Assign each item once below — the mapping is cached permanently in your alias dictionary.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div id="unmapped-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 2. MASTER CONSOLIDATED SALES LEDGER -->
+    <!-- ======================================================== -->
+    <div id="ledger-section" class="glass-panel p-6 rounded-3xl hidden flex flex-col gap-5">
+      
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h3 class="text-xl font-bold text-white heading-font flex items-center gap-2">
+              <i data-lucide="table" class="w-5 h-5 text-emerald-400"></i> Master Consolidated Sales & Revenue Ledger
+            </h3>
+            <span id="date-range-badge" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+              All Dates
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Unified output merging Square, Uber Eats, Just Eat, and Deliveroo with channel breakdown & revenue realized.</p>
+        </div>
+
+        <!-- Reporting Date Filter & Actions -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <div class="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 text-xs">
+            <span class="text-slate-400 font-medium">Reporting Date:</span>
+            <select id="reporting-date-select" onchange="changeReportingDate(this.value)" class="bg-transparent text-white font-bold outline-none cursor-pointer">
+              <option value="ALL" class="bg-slate-900">All Ingested Dates</option>
+            </select>
+          </div>
+
+          <button onclick="exportMasterExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-bold text-emerald-300 transition-all flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Excel (.xlsx)
+          </button>
+          
+          <button onclick="exportMasterCSV()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 transition-all flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i> Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div class="glass-panel p-4 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Volume Sold</p>
+          <p id="kpi-total-units" class="text-2xl sm:text-3xl font-black text-white heading-font">0</p>
+          <p class="text-[10px] text-emerald-400 font-semibold mt-1">Unified across 4 channels</p>
+        </div>
+
+        <div class="glass-panel p-4 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Gross Sales Revenue</p>
+          <p id="kpi-gross-revenue" class="text-2xl sm:text-3xl font-black text-amber-300 heading-font">£0.00</p>
+          <p class="text-[10px] text-slate-400 font-medium mt-1">Pre-commission list value</p>
+        </div>
+
+        <div class="glass-panel p-4 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-orange-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Platform Commission Leakage</p>
+          <p id="kpi-commission-leakage" class="text-2xl sm:text-3xl font-black text-rose-400 heading-font">£0.00</p>
+          <p id="kpi-effective-rate" class="text-[10px] text-rose-300 font-semibold mt-1">0.0% blended take</p>
+        </div>
+
+        <div class="glass-panel p-4 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Net Cash Realized</p>
+          <p id="kpi-net-realized" class="text-2xl sm:text-3xl font-black text-emerald-400 heading-font">£0.00</p>
+          <p class="text-[10px] text-emerald-300 font-semibold mt-1">Actual bank payout</p>
+        </div>
+      </div>
+
+      <!-- Master Consolidated Table -->
+      <div class="overflow-x-auto rounded-2xl border border-white/10 max-h-[550px] overflow-y-auto">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead class="sticky top-0 bg-[#082218] z-20">
+            <tr class="text-slate-300 border-b border-white/10 text-[11px] font-bold uppercase tracking-wider">
+              <th class="p-3.5">Master SOP Item Name</th>
+              <th class="p-3.5 text-center text-indigo-300">Square</th>
+              <th class="p-3.5 text-center text-emerald-300">Uber Eats</th>
+              <th class="p-3.5 text-center text-orange-300">Just Eat</th>
+              <th class="p-3.5 text-center text-teal-300">Deliveroo</th>
+              <th class="p-3.5 text-right font-black text-white">Total Volume</th>
+              <th class="p-3.5 text-right text-amber-300">Gross (£)</th>
+              <th class="p-3.5 text-right text-rose-400">Commission (£)</th>
+              <th class="p-3.5 text-right text-emerald-400 font-bold">Net (£)</th>
+              <th class="p-3.5 text-left w-36">Channel Share %</th>
+            </tr>
+          </thead>
+          <tbody id="master-ledger-tbody" class="divide-y divide-white/5">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 3. PERFORMANCE ANALYTICS & AI INSIGHTS ENGINE -->
+    <!-- ======================================================== -->
+    <div id="analytics-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
+      
+      <!-- AI Executive Summary Card -->
+      <div class="glass-panel p-6 rounded-3xl border-emerald-500/30 bg-gradient-to-br from-[#0c2f23]/60 to-[#081b15]/60 flex flex-col justify-between space-y-4">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-black">
+              <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+              <span>AI Executive Summary Card</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">ALAIYA Intelligence</span>
+          </div>
+
+          <h4 class="text-base font-bold text-white heading-font mb-3">Daily Franchise Velocity Brief</h4>
+          
+          <!-- Top 3 Volume Drivers -->
+          <div class="space-y-2 mb-4">
+            <p class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">Top 3 Volume Drivers Today:</p>
+            <div id="ai-volume-drivers-list" class="space-y-1.5 text-xs text-slate-200">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Underperforming Items to Monitor -->
+          <div class="space-y-2 mb-4">
+            <p class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Underperforming Items to Monitor:</p>
+            <div id="ai-underperformers-list" class="space-y-1.5 text-xs text-slate-200">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Channel Profitability Discrepancies -->
+          <div class="space-y-2">
+            <p class="text-[10px] font-extrabold uppercase tracking-wider text-rose-400">Channel Profitability Discrepancies:</p>
+            <div id="ai-profitability-list" class="space-y-1.5 text-xs text-slate-300 leading-relaxed">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-white/10 text-[11px] text-slate-400 flex items-center justify-between">
+          <span id="ai-blended-summary">Consolidated analytics active</span>
+          <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+      </div>
+
+      <!-- Channel Distribution & Economics -->
+      <div class="glass-panel p-6 rounded-3xl flex flex-col justify-between space-y-4">
+        <div>
+          <h4 class="text-base font-bold text-white heading-font flex items-center gap-2 mb-1">
+            <i data-lucide="pie-chart" class="w-4 h-4 text-amber-400"></i> Channel Economics & Margin Leakage
+          </h4>
+          <p class="text-xs text-slate-400 mb-4">Identifying blended platform fees and margin extraction rates:</p>
+
+          <div id="channel-economics-breakdown" class="space-y-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-white/[0.02] border border-white/10 text-xs text-slate-300">
+          <p class="font-bold text-white mb-0.5">Strategic Margin Advice:</p>
+          <p id="leakage-insight-text" class="text-[11px] text-slate-400 leading-relaxed">
+            Direct in-store sales via Square yield 0% aggregator commission. Boost in-store customer loyalty terminal signups to preserve takeaway margin.
+          </p>
+        </div>
+      </div>
+
+      <!-- Menu Item Velocity Leaderboard -->
+      <div class="glass-panel p-6 rounded-3xl flex flex-col justify-between space-y-4">
+        <div>
+          <h4 class="text-base font-bold text-white heading-font flex items-center gap-2 mb-1">
+            <i data-lucide="trophy" class="w-4 h-4 text-yellow-400"></i> Menu Velocity Leaders
+          </h4>
+          <p class="text-xs text-slate-400 mb-3">Best-selling items overall and ranked by channel:</p>
+
+          <div class="space-y-2.5">
+            <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-md bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center text-[10px]">SQ</span>
+                <span class="text-slate-300 font-medium">Square Till:</span>
+              </div>
+              <span id="lead-square" class="font-bold text-white truncate max-w-[140px]">-</span>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold flex items-center justify-center text-[10px]">UB</span>
+                <span class="text-slate-300 font-medium">Uber Eats:</span>
+              </div>
+              <span id="lead-uber" class="font-bold text-white truncate max-w-[140px]">-</span>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-md bg-orange-500/20 text-orange-300 font-bold flex items-center justify-center text-[10px]">JE</span>
+                <span class="text-slate-300 font-medium">Just Eat:</span>
+              </div>
+              <span id="lead-justeat" class="font-bold text-white truncate max-w-[140px]">-</span>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-md bg-teal-500/20 text-teal-300 font-bold flex items-center justify-center text-[10px]">DL</span>
+                <span class="text-slate-300 font-medium">Deliveroo:</span>
+              </div>
+              <span id="lead-deliveroo" class="font-bold text-white truncate max-w-[140px]">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2 text-right">
+          <span class="text-[10px] text-emerald-400 font-bold">Consolidated Franchise Intelligence</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 4. STOCK DEPLETION & THRESHOLD ALARM HANDSHAKE -->
+    <!-- ======================================================== -->
+    <div id="depletion-section" class="glass-panel p-6 rounded-3xl hidden flex flex-col gap-5">
+      
+      <!-- Section Header -->
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h3 class="text-xl font-bold text-white heading-font flex items-center gap-2">
+              <i data-lucide="package-minus" class="w-5 h-5 text-rose-400"></i> Stock Depletion & Safety Threshold Alarm Handshake
+            </h3>
+            <span id="alarms-count-badge" class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-black">
+              0 Critical Alarms
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Multiplies consolidated sales volume by standard SOP recipe portion breakdown to compute theoretical ingredient consumption and breach thresholds.</p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <button id="btn-commit-depletion" onclick="commitDepletionAction()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-slate-950 text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-rose-600/30">
+            <i data-lucide="zap" class="w-4 h-4"></i> Apply Depletion to Live Store Pots
+          </button>
+        </div>
+      </div>
+
+      <!-- CRITICAL LOW STOCK ALARM BANNERS (Surface High-Priority) -->
+      <div id="critical-alarms-container" class="space-y-2.5 hidden">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Theoretical Depletion & Projected Balance Table -->
+      <div class="overflow-x-auto rounded-2xl border border-white/10 max-h-[500px] overflow-y-auto">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead class="sticky top-0 bg-[#082218] z-10">
+            <tr class="text-slate-300 border-b border-white/10 text-[11px] font-bold uppercase tracking-wider">
+              <th class="p-3.5">Raw Ingredient / Prepped Batch</th>
+              <th class="p-3.5 text-center">Current On-Hand (Pots)</th>
+              <th class="p-3.5 text-center text-rose-400">Theoretical Consumption</th>
+              <th class="p-3.5 text-center">Projected Balance</th>
+              <th class="p-3.5 text-center text-amber-300">MOQ Safety Threshold</th>
+              <th class="p-3.5 text-center">Alarm Status</th>
+              <th class="p-3.5 text-center text-emerald-400 font-bold">Suggested Reorder Qty</th>
+            </tr>
+          </thead>
+          <tbody id="depletion-table-tbody" class="divide-y divide-white/5">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: UNMAPPED ITEM PERMANENT MAPPING -->
+  <!-- ========================================== -->
+  <div id="alias-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel bg-[#092219]/95 border border-amber-500/40 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-amber-400 font-bold text-sm heading-font">
+          <i data-lucide="link-2" class="w-4 h-4"></i>
+          <span>Assign Master SOP Recipe</span>
+        </div>
+        <button onclick="closeAliasModal()" class="text-slate-400 hover:text-white transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        Link this external channel string to an internal Master SOP Recipe. The mapping will be permanently stored in your alias dictionary.
+      </p>
+
+      <form onsubmit="submitAliasAssignment(event)" class="space-y-3.5 text-left">
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">External Channel String</label>
+          <input type="text" id="modal-raw-name" readonly class="w-full px-3.5 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-amber-300 font-semibold outline-none cursor-not-allowed">
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Detected Channel</label>
+          <input type="text" id="modal-channel" readonly class="w-full px-3.5 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-slate-300 outline-none cursor-not-allowed">
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Select Internal Master Recipe</label>
+          <select id="modal-target-recipe" required class="w-full px-3.5 py-2.5 bg-[#071b14] border border-emerald-500/40 rounded-xl text-xs text-white font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+
+        <div class="flex gap-2.5 pt-2">
+          <button type="button" onclick="closeAliasModal()" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold rounded-xl text-xs transition-all">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20">
+            Save & Update Ledger
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: DEMO MODE EXIT RESTRICTION -->
+  <!-- ========================================== -->
+  <div id="demo-exit-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel bg-[#0b221a]/95 border border-rose-500/40 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center space-y-4">
+      <div class="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto shadow-lg shadow-rose-950">
+        <i data-lucide="shield-alert" class="w-7 h-7"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-white heading-font">Demo Mode Safeguard Active</h3>
+        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+          Per operational protocol, Sandbox Demo Mode is currently locked to safeguard procurement orders, real-world stock levels, and SOPs.
+        </p>
+      </div>
+      <div class="p-3 rounded-2xl bg-white/[0.02] border border-white/10 text-xs text-amber-300 text-left">
+        <strong>Operator Notice:</strong> Real-world integration will be authorized after full testing verification is completed.
+      </div>
+      <div class="pt-2">
+        <button type="button" onclick="closeExitDemoModal()" class="w-full py-2.5 bg-white/10 hover:bg-white/15 text-white font-bold rounded-xl text-xs transition-all">
+          Acknowledge & Continue in Demo Mode
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="w-full border-t border-white/5 py-4 text-center text-xs text-slate-400 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span class="text-slate-400">Treat Street MK Stadium HQ • Master Sales & Depletion Ledger Engine</span>
+      <span class="text-amber-400/90 font-semibold flex items-center gap-1">
+        <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i> Sandbox Mode • Storage Isolated
+      </span>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    // State
+    let currentParsedFeeds = [];
+    let currentConsolidated = null;
+    let currentDepletionResult = null;
+    let activeReportingDate = 'ALL';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      updateModeUI();
+      setupDropzone();
+      populateMasterRecipesDropdown();
+
+      // Automatically load multi-channel demo batch for preview
+      loadDemoBatch();
+    });
+
+    // -------------------------------------------------------------
+    // Dropzone & File Ingestion
+    // -------------------------------------------------------------
+    function setupDropzone() {
+      const dropzone = document.getElementById('dropzone');
+      if (!dropzone) return;
+
+      ['dragenter', 'dragover'].forEach(name => {
+        dropzone.addEventListener(name, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add('dragover');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(name => {
+        dropzone.addEventListener(name, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove('dragover');
+        }, false);
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length) processSelectedFiles(Array.from(files));
+      }, false);
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files && files.length) processSelectedFiles(Array.from(files));
+    }
+
+    async function processSelectedFiles(files) {
+      const parsedResults = [];
+
+      for (const file of files) {
+        let content;
+        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+          content = await file.arrayBuffer();
+        } else {
+          content = await file.text();
+        }
+
+        const parsed = SalesEngine.parseUniversalFile(content, file.name);
+        parsedResults.push(parsed);
+      }
+
+      currentParsedFeeds = [...currentParsedFeeds, ...parsedResults];
+      renderIngestedChips();
+      recalculatePipeline();
+    }
+
+    function loadDemoBatch() {
+      const demoFiles = SalesEngine.generateDemoFiles();
+      const parsed = demoFiles.map(f => SalesEngine.parseUniversalFile(f.content, f.filename));
+      currentParsedFeeds = parsed;
+      renderIngestedChips();
+      recalculatePipeline();
+    }
+
+    function clearIngestedFiles() {
+      currentParsedFeeds = [];
+      document.getElementById('ingested-files-panel').classList.add('hidden');
+      document.getElementById('ledger-section').classList.add('hidden');
+      document.getElementById('analytics-section').classList.add('hidden');
+      document.getElementById('depletion-section').classList.add('hidden');
+      document.getElementById('unmapped-queue-banner').classList.add('hidden');
+    }
+
+    function renderIngestedChips() {
+      const panel = document.getElementById('ingested-files-panel');
+      const list = document.getElementById('ingested-files-list');
+      if (!currentParsedFeeds.length) {
+        panel.classList.add('hidden');
+        return;
+      }
+      panel.classList.remove('hidden');
+
+      list.innerHTML = currentParsedFeeds.map((feed, idx) => {
+        const badgeColor = 
+          feed.channel === 'Square' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' :
+          feed.channel === 'Uber Eats' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+          feed.channel === 'Just Eat' ? 'bg-orange-500/20 text-orange-300 border-orange-500/40' :
+          feed.channel === 'Deliveroo' ? 'bg-teal-500/20 text-teal-300 border-teal-500/40' :
+          'bg-slate-500/20 text-slate-300 border-slate-500/40';
+
+        return `
+          <div class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl shadow-sm flex items-center gap-2 text-xs">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="font-bold text-white">${feed.filename}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${badgeColor}">
+              ${feed.channel} (${feed.items.length} rows)
+            </span>
+            <button onclick="removeFeed(${idx})" class="text-slate-400 hover:text-rose-400 transition-colors ml-1">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function removeFeed(idx) {
+      currentParsedFeeds.splice(idx, 1);
+      renderIngestedChips();
+      recalculatePipeline();
+    }
+
+    // -------------------------------------------------------------
+    // Recalculate Consolidation, Analytics & Depletion Handshake
+    // -------------------------------------------------------------
+    function recalculatePipeline() {
+      if (!currentParsedFeeds.length) return;
+
+      // 1. Run Consolidation
+      currentConsolidated = SalesEngine.consolidateSales(currentParsedFeeds, {
+        reportingDate: activeReportingDate
+      });
+
+      // Update Date Dropdown
+      updateDateFilterDropdown(currentConsolidated.availableDates);
+
+      // 2. Render Unmapped Queue
+      renderUnmappedQueue(currentConsolidated.unmappedQueue);
+
+      // 3. Render Master Ledger & KPIs
+      renderMasterLedger(currentConsolidated);
+
+      // 4. Render Performance Analytics & AI Card
+      renderPerformanceAnalytics(currentConsolidated.analytics);
+
+      // 5. Run Depletion & Alarm Handshake
+      currentDepletionResult = SalesEngine.calculateDepletionAndAlarms(currentConsolidated.masterLedger);
+      renderDepletionAndAlarms(currentDepletionResult);
+
+      // 6. Dispatch cross-component handshake event
+      SalesEngine.dispatchDepletionHandshake({
+        grandTotals: currentConsolidated.grandTotals,
+        alarmsCount: currentDepletionResult.alarmsCount,
+        criticalLowStockAlarms: currentDepletionResult.criticalLowStockAlarms
+      });
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function updateDateFilterDropdown(dates) {
+      const select = document.getElementById('reporting-date-select');
+      const badge = document.getElementById('date-range-badge');
+      if (!select) return;
+
+      const currentVal = select.value;
+      select.innerHTML = '<option value="ALL" class="bg-slate-900">All Ingested Dates</option>' +
+        dates.map(d => `<option value="${d}" class="bg-slate-900" ${d === activeReportingDate ? 'selected' : ''}>${d}</option>`).join('');
+
+      if (activeReportingDate !== 'ALL' && dates.includes(activeReportingDate)) {
+        select.value = activeReportingDate;
+        badge.innerText = `Date: ${activeReportingDate}`;
+      } else {
+        select.value = 'ALL';
+        badge.innerText = 'All Dates';
+      }
+    }
+
+    function changeReportingDate(val) {
+      activeReportingDate = val;
+      recalculatePipeline();
+    }
+
+    // -------------------------------------------------------------
+    // Unmapped Items Resolution Queue
+    // -------------------------------------------------------------
+    function renderUnmappedQueue(unmappedList) {
+      const banner = document.getElementById('unmapped-queue-banner');
+      const badge = document.getElementById('unmapped-count-badge');
+      const grid = document.getElementById('unmapped-cards-grid');
+
+      if (!unmappedList || unmappedList.length === 0) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      banner.classList.remove('hidden');
+      badge.innerText = unmappedList.length;
+
+      grid.innerHTML = unmappedList.map(u => `
+        <div class="bg-black/40 p-3.5 rounded-2xl border border-amber-500/30 flex items-center justify-between gap-3 shadow-md">
+          <div class="overflow-hidden">
+            <p class="text-xs font-bold text-white truncate" title="${u.raw_name}">${u.raw_name}</p>
+            <p class="text-[10px] text-amber-300/90 mt-0.5">
+              ${u.channel} • <strong>${u.count} units sold</strong> • £${u.sample_revenue.toFixed(2)}
+            </p>
+          </div>
+          <button onclick="openAliasModal('${encodeURIComponent(u.raw_name)}', '${u.channel}')" class="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black shrink-0 transition-all flex items-center gap-1 shadow-md shadow-amber-500/20">
+            <i data-lucide="link-2" class="w-3.5 h-3.5"></i> Assign
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function populateMasterRecipesDropdown() {
+      const select = document.getElementById('modal-target-recipe');
+      if (!select) return;
+      const recipes = window.SalesEngine ? SalesEngine.generateDemoFiles && [
+        'Chocolate Chip Cookie Dough',
+        'Banoffee',
+        'Biscofia',
+        'Twist it, Lick it, Dunk it',
+        'Strawberry Field',
+        'Uncomplicated',
+        'Viral Dubai Chocolate - Kunafa',
+        'Gelato Shake',
+        'Luxury White Choc Milkshake',
+        'Oreo Milkshake',
+        '1 Scoop',
+        'Ragin Cajuns',
+        'Red Wedding',
+        'Louisiana',
+        'Papi Chulo',
+        'Uncle G',
+        'OG',
+        'Still Water',
+        'Coca Cola',
+        'Fanta Orange'
+      ] : [];
+
+      select.innerHTML = '<option value="">-- Choose Master SOP Recipe --</option>' +
+        recipes.map(r => `<option value="${r}">${r}</option>`).join('');
+    }
+
+    function openAliasModal(encodedRaw, channel) {
+      const raw = decodeURIComponent(encodedRaw);
+      document.getElementById('modal-raw-name').value = raw;
+      document.getElementById('modal-channel').value = channel;
+      document.getElementById('modal-target-recipe').value = '';
+      document.getElementById('alias-modal').classList.remove('hidden');
+    }
+
+    function closeAliasModal() {
+      document.getElementById('alias-modal').classList.add('hidden');
+    }
+
+    function submitAliasAssignment(e) {
+      e.preventDefault();
+      const rawName = document.getElementById('modal-raw-name').value.trim();
+      const channel = document.getElementById('modal-channel').value.trim();
+      const targetRecipe = document.getElementById('modal-target-recipe').value;
+
+      if (!rawName || !targetRecipe) return;
+
+      SalesEngine.saveAlias(rawName, targetRecipe, channel);
+      closeAliasModal();
+      recalculatePipeline();
+    }
+
+    // -------------------------------------------------------------
+    // Master Consolidated Sales Ledger Table & KPIs
+    // -------------------------------------------------------------
+    function renderMasterLedger(data) {
+      document.getElementById('ledger-section').classList.remove('hidden');
+
+      // KPIs
+      document.getElementById('kpi-total-units').innerText = data.grandTotals.units.toLocaleString();
+      document.getElementById('kpi-gross-revenue').innerText = `£${data.grandTotals.gross.toFixed(2)}`;
+      document.getElementById('kpi-commission-leakage').innerText = `£${data.grandTotals.commission.toFixed(2)}`;
+      document.getElementById('kpi-effective-rate').innerText = `${data.grandTotals.effective_commission_rate}% blended take`;
+      document.getElementById('kpi-net-realized').innerText = `£${data.grandTotals.net.toFixed(2)}`;
+
+      // Table
+      const tbody = document.getElementById('master-ledger-tbody');
+      tbody.innerHTML = data.masterLedger.map(item => `
+        <tr class="hover:bg-white/[0.03] transition-colors">
+          <td class="p-3.5 font-bold text-white flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            ${item.master_item_name}
+          </td>
+          <td class="p-3.5 text-center font-medium text-indigo-300">${item.square_units || '-'}</td>
+          <td class="p-3.5 text-center font-medium text-emerald-300">${item.uber_eats_units || '-'}</td>
+          <td class="p-3.5 text-center font-medium text-orange-300">${item.just_eat_units || '-'}</td>
+          <td class="p-3.5 text-center font-medium text-teal-300">${item.deliveroo_units || '-'}</td>
+          <td class="p-3.5 text-right font-black text-white text-base">${item.total_volume}</td>
+          <td class="p-3.5 text-right font-bold text-amber-300">£${item.gross_revenue.toFixed(2)}</td>
+          <td class="p-3.5 text-right font-medium text-rose-400">£${item.total_commissions.toFixed(2)}</td>
+          <td class="p-3.5 text-right font-black text-emerald-400">£${item.net_revenue.toFixed(2)}</td>
+          <td class="p-3.5">
+            <div class="flex h-2 rounded-full overflow-hidden bg-white/5 border border-white/10" title="Square: ${item.channel_share.square_pct}% | Uber: ${item.channel_share.uber_pct}% | JE: ${item.channel_share.just_eat_pct}% | Deliv: ${item.channel_share.deliveroo_pct}%">
+              <div style="width: ${item.channel_share.square_pct}%" class="bg-indigo-500"></div>
+              <div style="width: ${item.channel_share.uber_pct}%" class="bg-emerald-500"></div>
+              <div style="width: ${item.channel_share.just_eat_pct}%" class="bg-orange-500"></div>
+              <div style="width: ${item.channel_share.deliveroo_pct}%" class="bg-teal-400"></div>
+            </div>
+            <div class="flex justify-between text-[9px] text-slate-400 mt-1 font-mono">
+              <span class="text-indigo-300">${item.channel_share.square_pct}%</span>
+              <span class="text-emerald-300">${item.channel_share.uber_pct}%</span>
+              <span class="text-orange-300">${item.channel_share.just_eat_pct}%</span>
+              <span class="text-teal-300">${item.channel_share.deliveroo_pct}%</span>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // -------------------------------------------------------------
+    // Performance Analytics & AI Insights Cards
+    // -------------------------------------------------------------
+    function renderPerformanceAnalytics(analytics) {
+      document.getElementById('analytics-section').classList.remove('hidden');
+
+      // AI Volume Drivers
+      const volList = document.getElementById('ai-volume-drivers-list');
+      volList.innerHTML = analytics.aiExecutiveSummary.top3VolumeDrivers.map((d, i) => `
+        <div class="p-2 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+          <span><strong>#${i+1} ${d.name}</strong> (${d.volume} sold)</span>
+          <span class="text-[10px] text-emerald-400 font-bold">Led by ${d.dominant_channel}</span>
+        </div>
+      `).join('');
+
+      // AI Underperformers
+      const underList = document.getElementById('ai-underperformers-list');
+      underList.innerHTML = analytics.aiExecutiveSummary.underperformingToMonitor.map(u => `
+        <div class="p-2 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+          <span><strong>${u.name}</strong> (${u.volume} sold)</span>
+          <span class="text-[10px] text-amber-300/80">${u.note}</span>
+        </div>
+      `).join('');
+
+      // AI Profitability Discrepancies
+      const profList = document.getElementById('ai-profitability-list');
+      profList.innerHTML = analytics.aiExecutiveSummary.profitabilityDiscrepancies.map(p => `
+        <div class="flex items-start gap-2">
+          <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5"></i>
+          <span>${p}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('ai-blended-summary').innerText = analytics.aiExecutiveSummary.blendedLeakageSummary;
+
+      // Channel Economics Bars
+      const econContainer = document.getElementById('channel-economics-breakdown');
+      econContainer.innerHTML = analytics.channelEconomics.map(c => `
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-white">${c.channel}</span>
+            <span class="${c.take_rate_status === 'HIGH_LEAKAGE' ? 'text-rose-400 font-bold' : c.channel === 'Square' ? 'text-emerald-400 font-bold' : 'text-amber-300'}">
+              Take Rate: ${c.commission_rate_pct}% (£${c.commission.toFixed(2)})
+            </span>
+          </div>
+          <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden flex">
+            <div style="width: ${100 - c.commission_rate_pct}%" class="bg-emerald-500 h-full" title="Net Payout: £${c.net.toFixed(2)}"></div>
+            <div style="width: ${c.commission_rate_pct}%" class="bg-rose-500 h-full" title="Commission Leakage: £${c.commission.toFixed(2)}"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-400">
+            <span>Gross: £${c.gross.toFixed(2)} (${c.units} units)</span>
+            <span>Net: £${c.net.toFixed(2)}</span>
+          </div>
+        </div>
+      `).join('');
+
+      // Velocity Leaders
+      document.getElementById('lead-square').innerText = analytics.topByChannel.square ? `${analytics.topByChannel.square.name} (${analytics.topByChannel.square.units})` : 'None';
+      document.getElementById('lead-uber').innerText = analytics.topByChannel.uberEats ? `${analytics.topByChannel.uberEats.name} (${analytics.topByChannel.uberEats.units})` : 'None';
+      document.getElementById('lead-justeat').innerText = analytics.topByChannel.justEat ? `${analytics.topByChannel.justEat.name} (${analytics.topByChannel.justEat.units})` : 'None';
+      document.getElementById('lead-deliveroo').innerText = analytics.topByChannel.deliveroo ? `${analytics.topByChannel.deliveroo.name} (${analytics.topByChannel.deliveroo.units})` : 'None';
+    }
+
+    // -------------------------------------------------------------
+    // Stock Depletion & Alarm Handshake
+    // -------------------------------------------------------------
+    function renderDepletionAndAlarms(res) {
+      document.getElementById('depletion-section').classList.remove('hidden');
+
+      const alarmBadge = document.getElementById('alarms-count-badge');
+      const criticalContainer = document.getElementById('critical-alarms-container');
+
+      alarmBadge.innerText = `${res.alarmsCount} Critical Alarms`;
+
+      if (res.hasCriticalBreaches) {
+        criticalContainer.classList.remove('hidden');
+        criticalContainer.innerHTML = res.criticalLowStockAlarms.map(a => `
+          <div class="alarm-glow p-4 rounded-2xl bg-rose-950/40 border border-rose-500/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center justify-center shrink-0">
+                <i data-lucide="bell-ring" class="w-4 h-4 text-rose-400"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-black text-rose-400 uppercase tracking-wide">CRITICAL_LOW_STOCK_ALARM</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-500/20 text-rose-300">Deficit: ${a.deficit} pots</span>
+                </div>
+                <h5 class="text-sm font-bold text-white mt-0.5">${a.ingredient_name}</h5>
+                <p class="text-[11px] text-slate-300">
+                  Current Pot: <strong class="text-white">${a.current_on_hand}</strong> • Projected Post-Depletion: <strong class="text-rose-400">${a.projected_remaining}</strong> • MOQ Safety Target: <strong class="text-amber-300">${a.moq_safety_threshold}</strong>
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+              <div class="text-right sm:text-right px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+                <span class="text-[10px] text-slate-400 block">Suggested Reorder</span>
+                <strong class="text-emerald-400 font-black text-sm">+${a.suggested_reorder_qty} Cartons / Cases</strong>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        criticalContainer.classList.add('hidden');
+      }
+
+      // Depletion Table
+      const tbody = document.getElementById('depletion-table-tbody');
+      tbody.innerHTML = res.depletionLedger.map(row => {
+        const isCrit = row.status === 'CRITICAL_LOW_STOCK_ALARM';
+        const isWarn = row.status === 'WARNING_LOW';
+        const statusBadge = isCrit
+          ? '<span class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black uppercase">CRITICAL_LOW</span>'
+          : isWarn
+          ? '<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold uppercase">LOW WARNING</span>'
+          : '<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-semibold uppercase">HEALTHY</span>';
+
+        return `
+          <tr class="hover:bg-white/[0.03] transition-colors ${isCrit ? 'bg-rose-950/10' : ''}">
+            <td class="p-3.5 font-bold text-white">
+              ${row.ingredient_name}
+              <span class="text-[10px] text-slate-400 block font-normal">${row.dishes_involved.slice(0, 2).join(', ')}${row.dishes_involved.length > 2 ? '...' : ''}</span>
+            </td>
+            <td class="p-3.5 text-center font-bold text-slate-200">${row.current_on_hand}</td>
+            <td class="p-3.5 text-center font-bold text-rose-400">-${row.theoretical_consumption} <span class="text-[10px] text-slate-400">${row.unit}</span></td>
+            <td class="p-3.5 text-center font-black ${row.projected_remaining_stock <= row.moq_safety_threshold ? 'text-rose-400' : 'text-white'}">${row.projected_remaining_stock}</td>
+            <td class="p-3.5 text-center font-bold text-amber-300">${row.moq_safety_threshold}</td>
+            <td class="p-3.5 text-center">${statusBadge}</td>
+            <td class="p-3.5 text-center font-black ${row.suggested_reorder_qty > 0 ? 'text-emerald-400 text-sm' : 'text-slate-500'}">
+              ${row.suggested_reorder_qty > 0 ? `+${row.suggested_reorder_qty} Units` : '-'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function toggleDeploymentMode() {
+      const isCurrentlyDemo = SalesEngine.isDemoMode;
+      SalesEngine.isDemoMode = !isCurrentlyDemo;
+      updateModeUI();
+      recalculatePipeline();
+    }
+
+    function updateModeUI() {
+      const isDemo = SalesEngine.isDemoMode;
+      const tag = document.getElementById('nav-mode-tag');
+      const toggleBtn = document.getElementById('nav-mode-toggle-btn');
+      const icon = document.getElementById('nav-mode-icon');
+      const label = document.getElementById('nav-mode-label');
+      const banner = document.getElementById('mode-hero-banner');
+      const bannerTitle = document.getElementById('mode-banner-title');
+      const bannerBadge = document.getElementById('mode-banner-badge');
+      const bannerDesc = document.getElementById('mode-banner-desc');
+      const switchBtn = document.getElementById('mode-switch-btn');
+      const commitBtn = document.getElementById('btn-commit-depletion');
+
+      if (isDemo) {
+        if (tag) {
+          tag.className = 'text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-extrabold border border-amber-500/30';
+          tag.innerText = '🧪 SANDBOX DEMO';
+        }
+        if (toggleBtn) {
+          toggleBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-black shadow-sm transition-all';
+        }
+        if (icon) {
+          icon.className = 'w-4 h-4 text-amber-400';
+          icon.setAttribute('data-lucide', 'flask-conical');
+        }
+        if (label) label.innerText = 'SANDBOX DEMO';
+        if (banner) {
+          banner.className = 'glass-panel p-4 rounded-2xl bg-gradient-to-r from-amber-950/60 via-purple-950/40 to-slate-900/60 border border-amber-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4';
+        }
+        if (bannerTitle) {
+          bannerTitle.className = 'text-xs font-extrabold text-amber-300 tracking-wider uppercase';
+          bannerTitle.innerText = 'Sandbox Demo Mode Active & Safeguarded';
+        }
+        if (bannerBadge) {
+          bannerBadge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+          bannerBadge.innerText = 'Live Stock Protected';
+        }
+        if (bannerDesc) {
+          bannerDesc.innerHTML = 'All files, sales merges, alias mappings, and theoretical stock depletions are strictly stored in temporary sandbox storage. <strong class="text-amber-200">Real-world inventory pots, procurement orders, and recipe SOPs cannot be disturbed.</strong>';
+        }
+        if (switchBtn) {
+          switchBtn.innerHTML = '<i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i><span>Switch to Live Production</span>';
+        }
+        if (commitBtn) {
+          commitBtn.innerHTML = '<i data-lucide="zap" class="w-4 h-4"></i> Apply Depletion (Sandbox Pots)';
+        }
+      } else {
+        if (tag) {
+          tag.className = 'text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30';
+          tag.innerText = '🟢 LIVE PRODUCTION';
+        }
+        if (toggleBtn) {
+          toggleBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-black shadow-sm transition-all';
+        }
+        if (icon) {
+          icon.className = 'w-4 h-4 text-emerald-400';
+          icon.setAttribute('data-lucide', 'zap');
+        }
+        if (label) label.innerText = 'LIVE PRODUCTION';
+        if (banner) {
+          banner.className = 'glass-panel p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-teal-950/40 to-slate-900/60 border border-emerald-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4';
+        }
+        if (bannerTitle) {
+          bannerTitle.className = 'text-xs font-extrabold text-emerald-300 tracking-wider uppercase';
+          bannerTitle.innerText = 'Live Production Engine Deployed';
+        }
+        if (bannerBadge) {
+          bannerBadge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+          bannerBadge.innerText = 'Live Operations Synchronized';
+        }
+        if (bannerDesc) {
+          bannerDesc.innerHTML = 'Connected directly to genuine store inventory pots (<code class="text-emerald-300">ts_stock_levels</code>). Theoretical recipe stock depletions interface directly with live inventory, audits, and procurement.';
+        }
+        if (switchBtn) {
+          switchBtn.innerHTML = '<i data-lucide="flask-conical" class="w-3.5 h-3.5 text-amber-400"></i><span>Switch to Demo Sandbox</span>';
+        }
+        if (commitBtn) {
+          commitBtn.innerHTML = '<i data-lucide="zap" class="w-4 h-4"></i> Apply Depletion to Live Store Pots';
+        }
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function commitDepletionAction() {
+      if (!currentDepletionResult) return;
+
+      const isDemo = SalesEngine.isDemoMode;
+
+      if (!isDemo) {
+        // Confirmation prompt for live real-world inventory depletion
+        const confirmMsg = `⚠️ CONFIRM REAL-WORLD STOCK DEPLETION:\n\nYou are in LIVE PRODUCTION MODE.\nThis action will deduct genuine store inventory stock pots (ts_stock_levels) for ${currentConsolidated.grandTotals.units} items sold across platforms.\n\nAre you sure you want to apply live inventory depletion?`;
+        if (!confirm(confirmMsg)) return;
+
+        // Apply to live stock levels
+        const stock = SalesEngine.getOnHandStock();
+        currentDepletionResult.depletionLedger.forEach(row => {
+          const current = stock[row.ingredient_name] !== undefined ? parseFloat(stock[row.ingredient_name]) : 0;
+          stock[row.ingredient_name] = Math.max(0, parseFloat((current - row.consumed_stock_units).toFixed(2)));
+        });
+
+        try {
+          localStorage.setItem('ts_stock_levels', JSON.stringify(stock));
+        } catch (e) {
+          console.error("Failed writing live stock levels:", e);
+        }
+
+        recalculatePipeline();
+        alert(`🟢 [LIVE PRODUCTION] Genuine Stock Pot Depletion Successfully Executed!\n\n${currentDepletionResult.alarmsCount} safety stock alarms evaluated.\nLive store pots (ts_stock_levels) have been updated.`);
+      } else {
+        // Sandbox mode
+        const stock = SalesEngine.getOnHandStock();
+        currentDepletionResult.depletionLedger.forEach(row => {
+          const current = stock[row.ingredient_name] !== undefined ? parseFloat(stock[row.ingredient_name]) : 0;
+          stock[row.ingredient_name] = Math.max(0, parseFloat((current - row.consumed_stock_units).toFixed(2)));
+        });
+
+        try {
+          localStorage.setItem('ts_demo_stock_levels', JSON.stringify(stock));
+        } catch (e) {}
+
+        recalculatePipeline();
+        alert(`🧪 [Sandbox Demo Mode] Depletion applied to sandbox stock pots!\n\n${currentDepletionResult.alarmsCount} safety stock alarms evaluated.\nReal-world store pots remain untouched.`);
+      }
+    }
+
+    function resetSandboxDemoState() {
+      if (!confirm("Reset sandbox demo state to initial defaults?")) return;
+      try {
+        localStorage.removeItem('ts_demo_stock_levels');
+        localStorage.removeItem('ts_demo_item_aliases');
+        localStorage.removeItem('ts_demo_depletion_runs');
+      } catch (e) {}
+      loadDemoBatch();
+      alert("✅ Sandbox reset to clean defaults.");
+    }
+
+    // -------------------------------------------------------------
+    // Export Functionality (CSV & Excel)
+    // -------------------------------------------------------------
+    function exportMasterCSV() {
+      if (!currentConsolidated) return alert("Please ingest sales reports first.");
+      const rows = SalesEngine.generateMasterExportData(currentConsolidated);
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Master_Sales_Ledger_${activeReportingDate}_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function exportMasterExcel() {
+      if (!currentConsolidated) return alert("Please ingest sales reports first.");
+      if (typeof XLSX === 'undefined') {
+        exportMasterCSV();
+        return;
+      }
+
+      const rows = SalesEngine.generateMasterExportData(currentConsolidated);
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Master Sales Report");
+
+      // Add Depletion Sheet
+      if (currentDepletionResult && currentDepletionResult.depletionLedger.length) {
+        const depRows = [
+          ['Raw Ingredient', 'Current Stock Pot', 'Theoretical Consumption', 'Projected Remaining', 'MOQ Safety Threshold', 'Status', 'Suggested Reorder Qty']
+        ];
+        currentDepletionResult.depletionLedger.forEach(d => {
+          depRows.push([
+            d.ingredient_name,
+            d.current_on_hand,
+            d.theoretical_consumption + ' ' + d.unit,
+            d.projected_remaining_stock,
+            d.moq_safety_threshold,
+            d.status,
+            d.suggested_reorder_qty
+          ]);
+        });
+        const wsDep = XLSX.utils.aoa_to_sheet(depRows);
+        XLSX.utils.book_append_sheet(wb, wsDep, "Stock Depletion & Alarms");
+      }
+
+      XLSX.writeFile(wb, `Master_Sales_Ledger_${activeReportingDate}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+  </script>
+</body>
+</html>
