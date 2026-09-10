@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "name": "treat-street-portal",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "routes": [
+    {
+      "src": "/sales-ledger",
+      "dest": "/sales_ledger.html"
+    },
+    {
+      "src": "/inventory",
+      "dest": "/inventory.html"
+    },
+    {
+      "src": "/purchase",
+      "dest": "/purchase.html"
+    },
+    {
+      "src": "/analytics",
+      "dest": "/analytics.html"
+    },
+    {
+      "src": "/kitchen-ops",
+      "dest": "/kitchen_ops.html"
+    },
+    {
+      "src": "/sop",
+      "dest": "/SOP.html"
+    },
+    {
+      "src": "/",
+      "dest": "/index.html"
+    }
+  ]
+}
