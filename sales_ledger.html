@@ -592,14 +592,13 @@
     let activeTierFilter = 'ALL';
     let activeChannelFilter = 'ALL';
     let activeSearchQuery = '';
+    let isDemoActive = false;
 
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons();
       setupDropzone();
       syncSOPLibrary(false);
-
-      // Automatically load multi-channel demo batch on fresh launch for instant preview
-      loadDemoBatch();
+      // Clean slate on startup: do not load fake demo data automatically
     });
 
     // -------------------------------------------------------------
@@ -669,7 +668,15 @@
           parsed = SalesEngine.parseUniversalFile(text, file.name);
         }
 
+        parsed.isDemo = false;
         parsedResults.push(parsed);
+      }
+
+      // If demo mode was previously active or if demo files exist in memory,
+      // completely wipe demo feeds so fake sample data NEVER pollutes real sales!
+      if (isDemoActive || currentParsedFeeds.some(f => f.isDemo)) {
+        currentParsedFeeds = [];
+        isDemoActive = false;
       }
 
       currentParsedFeeds = [...currentParsedFeeds, ...parsedResults];
@@ -678,8 +685,13 @@
     }
 
     function loadDemoBatch() {
+      isDemoActive = true;
       const demoFiles = SalesEngine.generateDemoFiles();
-      const parsed = demoFiles.map(f => SalesEngine.parseUniversalFile(f.content, f.filename));
+      const parsed = demoFiles.map(f => {
+        const res = SalesEngine.parseUniversalFile(f.content, f.filename);
+        res.isDemo = true;
+        return res;
+      });
       currentParsedFeeds = parsed;
       renderIngestedChips();
       recalculatePipeline();
@@ -687,6 +699,8 @@
 
     function clearIngestedFiles() {
       currentParsedFeeds = [];
+      isDemoActive = false;
+      currentConsolidated = null;
       document.getElementById('ingested-files-panel').classList.add('hidden');
       document.getElementById('executive-kpi-section').classList.add('hidden');
       document.getElementById('ledger-section').classList.add('hidden');
@@ -702,7 +716,27 @@
       }
       panel.classList.remove('hidden');
 
-      list.innerHTML = currentParsedFeeds.map((feed, idx) => {
+      const bannerHTML = isDemoActive
+        ? `
+          <div class="w-full mb-3 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
+            <div class="flex items-center gap-2 font-bold">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+              <span>SIMULATED DEMO BATCH ACTIVE (4 Channels). Drop your real sales reports above to switch to live audited mode.</span>
+            </div>
+            <button onclick="clearIngestedFiles()" class="underline text-amber-200 hover:text-white font-semibold ml-2">Clear Demo</button>
+          </div>
+        `
+        : `
+          <div class="w-full mb-3 p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+            <div class="flex items-center gap-2 font-bold">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+              <span>LIVE AUDITED SALES DATA (${currentParsedFeeds.length} file${currentParsedFeeds.length > 1 ? 's' : ''} ingested). Exact numbers parsed from uploaded reports.</span>
+            </div>
+            <button onclick="clearIngestedFiles()" class="underline text-emerald-200 hover:text-white font-semibold ml-2">Clear All</button>
+          </div>
+        `;
+
+      const chipsHTML = currentParsedFeeds.map((feed, idx) => {
         const badgeColor = 
           feed.channel === 'Square' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' :
           feed.channel === 'Uber Eats' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
@@ -724,13 +758,19 @@
         `;
       }).join('');
 
+      list.innerHTML = bannerHTML + `<div class="flex flex-wrap gap-2.5 w-full">${chipsHTML}</div>`;
+
       if (window.lucide) lucide.createIcons();
     }
 
     function removeFeed(idx) {
       currentParsedFeeds.splice(idx, 1);
-      renderIngestedChips();
-      recalculatePipeline();
+      if (currentParsedFeeds.length === 0) {
+        clearIngestedFiles();
+      } else {
+        renderIngestedChips();
+        recalculatePipeline();
+      }
     }
 
     // -------------------------------------------------------------

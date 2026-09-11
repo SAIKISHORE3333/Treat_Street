@@ -449,9 +449,9 @@
           const c = line[j];
           const next = line[j + 1];
 
-          if (c === '"' || c === "'") {
-            if (inQuotes && next === c) {
-              curr += c;
+          if (c === '"') {
+            if (inQuotes && next === '"') {
+              curr += '"';
               j++;
             } else {
               inQuotes = !inQuotes;
@@ -622,21 +622,29 @@
         return null;
       };
 
+      // Order Status / Cancellation Filter
+      const statusStr = (findKey(['order_status', 'status', 'event_type', 'item_status', 'state', 'transaction_status']) || '').toLowerCase();
+      if (statusStr.includes('cancel') || statusStr.includes('void') || statusStr.includes('fail') || statusStr.includes('reject')) {
+        normalized.is_cancelled = true;
+      }
+
       if (channel === 'Square') {
         normalized.date = this.normalizeDate(findKey(['date', 'created_at', 'day']));
         normalized.time = findKey(['time', 'hour']) || '12:00:00';
         normalized.raw_name = (findKey(['item', 'item_name', 'description', 'product_name', 'product']) || '').trim();
-        normalized.quantity = this.cleanNumber(findKey(['qty', 'quantity', 'count', 'items_quantity']), 1);
-        normalized.discounts = Math.abs(this.cleanNumber(findKey(['discounts', 'discount', 'promo']), 0));
+        const rawQty = findKey(['qty', 'quantity', 'count', 'items_quantity']);
         normalized.gross_sales = this.cleanNumber(findKey(['gross_sales', 'product_sales', 'total_sales', 'sales', 'price']), 0);
+        normalized.quantity = (rawQty !== null && rawQty !== undefined && rawQty !== '') ? this.cleanNumber(rawQty, 0) : (normalized.gross_sales > 0 ? 1 : 0);
+        normalized.discounts = Math.abs(this.cleanNumber(findKey(['discounts', 'discount', 'promo']), 0));
         normalized.commission = Math.abs(this.cleanNumber(findKey(['commission', 'fee', 'charge']), 0));
         normalized.net_payout = this.cleanNumber(findKey(['net_sales', 'net']), normalized.gross_sales - normalized.discounts - normalized.commission);
       } else if (channel === 'Uber Eats') {
         normalized.date = this.normalizeDate(findKey(['order_date', 'date', 'time']));
         normalized.time = findKey(['order_time', 'time']) || '12:00:00';
-        normalized.raw_name = (findKey(['item_name', 'menu_item', 'item', 'product_name', 'product']) || '').trim();
-        normalized.quantity = this.cleanNumber(findKey(['items_quantity', 'quantity', 'qty', 'count']), 1);
+        normalized.raw_name = (findKey(['item_name', 'menu_item', 'item', 'product_name', 'product', 'item_description']) || '').trim();
         normalized.gross_sales = this.cleanNumber(findKey(['gross_sales', 'item_price', 'sales', 'price']), 0);
+        const rawQty = findKey(['items_quantity', 'quantity', 'qty', 'count', 'item_quantity', 'units']);
+        normalized.quantity = (rawQty !== null && rawQty !== undefined && rawQty !== '') ? this.cleanNumber(rawQty, 0) : (normalized.gross_sales > 0 ? 1 : 0);
         normalized.discounts = Math.abs(this.cleanNumber(findKey(['promo', 'discount', 'voucher']), 0));
         normalized.commission = Math.abs(this.cleanNumber(findKey(['marketplace_fee', 'commission', 'service_fee', 'fee']), normalized.gross_sales * 0.30));
         normalized.net_payout = this.cleanNumber(findKey(['net_payout', 'net_sales', 'payout', 'net']), normalized.gross_sales - normalized.commission - normalized.discounts);
@@ -644,8 +652,9 @@
         normalized.date = this.normalizeDate(findKey(['date', 'order_date', 'time']));
         normalized.time = findKey(['order_time', 'time']) || '12:00:00';
         normalized.raw_name = (findKey(['product_name', 'item_name', 'item', 'product']) || '').trim();
-        normalized.quantity = this.cleanNumber(findKey(['quantity', 'qty', 'count']), 1);
         normalized.gross_sales = this.cleanNumber(findKey(['sub_total', 'item_price', 'gross_sales', 'price', 'gross']), 0);
+        const rawQty = findKey(['quantity', 'qty', 'count', 'item_quantity']);
+        normalized.quantity = (rawQty !== null && rawQty !== undefined && rawQty !== '') ? this.cleanNumber(rawQty, 0) : (normalized.gross_sales > 0 ? 1 : 0);
         normalized.discounts = Math.abs(this.cleanNumber(findKey(['discount', 'voucher', 'promo']), 0));
         normalized.commission = Math.abs(this.cleanNumber(findKey(['commission_charge', 'commission', 'just_eat_fee', 'fee']), normalized.gross_sales * 0.28));
         normalized.net_payout = this.cleanNumber(findKey(['net_payout', 'net_amount', 'net']), normalized.gross_sales - normalized.commission - normalized.discounts);
@@ -653,8 +662,9 @@
         normalized.date = this.normalizeDate(findKey(['order_date', 'date', 'timestamp', 'time']));
         normalized.time = findKey(['order_time', 'time']) || '12:00:00';
         normalized.raw_name = (findKey(['item_name', 'item', 'product_name', 'dish']) || '').trim();
-        normalized.quantity = this.cleanNumber(findKey(['quantity', 'qty', 'count']), 1);
         normalized.gross_sales = this.cleanNumber(findKey(['item_gross', 'gross_sales', 'gross', 'price', 'total']), 0);
+        const rawQty = findKey(['quantity', 'qty', 'count', 'item_quantity']);
+        normalized.quantity = (rawQty !== null && rawQty !== undefined && rawQty !== '') ? this.cleanNumber(rawQty, 0) : (normalized.gross_sales > 0 ? 1 : 0);
         normalized.discounts = Math.abs(this.cleanNumber(findKey(['discount', 'customer_discount']), 0));
         normalized.commission = Math.abs(this.cleanNumber(findKey(['commission', 'deliveroo_fee', 'fee']), normalized.gross_sales * 0.32));
         normalized.net_payout = this.cleanNumber(findKey(['net_payout', 'net_sales', 'net']), normalized.gross_sales - normalized.commission - normalized.discounts);
@@ -663,8 +673,9 @@
         normalized.date = this.normalizeDate(findKey(['date', 'time', 'day']));
         normalized.time = findKey(['time']) || '12:00:00';
         normalized.raw_name = (findKey(['item_name', 'item', 'product_name', 'product', 'dish', 'description', 'name']) || '').trim();
-        normalized.quantity = this.cleanNumber(findKey(['qty', 'quantity', 'count', 'units']), 1);
         normalized.gross_sales = this.cleanNumber(findKey(['gross_sales', 'gross', 'sales', 'price', 'total', 'amount']), 0);
+        const rawQty = findKey(['qty', 'quantity', 'count', 'units']);
+        normalized.quantity = (rawQty !== null && rawQty !== undefined && rawQty !== '') ? this.cleanNumber(rawQty, 0) : (normalized.gross_sales > 0 ? 1 : 0);
         normalized.discounts = Math.abs(this.cleanNumber(findKey(['discounts', 'discount', 'promo']), 0));
         normalized.commission = Math.abs(this.cleanNumber(findKey(['commission', 'fee']), normalized.gross_sales * 0.25));
         normalized.net_payout = this.cleanNumber(findKey(['net_payout', 'net', 'payout']), normalized.gross_sales - normalized.commission - normalized.discounts);
@@ -706,7 +717,30 @@
         }
 
         const adapted = this.adaptChannelRow(rowObj, channel);
-        if (!adapted.raw_name || adapted.raw_name.toLowerCase() === 'total' || adapted.raw_name.toLowerCase() === 'summary') {
+        
+        // Skip cancelled / refunded / voided transactions
+        if (adapted.is_cancelled) {
+          continue;
+        }
+
+        // Skip non-item summary rows or delivery fee/bag fee rows
+        if (!adapted.raw_name) continue;
+        const nameLower = adapted.raw_name.toLowerCase();
+        if (
+          nameLower === 'total' ||
+          nameLower === 'summary' ||
+          nameLower === 'subtotal' ||
+          nameLower.includes('bag fee') ||
+          nameLower.includes('delivery fee') ||
+          nameLower.includes('courier tip') ||
+          nameLower.includes('restaurant tip') ||
+          nameLower.includes('service fee')
+        ) {
+          continue;
+        }
+
+        // Skip rows with zero quantity and zero gross
+        if (adapted.quantity <= 0 && adapted.gross_sales <= 0) {
           continue;
         }
 
@@ -823,19 +857,30 @@
         };
       }
 
-      // 3. Substring / Token Match Fallback
-      for (const r of recipes) {
-        const rNorm = this.normalizeText(r.title || r.name);
-        if (normRaw.includes(rNorm) || rNorm.includes(normRaw)) {
-          return {
-            status: 'MATCHED',
-            master_name: r.title || r.name,
-            recipe_obj: r,
-            match_type: 'FUZZY_SOP'
-          };
+      // 3. Strict High-Confidence Match ONLY (Prevents wild false positives on single words like 'chocolate', 'dubai', 'shake', 'waffle')
+      const rawTokens = normRaw.split(' ').filter(t => t.length > 2);
+      if (rawTokens.length >= 2) {
+        for (const r of recipes) {
+          const rNorm = this.normalizeText(r.title || r.name);
+          const rTokens = rNorm.split(' ').filter(t => t.length > 2);
+          if (rTokens.length >= 2) {
+            const intersection = rawTokens.filter(t => rTokens.includes(t));
+            const union = new Set([...rawTokens, ...rTokens]);
+            const jaccard = intersection.length / union.size;
+            // Only match if token overlap is 85% or higher
+            if (jaccard >= 0.85) {
+              return {
+                status: 'MATCHED',
+                master_name: r.title || r.name,
+                recipe_obj: r,
+                match_type: 'HIGH_CONFIDENCE_SOP'
+              };
+            }
+          }
         }
       }
 
+      // If not strictly matched, return UNMAPPED so it keeps its exact raw name without hallucinating numbers
       return {
         status: 'UNMAPPED',
         master_name: null,
