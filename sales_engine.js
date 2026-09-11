@@ -329,6 +329,47 @@
     },
 
     // -----------------------------------------------------------
+    // Master SOP Recipes Dynamic Synchronization
+    // -----------------------------------------------------------
+    getMasterRecipes() {
+      let recipes = [];
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const stored = localStorage.getItem('recipeSOPs');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              recipes = parsed;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Failed reading recipeSOPs from localStorage:", e);
+      }
+
+      // If empty, fallback to MASTER_SOP_RECIPES and seed into localStorage
+      // so SOP.html, recipe_sop_manager.html, and sales_ledger.html stay perfectly synced!
+      if (recipes.length === 0) {
+        recipes = MASTER_SOP_RECIPES;
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem('recipeSOPs', JSON.stringify(MASTER_SOP_RECIPES));
+          }
+        } catch (e) {}
+      }
+      return recipes;
+    },
+
+    syncWithSOP() {
+      const recipes = this.getMasterRecipes();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('treatstreet:sop_synced', { detail: { count: recipes.length } }));
+      }
+      return recipes;
+    },
+
+
+    // -----------------------------------------------------------
     // Normalizers
     // -----------------------------------------------------------
     normalizeText(str) {
@@ -381,9 +422,19 @@
     // -----------------------------------------------------------
     parseDelimited(text) {
       if (!text || typeof text !== 'string') return [];
-      const cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      let cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      if (cleanText.includes('\\t') && !cleanText.includes('\t')) {
+        cleanText = cleanText.replace(/\\t/g, '\t');
+      }
       const lines = cleanText.split('\n');
       const result = [];
+
+      // Determine delimiter from first non-empty line
+      const firstLine = lines.find(l => l && l.trim()) || '';
+      let defaultDelimiter = ',';
+      if (firstLine.includes('\t')) defaultDelimiter = '\t';
+      else if (firstLine.includes(';') && !firstLine.includes(',')) defaultDelimiter = ';';
+      else if (firstLine.includes('|')) defaultDelimiter = '|';
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -392,8 +443,7 @@
         const row = [];
         let curr = '';
         let inQuotes = false;
-        // Determine delimiter by line 0 if possible, or support comma & tab
-        const delimiter = line.includes('\t') && !line.includes('","') ? '\t' : ',';
+        const delimiter = (line.includes('\t') && !line.includes('","')) ? '\t' : defaultDelimiter;
 
         for (let j = 0; j < line.length; j++) {
           const c = line[j];
@@ -434,6 +484,62 @@
       const worksheet = workbook.Sheets[firstSheetName];
       const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
       return sheetData;
+    },
+
+    // -----------------------------------------------------------
+    // PDF Ingestion (PDF.js + Robust Text Stream Scanner)
+    // -----------------------------------------------------------
+    async parsePdfArrayBuffer(arrayBuffer, filename = '') {
+      let extractedLines = [];
+
+      // 1. Try PDF.js if loaded in browser
+      if (typeof window !== 'undefined' && window.pdfjsLib) {
+        try {
+          const loadingTask = window.pdfjsLib.getDocument({ data: arrayBuffer });
+          const pdfDoc = await loadingTask.promise;
+
+          for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+            const page = await pdfDoc.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            
+            // Cluster items by vertical Y position (within 4px)
+            const yMap = new Map();
+            for (const item of textContent.items) {
+              const str = (item.str || '').trim();
+              if (!str) continue;
+              const y = Math.round((item.transform[5] || 0) / 4) * 4;
+              const x = item.transform[4] || 0;
+              if (!yMap.has(y)) yMap.set(y, []);
+              yMap.get(y).push({ x, str });
+            }
+
+            // Sort descending Y (top of page first)
+            const sortedYs = Array.from(yMap.keys()).sort((a, b) => b - a);
+            for (const y of sortedYs) {
+              // Sort line left-to-right
+              const line = yMap.get(y).sort((a, b) => a.x - b.x);
+              extractedLines.push(line.map(i => i.str).join('\t'));
+            }
+          }
+        } catch (e) {
+          console.warn("PDF.js parse error:", e);
+        }
+      }
+
+      // 2. Binary text stream fallback
+      if (extractedLines.length === 0) {
+        try {
+          const decoder = new TextDecoder('latin1');
+          const raw = decoder.decode(arrayBuffer);
+          const matches = raw.match(/\(([^()]{2,})\)[\s]*Tj/g) || raw.match(/\[([^\[\]]+)\][\s]*TJ/g);
+          if (matches) {
+            extractedLines = matches.map(m => m.replace(/^[(\[]|[)\]]\s*T[jJ]$/g, '').replace(/\\([()\\])/g, '$1'));
+          }
+        } catch (e) {}
+      }
+
+      const fullText = extractedLines.join('\n');
+      return this.parseUniversalFile(fullText, filename);
     },
 
     // -----------------------------------------------------------
@@ -743,10 +849,10 @@
     // -----------------------------------------------------------
     consolidateSales(parsedFiles, options = {}) {
       const reportingDate = options.reportingDate || null; // null means all dates
-      const recipes = options.recipes || MASTER_SOP_RECIPES;
+      const recipes = options.recipes || this.getMasterRecipes();
       const aliases = options.aliases || this.getAliases();
 
-      const ledgerMap = new Map(); // master_item_name -> row
+      const ledgerMap = new Map(); // final_item_name -> row
       const unmappedMap = new Map(); // raw_name -> details
       
       let grandTotalUnits = 0;
@@ -774,74 +880,95 @@
           }
 
           const match = this.matchToMasterRecipe(item.raw_name, item.channel, recipes, aliases);
+          const hasRecipe = (match.status === 'MATCHED');
+          const finalItemName = hasRecipe ? match.master_name : (item.raw_name || 'Unnamed Product');
 
-          if (match.status === 'MATCHED') {
-            const masterName = match.master_name;
-            if (!ledgerMap.has(masterName)) {
-              ledgerMap.set(masterName, {
-                master_item_name: masterName,
-                recipe_obj: match.recipe_obj,
-                match_type: match.match_type,
-                square_units: 0,
-                uber_eats_units: 0,
-                just_eat_units: 0,
-                deliveroo_units: 0,
-                total_volume: 0,
-                gross_revenue: 0,
-                total_commissions: 0,
-                net_revenue: 0,
-                discounts_total: 0,
-                channel_share: {
-                  square_pct: 0,
-                  uber_pct: 0,
-                  just_eat_pct: 0,
-                  deliveroo_pct: 0
-                }
-              });
-            }
+          if (!ledgerMap.has(finalItemName)) {
+            ledgerMap.set(finalItemName, {
+              master_item_name: finalItemName,
+              raw_name: item.raw_name,
+              category: (hasRecipe && match.recipe_obj && match.recipe_obj.category) ? match.recipe_obj.category : (item.category || 'Desserts & Mains'),
+              has_sop_recipe: hasRecipe,
+              recipe_obj: hasRecipe ? match.recipe_obj : null,
+              match_type: hasRecipe ? match.match_type : 'DIRECT_SALES',
+              square_units: 0,
+              square_gross: 0,
+              uber_eats_units: 0,
+              uber_eats_gross: 0,
+              just_eat_units: 0,
+              just_eat_gross: 0,
+              deliveroo_units: 0,
+              deliveroo_gross: 0,
+              total_volume: 0,
+              gross_revenue: 0,
+              total_commissions: 0,
+              net_revenue: 0,
+              discounts_total: 0,
+              avg_price: 0,
+              revenue_contribution_pct: 0,
+              units_contribution_pct: 0,
+              performance_tier: 'MODERATE', // 'BEST' | 'MODERATE' | 'LEAST'
+              channel_share: {
+                square_pct: 0,
+                uber_pct: 0,
+                just_eat_pct: 0,
+                deliveroo_pct: 0
+              }
+            });
+          }
 
-            const row = ledgerMap.get(masterName);
-            const qty = item.quantity;
-            row.total_volume += qty;
-            row.gross_revenue += (item.gross_sales || 0);
-            row.total_commissions += (item.commission || 0);
-            row.net_revenue += (item.net_payout || 0);
-            row.discounts_total += (item.discounts || 0);
+          const row = ledgerMap.get(finalItemName);
+          const qty = item.quantity;
+          const gross = (item.gross_sales || 0);
+          const comm = (item.commission || 0);
+          const net = (item.net_payout || 0);
+          const disc = (item.discounts || 0);
 
-            // Channel Breakdown
-            if (item.channel === 'Square') {
-              row.square_units += qty;
-              channelTotals['Square'].units += qty;
-              channelTotals['Square'].gross += (item.gross_sales || 0);
-              channelTotals['Square'].commission += (item.commission || 0);
-              channelTotals['Square'].net += (item.net_payout || 0);
-            } else if (item.channel === 'Uber Eats') {
-              row.uber_eats_units += qty;
-              channelTotals['Uber Eats'].units += qty;
-              channelTotals['Uber Eats'].gross += (item.gross_sales || 0);
-              channelTotals['Uber Eats'].commission += (item.commission || 0);
-              channelTotals['Uber Eats'].net += (item.net_payout || 0);
-            } else if (item.channel === 'Just Eat') {
-              row.just_eat_units += qty;
-              channelTotals['Just Eat'].units += qty;
-              channelTotals['Just Eat'].gross += (item.gross_sales || 0);
-              channelTotals['Just Eat'].commission += (item.commission || 0);
-              channelTotals['Just Eat'].net += (item.net_payout || 0);
-            } else if (item.channel === 'Deliveroo') {
-              row.deliveroo_units += qty;
-              channelTotals['Deliveroo'].units += qty;
-              channelTotals['Deliveroo'].gross += (item.gross_sales || 0);
-              channelTotals['Deliveroo'].commission += (item.commission || 0);
-              channelTotals['Deliveroo'].net += (item.net_payout || 0);
-            }
+          row.total_volume += qty;
+          row.gross_revenue += gross;
+          row.total_commissions += comm;
+          row.net_revenue += net;
+          row.discounts_total += disc;
 
-            grandTotalUnits += qty;
-            grandTotalGross += (item.gross_sales || 0);
-            grandTotalCommission += (item.commission || 0);
-            grandTotalNet += (item.net_payout || 0);
-            grandTotalDiscounts += (item.discounts || 0);
-          } else {
-            // Unmapped
+          // Track channel-specific metrics
+          if (item.channel === 'Square') {
+            row.square_units += qty;
+            row.square_gross += gross;
+            channelTotals['Square'].units += qty;
+            channelTotals['Square'].gross += gross;
+            channelTotals['Square'].commission += comm;
+            channelTotals['Square'].net += net;
+          } else if (item.channel === 'Uber Eats') {
+            row.uber_eats_units += qty;
+            row.uber_eats_gross += gross;
+            channelTotals['Uber Eats'].units += qty;
+            channelTotals['Uber Eats'].gross += gross;
+            channelTotals['Uber Eats'].commission += comm;
+            channelTotals['Uber Eats'].net += net;
+          } else if (item.channel === 'Just Eat') {
+            row.just_eat_units += qty;
+            row.just_eat_gross += gross;
+            channelTotals['Just Eat'].units += qty;
+            channelTotals['Just Eat'].gross += gross;
+            channelTotals['Just Eat'].commission += comm;
+            channelTotals['Just Eat'].net += net;
+          } else if (item.channel === 'Deliveroo') {
+            row.deliveroo_units += qty;
+            row.deliveroo_gross += gross;
+            channelTotals['Deliveroo'].units += qty;
+            channelTotals['Deliveroo'].gross += gross;
+            channelTotals['Deliveroo'].commission += comm;
+            channelTotals['Deliveroo'].net += net;
+          }
+
+          grandTotalUnits += qty;
+          grandTotalGross += gross;
+          grandTotalCommission += comm;
+          grandTotalNet += net;
+          grandTotalDiscounts += disc;
+
+          // Keep unmapped tracking purely for optional SOP recipe linking (never blocks sales report!)
+          if (!hasRecipe) {
             const key = this.normalizeText(item.raw_name);
             if (!unmappedMap.has(key)) {
               unmappedMap.set(key, {
@@ -854,26 +981,52 @@
               });
             }
             const unres = unmappedMap.get(key);
-            unres.count += item.quantity;
-            unres.sample_revenue += (item.gross_sales || 0);
+            unres.count += qty;
+            unres.sample_revenue += gross;
             if (item.source_filename) unres.source_files.add(item.source_filename);
           }
         }
       }
 
-      // Calculate channel share percentages
       const ledgerRows = Array.from(ledgerMap.values());
+
+      // 1. Sort by gross revenue descending
+      ledgerRows.sort((a, b) => b.gross_revenue - a.gross_revenue);
+
+      // 2. Compute Revenue Contribution & Performance Tier (Pareto ABC Classification)
+      let cumulativeRevenue = 0;
       ledgerRows.forEach(row => {
+        row.avg_price = row.total_volume > 0 ? parseFloat((row.gross_revenue / row.total_volume).toFixed(2)) : 0;
+        row.revenue_contribution_pct = grandTotalGross > 0 ? parseFloat(((row.gross_revenue / grandTotalGross) * 100).toFixed(1)) : 0;
+        row.units_contribution_pct = grandTotalUnits > 0 ? parseFloat(((row.total_volume / grandTotalUnits) * 100).toFixed(1)) : 0;
+
         if (row.total_volume > 0) {
           row.channel_share.square_pct = parseFloat(((row.square_units / row.total_volume) * 100).toFixed(1));
           row.channel_share.uber_pct = parseFloat(((row.uber_eats_units / row.total_volume) * 100).toFixed(1));
           row.channel_share.just_eat_pct = parseFloat(((row.just_eat_units / row.total_volume) * 100).toFixed(1));
           row.channel_share.deliveroo_pct = parseFloat(((row.deliveroo_units / row.total_volume) * 100).toFixed(1));
         }
+
+        cumulativeRevenue += row.gross_revenue;
+        const cumPct = grandTotalGross > 0 ? (cumulativeRevenue / grandTotalGross) * 100 : 0;
+
+        // Pareto Tiers:
+        // Top cumulative 60% of sales -> BEST PERFORMER (Stars / Top Tier)
+        // 60% - 90% -> MODERATE PERFORMER (Core / Solid Mid Tier)
+        // Bottom 10% (or volume <= 2 or contribution < 1.5%) -> LEAST PERFORMER (Low / Tail)
+        if (cumPct <= 60 || row.revenue_contribution_pct >= 8.0) {
+          row.performance_tier = 'BEST';
+        } else if (cumPct <= 90 || row.revenue_contribution_pct >= 2.5) {
+          row.performance_tier = 'MODERATE';
+        } else {
+          row.performance_tier = 'LEAST';
+        }
       });
 
-      // Sort by total volume descending
-      ledgerRows.sort((a, b) => b.total_volume - a.total_volume);
+      // Special fallback if small item count
+      if (ledgerRows.length > 0 && !ledgerRows.some(r => r.performance_tier === 'BEST')) {
+        ledgerRows[0].performance_tier = 'BEST';
+      }
 
       const unmappedRows = Array.from(unmappedMap.values()).map(u => ({
         ...u,
@@ -881,7 +1034,7 @@
       })).sort((a, b) => b.count - a.count);
 
       // Performance analytics & AI Insights
-      const analytics = this.generatePerformanceAnalytics(ledgerRows, channelTotals, grandTotalGross, grandTotalNet, grandTotalCommission);
+      const analytics = this.generatePerformanceAnalytics(ledgerRows, channelTotals, grandTotalGross, grandTotalNet, grandTotalCommission, grandTotalUnits);
 
       return {
         reportingDate: reportingDate || 'ALL',
@@ -889,7 +1042,8 @@
         masterLedger: ledgerRows,
         unmappedQueue: unmappedRows,
         unmappedCount: unmappedRows.length,
-        matchedCount: ledgerRows.length,
+        matchedCount: ledgerRows.filter(r => r.has_sop_recipe).length,
+        totalItemsCount: ledgerRows.length,
         grandTotals: {
           units: grandTotalUnits,
           gross: grandTotalGross,
@@ -906,85 +1060,126 @@
     // -----------------------------------------------------------
     // 7. Performance Analytics & AI Insights Engine
     // -----------------------------------------------------------
-    generatePerformanceAnalytics(ledgerRows, channelTotals, grossTotal, netTotal, commissionTotal) {
-      // 1. Menu Item Velocity Ranking
-      const topPerformersOverall = [...ledgerRows].slice(0, 5);
-      const underperformers = [...ledgerRows]
-        .filter(r => r.total_volume > 0)
-        .sort((a, b) => a.total_volume - b.total_volume)
-        .slice(0, 5);
+    generatePerformanceAnalytics(ledgerRows, channelTotals, grossTotal, netTotal, commissionTotal, unitsTotal) {
+      // 1. Classification Groups
+      const bestPerformers = ledgerRows.filter(r => r.performance_tier === 'BEST');
+      const moderatePerformers = ledgerRows.filter(r => r.performance_tier === 'MODERATE');
+      const leastPerformers = ledgerRows.filter(r => r.performance_tier === 'LEAST');
 
-      // Top Performer by Channel
-      const topSquare = [...ledgerRows].sort((a, b) => b.square_units - a.square_units)[0] || null;
-      const topUber = [...ledgerRows].sort((a, b) => b.uber_eats_units - a.uber_eats_units)[0] || null;
-      const topJustEat = [...ledgerRows].sort((a, b) => b.just_eat_units - a.just_eat_units)[0] || null;
-      const topDeliveroo = [...ledgerRows].sort((a, b) => b.deliveroo_units - a.deliveroo_units)[0] || null;
+      // Top Volume and Revenue Drivers
+      const topRevenuePerformer = ledgerRows[0] || null;
+      const topVolumePerformer = [...ledgerRows].sort((a, b) => b.total_volume - a.total_volume)[0] || null;
 
-      // 2. Channel Economics & Commission Leakage
+      // 2. Channel Level Performance (Best, Moderate, Least on each platform)
+      const channelRankings = {};
+      ['Square', 'Uber Eats', 'Just Eat', 'Deliveroo'].forEach(channel => {
+        const fieldUnits = channel === 'Square' ? 'square_units' :
+                           channel === 'Uber Eats' ? 'uber_eats_units' :
+                           channel === 'Just Eat' ? 'just_eat_units' : 'deliveroo_units';
+        const fieldGross = channel === 'Square' ? 'square_gross' :
+                           channel === 'Uber Eats' ? 'uber_eats_gross' :
+                           channel === 'Just Eat' ? 'just_eat_gross' : 'deliveroo_gross';
+
+        const channelItems = ledgerRows
+          .filter(r => (r[fieldUnits] || 0) > 0)
+          .map(r => ({
+            name: r.master_item_name,
+            units: r[fieldUnits],
+            gross: r[fieldGross] || 0,
+            channel_revenue_share_pct: (channelTotals[channel] && channelTotals[channel].gross > 0) ? parseFloat((( (r[fieldGross] || 0) / channelTotals[channel].gross ) * 100).toFixed(1)) : 0
+          }))
+          .sort((a, b) => b.gross - a.gross);
+
+        const totalCh = channelItems.length;
+        let best = [], moderate = [], least = [];
+
+        if (totalCh <= 2) {
+          best = channelItems.slice(0, 1);
+          moderate = channelItems.slice(1, 2);
+          least = [];
+        } else {
+          const cut1 = Math.max(1, Math.ceil(totalCh * 0.3));
+          const cut2 = Math.max(cut1 + 1, Math.ceil(totalCh * 0.7));
+          best = channelItems.slice(0, cut1);
+          moderate = channelItems.slice(cut1, cut2);
+          least = channelItems.slice(cut2);
+        }
+
+        channelRankings[channel] = {
+          total_revenue: channelTotals[channel] ? channelTotals[channel].gross : 0,
+          total_units: channelTotals[channel] ? channelTotals[channel].units : 0,
+          share_of_store_pct: grossTotal > 0 ? parseFloat((( (channelTotals[channel] ? channelTotals[channel].gross : 0) / grossTotal) * 100).toFixed(1)) : 0,
+          best_performers: best,
+          moderate_performers: moderate,
+          least_performers: least
+        };
+      });
+
+      // 3. Channel Economics
       const channelEconomics = Object.entries(channelTotals).map(([channelName, data]) => {
         const commissionRate = data.gross > 0 ? (data.commission / data.gross) * 100 : 0;
+        const revenueShare = grossTotal > 0 ? (data.gross / grossTotal) * 100 : 0;
         return {
           channel: channelName,
           units: data.units,
           gross: data.gross,
           commission: data.commission,
           net: data.net,
+          revenue_share_pct: parseFloat(revenueShare.toFixed(1)),
           commission_rate_pct: parseFloat(commissionRate.toFixed(1)),
           take_rate_status: commissionRate > 30 ? 'HIGH_LEAKAGE' : commissionRate > 20 ? 'MODERATE' : 'DIRECT_IN_STORE'
         };
-      }).sort((a, b) => b.commission_rate_pct - a.commission_rate_pct);
+      }).sort((a, b) => b.gross - a.gross);
 
-      const highestLeakageChannel = channelEconomics[0] || null;
-
-      // 3. AI Executive Summary Card
-      const top3VolumeDrivers = topPerformersOverall.slice(0, 3).map(i => ({
-        name: i.master_item_name,
-        volume: i.total_volume,
-        gross: i.gross_revenue,
-        dominant_channel: Object.entries({
-          'Square': i.square_units,
-          'Uber Eats': i.uber_eats_units,
-          'Just Eat': i.just_eat_units,
-          'Deliveroo': i.deliveroo_units
-        }).sort((a, b) => b[1] - a[1])[0][0]
-      }));
-
-      const underperformingToMonitor = underperformers.slice(0, 3).map(i => ({
-        name: i.master_item_name,
-        volume: i.total_volume,
-        gross: i.gross_revenue,
-        note: i.total_volume <= 2 ? 'Near-zero sales velocity. Consider promotional push or combo pairing.' : 'Sub-par volume today.'
-      }));
-
-      const profitabilityDiscrepancies = [];
-      if (highestLeakageChannel && highestLeakageChannel.channel !== 'Square' && highestLeakageChannel.commission_rate_pct > 25) {
-        profitabilityDiscrepancies.push(
-          `${highestLeakageChannel.channel} extracts highest commission take at ${highestLeakageChannel.commission_rate_pct}% (£${highestLeakageChannel.commission.toFixed(2)} leakage). In-store Square POS retains 100% of dish list value.`
-        );
-      }
-      if (channelTotals['Deliveroo'].gross > 0 && channelTotals['Uber Eats'].gross > 0) {
-        const diff = Math.abs(channelEconomics.find(c => c.channel === 'Deliveroo').commission_rate_pct - channelEconomics.find(c => c.channel === 'Uber Eats').commission_rate_pct);
-        if (diff >= 2) {
-          profitabilityDiscrepancies.push(
-            `Margin spread discrepancy of ${diff.toFixed(1)}% between Uber Eats and Deliveroo. Adjust platform menu pricing parity to protect net margin.`
-          );
-        }
-      }
+      // AI Recommendations
+      const aiRecommendations = {
+        starHighlights: bestPerformers.slice(0, 3).map(i => 
+          `🌟 **${i.master_item_name}** generated £${i.gross_revenue.toFixed(2)} (${i.revenue_contribution_pct}% of total sales) with ${i.total_volume} units.`
+        ),
+        coreRecommendations: moderatePerformers.slice(0, 3).map(i => 
+          `⚡ **${i.master_item_name}** is a steady earner (£${i.gross_revenue.toFixed(2)}, ${i.total_volume} units). Maintain stock and feature in combo promos.`
+        ),
+        lowSalesAlerts: leastPerformers.slice(0, 3).map(i => 
+          `⚠️ **${i.master_item_name}** underperformed with only ${i.total_volume} units (£${i.gross_revenue.toFixed(2)}). Consider revising price, repackaging, or removing from delivery menus.`
+        )
+      };
 
       return {
-        topPerformersOverall,
-        underperformers,
-        topByChannel: {
-          square: topSquare ? { name: topSquare.master_item_name, units: topSquare.square_units } : null,
-          uberEats: topUber ? { name: topUber.master_item_name, units: topUber.uber_eats_units } : null,
-          justEat: topJustEat ? { name: topJustEat.master_item_name, units: topJustEat.just_eat_units } : null,
-          deliveroo: topDeliveroo ? { name: topDeliveroo.master_item_name, units: topDeliveroo.deliveroo_units } : null
-        },
+        bestPerformers,
+        moderatePerformers,
+        leastPerformers,
+        topRevenuePerformer,
+        topVolumePerformer,
+        channelRankings,
         channelEconomics,
+        aiRecommendations,
+        topPerformersOverall: bestPerformers,
+        underperformers: leastPerformers,
+        topByChannel: {
+          square: channelRankings['Square'].best_performers[0] || null,
+          uberEats: channelRankings['Uber Eats'].best_performers[0] || null,
+          justEat: channelRankings['Just Eat'].best_performers[0] || null,
+          deliveroo: channelRankings['Deliveroo'].best_performers[0] || null
+        },
         aiExecutiveSummary: {
-          top3VolumeDrivers,
-          underperformingToMonitor,
-          profitabilityDiscrepancies,
+          top3VolumeDrivers: bestPerformers.slice(0, 3).map(i => ({
+            name: i.master_item_name,
+            volume: i.total_volume,
+            gross: i.gross_revenue,
+            dominant_channel: Object.entries({
+              'Square': i.square_units,
+              'Uber Eats': i.uber_eats_units,
+              'Just Eat': i.just_eat_units,
+              'Deliveroo': i.deliveroo_units
+            }).sort((a, b) => b[1] - a[1])[0][0]
+          })),
+          underperformingToMonitor: leastPerformers.slice(0, 3).map(i => ({
+            name: i.master_item_name,
+            volume: i.total_volume,
+            gross: i.gross_revenue,
+            note: i.total_volume <= 2 ? 'Low sales velocity. Consider promotional push or combo pairing.' : 'Sub-par volume.'
+          })),
+          profitabilityDiscrepancies: [],
           blendedLeakageSummary: `Consolidated Gross Sales: £${grossTotal.toFixed(2)} with £${commissionTotal.toFixed(2)} platform commission deductions, realizing £${netTotal.toFixed(2)} net cash.`
         }
       };

@@ -3,11 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Master Sales & Depletion Ledger - Treat Street</title>
+  <title>Multi-Platform Sales Performance & Revenue Intelligence - Treat Street</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- PDF.js for parsing uploaded PDF reports directly in the browser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
   <script src="catalog.js"></script>
   <script src="sales_engine.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,6 +65,22 @@
       transform: translateY(-2px);
     }
 
+    .filter-btn-active {
+      background: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.5);
+      font-weight: 800;
+    }
+    .filter-btn-inactive {
+      background: rgba(255, 255, 255, 0.04);
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .filter-btn-inactive:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+    }
+
     /* Pulsing Critical Alarm */
     @keyframes pulseAlarm {
       0%, 100% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.35); border-color: rgba(244, 63, 94, 0.6); }
@@ -86,29 +109,31 @@
         </a>
         <div>
           <h1 class="text-base font-extrabold tracking-wide text-white flex items-center gap-2">
-            Master Sales & Depletion Ledger
+            Multi-Platform Sales Ledger
             <span id="nav-mode-tag" class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30">
               🟢 LIVE PRODUCTION
             </span>
           </h1>
-          <p class="text-[11px] text-emerald-400/80 font-medium">Multi-Platform Ingestion • Recipe Portion Depletion • MOQ Alarms</p>
+          <p class="text-[11px] text-emerald-400/80 font-medium">Revenue Contribution • Channel Breakdown • Best/Moderate/Least Performers</p>
         </div>
       </div>
 
       <!-- Action Nav Items -->
-      <div class="flex items-center gap-3">
-        <!-- Live vs Demo Mode Toggle Button -->
-        <button id="nav-mode-toggle-btn" onclick="toggleDeploymentMode()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-black shadow-sm transition-all">
-          <i data-lucide="zap" id="nav-mode-icon" class="w-4 h-4 text-emerald-400"></i>
-          <span id="nav-mode-label">LIVE PRODUCTION</span>
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        
+        <!-- Live SOP Synchronization Pill -->
+        <button id="sop-sync-pill" onclick="syncSOPLibrary()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all shadow-sm" title="Click to refresh recipes from SOP library">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span id="sop-sync-label">✓ Synced with SOP</span>
         </button>
 
+        <!-- Sample Batch Button -->
         <button onclick="loadDemoBatch()" class="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-white/10 shadow-sm">
           <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Sample Batch
         </button>
 
-        <a href="inventory.html" class="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors">
-          <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-400"></i> Stock Pots
+        <a href="recipe_sop_manager.html" class="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-400"></i> Recipes & SOPs
         </a>
 
         <a href="index.html" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1">
@@ -118,52 +143,24 @@
     </div>
   </header>
 
-  <!-- ========================================== -->
-  <!-- DYNAMIC MODE HERO BANNER (LIVE OR DEMO) -->
-  <!-- ========================================== -->
-  <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2 relative z-10">
-    <div id="mode-hero-banner" class="glass-panel p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-teal-950/40 to-slate-900/60 border border-emerald-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div class="flex items-center gap-3.5">
-        <div id="mode-banner-icon" class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950">
-          <i data-lucide="shield-check" class="w-6 h-6 text-emerald-400"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span id="mode-banner-title" class="text-xs font-extrabold text-emerald-300 tracking-wider uppercase">Live Production Engine Deployed</span>
-            <span id="mode-banner-badge" class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Live Operations Synchronized</span>
-          </div>
-          <p id="mode-banner-desc" class="text-xs text-slate-300 mt-0.5 leading-relaxed">
-            Connected to genuine store inventory pots (<code class="text-emerald-300">ts_stock_levels</code>). Theoretical recipe stock depletions interface directly with live inventory and audit records.
-          </p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 shrink-0 w-full md:w-auto">
-        <button onclick="toggleDeploymentMode()" id="mode-switch-btn" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-bold border border-white/15 transition-all flex items-center justify-center gap-1.5">
-          <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-amber-400"></i>
-          <span>Switch to Demo Sandbox</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- MAIN CONTAINER -->
   <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6 relative z-10">
 
     <!-- ======================================================== -->
-    <!-- 1. MULTI-FORMAT FILE INGESTION & DROPZONE STUDIO -->
+    <!-- 1. MULTI-FORMAT FILE INGESTION STUDIO (PDF, CSV, EXCEL)  -->
     <!-- ======================================================== -->
     <div class="glass-panel p-6 rounded-3xl border-emerald-500/30 bg-emerald-950/15">
       
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
         <div>
           <h2 class="text-xl sm:text-2xl font-extrabold text-white heading-font flex items-center gap-2.5">
             <span class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
-              <i data-lucide="layers" class="w-5 h-5"></i>
+              <i data-lucide="file-up" class="w-5 h-5"></i>
             </span>
             Multi-Platform Sales Ingestion Studio
           </h2>
           <p class="text-xs sm:text-sm text-slate-300 mt-1">
-            Drop CSV, TSV, or Excel (.xlsx / .xls) reports for <strong>Square, Uber Eats, Just Eat, and Deliveroo</strong>.
+            Upload your sales reports in <strong>PDF, CSV, TSV, or Excel (.xlsx / .xls)</strong> from Square, Uber Eats, Just Eat, or Deliveroo.
           </p>
         </div>
 
@@ -175,21 +172,24 @@
       </div>
 
       <!-- File Dropzone -->
-      <div id="dropzone" class="dropzone-box rounded-2xl p-8 text-center cursor-pointer bg-white/[0.02] flex flex-col items-center justify-center group" onclick="document.getElementById('file-input').click()">
-        <input type="file" id="file-input" multiple accept=".csv,.tsv,.txt,.xlsx,.xls" class="hidden" onchange="handleFileSelect(event)">
+      <div id="dropzone" class="dropzone-box rounded-2xl p-7 text-center cursor-pointer bg-white/[0.02] flex flex-col items-center justify-center group" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" multiple accept=".pdf,.csv,.tsv,.txt,.xlsx,.xls" class="hidden" onchange="handleFileSelect(event)">
         
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-400/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center mb-3.5 shadow-lg group-hover:scale-110 transition-transform">
-          <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-400/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center mb-3 shadow-lg group-hover:scale-110 transition-transform">
+          <i data-lucide="upload-cloud" class="w-7 h-7"></i>
         </div>
 
         <h3 class="font-bold text-white text-base sm:text-lg mb-1 heading-font">
-          Drop Square, Uber Eats, Just Eat & Deliveroo Reports Here
+          Drop your Sales Report PDF, CSV, or Excel Here
         </h3>
-        <p class="text-xs text-slate-400 max-w-lg mb-4 leading-relaxed">
-          Drop single files or batch drops all 4 platforms together. Supports CSV, TSV, and native Excel workbooks. Schema adapters automatically normalize timestamps, commissions, gross, and net payouts.
+        <p class="text-xs text-slate-400 max-w-lg mb-3.5 leading-relaxed">
+          Supports <strong>PDF exports</strong> directly from Square POS, Uber Eats, Deliveroo, and Just Eat, plus spreadsheets (.csv, .xlsx). The engine automatically parses all items, volumes, channel revenues, and computes product rankings.
         </p>
 
         <div class="flex flex-wrap items-center justify-center gap-2">
+          <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold flex items-center gap-1">
+            <i data-lucide="file-text" class="w-3 h-3"></i> PDF Reports
+          </span>
           <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold">Square POS</span>
           <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">Uber Eats</span>
           <span class="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30 text-[11px] font-bold">Just Eat</span>
@@ -198,7 +198,7 @@
       </div>
 
       <!-- Ingested Files Chips -->
-      <div id="ingested-files-panel" class="mt-5 hidden">
+      <div id="ingested-files-panel" class="mt-4 hidden">
         <div class="flex items-center justify-between mb-2">
           <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ingested Platform Feeds:</p>
           <button onclick="clearIngestedFiles()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1">
@@ -212,51 +212,162 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- UNMAPPED ITEMS RESOLUTION QUEUE (AUTO-FLAG ALERT) -->
+    <!-- 2. EXECUTIVE REVENUE & PERFORMANCE DASHBOARD (HERO VIEW)  -->
     <!-- ======================================================== -->
-    <div id="unmapped-queue-banner" class="glass-panel border-amber-500/50 bg-amber-500/10 p-5 rounded-3xl hidden">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
-        <div class="flex items-start gap-3">
-          <div class="p-2.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
-            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h4 class="text-base font-bold text-white heading-font flex items-center gap-2">
-              Unmapped Items Resolution Queue (<span id="unmapped-count-badge">0</span> detected)
-              <span class="px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 text-[10px] font-extrabold uppercase">Action Required</span>
-            </h4>
-            <p class="text-xs text-amber-200/80 mt-0.5 leading-relaxed">
-              Disparate external aggregator strings were detected that are not yet mapped to Master SOP Recipes.
-              Assign each item once below — the mapping is cached permanently in your alias dictionary.
-            </p>
-          </div>
+    <div id="executive-kpi-section" class="flex flex-col gap-6 hidden">
+      
+      <!-- Headline Metric Cards (4 Key Metrics) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Total Gross Revenue -->
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+            <span>Total Gross Sales</span>
+            <i data-lucide="pound-sterling" class="w-3.5 h-3.5 text-emerald-400"></i>
+          </p>
+          <p id="kpi-gross-revenue" class="text-2xl sm:text-3xl font-black text-amber-300 heading-font">£0.00</p>
+          <p class="text-[11px] text-slate-400 mt-1">Pre-commission list revenue</p>
+        </div>
+
+        <!-- Total Volume Sold -->
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+            <span>Total Volume Sold</span>
+            <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-indigo-400"></i>
+          </p>
+          <p id="kpi-total-units" class="text-2xl sm:text-3xl font-black text-white heading-font">0</p>
+          <p id="kpi-avg-price-sub" class="text-[11px] text-indigo-300 font-semibold mt-1">£0.00 avg per item</p>
+        </div>
+
+        <!-- Star Performer Product -->
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-yellow-300"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-amber-300 mb-1 flex items-center justify-between">
+            <span>🌟 Star Performer</span>
+            <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i>
+          </p>
+          <p id="kpi-star-item-name" class="text-lg sm:text-xl font-black text-white heading-font truncate">-</p>
+          <p id="kpi-star-item-sub" class="text-[11px] text-amber-300/90 font-semibold mt-1">0% of total revenue</p>
+        </div>
+
+        <!-- Net Realized Cash -->
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+            <span>Net Realized Payout</span>
+            <i data-lucide="wallet" class="w-3.5 h-3.5 text-teal-400"></i>
+          </p>
+          <p id="kpi-net-realized" class="text-2xl sm:text-3xl font-black text-emerald-400 heading-font">£0.00</p>
+          <p id="kpi-leakage-sub" class="text-[11px] text-rose-300 font-semibold mt-1">£0.00 platform take</p>
         </div>
       </div>
 
-      <div id="unmapped-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
-        <!-- Populated by JS -->
+      <!-- Channel Revenue Contribution & Comparison Grid -->
+      <div class="glass-panel p-6 rounded-3xl">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white heading-font flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-5 h-5 text-emerald-400"></i> Channel Revenue Share & Platform Breakdown
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Contribution to overall store revenue across In-Store POS and Delivery Aggregators.</p>
+          </div>
+          <span class="text-[11px] text-emerald-400 font-bold">100% Realized Share</span>
+        </div>
+
+        <div id="channel-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <!-- Populated by JS -->
+        </div>
       </div>
+
+      <!-- Cross-Channel Performance Tiers (Best, Moderate, Least) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <!-- 🌟 BEST PERFORMERS CARD -->
+        <div class="glass-panel p-5 rounded-3xl border-amber-500/40 bg-gradient-to-b from-amber-950/20 to-transparent flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-black flex items-center gap-1.5">
+                <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>
+                <span>Best Performers</span>
+              </span>
+              <span id="best-performers-count" class="text-xs font-black text-amber-300 font-mono">0 Items</span>
+            </div>
+            <p class="text-xs text-slate-300 mb-3">High revenue & volume drivers generating the top ~60% of sales.</p>
+            <div id="best-performers-list" class="space-y-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="pt-3 mt-3 border-t border-white/10 text-[10px] text-amber-300/80 font-semibold flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-3 h-3 text-amber-400"></i> Primary revenue anchors
+          </div>
+        </div>
+
+        <!-- ⚡ MODERATE PERFORMERS CARD -->
+        <div class="glass-panel p-5 rounded-3xl border-emerald-500/40 bg-gradient-to-b from-emerald-950/20 to-transparent flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Moderate Performers</span>
+              </span>
+              <span id="moderate-performers-count" class="text-xs font-black text-emerald-300 font-mono">0 Items</span>
+            </div>
+            <p class="text-xs text-slate-300 mb-3">Stable core menu items maintaining volume and steady contribution.</p>
+            <div id="moderate-performers-list" class="space-y-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="pt-3 mt-3 border-t border-white/10 text-[10px] text-emerald-300/80 font-semibold flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3 h-3 text-emerald-400"></i> Reliable volume baseline
+          </div>
+        </div>
+
+        <!-- ⚠️ LEAST PERFORMERS CARD -->
+        <div class="glass-panel p-5 rounded-3xl border-rose-500/40 bg-gradient-to-b from-rose-950/20 to-transparent flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-black flex items-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>Least Performers</span>
+              </span>
+              <span id="least-performers-count" class="text-xs font-black text-rose-300 font-mono">0 Items</span>
+            </div>
+            <p class="text-xs text-slate-300 mb-3">Low-volume or lagging contributors needing promotion or review.</p>
+            <div id="least-performers-list" class="space-y-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="pt-3 mt-3 border-t border-white/10 text-[10px] text-rose-300/80 font-semibold flex items-center gap-1">
+            <i data-lucide="arrow-down-right" class="w-3 h-3 text-rose-400"></i> Candidates for bundling or revision
+          </div>
+        </div>
+
+      </div>
+
     </div>
 
     <!-- ======================================================== -->
-    <!-- 2. MASTER CONSOLIDATED SALES LEDGER -->
+    <!-- 3. COMPREHENSIVE PRODUCT SALES & REVENUE CONTRIBUTION LEDGER -->
     <!-- ======================================================== -->
     <div id="ledger-section" class="glass-panel p-6 rounded-3xl hidden flex flex-col gap-5">
       
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <!-- Table Header & Action Controls -->
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <div class="flex items-center gap-2.5">
             <h3 class="text-xl font-bold text-white heading-font flex items-center gap-2">
-              <i data-lucide="table" class="w-5 h-5 text-emerald-400"></i> Master Consolidated Sales & Revenue Ledger
+              <i data-lucide="table-2" class="w-5 h-5 text-emerald-400"></i> Product Sales & Revenue Contribution Ledger
             </h3>
-            <span id="date-range-badge" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
-              All Dates
+            <span id="items-count-badge" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+              0 Items
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-1">Unified output merging Square, Uber Eats, Just Eat, and Deliveroo with channel breakdown & revenue realized.</p>
+          <p class="text-xs text-slate-400 mt-1">Every sold item with units, gross sales, platform split, and exact revenue contribution percentage.</p>
         </div>
 
-        <!-- Reporting Date Filter & Actions -->
+        <!-- Date & Export Actions -->
         <div class="flex flex-wrap items-center gap-2.5">
           <div class="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 text-xs">
             <span class="text-slate-400 font-medium">Reporting Date:</span>
@@ -266,7 +377,7 @@
           </div>
 
           <button onclick="exportMasterExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-bold text-emerald-300 transition-all flex items-center gap-1.5 shadow-sm">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Excel (.xlsx)
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Excel
           </button>
           
           <button onclick="exportMasterCSV()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 transition-all flex items-center gap-1.5 shadow-sm">
@@ -275,52 +386,58 @@
         </div>
       </div>
 
-      <!-- KPI Summary Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <div class="glass-panel p-4 rounded-2xl relative overflow-hidden bg-white/[0.02]">
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Volume Sold</p>
-          <p id="kpi-total-units" class="text-2xl sm:text-3xl font-black text-white heading-font">0</p>
-          <p class="text-[10px] text-emerald-400 font-semibold mt-1">Unified across 4 channels</p>
+      <!-- Filter Bar: Performance Tier & Channel Filters -->
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pt-2 pb-1 border-t border-b border-white/5">
+        
+        <!-- Performance Tier Filter Tabs -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Tier:</span>
+          <button onclick="setTierFilter('ALL')" id="filter-tier-all" class="px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-active">
+            All Items (<span id="count-tier-all">0</span>)
+          </button>
+          <button onclick="setTierFilter('BEST')" id="filter-tier-best" class="px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🌟 Best (<span id="count-tier-best">0</span>)
+          </button>
+          <button onclick="setTierFilter('MODERATE')" id="filter-tier-mod" class="px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-inactive">
+            ⚡ Moderate (<span id="count-tier-mod">0</span>)
+          </button>
+          <button onclick="setTierFilter('LEAST')" id="filter-tier-least" class="px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-inactive">
+            ⚠️ Least (<span id="count-tier-least">0</span>)
+          </button>
         </div>
 
-        <div class="glass-panel p-4 rounded-2xl relative overflow-hidden bg-white/[0.02]">
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-400"></div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Gross Sales Revenue</p>
-          <p id="kpi-gross-revenue" class="text-2xl sm:text-3xl font-black text-amber-300 heading-font">£0.00</p>
-          <p class="text-[10px] text-slate-400 font-medium mt-1">Pre-commission list value</p>
-        </div>
+        <!-- Channel Filter & Search -->
+        <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <select id="channel-filter-select" onchange="setChannelFilter(this.value)" class="px-3 py-1.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white font-bold outline-none cursor-pointer">
+            <option value="ALL">All Channels</option>
+            <option value="Square">Square POS (In-Store)</option>
+            <option value="Uber Eats">Uber Eats</option>
+            <option value="Just Eat">Just Eat</option>
+            <option value="Deliveroo">Deliveroo</option>
+          </select>
 
-        <div class="glass-panel p-4 rounded-2xl relative overflow-hidden bg-white/[0.02]">
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-orange-400"></div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Platform Commission Leakage</p>
-          <p id="kpi-commission-leakage" class="text-2xl sm:text-3xl font-black text-rose-400 heading-font">£0.00</p>
-          <p id="kpi-effective-rate" class="text-[10px] text-rose-300 font-semibold mt-1">0.0% blended take</p>
-        </div>
-
-        <div class="glass-panel p-4 rounded-2xl relative overflow-hidden bg-white/[0.02]">
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Net Cash Realized</p>
-          <p id="kpi-net-realized" class="text-2xl sm:text-3xl font-black text-emerald-400 heading-font">£0.00</p>
-          <p class="text-[10px] text-emerald-300 font-semibold mt-1">Actual bank payout</p>
+          <div class="relative flex-1 sm:w-60">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
+            <input type="text" id="item-search-input" oninput="handleSearchInput(this.value)" placeholder="Search products..." class="w-full pl-8 pr-3 py-1.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500">
+          </div>
         </div>
       </div>
 
-      <!-- Master Consolidated Table -->
-      <div class="overflow-x-auto rounded-2xl border border-white/10 max-h-[550px] overflow-y-auto">
+      <!-- Master Table -->
+      <div class="overflow-x-auto rounded-2xl border border-white/10 max-h-[600px] overflow-y-auto">
         <table class="w-full text-left border-collapse text-xs sm:text-sm">
-          <thead class="sticky top-0 bg-[#082218] z-20">
+          <thead class="sticky top-0 bg-[#082218] z-20 shadow-md">
             <tr class="text-slate-300 border-b border-white/10 text-[11px] font-bold uppercase tracking-wider">
-              <th class="p-3.5">Master SOP Item Name</th>
+              <th class="p-3.5"># Rank & Sold Item</th>
+              <th class="p-3.5 text-center">Performance Tier</th>
               <th class="p-3.5 text-center text-indigo-300">Square</th>
               <th class="p-3.5 text-center text-emerald-300">Uber Eats</th>
               <th class="p-3.5 text-center text-orange-300">Just Eat</th>
               <th class="p-3.5 text-center text-teal-300">Deliveroo</th>
-              <th class="p-3.5 text-right font-black text-white">Total Volume</th>
-              <th class="p-3.5 text-right text-amber-300">Gross (£)</th>
-              <th class="p-3.5 text-right text-rose-400">Commission (£)</th>
-              <th class="p-3.5 text-right text-emerald-400 font-bold">Net (£)</th>
-              <th class="p-3.5 text-left w-36">Channel Share %</th>
+              <th class="p-3.5 text-right font-black text-white">Units Sold</th>
+              <th class="p-3.5 text-right text-amber-300">Gross Sales (£)</th>
+              <th class="p-3.5 text-left w-44">Revenue Contribution %</th>
+              <th class="p-3.5 text-right text-emerald-400 font-bold">Net Payout (£)</th>
             </tr>
           </thead>
           <tbody id="master-ledger-tbody" class="divide-y divide-white/5">
@@ -328,285 +445,102 @@
           </tbody>
         </table>
       </div>
+
+      <div id="table-empty-msg" class="text-center py-8 text-slate-400 text-xs hidden">
+        No items match your selected filter criteria.
+      </div>
     </div>
 
     <!-- ======================================================== -->
-    <!-- 3. PERFORMANCE ANALYTICS & AI INSIGHTS ENGINE -->
+    <!-- 4. OPTIONAL INVENTORY & THEORETICAL STOCK DEPLETION DRAWER -->
     <!-- ======================================================== -->
-    <div id="analytics-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
-      
-      <!-- AI Executive Summary Card -->
-      <div class="glass-panel p-6 rounded-3xl border-emerald-500/30 bg-gradient-to-br from-[#0c2f23]/60 to-[#081b15]/60 flex flex-col justify-between space-y-4">
+    <div id="depletion-section" class="glass-panel p-6 rounded-3xl hidden flex flex-col gap-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <div class="flex items-center justify-between mb-3">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-black">
-              <i data-lucide="bot" class="w-3.5 h-3.5"></i>
-              <span>AI Executive Summary Card</span>
-            </div>
-            <span class="text-[10px] text-slate-400 font-mono">ALAIYA Intelligence</span>
-          </div>
-
-          <h4 class="text-base font-bold text-white heading-font mb-3">Daily Franchise Velocity Brief</h4>
-          
-          <!-- Top 3 Volume Drivers -->
-          <div class="space-y-2 mb-4">
-            <p class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">Top 3 Volume Drivers Today:</p>
-            <div id="ai-volume-drivers-list" class="space-y-1.5 text-xs text-slate-200">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-
-          <!-- Underperforming Items to Monitor -->
-          <div class="space-y-2 mb-4">
-            <p class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Underperforming Items to Monitor:</p>
-            <div id="ai-underperformers-list" class="space-y-1.5 text-xs text-slate-200">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-
-          <!-- Channel Profitability Discrepancies -->
-          <div class="space-y-2">
-            <p class="text-[10px] font-extrabold uppercase tracking-wider text-rose-400">Channel Profitability Discrepancies:</p>
-            <div id="ai-profitability-list" class="space-y-1.5 text-xs text-slate-300 leading-relaxed">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-        </div>
-
-        <div class="pt-3 border-t border-white/10 text-[11px] text-slate-400 flex items-center justify-between">
-          <span id="ai-blended-summary">Consolidated analytics active</span>
-          <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i>
-        </div>
-      </div>
-
-      <!-- Channel Distribution & Economics -->
-      <div class="glass-panel p-6 rounded-3xl flex flex-col justify-between space-y-4">
-        <div>
-          <h4 class="text-base font-bold text-white heading-font flex items-center gap-2 mb-1">
-            <i data-lucide="pie-chart" class="w-4 h-4 text-amber-400"></i> Channel Economics & Margin Leakage
+          <h4 class="text-base font-bold text-white heading-font flex items-center gap-2">
+            <i data-lucide="package-minus" class="w-4 h-4 text-emerald-400"></i>
+            Theoretical Ingredient Depletion & Stock Pot Handshake
           </h4>
-          <p class="text-xs text-slate-400 mb-4">Identifying blended platform fees and margin extraction rates:</p>
-
-          <div id="channel-economics-breakdown" class="space-y-3">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-
-        <div class="p-3 rounded-2xl bg-white/[0.02] border border-white/10 text-xs text-slate-300">
-          <p class="font-bold text-white mb-0.5">Strategic Margin Advice:</p>
-          <p id="leakage-insight-text" class="text-[11px] text-slate-400 leading-relaxed">
-            Direct in-store sales via Square yield 0% aggregator commission. Boost in-store customer loyalty terminal signups to preserve takeaway margin.
+          <p class="text-xs text-slate-400 mt-0.5">
+            Portion breakdown calculated automatically from your synced SOP recipes.
           </p>
         </div>
+        <button onclick="toggleDepletionDrawer()" id="depletion-toggle-btn" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-all">
+          <span id="depletion-toggle-label">Show Stock Pot Details</span>
+          <i data-lucide="chevron-down" id="depletion-toggle-icon" class="w-4 h-4 text-slate-400"></i>
+        </button>
       </div>
 
-      <!-- Menu Item Velocity Leaderboard -->
-      <div class="glass-panel p-6 rounded-3xl flex flex-col justify-between space-y-4">
-        <div>
-          <h4 class="text-base font-bold text-white heading-font flex items-center gap-2 mb-1">
-            <i data-lucide="trophy" class="w-4 h-4 text-yellow-400"></i> Menu Velocity Leaders
-          </h4>
-          <p class="text-xs text-slate-400 mb-3">Best-selling items overall and ranked by channel:</p>
+      <div id="depletion-drawer-content" class="space-y-4 hidden pt-2">
+        <!-- Critical Alarms if Any -->
+        <div id="critical-alarms-container" class="space-y-2"></div>
 
-          <div class="space-y-2.5">
-            <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2">
-                <span class="w-5 h-5 rounded-md bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center text-[10px]">SQ</span>
-                <span class="text-slate-300 font-medium">Square Till:</span>
-              </div>
-              <span id="lead-square" class="font-bold text-white truncate max-w-[140px]">-</span>
-            </div>
-
-            <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2">
-                <span class="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold flex items-center justify-center text-[10px]">UB</span>
-                <span class="text-slate-300 font-medium">Uber Eats:</span>
-              </div>
-              <span id="lead-uber" class="font-bold text-white truncate max-w-[140px]">-</span>
-            </div>
-
-            <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2">
-                <span class="w-5 h-5 rounded-md bg-orange-500/20 text-orange-300 font-bold flex items-center justify-center text-[10px]">JE</span>
-                <span class="text-slate-300 font-medium">Just Eat:</span>
-              </div>
-              <span id="lead-justeat" class="font-bold text-white truncate max-w-[140px]">-</span>
-            </div>
-
-            <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2">
-                <span class="w-5 h-5 rounded-md bg-teal-500/20 text-teal-300 font-bold flex items-center justify-center text-[10px]">DL</span>
-                <span class="text-slate-300 font-medium">Deliveroo:</span>
-              </div>
-              <span id="lead-deliveroo" class="font-bold text-white truncate max-w-[140px]">-</span>
-            </div>
-          </div>
+        <!-- Depletion Table -->
+        <div class="overflow-x-auto rounded-2xl border border-white/10 max-h-[400px] overflow-y-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="sticky top-0 bg-[#082218] z-10">
+              <tr class="text-slate-300 border-b border-white/10 text-[10px] font-bold uppercase tracking-wider">
+                <th class="p-3">Raw Ingredient / Batch</th>
+                <th class="p-3 text-center">On-Hand Pots</th>
+                <th class="p-3 text-center text-rose-400">Depletion (Sales)</th>
+                <th class="p-3 text-center">Projected Balance</th>
+                <th class="p-3 text-center text-amber-300">MOQ Target</th>
+                <th class="p-3 text-center">Status</th>
+                <th class="p-3 text-center text-emerald-400">Suggested Reorder</th>
+              </tr>
+            </thead>
+            <tbody id="depletion-table-tbody" class="divide-y divide-white/5"></tbody>
+          </table>
         </div>
-
-        <div class="pt-2 text-right">
-          <span class="text-[10px] text-emerald-400 font-bold">Consolidated Franchise Intelligence</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======================================================== -->
-    <!-- 4. STOCK DEPLETION & THRESHOLD ALARM HANDSHAKE -->
-    <!-- ======================================================== -->
-    <div id="depletion-section" class="glass-panel p-6 rounded-3xl hidden flex flex-col gap-5">
-      
-      <!-- Section Header -->
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <h3 class="text-xl font-bold text-white heading-font flex items-center gap-2">
-              <i data-lucide="package-minus" class="w-5 h-5 text-rose-400"></i> Stock Depletion & Safety Threshold Alarm Handshake
-            </h3>
-            <span id="alarms-count-badge" class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-black">
-              0 Critical Alarms
-            </span>
-          </div>
-          <p class="text-xs text-slate-400 mt-1">Multiplies consolidated sales volume by standard SOP recipe portion breakdown to compute theoretical ingredient consumption and breach thresholds.</p>
-        </div>
-
-        <div class="flex items-center gap-2.5">
-          <button id="btn-commit-depletion" onclick="commitDepletionAction()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-slate-950 text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-rose-600/30">
-            <i data-lucide="zap" class="w-4 h-4"></i> Apply Depletion to Live Store Pots
-          </button>
-        </div>
-      </div>
-
-      <!-- CRITICAL LOW STOCK ALARM BANNERS (Surface High-Priority) -->
-      <div id="critical-alarms-container" class="space-y-2.5 hidden">
-        <!-- Populated by JS -->
-      </div>
-
-      <!-- Theoretical Depletion & Projected Balance Table -->
-      <div class="overflow-x-auto rounded-2xl border border-white/10 max-h-[500px] overflow-y-auto">
-        <table class="w-full text-left border-collapse text-xs sm:text-sm">
-          <thead class="sticky top-0 bg-[#082218] z-10">
-            <tr class="text-slate-300 border-b border-white/10 text-[11px] font-bold uppercase tracking-wider">
-              <th class="p-3.5">Raw Ingredient / Prepped Batch</th>
-              <th class="p-3.5 text-center">Current On-Hand (Pots)</th>
-              <th class="p-3.5 text-center text-rose-400">Theoretical Consumption</th>
-              <th class="p-3.5 text-center">Projected Balance</th>
-              <th class="p-3.5 text-center text-amber-300">MOQ Safety Threshold</th>
-              <th class="p-3.5 text-center">Alarm Status</th>
-              <th class="p-3.5 text-center text-emerald-400 font-bold">Suggested Reorder Qty</th>
-            </tr>
-          </thead>
-          <tbody id="depletion-table-tbody" class="divide-y divide-white/5">
-            <!-- Populated by JS -->
-          </tbody>
-        </table>
       </div>
     </div>
 
   </main>
 
   <!-- ========================================== -->
-  <!-- MODAL: UNMAPPED ITEM PERMANENT MAPPING -->
-  <!-- ========================================== -->
-  <div id="alias-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
-    <div class="glass-panel bg-[#092219]/95 border border-amber-500/40 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2 text-amber-400 font-bold text-sm heading-font">
-          <i data-lucide="link-2" class="w-4 h-4"></i>
-          <span>Assign Master SOP Recipe</span>
-        </div>
-        <button onclick="closeAliasModal()" class="text-slate-400 hover:text-white transition-colors">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-
-      <p class="text-xs text-slate-300">
-        Link this external channel string to an internal Master SOP Recipe. The mapping will be permanently stored in your alias dictionary.
-      </p>
-
-      <form onsubmit="submitAliasAssignment(event)" class="space-y-3.5 text-left">
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">External Channel String</label>
-          <input type="text" id="modal-raw-name" readonly class="w-full px-3.5 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-amber-300 font-semibold outline-none cursor-not-allowed">
-        </div>
-
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Detected Channel</label>
-          <input type="text" id="modal-channel" readonly class="w-full px-3.5 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-slate-300 outline-none cursor-not-allowed">
-        </div>
-
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Select Internal Master Recipe</label>
-          <select id="modal-target-recipe" required class="w-full px-3.5 py-2.5 bg-[#071b14] border border-emerald-500/40 rounded-xl text-xs text-white font-bold outline-none focus:ring-2 focus:ring-emerald-500">
-            <!-- Populated by JS -->
-          </select>
-        </div>
-
-        <div class="flex gap-2.5 pt-2">
-          <button type="button" onclick="closeAliasModal()" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold rounded-xl text-xs transition-all">
-            Cancel
-          </button>
-          <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20">
-            Save & Update Ledger
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- MODAL: DEMO MODE EXIT RESTRICTION -->
-  <!-- ========================================== -->
-  <div id="demo-exit-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
-    <div class="glass-panel bg-[#0b221a]/95 border border-rose-500/40 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center space-y-4">
-      <div class="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto shadow-lg shadow-rose-950">
-        <i data-lucide="shield-alert" class="w-7 h-7"></i>
-      </div>
-      <div>
-        <h3 class="text-lg font-bold text-white heading-font">Demo Mode Safeguard Active</h3>
-        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-          Per operational protocol, Sandbox Demo Mode is currently locked to safeguard procurement orders, real-world stock levels, and SOPs.
-        </p>
-      </div>
-      <div class="p-3 rounded-2xl bg-white/[0.02] border border-white/10 text-xs text-amber-300 text-left">
-        <strong>Operator Notice:</strong> Real-world integration will be authorized after full testing verification is completed.
-      </div>
-      <div class="pt-2">
-        <button type="button" onclick="closeExitDemoModal()" class="w-full py-2.5 bg-white/10 hover:bg-white/15 text-white font-bold rounded-xl text-xs transition-all">
-          Acknowledge & Continue in Demo Mode
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- FOOTER -->
-  <footer class="w-full border-t border-white/5 py-4 text-center text-xs text-slate-400 relative z-10">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <span class="text-slate-400">Treat Street MK Stadium HQ • Master Sales & Depletion Ledger Engine</span>
-      <span class="text-amber-400/90 font-semibold flex items-center gap-1">
-        <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i> Sandbox Mode • Storage Isolated
-      </span>
-    </div>
+  <!-- ========================================== -->
+  <footer class="w-full border-t border-white/10 py-6 text-center text-xs text-slate-400">
+    <p>Treat Street Omnichannel Sales Intelligence & Revenue Consolidation • Powered by ALAIYA Architecture</p>
   </footer>
 
-  <!-- JAVASCRIPT APP LOGIC -->
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT PIPELINE CONTROLLER -->
+  <!-- ========================================== -->
   <script>
-    // State
     let currentParsedFeeds = [];
     let currentConsolidated = null;
     let currentDepletionResult = null;
     let activeReportingDate = 'ALL';
+    let activeTierFilter = 'ALL';
+    let activeChannelFilter = 'ALL';
+    let activeSearchQuery = '';
 
-    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-      updateModeUI();
+      if (window.lucide) lucide.createIcons();
       setupDropzone();
-      populateMasterRecipesDropdown();
+      syncSOPLibrary(false);
 
-      // Automatically load multi-channel demo batch for preview
+      // Automatically load multi-channel demo batch on fresh launch for instant preview
       loadDemoBatch();
     });
 
     // -------------------------------------------------------------
-    // Dropzone & File Ingestion
+    // SOP Synchronization
+    // -------------------------------------------------------------
+    function syncSOPLibrary(showToast = true) {
+      const recipes = window.SalesEngine ? SalesEngine.syncWithSOP() : [];
+      const label = document.getElementById('sop-sync-label');
+      if (label) {
+        label.innerText = `✓ Synced with SOP (${recipes.length} Recipes)`;
+      }
+      if (showToast) {
+        alert(`✓ Successfully synchronized with your SOP Recipe Library!\n\n${recipes.length} master recipes loaded and verified.`);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Dropzone & File Ingestion (Supports PDF, CSV, Excel, TSV)
     // -------------------------------------------------------------
     function setupDropzone() {
       const dropzone = document.getElementById('dropzone');
@@ -644,14 +578,20 @@
       const parsedResults = [];
 
       for (const file of files) {
-        let content;
-        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-          content = await file.arrayBuffer();
+        const name = file.name.toLowerCase();
+        let parsed;
+
+        if (name.endsWith('.pdf')) {
+          const buffer = await file.arrayBuffer();
+          parsed = await SalesEngine.parsePdfArrayBuffer(buffer, file.name);
+        } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+          const buffer = await file.arrayBuffer();
+          parsed = SalesEngine.parseUniversalFile(buffer, file.name);
         } else {
-          content = await file.text();
+          const text = await file.text();
+          parsed = SalesEngine.parseUniversalFile(text, file.name);
         }
 
-        const parsed = SalesEngine.parseUniversalFile(content, file.name);
         parsedResults.push(parsed);
       }
 
@@ -671,10 +611,9 @@
     function clearIngestedFiles() {
       currentParsedFeeds = [];
       document.getElementById('ingested-files-panel').classList.add('hidden');
+      document.getElementById('executive-kpi-section').classList.add('hidden');
       document.getElementById('ledger-section').classList.add('hidden');
-      document.getElementById('analytics-section').classList.add('hidden');
       document.getElementById('depletion-section').classList.add('hidden');
-      document.getElementById('unmapped-queue-banner').classList.add('hidden');
     }
 
     function renderIngestedChips() {
@@ -696,12 +635,12 @@
 
         return `
           <div class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl shadow-sm flex items-center gap-2 text-xs">
-            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <i data-lucide="file-check" class="w-3.5 h-3.5 text-emerald-400"></i>
             <span class="font-bold text-white">${feed.filename}</span>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${badgeColor}">
               ${feed.channel} (${feed.items.length} rows)
             </span>
-            <button onclick="removeFeed(${idx})" class="text-slate-400 hover:text-rose-400 transition-colors ml-1">
+            <button onclick="removeFeed(${idx})" class="text-slate-400 hover:text-rose-400 transition-colors ml-1" title="Remove feed">
               <i data-lucide="x" class="w-3.5 h-3.5"></i>
             </button>
           </div>
@@ -718,45 +657,34 @@
     }
 
     // -------------------------------------------------------------
-    // Recalculate Consolidation, Analytics & Depletion Handshake
+    // Recalculate Consolidation, Analytics & Depletion
     // -------------------------------------------------------------
     function recalculatePipeline() {
       if (!currentParsedFeeds.length) return;
 
-      // 1. Run Consolidation
+      // 1. Run Consolidation Engine
       currentConsolidated = SalesEngine.consolidateSales(currentParsedFeeds, {
         reportingDate: activeReportingDate
       });
 
-      // Update Date Dropdown
+      // 2. Update Date Selector
       updateDateFilterDropdown(currentConsolidated.availableDates);
 
-      // 2. Render Unmapped Queue
-      renderUnmappedQueue(currentConsolidated.unmappedQueue);
+      // 3. Render Executive Metrics & Channel Breakdown
+      renderExecutiveDashboard(currentConsolidated);
 
-      // 3. Render Master Ledger & KPIs
-      renderMasterLedger(currentConsolidated);
+      // 4. Render Master Product Sales & Revenue Contribution Table
+      renderMasterLedgerTable();
 
-      // 4. Render Performance Analytics & AI Card
-      renderPerformanceAnalytics(currentConsolidated.analytics);
-
-      // 5. Run Depletion & Alarm Handshake
+      // 5. Run Depletion in Background (Optional Drawer)
       currentDepletionResult = SalesEngine.calculateDepletionAndAlarms(currentConsolidated.masterLedger);
-      renderDepletionAndAlarms(currentDepletionResult);
-
-      // 6. Dispatch cross-component handshake event
-      SalesEngine.dispatchDepletionHandshake({
-        grandTotals: currentConsolidated.grandTotals,
-        alarmsCount: currentDepletionResult.alarmsCount,
-        criticalLowStockAlarms: currentDepletionResult.criticalLowStockAlarms
-      });
+      renderDepletionDetails(currentDepletionResult);
 
       if (window.lucide) lucide.createIcons();
     }
 
     function updateDateFilterDropdown(dates) {
       const select = document.getElementById('reporting-date-select');
-      const badge = document.getElementById('date-range-badge');
       if (!select) return;
 
       const currentVal = select.value;
@@ -765,10 +693,8 @@
 
       if (activeReportingDate !== 'ALL' && dates.includes(activeReportingDate)) {
         select.value = activeReportingDate;
-        badge.innerText = `Date: ${activeReportingDate}`;
       } else {
         select.value = 'ALL';
-        badge.innerText = 'All Dates';
       }
     }
 
@@ -778,465 +704,317 @@
     }
 
     // -------------------------------------------------------------
-    // Unmapped Items Resolution Queue
+    // Executive Dashboard (Headline KPIs, Channels & Tiers)
     // -------------------------------------------------------------
-    function renderUnmappedQueue(unmappedList) {
-      const banner = document.getElementById('unmapped-queue-banner');
-      const badge = document.getElementById('unmapped-count-badge');
-      const grid = document.getElementById('unmapped-cards-grid');
+    function renderExecutiveDashboard(data) {
+      document.getElementById('executive-kpi-section').classList.remove('hidden');
 
-      if (!unmappedList || unmappedList.length === 0) {
-        banner.classList.add('hidden');
-        return;
+      const totals = data.grandTotals;
+      const analytics = data.analytics;
+
+      // 1. Headline KPIs
+      document.getElementById('kpi-gross-revenue').innerText = `£${totals.gross.toFixed(2)}`;
+      document.getElementById('kpi-total-units').innerText = totals.units.toLocaleString();
+      const avgPrice = totals.units > 0 ? (totals.gross / totals.units) : 0;
+      document.getElementById('kpi-avg-price-sub').innerText = `£${avgPrice.toFixed(2)} avg per item`;
+
+      if (analytics.topRevenuePerformer) {
+        document.getElementById('kpi-star-item-name').innerText = analytics.topRevenuePerformer.master_item_name;
+        document.getElementById('kpi-star-item-sub').innerText = `£${analytics.topRevenuePerformer.gross_revenue.toFixed(2)} • ${analytics.topRevenuePerformer.revenue_contribution_pct}% of total sales`;
+      } else {
+        document.getElementById('kpi-star-item-name').innerText = '-';
+        document.getElementById('kpi-star-item-sub').innerText = '0% of total';
       }
 
-      banner.classList.remove('hidden');
-      badge.innerText = unmappedList.length;
+      document.getElementById('kpi-net-realized').innerText = `£${totals.net.toFixed(2)}`;
+      document.getElementById('kpi-leakage-sub').innerText = `£${totals.commission.toFixed(2)} platform take (${totals.effective_commission_rate}%)`;
 
-      grid.innerHTML = unmappedList.map(u => `
-        <div class="bg-black/40 p-3.5 rounded-2xl border border-amber-500/30 flex items-center justify-between gap-3 shadow-md">
-          <div class="overflow-hidden">
-            <p class="text-xs font-bold text-white truncate" title="${u.raw_name}">${u.raw_name}</p>
-            <p class="text-[10px] text-amber-300/90 mt-0.5">
-              ${u.channel} • <strong>${u.count} units sold</strong> • £${u.sample_revenue.toFixed(2)}
-            </p>
-          </div>
-          <button onclick="openAliasModal('${encodeURIComponent(u.raw_name)}', '${u.channel}')" class="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black shrink-0 transition-all flex items-center gap-1 shadow-md shadow-amber-500/20">
-            <i data-lucide="link-2" class="w-3.5 h-3.5"></i> Assign
-          </button>
-        </div>
-      `).join('');
-    }
+      // 2. Channel Cards Grid
+      const channelContainer = document.getElementById('channel-cards-grid');
+      const channelKeys = ['Square', 'Uber Eats', 'Just Eat', 'Deliveroo'];
 
-    function populateMasterRecipesDropdown() {
-      const select = document.getElementById('modal-target-recipe');
-      if (!select) return;
-      const recipes = window.SalesEngine ? SalesEngine.generateDemoFiles && [
-        'Chocolate Chip Cookie Dough',
-        'Banoffee',
-        'Biscofia',
-        'Twist it, Lick it, Dunk it',
-        'Strawberry Field',
-        'Uncomplicated',
-        'Viral Dubai Chocolate - Kunafa',
-        'Gelato Shake',
-        'Luxury White Choc Milkshake',
-        'Oreo Milkshake',
-        '1 Scoop',
-        'Ragin Cajuns',
-        'Red Wedding',
-        'Louisiana',
-        'Papi Chulo',
-        'Uncle G',
-        'OG',
-        'Still Water',
-        'Coca Cola',
-        'Fanta Orange'
-      ] : [];
+      channelContainer.innerHTML = channelKeys.map(ch => {
+        const cData = data.channelTotals[ch] || { units: 0, gross: 0, commission: 0, net: 0 };
+        const sharePct = totals.gross > 0 ? ((cData.gross / totals.gross) * 100).toFixed(1) : '0.0';
+        const rankObj = analytics.channelRankings[ch];
+        const topItem = (rankObj && rankObj.best_performers[0]) ? rankObj.best_performers[0].name : '-';
 
-      select.innerHTML = '<option value="">-- Choose Master SOP Recipe --</option>' +
-        recipes.map(r => `<option value="${r}">${r}</option>`).join('');
-    }
+        const borderCol = 
+          ch === 'Square' ? 'border-indigo-500/40 text-indigo-300' :
+          ch === 'Uber Eats' ? 'border-emerald-500/40 text-emerald-300' :
+          ch === 'Just Eat' ? 'border-orange-500/40 text-orange-300' :
+          'border-teal-500/40 text-teal-300';
 
-    function openAliasModal(encodedRaw, channel) {
-      const raw = decodeURIComponent(encodedRaw);
-      document.getElementById('modal-raw-name').value = raw;
-      document.getElementById('modal-channel').value = channel;
-      document.getElementById('modal-target-recipe').value = '';
-      document.getElementById('alias-modal').classList.remove('hidden');
-    }
+        const dotCol = 
+          ch === 'Square' ? 'bg-indigo-400' :
+          ch === 'Uber Eats' ? 'bg-emerald-400' :
+          ch === 'Just Eat' ? 'bg-orange-400' :
+          'bg-teal-400';
 
-    function closeAliasModal() {
-      document.getElementById('alias-modal').classList.add('hidden');
-    }
-
-    function submitAliasAssignment(e) {
-      e.preventDefault();
-      const rawName = document.getElementById('modal-raw-name').value.trim();
-      const channel = document.getElementById('modal-channel').value.trim();
-      const targetRecipe = document.getElementById('modal-target-recipe').value;
-
-      if (!rawName || !targetRecipe) return;
-
-      SalesEngine.saveAlias(rawName, targetRecipe, channel);
-      closeAliasModal();
-      recalculatePipeline();
-    }
-
-    // -------------------------------------------------------------
-    // Master Consolidated Sales Ledger Table & KPIs
-    // -------------------------------------------------------------
-    function renderMasterLedger(data) {
-      document.getElementById('ledger-section').classList.remove('hidden');
-
-      // KPIs
-      document.getElementById('kpi-total-units').innerText = data.grandTotals.units.toLocaleString();
-      document.getElementById('kpi-gross-revenue').innerText = `£${data.grandTotals.gross.toFixed(2)}`;
-      document.getElementById('kpi-commission-leakage').innerText = `£${data.grandTotals.commission.toFixed(2)}`;
-      document.getElementById('kpi-effective-rate').innerText = `${data.grandTotals.effective_commission_rate}% blended take`;
-      document.getElementById('kpi-net-realized').innerText = `£${data.grandTotals.net.toFixed(2)}`;
-
-      // Table
-      const tbody = document.getElementById('master-ledger-tbody');
-      tbody.innerHTML = data.masterLedger.map(item => `
-        <tr class="hover:bg-white/[0.03] transition-colors">
-          <td class="p-3.5 font-bold text-white flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            ${item.master_item_name}
-          </td>
-          <td class="p-3.5 text-center font-medium text-indigo-300">${item.square_units || '-'}</td>
-          <td class="p-3.5 text-center font-medium text-emerald-300">${item.uber_eats_units || '-'}</td>
-          <td class="p-3.5 text-center font-medium text-orange-300">${item.just_eat_units || '-'}</td>
-          <td class="p-3.5 text-center font-medium text-teal-300">${item.deliveroo_units || '-'}</td>
-          <td class="p-3.5 text-right font-black text-white text-base">${item.total_volume}</td>
-          <td class="p-3.5 text-right font-bold text-amber-300">£${item.gross_revenue.toFixed(2)}</td>
-          <td class="p-3.5 text-right font-medium text-rose-400">£${item.total_commissions.toFixed(2)}</td>
-          <td class="p-3.5 text-right font-black text-emerald-400">£${item.net_revenue.toFixed(2)}</td>
-          <td class="p-3.5">
-            <div class="flex h-2 rounded-full overflow-hidden bg-white/5 border border-white/10" title="Square: ${item.channel_share.square_pct}% | Uber: ${item.channel_share.uber_pct}% | JE: ${item.channel_share.just_eat_pct}% | Deliv: ${item.channel_share.deliveroo_pct}%">
-              <div style="width: ${item.channel_share.square_pct}%" class="bg-indigo-500"></div>
-              <div style="width: ${item.channel_share.uber_pct}%" class="bg-emerald-500"></div>
-              <div style="width: ${item.channel_share.just_eat_pct}%" class="bg-orange-500"></div>
-              <div style="width: ${item.channel_share.deliveroo_pct}%" class="bg-teal-400"></div>
-            </div>
-            <div class="flex justify-between text-[9px] text-slate-400 mt-1 font-mono">
-              <span class="text-indigo-300">${item.channel_share.square_pct}%</span>
-              <span class="text-emerald-300">${item.channel_share.uber_pct}%</span>
-              <span class="text-orange-300">${item.channel_share.just_eat_pct}%</span>
-              <span class="text-teal-300">${item.channel_share.deliveroo_pct}%</span>
-            </div>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    // -------------------------------------------------------------
-    // Performance Analytics & AI Insights Cards
-    // -------------------------------------------------------------
-    function renderPerformanceAnalytics(analytics) {
-      document.getElementById('analytics-section').classList.remove('hidden');
-
-      // AI Volume Drivers
-      const volList = document.getElementById('ai-volume-drivers-list');
-      volList.innerHTML = analytics.aiExecutiveSummary.top3VolumeDrivers.map((d, i) => `
-        <div class="p-2 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-          <span><strong>#${i+1} ${d.name}</strong> (${d.volume} sold)</span>
-          <span class="text-[10px] text-emerald-400 font-bold">Led by ${d.dominant_channel}</span>
-        </div>
-      `).join('');
-
-      // AI Underperformers
-      const underList = document.getElementById('ai-underperformers-list');
-      underList.innerHTML = analytics.aiExecutiveSummary.underperformingToMonitor.map(u => `
-        <div class="p-2 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-          <span><strong>${u.name}</strong> (${u.volume} sold)</span>
-          <span class="text-[10px] text-amber-300/80">${u.note}</span>
-        </div>
-      `).join('');
-
-      // AI Profitability Discrepancies
-      const profList = document.getElementById('ai-profitability-list');
-      profList.innerHTML = analytics.aiExecutiveSummary.profitabilityDiscrepancies.map(p => `
-        <div class="flex items-start gap-2">
-          <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5"></i>
-          <span>${p}</span>
-        </div>
-      `).join('');
-
-      document.getElementById('ai-blended-summary').innerText = analytics.aiExecutiveSummary.blendedLeakageSummary;
-
-      // Channel Economics Bars
-      const econContainer = document.getElementById('channel-economics-breakdown');
-      econContainer.innerHTML = analytics.channelEconomics.map(c => `
-        <div class="space-y-1">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-white">${c.channel}</span>
-            <span class="${c.take_rate_status === 'HIGH_LEAKAGE' ? 'text-rose-400 font-bold' : c.channel === 'Square' ? 'text-emerald-400 font-bold' : 'text-amber-300'}">
-              Take Rate: ${c.commission_rate_pct}% (£${c.commission.toFixed(2)})
-            </span>
-          </div>
-          <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden flex">
-            <div style="width: ${100 - c.commission_rate_pct}%" class="bg-emerald-500 h-full" title="Net Payout: £${c.net.toFixed(2)}"></div>
-            <div style="width: ${c.commission_rate_pct}%" class="bg-rose-500 h-full" title="Commission Leakage: £${c.commission.toFixed(2)}"></div>
-          </div>
-          <div class="flex justify-between text-[10px] text-slate-400">
-            <span>Gross: £${c.gross.toFixed(2)} (${c.units} units)</span>
-            <span>Net: £${c.net.toFixed(2)}</span>
-          </div>
-        </div>
-      `).join('');
-
-      // Velocity Leaders
-      document.getElementById('lead-square').innerText = analytics.topByChannel.square ? `${analytics.topByChannel.square.name} (${analytics.topByChannel.square.units})` : 'None';
-      document.getElementById('lead-uber').innerText = analytics.topByChannel.uberEats ? `${analytics.topByChannel.uberEats.name} (${analytics.topByChannel.uberEats.units})` : 'None';
-      document.getElementById('lead-justeat').innerText = analytics.topByChannel.justEat ? `${analytics.topByChannel.justEat.name} (${analytics.topByChannel.justEat.units})` : 'None';
-      document.getElementById('lead-deliveroo').innerText = analytics.topByChannel.deliveroo ? `${analytics.topByChannel.deliveroo.name} (${analytics.topByChannel.deliveroo.units})` : 'None';
-    }
-
-    // -------------------------------------------------------------
-    // Stock Depletion & Alarm Handshake
-    // -------------------------------------------------------------
-    function renderDepletionAndAlarms(res) {
-      document.getElementById('depletion-section').classList.remove('hidden');
-
-      const alarmBadge = document.getElementById('alarms-count-badge');
-      const criticalContainer = document.getElementById('critical-alarms-container');
-
-      alarmBadge.innerText = `${res.alarmsCount} Critical Alarms`;
-
-      if (res.hasCriticalBreaches) {
-        criticalContainer.classList.remove('hidden');
-        criticalContainer.innerHTML = res.criticalLowStockAlarms.map(a => `
-          <div class="alarm-glow p-4 rounded-2xl bg-rose-950/40 border border-rose-500/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center justify-center shrink-0">
-                <i data-lucide="bell-ring" class="w-4 h-4 text-rose-400"></i>
+        return `
+          <div class="p-4 rounded-2xl bg-white/[0.02] border ${borderCol} flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-black text-xs uppercase flex items-center gap-1.5 text-white">
+                  <span class="w-2 h-2 rounded-full ${dotCol}"></span>
+                  ${ch}
+                </span>
+                <span class="px-2 py-0.5 rounded-full bg-white/5 text-[10px] font-bold text-white">${sharePct}% share</span>
               </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs font-black text-rose-400 uppercase tracking-wide">CRITICAL_LOW_STOCK_ALARM</span>
-                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-500/20 text-rose-300">Deficit: ${a.deficit} pots</span>
-                </div>
-                <h5 class="text-sm font-bold text-white mt-0.5">${a.ingredient_name}</h5>
-                <p class="text-[11px] text-slate-300">
-                  Current Pot: <strong class="text-white">${a.current_on_hand}</strong> • Projected Post-Depletion: <strong class="text-rose-400">${a.projected_remaining}</strong> • MOQ Safety Target: <strong class="text-amber-300">${a.moq_safety_threshold}</strong>
-                </p>
-              </div>
+              <p class="text-xl font-black text-white heading-font">£${cData.gross.toFixed(2)}</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">${cData.units} units sold • £${cData.net.toFixed(2)} net</p>
             </div>
-            <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-              <div class="text-right sm:text-right px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
-                <span class="text-[10px] text-slate-400 block">Suggested Reorder</span>
-                <strong class="text-emerald-400 font-black text-sm">+${a.suggested_reorder_qty} Cartons / Cases</strong>
-              </div>
+            <div class="pt-3 mt-3 border-t border-white/5 text-[10px]">
+              <span class="text-slate-400 block">Top Channel Performer:</span>
+              <strong class="text-white truncate block">${topItem}</strong>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 3. Performance Tiers Summary Lists
+      document.getElementById('best-performers-count').innerText = `${analytics.bestPerformers.length} Items`;
+      document.getElementById('moderate-performers-count').innerText = `${analytics.moderatePerformers.length} Items`;
+      document.getElementById('least-performers-count').innerText = `${analytics.leastPerformers.length} Items`;
+
+      // Update Filter Pill Counts
+      document.getElementById('count-tier-all').innerText = data.masterLedger.length;
+      document.getElementById('count-tier-best').innerText = analytics.bestPerformers.length;
+      document.getElementById('count-tier-mod').innerText = analytics.moderatePerformers.length;
+      document.getElementById('count-tier-least').innerText = analytics.leastPerformers.length;
+
+      const renderTierList = (items, colorClass) => {
+        if (!items || items.length === 0) {
+          return '<p class="text-[11px] text-slate-500 italic">No items in this tier</p>';
+        }
+        return items.slice(0, 5).map(item => `
+          <div class="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs">
+            <div class="overflow-hidden pr-2">
+              <p class="font-bold text-white truncate">${item.master_item_name}</p>
+              <p class="text-[10px] text-slate-400">${item.total_volume} units sold • £${item.avg_price.toFixed(2)} avg</p>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="font-black ${colorClass} block">£${item.gross_revenue.toFixed(2)}</span>
+              <span class="text-[10px] text-slate-400">${item.revenue_contribution_pct}% share</span>
             </div>
           </div>
         `).join('');
-      } else {
-        criticalContainer.classList.add('hidden');
+      };
+
+      document.getElementById('best-performers-list').innerHTML = renderTierList(analytics.bestPerformers, 'text-amber-300');
+      document.getElementById('moderate-performers-list').innerHTML = renderTierList(analytics.moderatePerformers, 'text-emerald-300');
+      document.getElementById('least-performers-list').innerHTML = renderTierList(analytics.leastPerformers, 'text-rose-400');
+    }
+
+    // -------------------------------------------------------------
+    // Master Product Performance Table Rendering & Filtering
+    // -------------------------------------------------------------
+    function setTierFilter(tier) {
+      activeTierFilter = tier;
+      ['all', 'best', 'mod', 'least'].forEach(t => {
+        const btn = document.getElementById(`filter-tier-${t}`);
+        if (!btn) return;
+        const target = t === 'all' ? 'ALL' : t === 'best' ? 'BEST' : t === 'mod' ? 'MODERATE' : 'LEAST';
+        if (target === tier) {
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-active';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-inactive';
+        }
+      });
+      renderMasterLedgerTable();
+    }
+
+    function setChannelFilter(ch) {
+      activeChannelFilter = ch;
+      renderMasterLedgerTable();
+    }
+
+    function handleSearchInput(query) {
+      activeSearchQuery = (query || '').toLowerCase().trim();
+      renderMasterLedgerTable();
+    }
+
+    function renderMasterLedgerTable() {
+      if (!currentConsolidated) return;
+
+      document.getElementById('ledger-section').classList.remove('hidden');
+
+      let items = [...currentConsolidated.masterLedger];
+
+      // Tier Filter
+      if (activeTierFilter !== 'ALL') {
+        items = items.filter(i => i.performance_tier === activeTierFilter);
       }
 
-      // Depletion Table
+      // Channel Filter
+      if (activeChannelFilter !== 'ALL') {
+        const field = activeChannelFilter === 'Square' ? 'square_units' :
+                      activeChannelFilter === 'Uber Eats' ? 'uber_eats_units' :
+                      activeChannelFilter === 'Just Eat' ? 'just_eat_units' : 'deliveroo_units';
+        items = items.filter(i => (i[field] || 0) > 0);
+      }
+
+      // Search Query
+      if (activeSearchQuery) {
+        items = items.filter(i => 
+          i.master_item_name.toLowerCase().includes(activeSearchQuery) ||
+          (i.category && i.category.toLowerCase().includes(activeSearchQuery))
+        );
+      }
+
+      document.getElementById('items-count-badge').innerText = `${items.length} of ${currentConsolidated.masterLedger.length} Items`;
+
+      const tbody = document.getElementById('master-ledger-tbody');
+      const emptyMsg = document.getElementById('table-empty-msg');
+
+      if (items.length === 0) {
+        tbody.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        return;
+      }
+
+      emptyMsg.classList.add('hidden');
+
+      tbody.innerHTML = items.map((item, idx) => {
+        // Tier Badge
+        const tierBadge = 
+          item.performance_tier === 'BEST'
+            ? '<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase inline-flex items-center gap-1"><i data-lucide="star" class="w-3 h-3 fill-amber-300"></i> Best</span>'
+            : item.performance_tier === 'MODERATE'
+            ? '<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase inline-flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3"></i> Moderate</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black uppercase inline-flex items-center gap-1"><i data-lucide="arrow-down-right" class="w-3 h-3"></i> Least</span>';
+
+        // Contribution Bar Color
+        const barColor = 
+          item.performance_tier === 'BEST' ? 'bg-gradient-to-r from-amber-400 to-yellow-300' :
+          item.performance_tier === 'MODERATE' ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+          'bg-gradient-to-r from-rose-500 to-orange-400';
+
+        // SOP indicator
+        const sopTag = item.has_sop_recipe
+          ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold" title="Synced with SOP Recipe">SOP Linked</span>'
+          : '<span class="text-[9px] px-1.5 py-0.2 rounded bg-white/5 text-slate-400 border border-white/10" title="Report item tracked directly">Sales Tracked</span>';
+
+        return `
+          <tr class="hover:bg-white/[0.03] transition-colors">
+            <td class="p-3.5 font-bold text-white">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono text-slate-500 font-normal">#${idx + 1}</span>
+                <span class="text-sm">${item.master_item_name}</span>
+                ${sopTag}
+              </div>
+              <span class="text-[10px] text-slate-400 block mt-0.5 font-normal">${item.category || 'General'}</span>
+            </td>
+
+            <td class="p-3.5 text-center">${tierBadge}</td>
+
+            <td class="p-3.5 text-center font-medium text-indigo-300">${item.square_units || '-'}</td>
+            <td class="p-3.5 text-center font-medium text-emerald-300">${item.uber_eats_units || '-'}</td>
+            <td class="p-3.5 text-center font-medium text-orange-300">${item.just_eat_units || '-'}</td>
+            <td class="p-3.5 text-center font-medium text-teal-300">${item.deliveroo_units || '-'}</td>
+
+            <td class="p-3.5 text-right font-black text-white text-base">${item.total_volume}</td>
+            <td class="p-3.5 text-right font-bold text-amber-300 text-base">£${item.gross_revenue.toFixed(2)}</td>
+
+            <td class="p-3.5">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-black text-white">${item.revenue_contribution_pct}%</span>
+                <span class="text-[10px] text-slate-400">of total revenue</span>
+              </div>
+              <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                <div style="width: ${Math.min(100, Math.max(3, item.revenue_contribution_pct * 3.5))}%" class="h-full rounded-full ${barColor}"></div>
+              </div>
+            </td>
+
+            <td class="p-3.5 text-right font-black text-emerald-400 text-base">£${item.net_revenue.toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // Optional Inventory Depletion Drawer
+    // -------------------------------------------------------------
+    function toggleDepletionDrawer() {
+      const content = document.getElementById('depletion-drawer-content');
+      const label = document.getElementById('depletion-toggle-label');
+      const icon = document.getElementById('depletion-toggle-icon');
+      if (!content) return;
+
+      const isHidden = content.classList.contains('hidden');
+      if (isHidden) {
+        content.classList.remove('hidden');
+        label.innerText = 'Hide Stock Pot Details';
+        icon.setAttribute('data-lucide', 'chevron-up');
+      } else {
+        content.classList.add('hidden');
+        label.innerText = 'Show Stock Pot Details';
+        icon.setAttribute('data-lucide', 'chevron-down');
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderDepletionDetails(res) {
+      if (!res) return;
+      document.getElementById('depletion-section').classList.remove('hidden');
+
       const tbody = document.getElementById('depletion-table-tbody');
+      if (!tbody) return;
+
       tbody.innerHTML = res.depletionLedger.map(row => {
         const isCrit = row.status === 'CRITICAL_LOW_STOCK_ALARM';
         const isWarn = row.status === 'WARNING_LOW';
         const statusBadge = isCrit
-          ? '<span class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black uppercase">CRITICAL_LOW</span>'
+          ? '<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] font-black uppercase">CRITICAL</span>'
           : isWarn
-          ? '<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold uppercase">LOW WARNING</span>'
-          : '<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-semibold uppercase">HEALTHY</span>';
+          ? '<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold uppercase">LOW</span>'
+          : '<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-semibold uppercase">HEALTHY</span>';
 
         return `
           <tr class="hover:bg-white/[0.03] transition-colors ${isCrit ? 'bg-rose-950/10' : ''}">
-            <td class="p-3.5 font-bold text-white">
+            <td class="p-3 font-bold text-white">
               ${row.ingredient_name}
-              <span class="text-[10px] text-slate-400 block font-normal">${row.dishes_involved.slice(0, 2).join(', ')}${row.dishes_involved.length > 2 ? '...' : ''}</span>
+              <span class="text-[9px] text-slate-400 block font-normal">${row.dishes_involved.slice(0, 2).join(', ')}</span>
             </td>
-            <td class="p-3.5 text-center font-bold text-slate-200">${row.current_on_hand}</td>
-            <td class="p-3.5 text-center font-bold text-rose-400">-${row.theoretical_consumption} <span class="text-[10px] text-slate-400">${row.unit}</span></td>
-            <td class="p-3.5 text-center font-black ${row.projected_remaining_stock <= row.moq_safety_threshold ? 'text-rose-400' : 'text-white'}">${row.projected_remaining_stock}</td>
-            <td class="p-3.5 text-center font-bold text-amber-300">${row.moq_safety_threshold}</td>
-            <td class="p-3.5 text-center">${statusBadge}</td>
-            <td class="p-3.5 text-center font-black ${row.suggested_reorder_qty > 0 ? 'text-emerald-400 text-sm' : 'text-slate-500'}">
-              ${row.suggested_reorder_qty > 0 ? `+${row.suggested_reorder_qty} Units` : '-'}
+            <td class="p-3 text-center font-bold text-slate-200">${row.current_on_hand}</td>
+            <td class="p-3 text-center font-bold text-rose-400">-${row.theoretical_consumption} <span class="text-[9px] text-slate-400">${row.unit}</span></td>
+            <td class="p-3 text-center font-black ${row.projected_remaining_stock <= row.moq_safety_threshold ? 'text-rose-400' : 'text-white'}">${row.projected_remaining_stock}</td>
+            <td class="p-3 text-center font-bold text-amber-300">${row.moq_safety_threshold}</td>
+            <td class="p-3 text-center">${statusBadge}</td>
+            <td class="p-3 text-center font-black ${row.suggested_reorder_qty > 0 ? 'text-emerald-400' : 'text-slate-500'}">
+              ${row.suggested_reorder_qty > 0 ? `+${row.suggested_reorder_qty}` : '-'}
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    function toggleDeploymentMode() {
-      const isCurrentlyDemo = SalesEngine.isDemoMode;
-      SalesEngine.isDemoMode = !isCurrentlyDemo;
-      updateModeUI();
-      recalculatePipeline();
-    }
-
-    function updateModeUI() {
-      const isDemo = SalesEngine.isDemoMode;
-      const tag = document.getElementById('nav-mode-tag');
-      const toggleBtn = document.getElementById('nav-mode-toggle-btn');
-      const icon = document.getElementById('nav-mode-icon');
-      const label = document.getElementById('nav-mode-label');
-      const banner = document.getElementById('mode-hero-banner');
-      const bannerTitle = document.getElementById('mode-banner-title');
-      const bannerBadge = document.getElementById('mode-banner-badge');
-      const bannerDesc = document.getElementById('mode-banner-desc');
-      const switchBtn = document.getElementById('mode-switch-btn');
-      const commitBtn = document.getElementById('btn-commit-depletion');
-
-      if (isDemo) {
-        if (tag) {
-          tag.className = 'text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-extrabold border border-amber-500/30';
-          tag.innerText = '🧪 SANDBOX DEMO';
-        }
-        if (toggleBtn) {
-          toggleBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-black shadow-sm transition-all';
-        }
-        if (icon) {
-          icon.className = 'w-4 h-4 text-amber-400';
-          icon.setAttribute('data-lucide', 'flask-conical');
-        }
-        if (label) label.innerText = 'SANDBOX DEMO';
-        if (banner) {
-          banner.className = 'glass-panel p-4 rounded-2xl bg-gradient-to-r from-amber-950/60 via-purple-950/40 to-slate-900/60 border border-amber-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4';
-        }
-        if (bannerTitle) {
-          bannerTitle.className = 'text-xs font-extrabold text-amber-300 tracking-wider uppercase';
-          bannerTitle.innerText = 'Sandbox Demo Mode Active & Safeguarded';
-        }
-        if (bannerBadge) {
-          bannerBadge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-          bannerBadge.innerText = 'Live Stock Protected';
-        }
-        if (bannerDesc) {
-          bannerDesc.innerHTML = 'All files, sales merges, alias mappings, and theoretical stock depletions are strictly stored in temporary sandbox storage. <strong class="text-amber-200">Real-world inventory pots, procurement orders, and recipe SOPs cannot be disturbed.</strong>';
-        }
-        if (switchBtn) {
-          switchBtn.innerHTML = '<i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i><span>Switch to Live Production</span>';
-        }
-        if (commitBtn) {
-          commitBtn.innerHTML = '<i data-lucide="zap" class="w-4 h-4"></i> Apply Depletion (Sandbox Pots)';
-        }
-      } else {
-        if (tag) {
-          tag.className = 'text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30';
-          tag.innerText = '🟢 LIVE PRODUCTION';
-        }
-        if (toggleBtn) {
-          toggleBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-black shadow-sm transition-all';
-        }
-        if (icon) {
-          icon.className = 'w-4 h-4 text-emerald-400';
-          icon.setAttribute('data-lucide', 'zap');
-        }
-        if (label) label.innerText = 'LIVE PRODUCTION';
-        if (banner) {
-          banner.className = 'glass-panel p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-teal-950/40 to-slate-900/60 border border-emerald-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4';
-        }
-        if (bannerTitle) {
-          bannerTitle.className = 'text-xs font-extrabold text-emerald-300 tracking-wider uppercase';
-          bannerTitle.innerText = 'Live Production Engine Deployed';
-        }
-        if (bannerBadge) {
-          bannerBadge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-          bannerBadge.innerText = 'Live Operations Synchronized';
-        }
-        if (bannerDesc) {
-          bannerDesc.innerHTML = 'Connected directly to genuine store inventory pots (<code class="text-emerald-300">ts_stock_levels</code>). Theoretical recipe stock depletions interface directly with live inventory, audits, and procurement.';
-        }
-        if (switchBtn) {
-          switchBtn.innerHTML = '<i data-lucide="flask-conical" class="w-3.5 h-3.5 text-amber-400"></i><span>Switch to Demo Sandbox</span>';
-        }
-        if (commitBtn) {
-          commitBtn.innerHTML = '<i data-lucide="zap" class="w-4 h-4"></i> Apply Depletion to Live Store Pots';
-        }
-      }
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function commitDepletionAction() {
-      if (!currentDepletionResult) return;
-
-      const isDemo = SalesEngine.isDemoMode;
-
-      if (!isDemo) {
-        // Confirmation prompt for live real-world inventory depletion
-        const confirmMsg = `⚠️ CONFIRM REAL-WORLD STOCK DEPLETION:\n\nYou are in LIVE PRODUCTION MODE.\nThis action will deduct genuine store inventory stock pots (ts_stock_levels) for ${currentConsolidated.grandTotals.units} items sold across platforms.\n\nAre you sure you want to apply live inventory depletion?`;
-        if (!confirm(confirmMsg)) return;
-
-        // Apply to live stock levels
-        const stock = SalesEngine.getOnHandStock();
-        currentDepletionResult.depletionLedger.forEach(row => {
-          const current = stock[row.ingredient_name] !== undefined ? parseFloat(stock[row.ingredient_name]) : 0;
-          stock[row.ingredient_name] = Math.max(0, parseFloat((current - row.consumed_stock_units).toFixed(2)));
-        });
-
-        try {
-          localStorage.setItem('ts_stock_levels', JSON.stringify(stock));
-        } catch (e) {
-          console.error("Failed writing live stock levels:", e);
-        }
-
-        recalculatePipeline();
-        alert(`🟢 [LIVE PRODUCTION] Genuine Stock Pot Depletion Successfully Executed!\n\n${currentDepletionResult.alarmsCount} safety stock alarms evaluated.\nLive store pots (ts_stock_levels) have been updated.`);
-      } else {
-        // Sandbox mode
-        const stock = SalesEngine.getOnHandStock();
-        currentDepletionResult.depletionLedger.forEach(row => {
-          const current = stock[row.ingredient_name] !== undefined ? parseFloat(stock[row.ingredient_name]) : 0;
-          stock[row.ingredient_name] = Math.max(0, parseFloat((current - row.consumed_stock_units).toFixed(2)));
-        });
-
-        try {
-          localStorage.setItem('ts_demo_stock_levels', JSON.stringify(stock));
-        } catch (e) {}
-
-        recalculatePipeline();
-        alert(`🧪 [Sandbox Demo Mode] Depletion applied to sandbox stock pots!\n\n${currentDepletionResult.alarmsCount} safety stock alarms evaluated.\nReal-world store pots remain untouched.`);
-      }
-    }
-
-    function resetSandboxDemoState() {
-      if (!confirm("Reset sandbox demo state to initial defaults?")) return;
-      try {
-        localStorage.removeItem('ts_demo_stock_levels');
-        localStorage.removeItem('ts_demo_item_aliases');
-        localStorage.removeItem('ts_demo_depletion_runs');
-      } catch (e) {}
-      loadDemoBatch();
-      alert("✅ Sandbox reset to clean defaults.");
-    }
-
     // -------------------------------------------------------------
-    // Export Functionality (CSV & Excel)
+    // Export Data Utilities
     // -------------------------------------------------------------
-    function exportMasterCSV() {
-      if (!currentConsolidated) return alert("Please ingest sales reports first.");
-      const rows = SalesEngine.generateMasterExportData(currentConsolidated);
-      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(",")).join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Master_Sales_Ledger_${activeReportingDate}_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
     function exportMasterExcel() {
-      if (!currentConsolidated) return alert("Please ingest sales reports first.");
-      if (typeof XLSX === 'undefined') {
-        exportMasterCSV();
-        return;
-      }
-
+      if (!currentConsolidated) return;
       const rows = SalesEngine.generateMasterExportData(currentConsolidated);
       const ws = XLSX.utils.aoa_to_sheet(rows);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Master Sales Report");
+      XLSX.utils.book_append_sheet(wb, ws, "Sales_Performance_Ledger");
+      XLSX.writeFile(wb, `Treat_Street_Sales_Performance_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
 
-      // Add Depletion Sheet
-      if (currentDepletionResult && currentDepletionResult.depletionLedger.length) {
-        const depRows = [
-          ['Raw Ingredient', 'Current Stock Pot', 'Theoretical Consumption', 'Projected Remaining', 'MOQ Safety Threshold', 'Status', 'Suggested Reorder Qty']
-        ];
-        currentDepletionResult.depletionLedger.forEach(d => {
-          depRows.push([
-            d.ingredient_name,
-            d.current_on_hand,
-            d.theoretical_consumption + ' ' + d.unit,
-            d.projected_remaining_stock,
-            d.moq_safety_threshold,
-            d.status,
-            d.suggested_reorder_qty
-          ]);
-        });
-        const wsDep = XLSX.utils.aoa_to_sheet(depRows);
-        XLSX.utils.book_append_sheet(wb, wsDep, "Stock Depletion & Alarms");
-      }
-
-      XLSX.writeFile(wb, `Master_Sales_Ledger_${activeReportingDate}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    function exportMasterCSV() {
+      if (!currentConsolidated) return;
+      const rows = SalesEngine.generateMasterExportData(currentConsolidated);
+      const csvContent = rows.map(r => r.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Treat_Street_Sales_Performance_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   </script>
 </body>
