@@ -1484,40 +1484,50 @@
     // -----------------------------------------------------------
     generateMasterExportData(consolidated) {
       const headers = [
-        'Master SOP Recipe Item',
-        'Square POS Units',
+        'Rank',
+        'Product Name',
+        'Category',
+        'Performance Tier',
+        'Square Units',
         'Uber Eats Units',
         'Just Eat Units',
         'Deliveroo Units',
         'Total Volume Sold',
+        'Avg Unit Price (£)',
         'Gross Revenue (£)',
+        'Revenue Contribution (%)',
         'Platform Commissions (£)',
         'Net Revenue Realized (£)',
         'Square Share (%)',
         'Uber Eats Share (%)',
         'Just Eat Share (%)',
         'Deliveroo Share (%)',
-        'Match Type'
+        'SOP Status'
       ];
 
       const rows = [headers];
 
-      (consolidated.masterLedger || []).forEach(item => {
+      (consolidated.masterLedger || []).forEach((item, idx) => {
         rows.push([
+          idx + 1,
           item.master_item_name,
+          item.category || 'General Menu',
+          item.performance_tier,
           item.square_units || 0,
           item.uber_eats_units || 0,
           item.just_eat_units || 0,
           item.deliveroo_units || 0,
           item.total_volume || 0,
+          (item.avg_price || 0).toFixed(2),
           (item.gross_revenue || 0).toFixed(2),
+          (item.revenue_contribution_pct || 0) + '%',
           (item.total_commissions || 0).toFixed(2),
           (item.net_revenue || 0).toFixed(2),
           item.channel_share.square_pct + '%',
           item.channel_share.uber_pct + '%',
           item.channel_share.just_eat_pct + '%',
           item.channel_share.deliveroo_pct + '%',
-          item.match_type
+          item.has_sop_recipe ? 'SOP Linked' : 'Sales Tracked'
         ]);
       });
 
