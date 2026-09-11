@@ -723,24 +723,33 @@
           continue;
         }
 
-        // Skip non-item summary rows or delivery fee/bag fee rows
+        // Skip non-item summary rows or delivery fee/bag fee/tip rows
         if (!adapted.raw_name) continue;
-        const nameLower = adapted.raw_name.toLowerCase();
+        const nameLower = adapted.raw_name.toLowerCase().trim();
         if (
           nameLower === 'total' ||
           nameLower === 'summary' ||
           nameLower === 'subtotal' ||
+          nameLower === 'no side' ||
+          nameLower === 'no extras' ||
+          nameLower === 'no extra' ||
+          nameLower.startsWith('no side') ||
           nameLower.includes('bag fee') ||
+          nameLower.includes('carrier bag') ||
           nameLower.includes('delivery fee') ||
           nameLower.includes('courier tip') ||
+          nameLower.includes('driver tip') ||
           nameLower.includes('restaurant tip') ||
-          nameLower.includes('service fee')
+          nameLower.includes('service fee') ||
+          nameLower.includes('cutlery') ||
+          nameLower.includes('napkins')
         ) {
           continue;
         }
 
-        // Skip rows with zero quantity and zero gross
-        if (adapted.quantity <= 0 && adapted.gross_sales <= 0) {
+        // Filter out zero-revenue modifier / free option choices (e.g. Free base choices like 'Pancake' £0.00, 'No Side' £0.00)
+        // Genuine products have gross_sales > 0 (or explicit promo discounts). Free modifier options must not clutter sales!
+        if (adapted.gross_sales <= 0 && adapted.discounts <= 0) {
           continue;
         }
 
