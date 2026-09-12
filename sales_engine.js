@@ -154,11 +154,31 @@
     },
     {
       id: 'sop-gelato-scoop',
-      title: '1 Scoop',
-      category: 'Gelato',
+      title: '1 Scoop Gelato',
+      category: 'Gelato & Sorbet',
       yield: 1,
       ingredients: [
         { name: 'Artisan Gelato Tub Base', quantity: 0.1, unit: 'unit' },
+        { name: 'Waffle Cone Deluxe', quantity: 1, unit: 'unit' }
+      ]
+    },
+    {
+      id: 'sop-gelato-2-scoop',
+      title: '2 Scoop Gelato',
+      category: 'Gelato & Sorbet',
+      yield: 1,
+      ingredients: [
+        { name: 'Artisan Gelato Tub Base', quantity: 0.2, unit: 'unit' },
+        { name: 'Waffle Cone Deluxe', quantity: 1, unit: 'unit' }
+      ]
+    },
+    {
+      id: 'sop-gelato-3-scoop',
+      title: '3 Scoop Gelato',
+      category: 'Gelato & Sorbet',
+      yield: 1,
+      ingredients: [
+        { name: 'Artisan Gelato Tub Base', quantity: 0.3, unit: 'unit' },
         { name: 'Waffle Cone Deluxe', quantity: 1, unit: 'unit' }
       ]
     },
@@ -271,9 +291,16 @@
     { external_name: 'Cookie Dough Base', recipe_name: 'Chocolate Chip Cookie Dough', channel: 'Square' },
     { external_name: 'Biscofia Waffle', recipe_name: 'Biscofia', channel: 'Square' },
     { external_name: 'Cajun Chicken Tenders', recipe_name: 'Ragin Cajuns', channel: 'Square' },
-    { external_name: 'Oreo Shake Reg', recipe_name: 'Oreo Milkshake', channel: 'Square' },
-    { external_name: 'Vanilla Scoop', recipe_name: '1 Scoop', channel: 'Square' },
-    { external_name: 'Bubblegum Gelato 1x', recipe_name: '1 Scoop', channel: 'Square' },
+    { external_name: 'Vanilla Scoop', recipe_name: '1 Scoop Gelato', channel: 'Square' },
+    { external_name: 'Bubblegum Gelato 1x', recipe_name: '1 Scoop Gelato', channel: 'Square' },
+    { external_name: '1 Scoop', recipe_name: '1 Scoop Gelato', channel: 'Square' },
+    { external_name: '1 Scoop', recipe_name: '1 Scoop Gelato', channel: 'Square POS (In-Store)' },
+    { external_name: '1 Scoop', recipe_name: '1 Scoop Gelato', channel: 'ALL' },
+    { external_name: '1 Scoop Gelato', recipe_name: '1 Scoop Gelato', channel: 'ALL' },
+    { external_name: '2 Scoop', recipe_name: '2 Scoop Gelato', channel: 'ALL' },
+    { external_name: '2 Scoop Gelato', recipe_name: '2 Scoop Gelato', channel: 'ALL' },
+    { external_name: '3 Scoop', recipe_name: '3 Scoop Gelato', channel: 'ALL' },
+    { external_name: '3 Scoop Gelato', recipe_name: '3 Scoop Gelato', channel: 'ALL' },
 
     // Uber Eats
     { external_name: 'Uber - Signature Cookie Dough (Warm)', recipe_name: 'Chocolate Chip Cookie Dough', channel: 'Uber Eats' },
@@ -394,9 +421,16 @@
       if (val === null || val === undefined) return defaultVal;
       if (typeof val === 'number') return isNaN(val) ? defaultVal : val;
       let str = val.toString().trim();
-      // Handle accounting negative formats: (10.00) or (£10.00)
-      const isNegative = str.startsWith('-') || (str.startsWith('(') && str.endsWith(')'));
-      const clean = str.replace(/[^0-9.]+/g, '');
+      // Strip outer quotes and spaces
+      str = str.replace(/^["']+|["']+$/g, '').trim();
+      if (!str) return defaultVal;
+
+      // Handle accounting negative formats: -£10.00, £-10.00, (£10.00), -10.00, (10.00)
+      const isNegative = str.includes('-') || (str.startsWith('(') && str.endsWith(')'));
+
+      // Strip currency symbols ('£', '$', '€'), commas (thousands separator), quotes, and non-numeric chars except dot
+      const clean = str.replace(/[£$€,\s"']/g, '').replace(/[^0-9.]+/g, '');
+      if (!clean) return defaultVal;
       const num = parseFloat(clean);
       if (isNaN(num)) return defaultVal;
       return isNegative ? -num : num;
@@ -423,23 +457,111 @@
     },
 
     // -----------------------------------------------------------
-    // Delimited (CSV/TSV) Parser
+    // Universal Text & Encoding Buffer Decoder (UTF-16 LE / UTF-8)
+    // -----------------------------------------------------------
+    decodeTextBuffer(buffer) {
+      if (!buffer) return '';
+      if (typeof buffer === 'string') {
+        // Strip BOM and null characters if naive decoding happened upstream
+        return buffer.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+      }
+
+      let bytes;
+      if (buffer instanceof Uint8Array) {
+        bytes = buffer;
+      } else if (typeof Buffer !== 'undefined' && Buffer.isBuffer(buffer)) {
+        bytes = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+      } else if (buffer instanceof ArrayBuffer) {
+        bytes = new Uint8Array(buffer);
+      } else if (buffer.buffer instanceof ArrayBuffer) {
+        bytes = new Uint8Array(buffer.buffer);
+      } else {
+        return String(buffer);
+      }
+
+      if (bytes.length === 0) return '';
+
+      // 1. Explicit Byte Order Mark (BOM) Checks
+      // UTF-16 LE BOM: 0xFF, 0xFE
+      if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+        try {
+          return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+        } catch (e) {}
+      }
+      // UTF-16 BE BOM: 0xFE, 0xFF
+      if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+        try {
+          return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+        } catch (e) {}
+      }
+      // UTF-8 BOM: 0xEF, 0xBB, 0xBF
+      if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+        try {
+          return new TextDecoder('utf-8').decode(bytes.subarray(3));
+        } catch (e) {}
+      }
+
+      // 2. Heuristic check for UTF-16 LE without BOM (common in Windows / Square POS exports)
+      // Check first 200 bytes for alternating null bytes
+      const checkLen = Math.min(bytes.length, 200);
+      let nullOdd = 0;
+      let nullEven = 0;
+      for (let i = 0; i < checkLen; i++) {
+        if (bytes[i] === 0x00) {
+          if (i % 2 === 1) nullOdd++;
+          else nullEven++;
+        }
+      }
+      if (nullOdd > checkLen * 0.25) {
+        try {
+          return new TextDecoder('utf-16le').decode(bytes);
+        } catch (e) {}
+      }
+      if (nullEven > checkLen * 0.25) {
+        try {
+          return new TextDecoder('utf-16be').decode(bytes);
+        } catch (e) {}
+      }
+
+      // 3. Fallback to UTF-8
+      try {
+        return new TextDecoder('utf-8').decode(bytes);
+      } catch (e) {
+        try {
+          return new TextDecoder('latin1').decode(bytes);
+        } catch (e2) {
+          return String.fromCharCode.apply(null, bytes);
+        }
+      }
+    },
+
+    // -----------------------------------------------------------
+    // Delimited (CSV/TSV) Parser with Format & Quote Sanitization
     // -----------------------------------------------------------
     parseDelimited(text) {
-      if (!text || typeof text !== 'string') return [];
-      let cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      if (!text || (typeof text !== 'string' && !(text instanceof ArrayBuffer) && !(typeof Buffer !== 'undefined' && Buffer.isBuffer(text)))) {
+        return [];
+      }
+
+      let cleanText = typeof text === 'string' ? text : this.decodeTextBuffer(text);
+      cleanText = cleanText.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+      cleanText = cleanText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       if (cleanText.includes('\\t') && !cleanText.includes('\t')) {
         cleanText = cleanText.replace(/\\t/g, '\t');
       }
       const lines = cleanText.split('\n');
       const result = [];
 
-      // Determine delimiter from first non-empty line
+      // Determine delimiter from first non-empty line (tab for Square TSV / UTF-16, comma fallback)
       const firstLine = lines.find(l => l && l.trim()) || '';
       let defaultDelimiter = ',';
-      if (firstLine.includes('\t')) defaultDelimiter = '\t';
-      else if (firstLine.includes(';') && !firstLine.includes(',')) defaultDelimiter = ';';
-      else if (firstLine.includes('|')) defaultDelimiter = '|';
+      if (firstLine.includes('\t')) {
+        defaultDelimiter = '\t';
+      } else if (firstLine.includes(';') && !firstLine.includes(',')) {
+        defaultDelimiter = ';';
+      } else if (firstLine.includes('|')) {
+        defaultDelimiter = '|';
+      }
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -448,7 +570,7 @@
         const row = [];
         let curr = '';
         let inQuotes = false;
-        const delimiter = (line.includes('\t') && !line.includes('","')) ? '\t' : defaultDelimiter;
+        const delimiter = defaultDelimiter;
 
         for (let j = 0; j < line.length; j++) {
           const c = line[j];
@@ -462,13 +584,14 @@
               inQuotes = !inQuotes;
             }
           } else if (c === delimiter && !inQuotes) {
-            row.push(curr.trim());
+            // Strip leading/trailing quotes and trim whitespace
+            row.push(curr.trim().replace(/^["']+|["']+$/g, '').trim());
             curr = '';
           } else {
             curr += c;
           }
         }
-        row.push(curr.trim());
+        row.push(curr.trim().replace(/^["']+|["']+$/g, '').trim());
         if (row.some(val => val !== '')) {
           result.push(row);
         }
@@ -555,7 +678,31 @@
       const lowerFile = (filename || '').toLowerCase();
       const allText = lower.join(' ');
 
-      // 1. Deliveroo Detection
+      // 1. Square POS Primary Header Signature Check
+      // If columns include ['Item Name', 'Item Variation', 'Product Sales', 'Net Sales', 'Units Sold']
+      // identify source as "Square POS (In-Store)", NOT Deliveroo or third-party aggregators.
+      const hasItemNameSig = lower.some(h => h === 'item name' || h.includes('item name') || h === 'item');
+      const hasItemVarSig = lower.some(h => h === 'item variation' || h.includes('item variation') || h === 'variation' || h === 'price point name');
+      const hasProductSalesSig = lower.some(h => h === 'product sales' || h.includes('product sales') || h === 'gross sales');
+      const hasNetSalesSig = lower.some(h => h === 'net sales' || h.includes('net sales'));
+      const hasUnitsSoldSig = lower.some(h => h === 'units sold' || h.includes('units sold') || h === 'items sold' || h.includes('items sold') || h === 'qty' || h === 'quantity');
+
+      if (hasItemNameSig && hasItemVarSig && hasProductSalesSig && hasNetSalesSig && hasUnitsSoldSig) {
+        return 'Square POS (In-Store)';
+      }
+
+      // Check transaction-level Square export headers
+      if (
+        lowerFile.includes('square') || lowerFile.includes('pos') || lowerFile.includes('till') ||
+        lower.some(h => h.includes('square')) ||
+        lower.some(h => h.includes('modifiers applied')) ||
+        lower.some(h => h.includes('price point name')) ||
+        lower.some(h => h.includes('transaction id'))
+      ) {
+        return 'Square POS (In-Store)';
+      }
+
+      // 2. Deliveroo Detection
       // Matches filename, literal deliveroo header, or typical Deliveroo export column combinations
       const hasOrderId = lower.some(h => h.includes('order id') || h === 'order_id' || h === 'orderid');
       const hasItemName = lower.some(h => h.includes('item name') || h === 'item' || h === 'menu item' || h.includes('dish'));
@@ -577,7 +724,7 @@
         return 'Deliveroo';
       }
 
-      // 2. Uber Eats Detection
+      // 3. Uber Eats Detection
       if (
         lowerFile.includes('uber') || lowerFile.includes('ubereats') ||
         lower.some(h => h.includes('uber')) ||
@@ -587,7 +734,7 @@
         return 'Uber Eats';
       }
 
-      // 3. Just Eat Detection
+      // 4. Just Eat Detection
       if (
         lowerFile.includes('just eat') || lowerFile.includes('justeat') ||
         lower.some(h => h.includes('just eat') || h.includes('justeat')) ||
@@ -597,19 +744,8 @@
         return 'Just Eat';
       }
 
-      // 4. Square Detection (In-store POS)
-      if (
-        lowerFile.includes('square') || lowerFile.includes('pos') || lowerFile.includes('till') ||
-        lower.some(h => h.includes('square')) ||
-        lower.some(h => h.includes('modifiers applied')) ||
-        lower.some(h => h.includes('price point name')) ||
-        lower.some(h => h.includes('transaction id'))
-      ) {
-        return 'Square';
-      }
-
       // Fallback detection
-      if (lower.some(h => h.includes('channel') || h.includes('pos'))) return 'Square';
+      if (lower.some(h => h.includes('channel') || h.includes('pos'))) return 'Square POS (In-Store)';
       return 'Generic / Auto-Detected';
     },
 
@@ -655,16 +791,22 @@
         normalized.is_cancelled = true;
       }
 
-      if (channel === 'Square') {
+      const isSquareChannel = channel === 'Square' || channel === 'Square POS (In-Store)' || (channel && channel.toLowerCase().includes('square'));
+
+      if (isSquareChannel) {
+        normalized.channel = 'Square';
         normalized.date = this.normalizeDate(findKey(['date', 'created_at', 'day']));
         normalized.time = findKey(['time', 'hour']) || '12:00:00';
-        normalized.raw_name = (findKey(['item', 'item_name', 'description', 'product_name', 'product']) || '').trim();
-        const rawQty = findKey(['qty', 'quantity', 'count', 'items_quantity']);
-        normalized.gross_sales = this.cleanNumber(findKey(['gross_sales', 'product_sales', 'total_sales', 'sales', 'price']), 0);
+        normalized.raw_name = (findKey(['item_name', 'item', 'description', 'product_name', 'product']) || '').trim();
+        const rawQty = findKey(['units_sold', 'items_sold', 'units', 'qty', 'quantity', 'count', 'items_quantity', 'items']);
+        normalized.gross_sales = this.cleanNumber(findKey(['product_sales', 'gross_sales', 'total_sales', 'sales', 'price']), 0);
         normalized.quantity = (rawQty !== null && rawQty !== undefined && rawQty !== '') ? this.cleanNumber(rawQty, 0) : (normalized.gross_sales > 0 ? 1 : 0);
         normalized.discounts = Math.abs(this.cleanNumber(findKey(['discounts', 'discount', 'promo']), 0));
         normalized.commission = Math.abs(this.cleanNumber(findKey(['commission', 'fee', 'charge']), 0));
-        normalized.net_payout = this.cleanNumber(findKey(['net_sales', 'net']), normalized.gross_sales - normalized.discounts - normalized.commission);
+        const explicitNet = findKey(['net_sales', 'net', 'net_total']);
+        normalized.net_payout = (explicitNet !== null && explicitNet !== undefined && explicitNet !== '')
+          ? this.cleanNumber(explicitNet, normalized.gross_sales - normalized.discounts - normalized.commission)
+          : (normalized.gross_sales - normalized.discounts - normalized.commission);
       } else if (channel === 'Uber Eats') {
         normalized.date = this.normalizeDate(findKey(['order_date', 'date', 'time']));
         normalized.time = findKey(['order_time', 'time']) || '12:00:00';
@@ -732,8 +874,8 @@
       normalized.variation = rawVariation;
       normalized.notes = rawNotes;
 
-      // Cleanup
-      if (normalized.net_payout <= 0 && normalized.gross_sales > 0) {
+      // Cleanup (preserve 0.00 net sales for legitimately 100% discounted items)
+      if (normalized.net_payout <= 0 && normalized.gross_sales > 0 && normalized.discounts <= 0 && normalized.commission <= 0) {
         normalized.net_payout = Math.max(0, normalized.gross_sales - normalized.commission - normalized.discounts);
       }
 
@@ -742,10 +884,25 @@
 
     parseUniversalFile(fileData, filename = '') {
       let rawGrid = [];
-      if (typeof fileData === 'string') {
-        rawGrid = this.parseDelimited(fileData);
-      } else if (fileData instanceof ArrayBuffer || (typeof Buffer !== 'undefined' && Buffer.isBuffer(fileData))) {
+      const lowerFilename = (filename || '').toLowerCase();
+
+      if (lowerFilename.endsWith('.xlsx') || lowerFilename.endsWith('.xls')) {
         rawGrid = this.parseExcelArrayBuffer(fileData);
+      } else if (typeof fileData === 'string') {
+        rawGrid = this.parseDelimited(fileData);
+      } else if (fileData instanceof ArrayBuffer || (typeof Buffer !== 'undefined' && Buffer.isBuffer(fileData)) || fileData instanceof Uint8Array) {
+        // First try text decoding (detecting UTF-16LE or UTF-8 CSV/TSV)
+        try {
+          const decoded = this.decodeTextBuffer(fileData);
+          rawGrid = this.parseDelimited(decoded);
+        } catch (e) {
+          rawGrid = [];
+        }
+        if (!rawGrid || rawGrid.length < 2) {
+          try {
+            rawGrid = this.parseExcelArrayBuffer(fileData);
+          } catch (e2) {}
+        }
       } else if (Array.isArray(fileData)) {
         rawGrid = fileData;
       }
@@ -918,11 +1075,18 @@
       }
 
       // 3. Strict High-Confidence Match ONLY (Prevents wild false positives on single words like 'chocolate', 'dubai', 'shake', 'waffle')
-      const rawTokens = normRaw.split(' ').filter(t => t.length > 2);
+      const rawNumbers = (normRaw.match(/\d+/g) || []).sort().join(',');
+      const rawTokens = normRaw.split(' ').filter(t => t.length > 1 || /\d/.test(t));
       if (rawTokens.length >= 2) {
         for (const r of recipes) {
           const rNorm = this.normalizeText(r.title || r.name);
-          const rTokens = rNorm.split(' ').filter(t => t.length > 2);
+          const rNumbers = (rNorm.match(/\d+/g) || []).sort().join(',');
+          // If numbers are present in either string, they MUST match exactly
+          if (rawNumbers !== rNumbers) {
+            continue;
+          }
+
+          const rTokens = rNorm.split(' ').filter(t => t.length > 1 || /\d/.test(t));
           if (rTokens.length >= 2) {
             const intersection = rawTokens.filter(t => rTokens.includes(t));
             const union = new Set([...rawTokens, ...rTokens]);
@@ -947,6 +1111,91 @@
         recipe_obj: null,
         match_type: null
       };
+    },
+
+    // -----------------------------------------------------------
+    // Fuzzy Category & Sub-Category Normalization
+    // -----------------------------------------------------------
+    normalizeAuditCategory(category = '', rawName = '') {
+      const cat = (category || '').toLowerCase().trim();
+      const name = (rawName || '').toLowerCase().trim();
+
+      // 1. Dessert / Waffle audit segment
+      // "Waffles, Pancakes, Cookie Doughs, Cheesecakes" must map to the Dessert/Waffle audit segment
+      if (
+        cat.includes('waffles, pancakes, cookie doughs, cheesecakes') ||
+        cat.includes('waffle') ||
+        cat.includes('cookie dough') ||
+        cat.includes('cheesecake') ||
+        cat.includes('croffle') ||
+        cat.includes('pancake') ||
+        cat.includes('crepe') ||
+        cat.includes('dessert')
+      ) {
+        return 'Dessert/Waffle';
+      }
+
+      // 2. Savoury Mains & Sides
+      // Map "Burgers", "Fully Funked Fries", "Side Ting", and "BLOC PRTY" to "Savoury Mains & Sides"
+      if (
+        cat.includes('burger') ||
+        cat.includes('fully funked fries') ||
+        cat.includes('side ting') ||
+        cat.includes('bloc prty') ||
+        cat.includes('fries') ||
+        cat.includes('savoury') ||
+        cat.includes('savory') ||
+        cat.includes('chicken') ||
+        name.includes('burger') ||
+        name.includes('fries') ||
+        name.includes('side ting') ||
+        name.includes('bloc prty') ||
+        name.includes('cajun') ||
+        name.includes('tender') ||
+        name.includes('wing')
+      ) {
+        return 'Savoury Mains & Sides';
+      }
+
+      // 3. Beverages & Shakes
+      // Map "Candy Bar Shakes" and "Milkshakes" to "Beverages & Shakes"
+      if (
+        cat.includes('candy bar shakes') ||
+        cat.includes('milkshakes') ||
+        cat.includes('milkshake') ||
+        cat.includes('shake') ||
+        cat.includes('smoothie') ||
+        cat.includes('drink') ||
+        cat.includes('beverage') ||
+        name.includes('shake') ||
+        name.includes('smoothie') ||
+        name.includes('water') ||
+        name.includes('coke') ||
+        name.includes('fanta') ||
+        name.includes('sprite') ||
+        name.includes('cola')
+      ) {
+        return 'Beverages & Shakes';
+      }
+
+      // 4. Ice Cream / Scoops
+      // Map "Gelato & Sorbet Scoops" to "Ice Cream / Scoops"
+      if (
+        cat.includes('gelato & sorbet scoops') ||
+        cat.includes('gelato') ||
+        cat.includes('sorbet') ||
+        cat.includes('scoop') ||
+        cat.includes('ice cream') ||
+        cat.includes('sundae') ||
+        name.includes('scoop') ||
+        name.includes('gelato') ||
+        name.includes('sorbet') ||
+        name.includes('sundae')
+      ) {
+        return 'Ice Cream / Scoops';
+      }
+
+      return category || 'Desserts & Mains';
     },
 
     // -----------------------------------------------------------
@@ -990,7 +1239,7 @@
         return { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepe' };
       }
       if (allModText.includes('brioche bun') || allModText.includes('fries') || allModText.includes('chicken patty')) {
-        return { type: 'SAVOURY_BURGER', label: 'Burger & Savoury', plural: 'Burgers & Savoury', icon: '🍔', badge: '🍔 Savoury Main' };
+        return { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides' };
       }
 
       // Priority 2: Product Name / Dish Title
@@ -1015,22 +1264,23 @@
       if (
         normName.includes('burger') || normName.includes('chicken') || normName.includes('tenders') ||
         normName.includes('cajun') || normName.includes('wings') || normName.includes('louisiana') ||
-        normName.includes('papi chulo') || normName.includes('fries') || normName.includes('chick n')
+        normName.includes('papi chulo') || normName.includes('fries') || normName.includes('chick n') ||
+        normName.includes('side ting') || normName.includes('bloc prty')
       ) {
-        return { type: 'SAVOURY_BURGER', label: 'Burger & Savoury', plural: 'Burgers & Savoury', icon: '🍔', badge: '🍔 Savoury Main' };
+        return { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides' };
       }
       if (normName.includes('shake') || normName.includes('smoothie') || normName.includes('frappe')) {
-        return { type: 'MILKSHAKE', label: 'Milkshake', plural: 'Milkshakes', icon: '🥤', badge: '🥤 Milkshake' };
+        return { type: 'MILKSHAKE', label: 'Beverages & Shakes', plural: 'Beverages & Shakes', icon: '🥤', badge: '🥤 Beverages & Shakes' };
       }
       if (normName.includes('gelato') || normName.includes('scoop') || normName.includes('sundae') || normName.includes('sorbet')) {
-        return { type: 'GELATO_SUNDAE', label: 'Gelato & Sundae', plural: 'Gelato & Sundaes', icon: '🍨', badge: '🍨 Gelato' };
+        return { type: 'GELATO_SUNDAE', label: 'Ice Cream / Scoops', plural: 'Ice Cream / Scoops', icon: '🍨', badge: '🍨 Ice Cream / Scoops' };
       }
       if (
         normName.includes('water') || normName.includes('coke') || normName.includes('cola') ||
         normName.includes('fanta') || normName.includes('sprite') || normName.includes('drink') ||
         normName.includes('tea') || normName.includes('coffee')
       ) {
-        return { type: 'BEVERAGE_OTHER', label: 'Drink / Other', plural: 'Drinks & Other', icon: '☕', badge: '☕ Beverage' };
+        return { type: 'BEVERAGE_OTHER', label: 'Beverages & Other', plural: 'Beverages & Other', icon: '☕', badge: '☕ Beverage' };
       }
 
       // Priority 3: Linked SOP Recipe ingredients (evaluated BEFORE ambiguous category strings!)
@@ -1040,35 +1290,46 @@
         if (ingNames.includes('waffle')) return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
         if (ingNames.includes('cookie dough')) return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
         if (ingNames.includes('brioche') || ingNames.includes('patty') || ingNames.includes('fries')) {
-          return { type: 'SAVOURY_BURGER', label: 'Burger & Savoury', plural: 'Burgers & Savoury', icon: '🍔', badge: '🍔 Savoury Main' };
+          return { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides' };
         }
-        if (ingNames.includes('milk') && ingNames.includes('mix')) return { type: 'MILKSHAKE', label: 'Milkshake', plural: 'Milkshakes', icon: '🥤', badge: '🥤 Milkshake' };
+        if (ingNames.includes('milk') && ingNames.includes('mix')) return { type: 'MILKSHAKE', label: 'Beverages & Shakes', plural: 'Beverages & Shakes', icon: '🥤', badge: '🥤 Beverages & Shakes' };
       }
 
-      // Priority 4: Category
-      // If category specifically mentions pancake without waffle
+      // Priority 4: Category (Substring / Alias Normalized Rules)
+      // "Waffles, Pancakes, Cookie Doughs, Cheesecakes" must map to Dessert/Waffle audit segment
+      if (normCat.includes('waffles, pancakes, cookie doughs, cheesecakes')) {
+        return { type: 'WAFFLE', label: 'Dessert / Waffle', plural: 'Dessert / Waffles', icon: '🧇', badge: '🧇 Dessert/Waffle' };
+      }
+      if (
+        normCat.includes('burger') || normCat.includes('fully funked fries') ||
+        normCat.includes('side ting') || normCat.includes('bloc prty') ||
+        normCat.includes('chicken') || normCat.includes('savory') || normCat.includes('savoury')
+      ) {
+        return { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides' };
+      }
+      if (
+        normCat.includes('candy bar shakes') || normCat.includes('milkshake') ||
+        normCat.includes('shake') || normCat.includes('smoothie')
+      ) {
+        return { type: 'MILKSHAKE', label: 'Beverages & Shakes', plural: 'Beverages & Shakes', icon: '🥤', badge: '🥤 Beverages & Shakes' };
+      }
+      if (
+        normCat.includes('gelato & sorbet scoops') || normCat.includes('gelato') ||
+        normCat.includes('scoop') || normCat.includes('sorbet') || normCat.includes('sundae')
+      ) {
+        return { type: 'GELATO_SUNDAE', label: 'Ice Cream / Scoops', plural: 'Ice Cream / Scoops', icon: '🍨', badge: '🍨 Ice Cream / Scoops' };
+      }
+
       if (normCat.includes('pancake') && !normCat.includes('waffle')) {
         return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
       }
       if (normCat.includes('waffle') && !normCat.includes('pancake')) {
         return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
       }
-      // If category contains both or combined (e.g. "Pancakes & Waffles")
-      if (normCat.includes('pancake')) {
-        return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
-      }
-      if (normCat.includes('waffle') || normCat.includes('chick n waffle')) {
-        return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
-      }
       if (normCat.includes('cookie dough')) return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
       if (normCat.includes('croffle')) return { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffle' };
       if (normCat.includes('crepe')) return { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepe' };
       if (normCat.includes('cheesecake')) return { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecake' };
-      if (normCat.includes('burger') || normCat.includes('chicken') || normCat.includes('savory') || normCat.includes('savoury')) {
-        return { type: 'SAVOURY_BURGER', label: 'Burger & Savoury', plural: 'Burgers & Savoury', icon: '🍔', badge: '🍔 Savoury Main' };
-      }
-      if (normCat.includes('shake') || normCat.includes('smoothie')) return { type: 'MILKSHAKE', label: 'Milkshake', plural: 'Milkshakes', icon: '🥤', badge: '🥤 Milkshake' };
-      if (normCat.includes('gelato') || normCat.includes('scoop') || normCat.includes('sundae')) return { type: 'GELATO_SUNDAE', label: 'Gelato & Sundae', plural: 'Gelato & Sundaes', icon: '🍨', badge: '🍨 Gelato' };
 
       return { type: 'OTHER', label: 'General Menu', plural: 'General Items', icon: '🍽️', badge: '🍽️ General' };
     },
@@ -1077,6 +1338,11 @@
       if (!baseItemName) return 'Unnamed Product';
       const normName = baseItemName.toLowerCase();
       const normMod = (modifiers || '').toLowerCase();
+
+      // Don't append croffle/waffle suffix to Viral Dubai Chocolate - Kunafa
+      if (normName.includes('dubai') || normName.includes('kunafa')) {
+        return baseItemName;
+      }
 
       // Disambiguate if base item name does NOT already mention the main base
       if (mainInfo.type === 'WAFFLE' && !normName.includes('waffle')) {
@@ -1120,10 +1386,12 @@
 
       const channelTotals = {
         'Square': { units: 0, gross: 0, commission: 0, net: 0 },
+        'Square POS (In-Store)': { units: 0, gross: 0, commission: 0, net: 0 },
         'Uber Eats': { units: 0, gross: 0, commission: 0, net: 0 },
         'Just Eat': { units: 0, gross: 0, commission: 0, net: 0 },
         'Deliveroo': { units: 0, gross: 0, commission: 0, net: 0 }
       };
+      channelTotals['Square POS (In-Store)'] = channelTotals['Square'];
 
       const availableDatesSet = new Set();
 
@@ -1143,17 +1411,18 @@
           // Detect Main Base (Waffles, Pancakes, Cookie Dough, Croffles, Cheesecakes, etc.)
           const mainInfo = this.detectMainBase(item.raw_name, item.modifiers, item.category, item.variation, item.notes, hasRecipe ? match.recipe_obj : null);
           const finalItemName = this.disambiguateItemName(matchedName, mainInfo, item.modifiers);
+          const auditCategory = this.normalizeAuditCategory(item.category, item.raw_name);
 
           if (!ledgerMap.has(finalItemName)) {
-            const formattedCategory = (mainInfo.label !== 'General Menu' && mainInfo.label !== 'Other')
-              ? mainInfo.label + (hasRecipe && match.recipe_obj && match.recipe_obj.category ? ' • ' + match.recipe_obj.category : (item.category && !item.category.includes(',') ? ' • ' + item.category : ''))
-              : (hasRecipe && match.recipe_obj && match.recipe_obj.category ? match.recipe_obj.category : (item.category || 'Desserts & Mains'));
+            const formattedCategory = auditCategory || (hasRecipe && match.recipe_obj && match.recipe_obj.category ? match.recipe_obj.category : (item.category || 'Desserts & Mains'));
 
             ledgerMap.set(finalItemName, {
               master_item_name: finalItemName,
               base_product_name: matchedName,
               raw_name: item.raw_name,
+              raw_category: item.category || '',
               category: formattedCategory,
+              audit_segment: auditCategory,
               main_type: mainInfo.type,
               main_label: mainInfo.label,
               main_plural: mainInfo.plural,
@@ -1203,7 +1472,9 @@
           row.discounts_total += disc;
 
           // Track channel-specific metrics
-          if (item.channel === 'Square') {
+          const isSquareChannel = item.channel === 'Square' || item.channel === 'Square POS (In-Store)' || (item.channel && item.channel.toLowerCase().includes('square'));
+
+          if (isSquareChannel) {
             row.square_units += qty;
             row.square_gross += gross;
             channelTotals['Square'].units += qty;
@@ -1262,14 +1533,15 @@
 
       const ledgerRows = Array.from(ledgerMap.values());
 
-      // 1. Sort by gross revenue descending
-      ledgerRows.sort((a, b) => b.gross_revenue - a.gross_revenue);
+      // 1. Sort by Net Revenue descending (True Cash ranking)
+      ledgerRows.sort((a, b) => b.net_revenue - a.net_revenue);
 
-      // 2. Compute Revenue Contribution & Performance Tier (Pareto ABC Classification)
-      let cumulativeRevenue = 0;
+      // 2. Compute Revenue Contribution & Performance Tier (Pareto ABC Classification based on Net Revenue)
+      let cumulativeNet = 0;
       ledgerRows.forEach(row => {
         row.avg_price = row.total_volume > 0 ? parseFloat((row.gross_revenue / row.total_volume).toFixed(2)) : 0;
-        row.revenue_contribution_pct = grandTotalGross > 0 ? parseFloat(((row.gross_revenue / grandTotalGross) * 100).toFixed(1)) : 0;
+        // Item Revenue Share % = (Item Net Sales / Total Store Net Sales) * 100
+        row.revenue_contribution_pct = grandTotalNet > 0 ? parseFloat(((row.net_revenue / grandTotalNet) * 100).toFixed(1)) : 0;
         row.units_contribution_pct = grandTotalUnits > 0 ? parseFloat(((row.total_volume / grandTotalUnits) * 100).toFixed(1)) : 0;
 
         if (row.total_volume > 0) {
@@ -1279,16 +1551,17 @@
           row.channel_share.deliveroo_pct = parseFloat(((row.deliveroo_units / row.total_volume) * 100).toFixed(1));
         }
 
-        cumulativeRevenue += row.gross_revenue;
-        const cumPct = grandTotalGross > 0 ? (cumulativeRevenue / grandTotalGross) * 100 : 0;
+        cumulativeNet += row.net_revenue;
+        const cumPct = grandTotalNet > 0 ? (cumulativeNet / grandTotalNet) * 100 : 0;
 
-        // Pareto Tiers:
-        // Top cumulative 60% of sales -> BEST PERFORMER (Stars / Top Tier)
-        // 60% - 90% -> MODERATE PERFORMER (Core / Solid Mid Tier)
-        // Bottom 10% (or volume <= 2 or contribution < 1.5%) -> LEAST PERFORMER (Low / Tail)
+        // Pareto Tiers based on Net Sales:
+        // Top cumulative 60% of sales or contribution >= 8.0% -> BEST PERFORMER
+        // 60% - 90% or volume >= 2 or net >= 7.00 -> MODERATE PERFORMER
+        // Underperformed: ONLY if total_volume === 1 AND net_revenue < 7.00 -> LEAST PERFORMER
+        // Items with 2+ units sold (e.g. Still Water 2 units, 3 Scoop 2 units) are never flagged as LEAST
         if (cumPct <= 60 || row.revenue_contribution_pct >= 8.0) {
           row.performance_tier = 'BEST';
-        } else if (cumPct <= 90 || row.revenue_contribution_pct >= 2.5) {
+        } else if (row.total_volume >= 2 || row.net_revenue >= 7.00 || cumPct <= 90 || row.revenue_contribution_pct >= 2.5) {
           row.performance_tier = 'MODERATE';
         } else {
           row.performance_tier = 'LEAST';
@@ -1302,16 +1575,16 @@
 
       // 3. Compute Comprehensive Mains & Dessert Bases Velocity Breakdown
       const mainsSummary = {
-        'WAFFLE': { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffles', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
-        'PANCAKE': { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancakes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
+        'WAFFLE': { type: 'WAFFLE', label: 'Dessert / Waffles', plural: 'Dessert / Waffles', icon: '🧇', badge: '🧇 Dessert / Waffles', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
+        'PANCAKE': { type: 'PANCAKE', label: 'Pancakes', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancakes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
         'COOKIE_DOUGH': { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
-        'CROFFLE': { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffles', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
-        'CHEESECAKE': { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecakes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
-        'CREPE': { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
-        'SAVOURY_BURGER': { type: 'SAVOURY_BURGER', label: 'Burger & Savoury', plural: 'Burgers & Savoury', icon: '🍔', badge: '🍔 Savoury Mains', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
-        'MILKSHAKE': { type: 'MILKSHAKE', label: 'Milkshake', plural: 'Milkshakes', icon: '🥤', badge: '🥤 Milkshakes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
-        'GELATO_SUNDAE': { type: 'GELATO_SUNDAE', label: 'Gelato & Sundae', plural: 'Gelato & Sundaes', icon: '🍨', badge: '🍨 Gelato & Sundaes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
-        'BEVERAGE_OTHER': { type: 'BEVERAGE_OTHER', label: 'Drink / Other', plural: 'Drinks & Other', icon: '☕', badge: '☕ Drinks & Other', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 }
+        'CROFFLE': { type: 'CROFFLE', label: 'Croffles', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffles', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
+        'CHEESECAKE': { type: 'CHEESECAKE', label: 'Cheesecakes', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecakes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
+        'CREPE': { type: 'CREPE', label: 'Crepes', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
+        'SAVOURY_BURGER': { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
+        'MILKSHAKE': { type: 'MILKSHAKE', label: 'Beverages & Shakes', plural: 'Beverages & Shakes', icon: '🥤', badge: '🥤 Beverages & Shakes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
+        'GELATO_SUNDAE': { type: 'GELATO_SUNDAE', label: 'Ice Cream / Scoops', plural: 'Ice Cream / Scoops', icon: '🍨', badge: '🍨 Ice Cream / Scoops', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
+        'BEVERAGE_OTHER': { type: 'BEVERAGE_OTHER', label: 'Other Drinks & Desserts', plural: 'Other Drinks & Desserts', icon: '☕', badge: '☕ Other', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 }
       };
 
       ledgerRows.forEach(row => {
@@ -1363,17 +1636,20 @@
         };
       });
 
-      // Alias mapping so mainsSummary['pancakes'], mainsSummary['pancake'], mainsSummary['waffles'], etc. all resolve seamlessly
+      // Alias mapping so audit segments and base variations all resolve seamlessly
       const aliasKeyPairs = [
-        ['waffles', 'WAFFLE'], ['waffle', 'WAFFLE'],
+        ['waffles', 'WAFFLE'], ['waffle', 'WAFFLE'], ['dessert/waffle', 'WAFFLE'], ['dessert_waffle', 'WAFFLE'], ['dessert / waffle', 'WAFFLE'],
         ['pancakes', 'PANCAKE'], ['pancake', 'PANCAKE'],
         ['cookie_dough', 'COOKIE_DOUGH'], ['cookiedough', 'COOKIE_DOUGH'],
         ['croffles', 'CROFFLE'], ['croffle', 'CROFFLE'],
         ['cheesecakes', 'CHEESECAKE'], ['cheesecake', 'CHEESECAKE'],
         ['crepes', 'CREPE'], ['crepe', 'CREPE'],
         ['savoury_burgers', 'SAVOURY_BURGER'], ['savoury_burger', 'SAVOURY_BURGER'], ['burgers', 'SAVOURY_BURGER'],
+        ['savoury mains & sides', 'SAVOURY_BURGER'], ['savoury_mains_sides', 'SAVOURY_BURGER'],
         ['milkshakes', 'MILKSHAKE'], ['milkshake', 'MILKSHAKE'],
+        ['beverages & shakes', 'MILKSHAKE'], ['beverages_shakes', 'MILKSHAKE'],
         ['gelato_sundaes', 'GELATO_SUNDAE'], ['gelato', 'GELATO_SUNDAE'],
+        ['ice cream / scoops', 'GELATO_SUNDAE'], ['ice_cream_scoops', 'GELATO_SUNDAE'],
         ['beverage_other', 'BEVERAGE_OTHER'], ['beverages', 'BEVERAGE_OTHER']
       ];
       aliasKeyPairs.forEach(([alias, sourceKey]) => {
@@ -1417,10 +1693,11 @@
     // 7. Performance Analytics & AI Insights Engine
     // -----------------------------------------------------------
     generatePerformanceAnalytics(ledgerRows, channelTotals, grossTotal, netTotal, commissionTotal, unitsTotal, mainsSummary = null, totalCoreMainsVolume = 0) {
-      // 1. Classification Groups
+      // 1. Classification Groups (Sorted by Net Revenue)
       const bestPerformers = ledgerRows.filter(r => r.performance_tier === 'BEST');
       const moderatePerformers = ledgerRows.filter(r => r.performance_tier === 'MODERATE');
-      const leastPerformers = ledgerRows.filter(r => r.performance_tier === 'LEAST');
+      // Underperformed rule: ONLY Units Sold == 1 AND Net Sales < £7.00. Exclude 2+ units!
+      const leastPerformers = ledgerRows.filter(r => r.total_volume === 1 && r.net_revenue < 7.00);
 
       // Top Volume and Revenue Drivers
       const topRevenuePerformer = ledgerRows[0] || null;
@@ -1472,7 +1749,7 @@
       });
 
       // 3. Channel Economics
-      const channelEconomics = Object.entries(channelTotals).map(([channelName, data]) => {
+      const channelEconomics = Object.entries(channelTotals).filter(([name]) => name !== 'Square POS (In-Store)').map(([channelName, data]) => {
         const commissionRate = data.gross > 0 ? (data.commission / data.gross) * 100 : 0;
         const revenueShare = grossTotal > 0 ? (data.gross / grossTotal) * 100 : 0;
         return {
@@ -1490,26 +1767,30 @@
       // AI Recommendations
       const aiRecommendations = {
         starHighlights: bestPerformers.slice(0, 3).map(i => 
-          `🌟 **${i.master_item_name}** generated £${i.gross_revenue.toFixed(2)} (${i.revenue_contribution_pct}% of total sales) with ${i.total_volume} units.`
+          `🌟 **${i.master_item_name}** generated £${i.net_revenue.toFixed(2)} Net Sales (${i.revenue_contribution_pct}% share) with ${i.total_volume} units.`
         ),
         coreRecommendations: moderatePerformers.slice(0, 3).map(i => 
-          `⚡ **${i.master_item_name}** is a steady earner (£${i.gross_revenue.toFixed(2)}, ${i.total_volume} units). Maintain stock and feature in combo promos.`
+          `⚡ **${i.master_item_name}** is a steady earner (£${i.net_revenue.toFixed(2)} Net, ${i.total_volume} units). Maintain stock and feature in combo promos.`
         ),
-        lowSalesAlerts: leastPerformers.slice(0, 3).map(i => 
-          `⚠️ **${i.master_item_name}** underperformed with only ${i.total_volume} units (£${i.gross_revenue.toFixed(2)}). Consider revising price, repackaging, or removing from delivery menus.`
-        )
+        lowSalesAlerts: leastPerformers.length > 0
+          ? leastPerformers.slice(0, 3).map(i => 
+              `⚠️ **${i.master_item_name}** underperformed with only ${i.total_volume} unit (£${i.net_revenue.toFixed(2)} Net). Consider revising price, repackaging, or removing from delivery menus.`
+            )
+          : [
+              `✓ **Optimal Menu Performance**: Zero critical underperformers detected. All products maintained 2+ units volume or exceeded £7.00 net sales threshold.`
+            ]
       };
 
       // Mains velocity highlights
       if (mainsSummary) {
         if (mainsSummary['WAFFLE'] && mainsSummary['WAFFLE'].units > 0) {
           aiRecommendations.starHighlights.unshift(
-            `🧇 **Waffles Velocity**: Sold ${mainsSummary['WAFFLE'].units} Waffles (£${mainsSummary['WAFFLE'].gross.toFixed(2)}), making up ${mainsSummary['WAFFLE'].pct_of_mains}% of total dessert & savoury mains.`
+            `🧇 **Waffles Velocity**: Sold ${mainsSummary['WAFFLE'].units} Dessert/Waffles (£${mainsSummary['WAFFLE'].net.toFixed(2)} Net), making up ${mainsSummary['WAFFLE'].pct_of_mains}% of total dessert & savoury mains.`
           );
         }
         if (mainsSummary['PANCAKE'] && mainsSummary['PANCAKE'].units > 0) {
           aiRecommendations.coreRecommendations.unshift(
-            `🥞 **Pancakes Velocity**: Sold ${mainsSummary['PANCAKE'].units} Pancakes (£${mainsSummary['PANCAKE'].gross.toFixed(2)}), making up ${mainsSummary['PANCAKE'].pct_of_mains}% of total dessert & savoury mains.`
+            `🥞 **Pancakes Velocity**: Sold ${mainsSummary['PANCAKE'].units} Pancakes (£${mainsSummary['PANCAKE'].net.toFixed(2)} Net), making up ${mainsSummary['PANCAKE'].pct_of_mains}% of total dessert & savoury mains.`
           );
         }
       }
@@ -1538,6 +1819,7 @@
             name: i.master_item_name,
             volume: i.total_volume,
             gross: i.gross_revenue,
+            net: i.net_revenue,
             dominant_channel: Object.entries({
               'Square': i.square_units,
               'Uber Eats': i.uber_eats_units,
@@ -1549,7 +1831,8 @@
             name: i.master_item_name,
             volume: i.total_volume,
             gross: i.gross_revenue,
-            note: i.total_volume <= 2 ? 'Low sales velocity. Consider promotional push or combo pairing.' : 'Sub-par volume.'
+            net: i.net_revenue,
+            note: 'Units Sold == 1 and Net Sales < £7.00 threshold.'
           })),
           profitabilityDiscrepancies: [],
           blendedLeakageSummary: `Consolidated Gross Sales: £${grossTotal.toFixed(2)} with £${commissionTotal.toFixed(2)} platform commission deductions, realizing £${netTotal.toFixed(2)} net cash.`
@@ -1846,7 +2129,7 @@
       ].join('\n');
 
       return [
-        { filename: 'square_instore_pos.tsv', content: squareContent, channel: 'Square' },
+        { filename: 'square_instore_pos.tsv', content: squareContent, channel: 'Square POS (In-Store)' },
         { filename: 'ubereats_daily_sales.csv', content: uberContent, channel: 'Uber Eats' },
         { filename: 'justeat_daily_sales.csv', content: justEatContent, channel: 'Just Eat' },
         { filename: 'deliveroo_daily_sales.csv', content: deliverooContent, channel: 'Deliveroo' }

@@ -706,12 +706,10 @@
         if (name.endsWith('.pdf')) {
           const buffer = await file.arrayBuffer();
           parsed = await SalesEngine.parsePdfArrayBuffer(buffer, file.name);
-        } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+        } else {
+          // Pass raw ArrayBuffer for universal encoding detection (UTF-16 LE, UTF-8 BOM, etc.)
           const buffer = await file.arrayBuffer();
           parsed = SalesEngine.parseUniversalFile(buffer, file.name);
-        } else {
-          const text = await file.text();
-          parsed = SalesEngine.parseUniversalFile(text, file.name);
         }
 
         parsed.isDemo = false;
@@ -1365,7 +1363,7 @@
       const bestItemsListHTML = (analytics.bestPerformers || []).slice(0, 4).map(item => `
         <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #fde68a;">
           <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
-          <span style="font-weight: 800; color: #b45309; font-size: 8px;">£${item.gross_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
+          <span style="font-weight: 800; color: #b45309; font-size: 8px;">£${item.net_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
         </div>
       `).join('') || '<span style="color:#64748b;">No items recorded</span>';
 
@@ -1373,73 +1371,32 @@
       const modItemsListHTML = (analytics.moderatePerformers || []).slice(0, 4).map(item => `
         <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #bbf7d0;">
           <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
-          <span style="font-weight: 800; color: #15803d; font-size: 8px;">£${item.gross_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
+          <span style="font-weight: 800; color: #15803d; font-size: 8px;">£${item.net_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
         </div>
       `).join('') || '<span style="color:#64748b;">No items recorded</span>';
 
-      // Least Performers List
+      // Least Performers List (Strictly Units Sold == 1 AND Net Sales < £7.00)
       const leastItemsListHTML = (analytics.leastPerformers || []).slice(0, 4).map(item => `
         <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #fecaca;">
           <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
-          <span style="font-weight: 800; color: #b91c1c; font-size: 8px;">£${item.gross_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
+          <span style="font-weight: 800; color: #b91c1c; font-size: 8px;">£${item.net_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
         </div>
-      `).join('') || '<span style="color:#64748b;">No items recorded</span>';
+      `).join('') || '<span style="color:#64748b;">No items under threshold</span>';
 
-      // Master Ledger Table Rows with Main Base Badge
-      const ledgerRowsHTML = (data.masterLedger || []).map((item, idx) => {
+      // Master Ledger Table Rows - Strictly Sorted by Net Sales descending
+      const sortedLedger = [...(data.masterLedger || [])].sort((a, b) => (b.net_revenue || 0) - (a.net_revenue || 0));
+      const ledgerRowsHTML = sortedLedger.map((item, idx) => {
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-        const tierBadge = 
-          item.performance_tier === 'BEST'
-            ? '<span style="background: #fef3c7; color: #92400e; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 7.5px;">★ BEST</span>'
-            : item.performance_tier === 'MODERATE'
-            ? '<span style="background: #ecfdf5; color: #065f46; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 7.5px;">⚡ MOD</span>'
-            : '<span style="background: #fee2e2; color: #991b1b; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 7.5px;">▼ LEAST</span>';
-
-        const baseBadgeBg = 
-          item.main_type === 'WAFFLE' ? '#fef3c7' :
-          item.main_type === 'PANCAKE' ? '#ffedd5' :
-          item.main_type === 'COOKIE_DOUGH' ? '#fef9c3' :
-          item.main_type === 'CROFFLE' ? '#dcfce7' :
-          item.main_type === 'CHEESECAKE' ? '#ffe4e6' :
-          item.main_type === 'SAVOURY_BURGER' ? '#fee2e2' : '#f1f5f9';
-        const baseBadgeColor = 
-          item.main_type === 'WAFFLE' ? '#92400e' :
-          item.main_type === 'PANCAKE' ? '#9a3412' :
-          item.main_type === 'COOKIE_DOUGH' ? '#854d0e' :
-          item.main_type === 'CROFFLE' ? '#166534' :
-          item.main_type === 'CHEESECAKE' ? '#9f1239' :
-          item.main_type === 'SAVOURY_BURGER' ? '#991b1b' : '#475569';
-
-        const barWidth = Math.min(100, Math.max(4, item.revenue_contribution_pct * 3.5));
-        const barColor = item.performance_tier === 'BEST' ? '#f59e0b' : item.performance_tier === 'MODERATE' ? '#059669' : '#f43f5e';
-
         return `
           <tr style="background: ${rowBg}; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
-            <td style="padding: 4px 5px; text-align: center; font-weight: 700; color: #64748b; font-size: 8px;">${idx + 1}</td>
-            <td style="padding: 4px 6px;">
-              <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
-                <span style="background: ${baseBadgeBg}; color: ${baseBadgeColor}; padding: 0.5px 4px; border-radius: 3px; font-size: 7px; font-weight: 800; border: 1px solid ${baseBadgeBg};">${item.main_badge || item.main_label || 'Dessert'}</span>
-              </div>
-              <span style="display: block; font-size: 7.5px; color: #64748b; margin-top: 1px;">${item.category || 'Desserts & Mains'}</span>
+            <td style="padding: 5px 8px; vertical-align: middle;">
+              <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
+              ${item.category ? `<span style="display: block; font-size: 7.5px; color: #64748b; margin-top: 1px;">${item.category}</span>` : ''}
             </td>
-            <td style="padding: 4px 4px; text-align: center;">${tierBadge}</td>
-            <td style="padding: 4px 3px; text-align: center; color: #4338ca; font-weight: 700; font-size: 8px;">${item.square_units || '-'}</td>
-            <td style="padding: 4px 3px; text-align: center; color: #047857; font-weight: 700; font-size: 8px;">${item.uber_eats_units || '-'}</td>
-            <td style="padding: 4px 3px; text-align: center; color: #c2410c; font-weight: 700; font-size: 8px;">${item.just_eat_units || '-'}</td>
-            <td style="padding: 4px 3px; text-align: center; color: #0f766e; font-weight: 700; font-size: 8px;">${item.deliveroo_units || '-'}</td>
-            <td style="padding: 4px 4px; text-align: right; font-weight: 900; color: #0f172a; font-size: 8.5px;">${item.total_volume}</td>
-            <td style="padding: 4px 5px; text-align: right; font-weight: 900; color: #b45309; font-size: 8.5px;">£${item.gross_revenue.toFixed(2)}</td>
-            <td style="padding: 4px 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 7.5px; margin-bottom: 2px;">
-                <strong style="color: #0f172a;">${item.revenue_contribution_pct}%</strong>
-                <span style="color: #64748b;">of total</span>
-              </div>
-              <div style="background: #e2e8f0; height: 4px; border-radius: 9999px; overflow: hidden;">
-                <div style="width: ${barWidth}%; height: 100%; background: ${barColor}; border-radius: 9999px;"></div>
-              </div>
-            </td>
-            <td style="padding: 4px 5px; text-align: right; font-weight: 900; color: #059669; font-size: 8.5px;">£${item.net_revenue.toFixed(2)}</td>
+            <td style="padding: 5px 8px; text-align: center; font-weight: 900; color: #1e293b; font-size: 9px; vertical-align: middle;">${item.total_volume}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 800; color: #b45309; font-size: 8.5px; vertical-align: middle;">£${item.gross_revenue.toFixed(2)}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 900; color: #059669; font-size: 8.5px; vertical-align: middle;">£${item.net_revenue.toFixed(2)}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 800; color: #0f172a; font-size: 8.5px; vertical-align: middle;">${item.revenue_contribution_pct}%</td>
           </tr>
         `;
       }).join('');
@@ -1496,7 +1453,7 @@
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #f59e0b; border-radius: 7px; padding: 8px;">
               <p style="margin: 0 0 2px 0; font-size: 8px; font-weight: 800; color: #d97706; text-transform: uppercase;">🌟 Star Performer</p>
               <p style="margin: 0; font-size: 11px; font-weight: 900; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${star.master_item_name}</p>
-              <p style="margin: 2px 0 0 0; font-size: 8px; color: #d97706; font-weight: 800;">£${star.gross_revenue.toFixed(2)} (${star.revenue_contribution_pct}% share)</p>
+              <p style="margin: 2px 0 0 0; font-size: 8px; color: #d97706; font-weight: 800;">£${(star.net_revenue ?? star.gross_revenue).toFixed(2)} Net (${star.revenue_contribution_pct}% share • ${star.total_volume || star.units || 1} units)</p>
             </div>
 
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #0d9488; border-radius: 7px; padding: 8px;">
@@ -1621,28 +1578,31 @@
               <h2 style="margin: 0; font-size: 10.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
                 4. Master Product Sales & Revenue Contribution Ledger
               </h2>
-              <span style="font-size: 8px; font-weight: 700; color: #64748b;">${(data.masterLedger||[]).length} Products Sold (Base Disambiguated)</span>
+              <span style="font-size: 8px; font-weight: 700; color: #64748b;">${sortedLedger.length} Products Sold (Sorted by Net Sales Descending)</span>
             </div>
 
             <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; text-align: left; border: 1px solid #e2e8f0; table-layout: fixed;">
               <thead>
-                <tr style="background: #1e293b; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 7.5px;">
-                  <th style="padding: 5px 4px; width: 22px; text-align: center;">#</th>
-                  <th style="padding: 5px 6px; width: 200px;">Product Name & Main Base</th>
-                  <th style="padding: 5px 4px; width: 52px; text-align: center;">Tier</th>
-                  <th style="padding: 5px 3px; width: 32px; text-align: center;">SQ</th>
-                  <th style="padding: 5px 3px; width: 32px; text-align: center;">UB</th>
-                  <th style="padding: 5px 3px; width: 32px; text-align: center;">JE</th>
-                  <th style="padding: 5px 3px; width: 32px; text-align: center;">DL</th>
-                  <th style="padding: 5px 4px; width: 44px; text-align: right;">Units</th>
-                  <th style="padding: 5px 5px; width: 65px; text-align: right;">Gross (£)</th>
-                  <th style="padding: 5px 6px; width: 105px;">Revenue Share %</th>
-                  <th style="padding: 5px 5px; width: 74px; text-align: right;">Net (£)</th>
+                <tr style="background: #0f3d2e; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 8px;">
+                  <th style="padding: 6px 8px; width: 250px;">Item Name</th>
+                  <th style="padding: 6px 8px; width: 90px; text-align: center;">Units Sold</th>
+                  <th style="padding: 6px 8px; width: 120px; text-align: right;">Gross Sales (£)</th>
+                  <th style="padding: 6px 8px; width: 120px; text-align: right;">Net Revenue (£)</th>
+                  <th style="padding: 6px 8px; width: 130px; text-align: right;">Revenue Share (%)</th>
                 </tr>
               </thead>
               <tbody>
                 ${ledgerRowsHTML}
               </tbody>
+              <tfoot>
+                <tr style="background: #f1f5f9; font-weight: 900; border-top: 2px solid #0f3d2e; font-size: 8.5px;">
+                  <td style="padding: 6px 8px; color: #0f3d2e;">Total Store Sales (${sortedLedger.length} Items)</td>
+                  <td style="padding: 6px 8px; text-align: center; color: #1e293b; font-size: 9px;">${totals.units}</td>
+                  <td style="padding: 6px 8px; text-align: right; color: #b45309;">£${totals.gross.toFixed(2)}</td>
+                  <td style="padding: 6px 8px; text-align: right; color: #059669;">£${totals.net.toFixed(2)}</td>
+                  <td style="padding: 6px 8px; text-align: right; color: #0f3d2e;">100.0%</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
 

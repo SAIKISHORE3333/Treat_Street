@@ -16,7 +16,7 @@ const parsedFiles = demoFiles.map(f => {
   console.log(`\nParsed ${f.filename}:`);
   console.log(` - Detected Channel: ${parsed.channel}`);
   console.log(` - Rows Extracted: ${parsed.items.length}`);
-  if (f.channel === 'Square') {
+  if (f.channel.includes('Square')) {
     console.log('Sample Square Item:', parsed.items[0]);
   }
   assert.strictEqual(parsed.channel, f.channel, `Channel detection mismatch for ${f.filename}`);
