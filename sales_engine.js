@@ -304,6 +304,11 @@
     { external_name: 'DELIV - Biscoff Liege Waffle', recipe_name: 'Biscofia', channel: 'Deliveroo' },
     { external_name: 'DELIV - Banoffee Fresh Waffle', recipe_name: 'Banoffee', channel: 'Deliveroo' },
     { external_name: 'DELIV - Twist It Dunk It Pancake Stack', recipe_name: 'Twist it, Lick it, Dunk it', channel: 'Deliveroo' },
+    { external_name: 'DELIV - American Pancakes', recipe_name: 'Twist it, Lick it, Dunk it', channel: 'Deliveroo' },
+    { external_name: 'DELIV - Fluffy Pancake Stack', recipe_name: 'Twist it, Lick it, Dunk it', channel: 'Deliveroo' },
+    { external_name: 'American Pancakes', recipe_name: 'Twist it, Lick it, Dunk it', channel: 'ALL' },
+    { external_name: 'Pancake Stack', recipe_name: 'Twist it, Lick it, Dunk it', channel: 'ALL' },
+    { external_name: 'Pancakes', recipe_name: 'Twist it, Lick it, Dunk it', channel: 'ALL' },
     { external_name: 'DELIV - Viral Kunafa Dubai Chocolate Waffle', recipe_name: 'Viral Dubai Chocolate - Kunafa', channel: 'Deliveroo' },
     { external_name: 'DELIV - Louisiana Crispy Chicken Burger', recipe_name: 'Louisiana', channel: 'Deliveroo' },
     { external_name: 'DELIV - Papi Chulo Cheesy Loaded Fries', recipe_name: 'Papi Chulo', channel: 'Deliveroo' },
@@ -548,35 +553,57 @@
     detectChannel(headers, filename = '') {
       const lower = headers.map(h => (h || '').toLowerCase().trim());
       const lowerFile = (filename || '').toLowerCase();
+      const allText = lower.join(' ');
 
-      // 1. Deliveroo
+      // 1. Deliveroo Detection
+      // Matches filename, literal deliveroo header, or typical Deliveroo export column combinations
+      const hasOrderId = lower.some(h => h.includes('order id') || h === 'order_id' || h === 'orderid');
+      const hasItemName = lower.some(h => h.includes('item name') || h === 'item' || h === 'menu item' || h.includes('dish'));
+      const hasDeliverooSpecific = lower.some(h => 
+        h.includes('deliveroo') || 
+        h === 'item gross' || 
+        h.includes('customisation') || 
+        h.includes('customization') || 
+        h.includes('rider tip') || 
+        h.includes('order placement')
+      );
+
       if (
-        lower.some(h => h.includes('deliveroo') || h === 'item gross' || (h.includes('order id') && h.includes('item name'))) ||
-        lowerFile.includes('deliveroo')
+        lowerFile.includes('deliveroo') ||
+        lower.some(h => h.includes('deliveroo')) ||
+        (hasOrderId && hasDeliverooSpecific) ||
+        (hasOrderId && hasItemName && lower.some(h => h.includes('commission') || h.includes('fee') || h.includes('gross') || h.includes('payout')))
       ) {
         return 'Deliveroo';
       }
 
-      // 2. Uber Eats
+      // 2. Uber Eats Detection
       if (
-        lower.some(h => h.includes('uber') || h.includes('items quantity') || h.includes('order number') && h.includes('customisations')) ||
-        lowerFile.includes('uber') || lowerFile.includes('ubereats')
+        lowerFile.includes('uber') || lowerFile.includes('ubereats') ||
+        lower.some(h => h.includes('uber')) ||
+        lower.some(h => h.includes('items quantity')) ||
+        (lower.some(h => h.includes('order number') || h === 'order_number') && lower.some(h => h.includes('customisations') || h.includes('customizations') || h.includes('restaurant payout')))
       ) {
         return 'Uber Eats';
       }
 
-      // 3. Just Eat
+      // 3. Just Eat Detection
       if (
-        lower.some(h => h.includes('just eat') || h.includes('justeat') || h.includes('restaurant reference') || h.includes('product name')) ||
-        lowerFile.includes('just eat') || lowerFile.includes('justeat')
+        lowerFile.includes('just eat') || lowerFile.includes('justeat') ||
+        lower.some(h => h.includes('just eat') || h.includes('justeat')) ||
+        lower.some(h => h.includes('restaurant reference')) ||
+        (lower.some(h => h.includes('sub total') || h.includes('sub_total')) && lower.some(h => h.includes('commission charge')))
       ) {
         return 'Just Eat';
       }
 
-      // 4. Square (In-store POS)
+      // 4. Square Detection (In-store POS)
       if (
-        lower.some(h => h.includes('square') || h.includes('modifiers applied') || h.includes('price point name') || h.includes('transaction id')) ||
-        lowerFile.includes('square') || lowerFile.includes('pos') || lowerFile.includes('till')
+        lowerFile.includes('square') || lowerFile.includes('pos') || lowerFile.includes('till') ||
+        lower.some(h => h.includes('square')) ||
+        lower.some(h => h.includes('modifiers applied')) ||
+        lower.some(h => h.includes('price point name')) ||
+        lower.some(h => h.includes('transaction id'))
       ) {
         return 'Square';
       }
@@ -659,22 +686,22 @@
         normalized.commission = Math.abs(this.cleanNumber(findKey(['commission_charge', 'commission', 'just_eat_fee', 'fee']), normalized.gross_sales * 0.28));
         normalized.net_payout = this.cleanNumber(findKey(['net_payout', 'net_amount', 'net']), normalized.gross_sales - normalized.commission - normalized.discounts);
       } else if (channel === 'Deliveroo') {
-        normalized.date = this.normalizeDate(findKey(['order_date', 'date', 'timestamp', 'time']));
-        normalized.time = findKey(['order_time', 'time']) || '12:00:00';
-        normalized.raw_name = (findKey(['item_name', 'item', 'product_name', 'dish']) || '').trim();
-        normalized.gross_sales = this.cleanNumber(findKey(['item_gross', 'gross_sales', 'gross', 'price', 'total']), 0);
-        const rawQty = findKey(['quantity', 'qty', 'count', 'item_quantity']);
+        normalized.date = this.normalizeDate(findKey(['order_date', 'date', 'order_placement_date', 'timestamp', 'time', 'day']));
+        normalized.time = findKey(['order_time', 'time', 'order_placement_time']) || '12:00:00';
+        normalized.raw_name = (findKey(['item_name', 'item', 'menu_item', 'product_name', 'product', 'dish', 'item_description', 'item_sold', 'dish_name', 'name']) || '').trim();
+        normalized.gross_sales = this.cleanNumber(findKey(['item_gross', 'gross_sales', 'gross', 'price', 'total', 'item_price', 'item_total', 'base_price', 'sub_total', 'subtotal', 'line_total', 'amount']), 0);
+        const rawQty = findKey(['quantity', 'qty', 'count', 'item_quantity', 'item_count', 'items_count', 'units', 'units_sold', 'items_quantity', 'items']);
         normalized.quantity = (rawQty !== null && rawQty !== undefined && rawQty !== '') ? this.cleanNumber(rawQty, 0) : (normalized.gross_sales > 0 ? 1 : 0);
-        normalized.discounts = Math.abs(this.cleanNumber(findKey(['discount', 'customer_discount']), 0));
-        normalized.commission = Math.abs(this.cleanNumber(findKey(['commission', 'deliveroo_fee', 'fee']), normalized.gross_sales * 0.32));
-        normalized.net_payout = this.cleanNumber(findKey(['net_payout', 'net_sales', 'net']), normalized.gross_sales - normalized.commission - normalized.discounts);
+        normalized.discounts = Math.abs(this.cleanNumber(findKey(['discount', 'customer_discount', 'promo', 'promotion', 'voucher']), 0));
+        normalized.commission = Math.abs(this.cleanNumber(findKey(['commission', 'deliveroo_fee', 'fee', 'service_fee']), normalized.gross_sales * 0.32));
+        normalized.net_payout = this.cleanNumber(findKey(['net_payout', 'net_sales', 'net', 'payout', 'restaurant_payout']), normalized.gross_sales - normalized.commission - normalized.discounts);
       } else {
         // Generic
         normalized.date = this.normalizeDate(findKey(['date', 'time', 'day']));
         normalized.time = findKey(['time']) || '12:00:00';
-        normalized.raw_name = (findKey(['item_name', 'item', 'product_name', 'product', 'dish', 'description', 'name']) || '').trim();
-        normalized.gross_sales = this.cleanNumber(findKey(['gross_sales', 'gross', 'sales', 'price', 'total', 'amount']), 0);
-        const rawQty = findKey(['qty', 'quantity', 'count', 'units']);
+        normalized.raw_name = (findKey(['item_name', 'item', 'menu_item', 'product_name', 'product', 'dish', 'description', 'name']) || '').trim();
+        normalized.gross_sales = this.cleanNumber(findKey(['gross_sales', 'gross', 'sales', 'price', 'total', 'amount', 'item_price']), 0);
+        const rawQty = findKey(['qty', 'quantity', 'count', 'units', 'item_quantity', 'items']);
         normalized.quantity = (rawQty !== null && rawQty !== undefined && rawQty !== '') ? this.cleanNumber(rawQty, 0) : (normalized.gross_sales > 0 ? 1 : 0);
         normalized.discounts = Math.abs(this.cleanNumber(findKey(['discounts', 'discount', 'promo']), 0));
         normalized.commission = Math.abs(this.cleanNumber(findKey(['commission', 'fee']), normalized.gross_sales * 0.25));
@@ -682,10 +709,23 @@
       }
 
       // Universal metadata extraction (modifiers applied, category, variation/size, notes)
-      const rawModifiers = (findKey(['modifiers_applied', 'modifiers', 'modifier', 'options', 'options_applied', 'customizations', 'toppings']) || '').trim();
-      const rawCategory = (findKey(['category', 'category_name', 'item_category', 'department', 'menu_category']) || '').trim();
-      const rawVariation = (findKey(['price_point_name', 'variation', 'size', 'option', 'variant', 'portion']) || '').trim();
-      const rawNotes = (findKey(['notes', 'note', 'details', 'special_instructions', 'item_notes']) || '').trim();
+      // Supports Deliveroo UK 'customisations' (with 's') as well as standard 'modifiers', 'options', and 'choices'
+      const rawModifiers = (findKey([
+        'customisations', 'customisation', 'customizations', 'customization',
+        'modifiers_applied', 'modifiers', 'modifier',
+        'options', 'item_options', 'options_applied', 'option_choices', 'choices',
+        'selected_options', 'toppings', 'item_details', 'attributes', 'add_ons', 'addons'
+      ]) || '').trim();
+      const rawCategory = (findKey([
+        'category', 'category_name', 'item_category', 'menu_category',
+        'department', 'section', 'menu_section'
+      ]) || '').trim();
+      const rawVariation = (findKey([
+        'price_point_name', 'variation', 'size', 'option', 'variant', 'portion'
+      ]) || '').trim();
+      const rawNotes = (findKey([
+        'notes', 'note', 'details', 'special_instructions', 'item_notes', 'customer_note', 'instructions'
+      ]) || '').trim();
 
       normalized.modifiers = rawModifiers;
       normalized.category = rawCategory;
@@ -919,42 +959,46 @@
       const normVar = (variation || '').toLowerCase();
       const normNotes = (notes || '').toLowerCase();
 
-      // Priority 1: Explicit Modifiers Applied / Choices
-      // (e.g. customer ordered "Banoffee" or "Twist it" and picked "Waffle", "Pancakes", "Croffle", "Cookie dough", etc.)
+      // Combined metadata text for modifier & option choices
+      const allModText = `${normMod} ${normVar} ${normNotes}`.toLowerCase();
+
+      // Priority 1: Explicit Modifiers / Options / Choices / Variation / Notes
+      // (e.g. customer ordered a flavor like "Banoffee" and picked "American Pancakes", "Waffle", "Croffle", etc.)
       if (
-        normMod.includes('liege waffle') || normMod.includes('belgian waffle') ||
-        normMod.includes('bubble waffle') || normMod.includes('waffle')
-      ) {
-        return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
-      }
-      if (
-        normMod.includes('pancake') || normMod.includes('pancakes') ||
-        normMod.includes('american pancake') || normMod.includes('hotcake')
+        allModText.includes('pancake') || allModText.includes('pancakes') ||
+        allModText.includes('american pancake') || allModText.includes('hotcake') ||
+        allModText.includes('pancake stack') || allModText.includes('buttermilk pancake')
       ) {
         return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
       }
-      if (normMod.includes('croffle') || normMod.includes('croissant waffle')) {
+      if (
+        allModText.includes('liege waffle') || allModText.includes('belgian waffle') ||
+        allModText.includes('bubble waffle') || allModText.includes('waffle')
+      ) {
+        return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
+      }
+      if (allModText.includes('croffle') || allModText.includes('croissant waffle')) {
         return { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffle' };
       }
-      if (normMod.includes('cookie dough') || normMod.includes('cookiedough') || normMod.includes('cookie-dough')) {
+      if (allModText.includes('cookie dough') || allModText.includes('cookiedough') || allModText.includes('cookie-dough')) {
         return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
       }
-      if (normMod.includes('cheesecake')) {
+      if (allModText.includes('cheesecake')) {
         return { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecake' };
       }
-      if (normMod.includes('crepe') || normMod.includes('crêpe')) {
+      if (allModText.includes('crepe') || allModText.includes('crêpe')) {
         return { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepe' };
       }
-      if (normMod.includes('brioche bun') || normMod.includes('fries') || normMod.includes('chicken patty')) {
+      if (allModText.includes('brioche bun') || allModText.includes('fries') || allModText.includes('chicken patty')) {
         return { type: 'SAVOURY_BURGER', label: 'Burger & Savoury', plural: 'Burgers & Savoury', icon: '🍔', badge: '🍔 Savoury Main' };
       }
 
       // Priority 2: Product Name / Dish Title
+      if (normName.includes('pancake') || normName.includes('hotcake') || normName.includes('pancake stack')) {
+        return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
+      }
       if (normName.includes('waffle')) {
         return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
-      }
-      if (normName.includes('pancake')) {
-        return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
       }
       if (normName.includes('croffle')) {
         return { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffle' };
@@ -989,32 +1033,42 @@
         return { type: 'BEVERAGE_OTHER', label: 'Drink / Other', plural: 'Drinks & Other', icon: '☕', badge: '☕ Beverage' };
       }
 
-      // Priority 3: Category (Avoid generic combined category like "Waffles, Pancakes, Cookie Doughs, Cheesecakes")
-      if (!normCat.includes(',')) {
-        if (normCat.includes('waffle') || normCat.includes('chick n waffle')) return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
-        if (normCat.includes('pancake')) return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
-        if (normCat.includes('cookie dough')) return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
-        if (normCat.includes('croffle')) return { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffle' };
-        if (normCat.includes('crepe')) return { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepe' };
-        if (normCat.includes('cheesecake')) return { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecake' };
-        if (normCat.includes('burger') || normCat.includes('chicken') || normCat.includes('savory') || normCat.includes('savoury')) {
-          return { type: 'SAVOURY_BURGER', label: 'Burger & Savoury', plural: 'Burgers & Savoury', icon: '🍔', badge: '🍔 Savoury Main' };
-        }
-        if (normCat.includes('shake') || normCat.includes('smoothie')) return { type: 'MILKSHAKE', label: 'Milkshake', plural: 'Milkshakes', icon: '🥤', badge: '🥤 Milkshake' };
-        if (normCat.includes('gelato') || normCat.includes('scoop') || normCat.includes('sundae')) return { type: 'GELATO_SUNDAE', label: 'Gelato & Sundae', plural: 'Gelato & Sundaes', icon: '🍨', badge: '🍨 Gelato' };
-      }
-
-      // Priority 4: Linked SOP Recipe ingredients
+      // Priority 3: Linked SOP Recipe ingredients (evaluated BEFORE ambiguous category strings!)
       if (recipeObj && Array.isArray(recipeObj.ingredients)) {
         const ingNames = recipeObj.ingredients.map(i => (i.name || '').toLowerCase()).join(' ');
-        if (ingNames.includes('waffle')) return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
         if (ingNames.includes('pancake')) return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
+        if (ingNames.includes('waffle')) return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
         if (ingNames.includes('cookie dough')) return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
         if (ingNames.includes('brioche') || ingNames.includes('patty') || ingNames.includes('fries')) {
           return { type: 'SAVOURY_BURGER', label: 'Burger & Savoury', plural: 'Burgers & Savoury', icon: '🍔', badge: '🍔 Savoury Main' };
         }
         if (ingNames.includes('milk') && ingNames.includes('mix')) return { type: 'MILKSHAKE', label: 'Milkshake', plural: 'Milkshakes', icon: '🥤', badge: '🥤 Milkshake' };
       }
+
+      // Priority 4: Category
+      // If category specifically mentions pancake without waffle
+      if (normCat.includes('pancake') && !normCat.includes('waffle')) {
+        return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
+      }
+      if (normCat.includes('waffle') && !normCat.includes('pancake')) {
+        return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
+      }
+      // If category contains both or combined (e.g. "Pancakes & Waffles")
+      if (normCat.includes('pancake')) {
+        return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
+      }
+      if (normCat.includes('waffle') || normCat.includes('chick n waffle')) {
+        return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
+      }
+      if (normCat.includes('cookie dough')) return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
+      if (normCat.includes('croffle')) return { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffle' };
+      if (normCat.includes('crepe')) return { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepe' };
+      if (normCat.includes('cheesecake')) return { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecake' };
+      if (normCat.includes('burger') || normCat.includes('chicken') || normCat.includes('savory') || normCat.includes('savoury')) {
+        return { type: 'SAVOURY_BURGER', label: 'Burger & Savoury', plural: 'Burgers & Savoury', icon: '🍔', badge: '🍔 Savoury Main' };
+      }
+      if (normCat.includes('shake') || normCat.includes('smoothie')) return { type: 'MILKSHAKE', label: 'Milkshake', plural: 'Milkshakes', icon: '🥤', badge: '🥤 Milkshake' };
+      if (normCat.includes('gelato') || normCat.includes('scoop') || normCat.includes('sundae')) return { type: 'GELATO_SUNDAE', label: 'Gelato & Sundae', plural: 'Gelato & Sundaes', icon: '🍨', badge: '🍨 Gelato' };
 
       return { type: 'OTHER', label: 'General Menu', plural: 'General Items', icon: '🍽️', badge: '🍽️ General' };
     },
@@ -1299,6 +1353,33 @@
         m.pct_of_mains = totalCoreMainsVolume > 0 && coreMainsKeys.includes(k)
           ? parseFloat(((m.units / totalCoreMainsVolume) * 100).toFixed(1))
           : (grandTotalUnits > 0 ? parseFloat(((m.units / grandTotalUnits) * 100).toFixed(1)) : 0);
+        
+        // Provide standard channels object mapping
+        m.channels = {
+          Square: m.square_units || 0,
+          UberEats: m.uber_units || 0,
+          JustEat: m.just_eat_units || 0,
+          Deliveroo: m.deliveroo_units || 0
+        };
+      });
+
+      // Alias mapping so mainsSummary['pancakes'], mainsSummary['pancake'], mainsSummary['waffles'], etc. all resolve seamlessly
+      const aliasKeyPairs = [
+        ['waffles', 'WAFFLE'], ['waffle', 'WAFFLE'],
+        ['pancakes', 'PANCAKE'], ['pancake', 'PANCAKE'],
+        ['cookie_dough', 'COOKIE_DOUGH'], ['cookiedough', 'COOKIE_DOUGH'],
+        ['croffles', 'CROFFLE'], ['croffle', 'CROFFLE'],
+        ['cheesecakes', 'CHEESECAKE'], ['cheesecake', 'CHEESECAKE'],
+        ['crepes', 'CREPE'], ['crepe', 'CREPE'],
+        ['savoury_burgers', 'SAVOURY_BURGER'], ['savoury_burger', 'SAVOURY_BURGER'], ['burgers', 'SAVOURY_BURGER'],
+        ['milkshakes', 'MILKSHAKE'], ['milkshake', 'MILKSHAKE'],
+        ['gelato_sundaes', 'GELATO_SUNDAE'], ['gelato', 'GELATO_SUNDAE'],
+        ['beverage_other', 'BEVERAGE_OTHER'], ['beverages', 'BEVERAGE_OTHER']
+      ];
+      aliasKeyPairs.forEach(([alias, sourceKey]) => {
+        if (mainsSummary[sourceKey]) {
+          mainsSummary[alias] = mainsSummary[sourceKey];
+        }
       });
 
       const unmappedRows = Array.from(unmappedMap.values()).map(u => ({
@@ -1758,6 +1839,8 @@
         [today, '17:00:00', 'DEL-905', '"DELIV - Louisiana Crispy Chicken Burger"', '6', '78.00', '24.96', '0.00', '53.04'].join(','),
         [today, '17:45:00', 'DEL-906', '"DELIV - Papi Chulo Cheesy Loaded Fries"', '8', '48.00', '15.36', '0.00', '32.64'].join(','),
         [today, '18:25:00', 'DEL-907', '"DELIV - Oreo Cream Milkshake"', '10', '72.00', '23.04', '0.00', '48.96'].join(','),
+        [today, '18:40:00', 'DEL-909', '"DELIV - Twist It Dunk It Pancake Stack"', '5', '54.75', '17.52', '0.00', '37.23'].join(','),
+        [today, '18:55:00', 'DEL-910', '"American Pancakes - Maple & Berries"', '4', '39.80', '12.74', '0.00', '27.06'].join(','),
         // Include one unmapped mystery item to demonstrate the Unmapped Resolution Queue!
         [today, '19:15:00', 'DEL-908', '"DELIV - Mystery Caramel Churros Craze"', '3', '27.00', '8.64', '0.00', '18.36'].join(',')
       ].join('\n');

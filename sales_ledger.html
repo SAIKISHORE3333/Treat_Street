@@ -1291,16 +1291,17 @@
 
       // Mains Cards Definition
       const mainCardDefs = [
-        { key: 'waffles', label: 'Waffles', emoji: '🧇', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
-        { key: 'pancakes', label: 'Pancakes', emoji: '🥞', color: '#c2410c', bg: '#fff7ed', border: '#fed7aa' },
-        { key: 'cookie_dough', label: 'Cookie Dough', emoji: '🍪', color: '#a16207', bg: '#fefce8', border: '#fef08a' },
-        { key: 'croffles', label: 'Croffles', emoji: '🥐', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
-        { key: 'cheesecakes', label: 'Cheesecakes', emoji: '🍰', color: '#be123c', bg: '#fff1f2', border: '#fecdd3' },
-        { key: 'savoury_burgers', label: 'Savoury Mains', emoji: '🍔', color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' }
+        { key: 'WAFFLE', label: 'Waffles', emoji: '🧇', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+        { key: 'PANCAKE', label: 'Pancakes', emoji: '🥞', color: '#c2410c', bg: '#fff7ed', border: '#fed7aa' },
+        { key: 'COOKIE_DOUGH', label: 'Cookie Dough', emoji: '🍪', color: '#a16207', bg: '#fefce8', border: '#fef08a' },
+        { key: 'CROFFLE', label: 'Croffles', emoji: '🥐', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+        { key: 'CHEESECAKE', label: 'Cheesecakes', emoji: '🍰', color: '#be123c', bg: '#fff1f2', border: '#fecdd3' },
+        { key: 'SAVOURY_BURGER', label: 'Savoury Mains', emoji: '🍔', color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' }
       ];
 
       const mainsCardsHTML = mainCardDefs.map(def => {
-        const item = mains[def.key] || { units: 0, gross: 0, net: 0, shareOfMains: 0 };
+        const item = mains[def.key] || mains[def.key.toLowerCase()] || { units: 0, gross: 0, net: 0, pct_of_mains: 0, shareOfMains: 0 };
+        const shareVal = item.pct_of_mains ?? item.shareOfMains ?? 0;
         return `
           <div style="background: ${def.bg}; border: 1px solid ${def.border}; border-radius: 6px; padding: 7px 8px; text-align: center;">
             <div style="font-size: 9px; font-weight: 800; color: ${def.color}; margin-bottom: 2px;">
@@ -1310,7 +1311,7 @@
               ${item.units} <span style="font-size: 8.5px; font-weight: 700; color: #64748b;">Units</span>
             </div>
             <div style="font-size: 8px; color: ${def.color}; font-weight: 800; margin-top: 2px;">
-              £${item.gross.toFixed(2)} • ${item.shareOfMains}% mains
+              £${item.gross.toFixed(2)} • ${shareVal}% mains
             </div>
           </div>
         `;
@@ -1318,25 +1319,30 @@
 
       // All Mains Table Rows (shows all categories with sales or core bases)
       const allMainsKeys = [
-        { key: 'waffles', label: '🧇 Belgian & Liege Waffles' },
-        { key: 'pancakes', label: '🥞 American Pancakes & Stacks' },
-        { key: 'cookie_dough', label: '🍪 Warm Cookie Dough' },
-        { key: 'croffles', label: '🥐 Croissant Waffles (Croffles)' },
-        { key: 'cheesecakes', label: '🍰 Artisan Cheesecakes & Slices' },
-        { key: 'crepes', label: '🫓 French Crepes' },
-        { key: 'savoury_burgers', label: '🍔 Savoury Gourmet Burgers' },
-        { key: 'milkshakes', label: '🥤 Premium Thick Shakes' },
-        { key: 'gelato_sundaes', label: '🍨 Gelato & Sundaes' },
-        { key: 'beverage_other', label: '☕ Beverages & Other Desserts' }
+        { key: 'WAFFLE', label: '🧇 Belgian & Liege Waffles' },
+        { key: 'PANCAKE', label: '🥞 American Pancakes & Stacks' },
+        { key: 'COOKIE_DOUGH', label: '🍪 Warm Cookie Dough' },
+        { key: 'CROFFLE', label: '🥐 Croissant Waffles (Croffles)' },
+        { key: 'CHEESECAKE', label: '🍰 Artisan Cheesecakes & Slices' },
+        { key: 'CREPE', label: '🫓 French Crepes' },
+        { key: 'SAVOURY_BURGER', label: '🍔 Savoury Gourmet Burgers' },
+        { key: 'MILKSHAKE', label: '🥤 Premium Thick Shakes' },
+        { key: 'GELATO_SUNDAE', label: '🍨 Gelato & Sundaes' },
+        { key: 'BEVERAGE_OTHER', label: '☕ Beverages & Other Desserts' }
       ];
 
       const mainsTableRowsHTML = allMainsKeys.map((k, i) => {
-        const row = mains[k.key] || { units: 0, gross: 0, net: 0, shareOfMains: 0, channels: { Square: 0, UberEats: 0, JustEat: 0, Deliveroo: 0 } };
-        if (row.units === 0 && !['waffles', 'pancakes', 'cookie_dough', 'croffles'].includes(k.key)) {
+        const row = mains[k.key] || mains[k.key.toLowerCase()] || { units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, pct_of_mains: 0 };
+        if (row.units === 0 && !['WAFFLE', 'PANCAKE', 'COOKIE_DOUGH', 'CROFFLE'].includes(k.key)) {
           return ''; // omit zero-volume secondary bases to keep report tight
         }
         const rowBg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
-        const isHighlight = k.key === 'waffles' || k.key === 'pancakes';
+        const isHighlight = k.key === 'WAFFLE' || k.key === 'PANCAKE';
+        const sq = row.square_units ?? row.channels?.Square ?? 0;
+        const ub = row.uber_units ?? row.channels?.UberEats ?? 0;
+        const je = row.just_eat_units ?? row.channels?.JustEat ?? 0;
+        const dl = row.deliveroo_units ?? row.channels?.Deliveroo ?? 0;
+        const sharePct = row.pct_of_mains ?? row.shareOfMains ?? 0;
 
         return `
           <tr style="background: ${isHighlight ? '#fffdf7' : rowBg}; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
@@ -1344,13 +1350,13 @@
               ${k.label}
               ${isHighlight ? '<span style="font-size: 7.5px; background: #fef3c7; color: #92400e; padding: 1px 4px; border-radius: 3px; margin-left: 4px; font-weight: 800;">CORE ANCHOR</span>' : ''}
             </td>
-            <td style="padding: 5px 6px; text-align: center; color: #4338ca; font-weight: 700;">${row.channels.Square || '-'}</td>
-            <td style="padding: 5px 6px; text-align: center; color: #047857; font-weight: 700;">${row.channels.UberEats || '-'}</td>
-            <td style="padding: 5px 6px; text-align: center; color: #c2410c; font-weight: 700;">${row.channels.JustEat || '-'}</td>
-            <td style="padding: 5px 6px; text-align: center; color: #0f766e; font-weight: 700;">${row.channels.Deliveroo || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #4338ca; font-weight: 700;">${sq || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #047857; font-weight: 700;">${ub || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #c2410c; font-weight: 700;">${je || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #0f766e; font-weight: 700;">${dl || '-'}</td>
             <td style="padding: 5px 6px; text-align: right; font-weight: 900; color: #0f172a;">${row.units}</td>
             <td style="padding: 5px 8px; text-align: right; font-weight: 900; color: #b45309;">£${row.gross.toFixed(2)}</td>
-            <td style="padding: 5px 8px; text-align: right; font-weight: 800; color: #059669;">${row.shareOfMains}%</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 800; color: #059669;">${sharePct}%</td>
           </tr>
         `;
       }).filter(Boolean).join('');
