@@ -263,6 +263,25 @@
         </div>
       </div>
 
+      <!-- Mains & Dessert Bases Velocity Tracker (Waffles, Pancakes, Cookie Dough, Croffles, etc.) -->
+      <div class="glass-panel p-6 rounded-3xl border-amber-500/30 bg-gradient-to-br from-amber-950/15 via-slate-900/40 to-slate-950/60 shadow-xl">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white heading-font flex items-center gap-2">
+              <span class="text-xl">🧇🥞</span> Mains & Dessert Bases Velocity Tracker
+            </h3>
+            <p class="text-xs text-slate-300 mt-0.5">Accurate unit volume & revenue tracking across Waffles, Pancakes, Cookie Dough, Croffles, Cheesecakes and Savoury Mains.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="mains-total-units-badge" class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-black">0 Mains Sold</span>
+          </div>
+        </div>
+
+        <div id="mains-summary-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
       <!-- Channel Revenue Contribution & Comparison Grid -->
       <div class="glass-panel p-6 rounded-3xl">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
@@ -447,6 +466,32 @@
             <input type="text" id="item-search-input" oninput="handleSearchInput(this.value)" placeholder="Search products..." class="w-full pl-8 pr-3 py-1.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500">
           </div>
         </div>
+
+        <!-- Main Base Filter Tabs (Waffles, Pancakes, Cookie Dough, etc.) -->
+        <div class="flex flex-wrap items-center gap-1.5 w-full pt-2.5 border-t border-white/5">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1.5">Main Base:</span>
+          <button onclick="setMainFilter('ALL')" id="filter-main-all" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-active">
+            All Mains
+          </button>
+          <button onclick="setMainFilter('WAFFLE')" id="filter-main-waffle" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🧇 Waffles (<span id="count-main-waffle">0</span>)
+          </button>
+          <button onclick="setMainFilter('PANCAKE')" id="filter-main-pancake" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🥞 Pancakes (<span id="count-main-pancake">0</span>)
+          </button>
+          <button onclick="setMainFilter('COOKIE_DOUGH')" id="filter-main-cookie_dough" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🍪 Cookie Dough (<span id="count-main-cookie_dough">0</span>)
+          </button>
+          <button onclick="setMainFilter('CROFFLE')" id="filter-main-croffle" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🥐 Croffles (<span id="count-main-croffle">0</span>)
+          </button>
+          <button onclick="setMainFilter('CHEESECAKE')" id="filter-main-cheesecake" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🍰 Cheesecakes (<span id="count-main-cheesecake">0</span>)
+          </button>
+          <button onclick="setMainFilter('SAVOURY_BURGER')" id="filter-main-savoury_burger" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🍔 Savoury (<span id="count-main-savoury_burger">0</span>)
+          </button>
+        </div>
       </div>
 
       <!-- Master Table -->
@@ -556,7 +601,7 @@
 
       <!-- Preview Document Canvas -->
       <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-900/60 flex justify-center">
-        <div id="pdf-modal-canvas" class="bg-white shadow-2xl rounded-xl w-full max-w-[800px] min-h-[500px]">
+        <div id="pdf-modal-canvas" class="bg-white shadow-2xl rounded-xl w-full max-w-[760px] min-h-[500px]">
           <!-- Populated by JS -->
         </div>
       </div>
@@ -572,7 +617,7 @@
   </div>
 
   <!-- HIDDEN PDF GENERATION TEMPLATE CONTAINER -->
-  <div id="pdf-export-container" class="fixed left-[-9999px] top-[-9999px] pointer-events-none w-[820px] bg-white"></div>
+  <div id="pdf-export-container" class="fixed left-0 top-0 pointer-events-none w-[750px] bg-white opacity-0 -z-50"></div>
 
   <!-- ========================================== -->
   <!-- FOOTER -->
@@ -591,6 +636,7 @@
     let activeReportingDate = 'ALL';
     let activeTierFilter = 'ALL';
     let activeChannelFilter = 'ALL';
+    let activeMainFilter = 'ALL';
     let activeSearchQuery = '';
     let isDemoActive = false;
 
@@ -846,6 +892,54 @@
       document.getElementById('kpi-net-realized').innerText = `£${totals.net.toFixed(2)}`;
       document.getElementById('kpi-leakage-sub').innerText = `£${totals.commission.toFixed(2)} platform take (${totals.effective_commission_rate}%)`;
 
+      // 1b. Mains & Bases Summary Grid & Badges
+      const mainsGrid = document.getElementById('mains-summary-grid');
+      if (mainsGrid && data.mainsSummary) {
+        const priorityMains = ['WAFFLE', 'PANCAKE', 'COOKIE_DOUGH', 'CROFFLE', 'CHEESECAKE', 'SAVOURY_BURGER'];
+        const otherMains = Object.keys(data.mainsSummary).filter(k => !priorityMains.includes(k) && data.mainsSummary[k].units > 0);
+        const displayKeys = [...priorityMains, ...otherMains];
+
+        const totalMainsUnits = data.totalCoreMainsVolume || 0;
+        const totalBadge = document.getElementById('mains-total-units-badge');
+        if (totalBadge) totalBadge.innerText = `${totalMainsUnits} Core Mains Sold`;
+
+        mainsGrid.innerHTML = displayKeys.map(k => {
+          const m = data.mainsSummary[k] || { label: k, icon: '🍽️', units: 0, gross: 0, pct_of_mains: 0, plural: k + 's' };
+          const isHighlight = (k === 'WAFFLE' || k === 'PANCAKE');
+          const borderClass = isHighlight ? 'border-amber-500/40 bg-amber-500/10 shadow-sm' : 'border-white/10 bg-white/[0.02]';
+          const titleColor = isHighlight ? 'text-amber-300 font-black' : 'text-white font-bold';
+
+          return `
+            <div onclick="setMainFilter('${k}')" class="p-3.5 rounded-2xl border ${borderClass} hover:border-amber-400/60 cursor-pointer transition-all flex flex-col justify-between group">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xl">${m.icon}</span>
+                  <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/5 text-slate-300">${m.pct_of_mains}%</span>
+                </div>
+                <p class="text-xs ${titleColor} truncate group-hover:text-amber-300 transition-colors">${m.plural || m.label}</p>
+                <p class="text-xl font-black text-white heading-font mt-1">${m.units} <span class="text-[11px] font-normal text-slate-400">units</span></p>
+              </div>
+              <div class="pt-2 mt-2 border-t border-white/5 flex items-center justify-between text-[10px]">
+                <span class="text-slate-400">Gross</span>
+                <span class="font-bold text-amber-300">£${m.gross.toFixed(2)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Update Main Base Filter Pills
+        const updatePill = (id, count) => {
+          const el = document.getElementById(id);
+          if (el) el.innerText = count || 0;
+        };
+        updatePill('count-main-waffle', data.mainsSummary['WAFFLE'] ? data.mainsSummary['WAFFLE'].units : 0);
+        updatePill('count-main-pancake', data.mainsSummary['PANCAKE'] ? data.mainsSummary['PANCAKE'].units : 0);
+        updatePill('count-main-cookie_dough', data.mainsSummary['COOKIE_DOUGH'] ? data.mainsSummary['COOKIE_DOUGH'].units : 0);
+        updatePill('count-main-croffle', data.mainsSummary['CROFFLE'] ? data.mainsSummary['CROFFLE'].units : 0);
+        updatePill('count-main-cheesecake', data.mainsSummary['CHEESECAKE'] ? data.mainsSummary['CHEESECAKE'].units : 0);
+        updatePill('count-main-savoury_burger', data.mainsSummary['SAVOURY_BURGER'] ? data.mainsSummary['SAVOURY_BURGER'].units : 0);
+      }
+
       // 2. Channel Cards Grid
       const channelContainer = document.getElementById('channel-cards-grid');
       const channelKeys = ['Square', 'Uber Eats', 'Just Eat', 'Deliveroo'];
@@ -941,6 +1035,22 @@
       renderMasterLedgerTable();
     }
 
+    function setMainFilter(mainType) {
+      activeMainFilter = mainType;
+      const mainKeys = ['all', 'waffle', 'pancake', 'cookie_dough', 'croffle', 'cheesecake', 'savoury_burger'];
+      mainKeys.forEach(m => {
+        const btn = document.getElementById(`filter-main-${m}`);
+        if (!btn) return;
+        const target = m === 'all' ? 'ALL' : m.toUpperCase();
+        if (target === mainType) {
+          btn.className = 'px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-active';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive';
+        }
+      });
+      renderMasterLedgerTable();
+    }
+
     function setChannelFilter(ch) {
       activeChannelFilter = ch;
       renderMasterLedgerTable();
@@ -963,6 +1073,11 @@
         items = items.filter(i => i.performance_tier === activeTierFilter);
       }
 
+      // Main Base Filter (Waffles, Pancakes, Cookie Dough, etc.)
+      if (activeMainFilter !== 'ALL') {
+        items = items.filter(i => i.main_type === activeMainFilter);
+      }
+
       // Channel Filter
       if (activeChannelFilter !== 'ALL') {
         const field = activeChannelFilter === 'Square' ? 'square_units' :
@@ -975,7 +1090,8 @@
       if (activeSearchQuery) {
         items = items.filter(i => 
           i.master_item_name.toLowerCase().includes(activeSearchQuery) ||
-          (i.category && i.category.toLowerCase().includes(activeSearchQuery))
+          (i.category && i.category.toLowerCase().includes(activeSearchQuery)) ||
+          (i.main_label && i.main_label.toLowerCase().includes(activeSearchQuery))
         );
       }
 
@@ -1007,6 +1123,17 @@
           item.performance_tier === 'MODERATE' ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
           'bg-gradient-to-r from-rose-500 to-orange-400';
 
+        // Main Base Badge
+        const mainBadgeColor = 
+          item.main_type === 'WAFFLE' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
+          item.main_type === 'PANCAKE' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+          item.main_type === 'COOKIE_DOUGH' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+          item.main_type === 'CROFFLE' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+          item.main_type === 'CHEESECAKE' ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
+          item.main_type === 'SAVOURY_BURGER' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
+          'bg-white/5 text-slate-300 border-white/10';
+        const mainBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${mainBadgeColor}">${item.main_badge || item.main_label || 'General'}</span>`;
+
         // SOP indicator
         const sopTag = item.has_sop_recipe
           ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold" title="Synced with SOP Recipe">SOP Linked</span>'
@@ -1018,6 +1145,7 @@
               <div class="flex items-center gap-2">
                 <span class="text-xs font-mono text-slate-500 font-normal">#${idx + 1}</span>
                 <span class="text-sm">${item.master_item_name}</span>
+                ${mainBadge}
                 ${sopTag}
               </div>
               <span class="text-[10px] text-slate-400 block mt-0.5 font-normal">${item.category || 'General'}</span>
@@ -1119,6 +1247,8 @@
     function buildExecutivePDFHTML(data, branchName) {
       const totals = data.grandTotals;
       const analytics = data.analytics;
+      const mains = data.mainsSummary || {};
+      const totalMainsUnits = data.totalCoreMainsVolume || 0;
       const genTimestamp = new Date().toLocaleString('en-GB', {
         day: '2-digit',
         month: 'short',
@@ -1140,86 +1270,170 @@
         const rowBg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
 
         return `
-          <tr style="background: ${rowBg}; border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 7px 10px; font-weight: 800; color: #0f172a;">
-              <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: ${ch==='Square'?'#4f46e5':ch==='Uber Eats'?'#059669':ch==='Just Eat'?'#ea580c':'#0d9488'}; margin-right: 6px;"></span>
+          <tr style="background: ${rowBg}; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
+            <td style="padding: 6px 8px; font-weight: 800; color: #0f172a;">
+              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${ch==='Square'?'#4f46e5':ch==='Uber Eats'?'#059669':ch==='Just Eat'?'#ea580c':'#0d9488'}; margin-right: 5px;"></span>
               ${ch === 'Square' ? 'In-Store POS (Square)' : ch}
             </td>
-            <td style="padding: 7px 8px; text-align: center; font-weight: 700; color: #334155;">${c.units}</td>
-            <td style="padding: 7px 8px; text-align: right; font-weight: 800; color: #0f172a;">£${c.gross.toFixed(2)}</td>
-            <td style="padding: 7px 8px; text-align: center; font-weight: 800; color: #059669;">${share}%</td>
-            <td style="padding: 7px 8px; text-align: right; color: ${c.commission > 0 ? '#e11d48' : '#059669'}; font-weight: 700;">
+            <td style="padding: 6px 6px; text-align: center; font-weight: 700; color: #334155;">${c.units}</td>
+            <td style="padding: 6px 6px; text-align: right; font-weight: 800; color: #0f172a;">£${c.gross.toFixed(2)}</td>
+            <td style="padding: 6px 6px; text-align: center; font-weight: 800; color: #059669;">${share}%</td>
+            <td style="padding: 6px 6px; text-align: right; color: ${c.commission > 0 ? '#e11d48' : '#059669'}; font-weight: 700;">
               ${c.commission > 0 ? `-£${c.commission.toFixed(2)} (${commRate}%)` : '£0.00 (0%)'}
             </td>
-            <td style="padding: 7px 8px; text-align: right; font-weight: 900; color: #059669;">£${c.net.toFixed(2)}</td>
-            <td style="padding: 7px 10px; font-weight: 700; color: #1e293b; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <td style="padding: 6px 6px; text-align: right; font-weight: 900; color: #059669;">£${c.net.toFixed(2)}</td>
+            <td style="padding: 6px 8px; font-weight: 700; color: #1e293b; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
               ${topProd}
             </td>
           </tr>
         `;
       }).join('');
 
+      // Mains Cards Definition
+      const mainCardDefs = [
+        { key: 'waffles', label: 'Waffles', emoji: '🧇', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+        { key: 'pancakes', label: 'Pancakes', emoji: '🥞', color: '#c2410c', bg: '#fff7ed', border: '#fed7aa' },
+        { key: 'cookie_dough', label: 'Cookie Dough', emoji: '🍪', color: '#a16207', bg: '#fefce8', border: '#fef08a' },
+        { key: 'croffles', label: 'Croffles', emoji: '🥐', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+        { key: 'cheesecakes', label: 'Cheesecakes', emoji: '🍰', color: '#be123c', bg: '#fff1f2', border: '#fecdd3' },
+        { key: 'savoury_burgers', label: 'Savoury Mains', emoji: '🍔', color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' }
+      ];
+
+      const mainsCardsHTML = mainCardDefs.map(def => {
+        const item = mains[def.key] || { units: 0, gross: 0, net: 0, shareOfMains: 0 };
+        return `
+          <div style="background: ${def.bg}; border: 1px solid ${def.border}; border-radius: 6px; padding: 7px 8px; text-align: center;">
+            <div style="font-size: 9px; font-weight: 800; color: ${def.color}; margin-bottom: 2px;">
+              ${def.emoji} ${def.label}
+            </div>
+            <div style="font-size: 15px; font-weight: 900; color: #0f172a; line-height: 1.1;">
+              ${item.units} <span style="font-size: 8.5px; font-weight: 700; color: #64748b;">Units</span>
+            </div>
+            <div style="font-size: 8px; color: ${def.color}; font-weight: 800; margin-top: 2px;">
+              £${item.gross.toFixed(2)} • ${item.shareOfMains}% mains
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // All Mains Table Rows (shows all categories with sales or core bases)
+      const allMainsKeys = [
+        { key: 'waffles', label: '🧇 Belgian & Liege Waffles' },
+        { key: 'pancakes', label: '🥞 American Pancakes & Stacks' },
+        { key: 'cookie_dough', label: '🍪 Warm Cookie Dough' },
+        { key: 'croffles', label: '🥐 Croissant Waffles (Croffles)' },
+        { key: 'cheesecakes', label: '🍰 Artisan Cheesecakes & Slices' },
+        { key: 'crepes', label: '🫓 French Crepes' },
+        { key: 'savoury_burgers', label: '🍔 Savoury Gourmet Burgers' },
+        { key: 'milkshakes', label: '🥤 Premium Thick Shakes' },
+        { key: 'gelato_sundaes', label: '🍨 Gelato & Sundaes' },
+        { key: 'beverage_other', label: '☕ Beverages & Other Desserts' }
+      ];
+
+      const mainsTableRowsHTML = allMainsKeys.map((k, i) => {
+        const row = mains[k.key] || { units: 0, gross: 0, net: 0, shareOfMains: 0, channels: { Square: 0, UberEats: 0, JustEat: 0, Deliveroo: 0 } };
+        if (row.units === 0 && !['waffles', 'pancakes', 'cookie_dough', 'croffles'].includes(k.key)) {
+          return ''; // omit zero-volume secondary bases to keep report tight
+        }
+        const rowBg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+        const isHighlight = k.key === 'waffles' || k.key === 'pancakes';
+
+        return `
+          <tr style="background: ${isHighlight ? '#fffdf7' : rowBg}; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
+            <td style="padding: 5px 8px; font-weight: 800; color: ${isHighlight ? '#b45309' : '#0f172a'};">
+              ${k.label}
+              ${isHighlight ? '<span style="font-size: 7.5px; background: #fef3c7; color: #92400e; padding: 1px 4px; border-radius: 3px; margin-left: 4px; font-weight: 800;">CORE ANCHOR</span>' : ''}
+            </td>
+            <td style="padding: 5px 6px; text-align: center; color: #4338ca; font-weight: 700;">${row.channels.Square || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #047857; font-weight: 700;">${row.channels.UberEats || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #c2410c; font-weight: 700;">${row.channels.JustEat || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #0f766e; font-weight: 700;">${row.channels.Deliveroo || '-'}</td>
+            <td style="padding: 5px 6px; text-align: right; font-weight: 900; color: #0f172a;">${row.units}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 900; color: #b45309;">£${row.gross.toFixed(2)}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 800; color: #059669;">${row.shareOfMains}%</td>
+          </tr>
+        `;
+      }).filter(Boolean).join('');
+
       // Top Performers List (Best)
       const bestItemsListHTML = (analytics.bestPerformers || []).slice(0, 4).map(item => `
         <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #fde68a;">
-          <strong style="color: #0f172a;">${item.master_item_name}</strong>
-          <span style="font-weight: 800; color: #b45309;">£${item.gross_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
+          <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
+          <span style="font-weight: 800; color: #b45309; font-size: 8px;">£${item.gross_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
         </div>
       `).join('') || '<span style="color:#64748b;">No items recorded</span>';
 
       // Moderate Performers List
       const modItemsListHTML = (analytics.moderatePerformers || []).slice(0, 4).map(item => `
         <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #bbf7d0;">
-          <strong style="color: #0f172a;">${item.master_item_name}</strong>
-          <span style="font-weight: 800; color: #15803d;">£${item.gross_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
+          <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
+          <span style="font-weight: 800; color: #15803d; font-size: 8px;">£${item.gross_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
         </div>
       `).join('') || '<span style="color:#64748b;">No items recorded</span>';
 
       // Least Performers List
       const leastItemsListHTML = (analytics.leastPerformers || []).slice(0, 4).map(item => `
         <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #fecaca;">
-          <strong style="color: #0f172a;">${item.master_item_name}</strong>
-          <span style="font-weight: 800; color: #b91c1c;">£${item.gross_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
+          <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
+          <span style="font-weight: 800; color: #b91c1c; font-size: 8px;">£${item.gross_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
         </div>
       `).join('') || '<span style="color:#64748b;">No items recorded</span>';
 
-      // Master Ledger Table Rows
+      // Master Ledger Table Rows with Main Base Badge
       const ledgerRowsHTML = (data.masterLedger || []).map((item, idx) => {
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
         const tierBadge = 
           item.performance_tier === 'BEST'
-            ? '<span style="background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 4px; font-weight: 800; font-size: 8px;">★ BEST</span>'
+            ? '<span style="background: #fef3c7; color: #92400e; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 7.5px;">★ BEST</span>'
             : item.performance_tier === 'MODERATE'
-            ? '<span style="background: #ecfdf5; color: #065f46; padding: 1px 6px; border-radius: 4px; font-weight: 800; font-size: 8px;">⚡ MOD</span>'
-            : '<span style="background: #fee2e2; color: #991b1b; padding: 1px 6px; border-radius: 4px; font-weight: 800; font-size: 8px;">▼ LEAST</span>';
+            ? '<span style="background: #ecfdf5; color: #065f46; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 7.5px;">⚡ MOD</span>'
+            : '<span style="background: #fee2e2; color: #991b1b; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 7.5px;">▼ LEAST</span>';
+
+        const baseBadgeBg = 
+          item.main_type === 'WAFFLE' ? '#fef3c7' :
+          item.main_type === 'PANCAKE' ? '#ffedd5' :
+          item.main_type === 'COOKIE_DOUGH' ? '#fef9c3' :
+          item.main_type === 'CROFFLE' ? '#dcfce7' :
+          item.main_type === 'CHEESECAKE' ? '#ffe4e6' :
+          item.main_type === 'SAVOURY_BURGER' ? '#fee2e2' : '#f1f5f9';
+        const baseBadgeColor = 
+          item.main_type === 'WAFFLE' ? '#92400e' :
+          item.main_type === 'PANCAKE' ? '#9a3412' :
+          item.main_type === 'COOKIE_DOUGH' ? '#854d0e' :
+          item.main_type === 'CROFFLE' ? '#166534' :
+          item.main_type === 'CHEESECAKE' ? '#9f1239' :
+          item.main_type === 'SAVOURY_BURGER' ? '#991b1b' : '#475569';
 
         const barWidth = Math.min(100, Math.max(4, item.revenue_contribution_pct * 3.5));
         const barColor = item.performance_tier === 'BEST' ? '#f59e0b' : item.performance_tier === 'MODERATE' ? '#059669' : '#f43f5e';
 
         return `
           <tr style="background: ${rowBg}; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
-            <td style="padding: 5px 8px; font-weight: 700; color: #64748b;">${idx + 1}</td>
-            <td style="padding: 5px 8px;">
-              <strong style="color: #0f172a; font-size: 9.5px;">${item.master_item_name}</strong>
-              <span style="display: block; font-size: 8px; color: #64748b;">${item.category || 'Desserts & Mains'}</span>
+            <td style="padding: 4px 5px; text-align: center; font-weight: 700; color: #64748b; font-size: 8px;">${idx + 1}</td>
+            <td style="padding: 4px 6px;">
+              <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
+                <span style="background: ${baseBadgeBg}; color: ${baseBadgeColor}; padding: 0.5px 4px; border-radius: 3px; font-size: 7px; font-weight: 800; border: 1px solid ${baseBadgeBg};">${item.main_badge || item.main_label || 'Dessert'}</span>
+              </div>
+              <span style="display: block; font-size: 7.5px; color: #64748b; margin-top: 1px;">${item.category || 'Desserts & Mains'}</span>
             </td>
-            <td style="padding: 5px 8px; text-align: center;">${tierBadge}</td>
-            <td style="padding: 5px 6px; text-align: center; color: #4338ca; font-weight: 700;">${item.square_units || '-'}</td>
-            <td style="padding: 5px 6px; text-align: center; color: #047857; font-weight: 700;">${item.uber_eats_units || '-'}</td>
-            <td style="padding: 5px 6px; text-align: center; color: #c2410c; font-weight: 700;">${item.just_eat_units || '-'}</td>
-            <td style="padding: 5px 6px; text-align: center; color: #0f766e; font-weight: 700;">${item.deliveroo_units || '-'}</td>
-            <td style="padding: 5px 8px; text-align: right; font-weight: 900; color: #0f172a;">${item.total_volume}</td>
-            <td style="padding: 5px 8px; text-align: right; font-weight: 900; color: #b45309;">£${item.gross_revenue.toFixed(2)}</td>
-            <td style="padding: 5px 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 8px; margin-bottom: 2px;">
+            <td style="padding: 4px 4px; text-align: center;">${tierBadge}</td>
+            <td style="padding: 4px 3px; text-align: center; color: #4338ca; font-weight: 700; font-size: 8px;">${item.square_units || '-'}</td>
+            <td style="padding: 4px 3px; text-align: center; color: #047857; font-weight: 700; font-size: 8px;">${item.uber_eats_units || '-'}</td>
+            <td style="padding: 4px 3px; text-align: center; color: #c2410c; font-weight: 700; font-size: 8px;">${item.just_eat_units || '-'}</td>
+            <td style="padding: 4px 3px; text-align: center; color: #0f766e; font-weight: 700; font-size: 8px;">${item.deliveroo_units || '-'}</td>
+            <td style="padding: 4px 4px; text-align: right; font-weight: 900; color: #0f172a; font-size: 8.5px;">${item.total_volume}</td>
+            <td style="padding: 4px 5px; text-align: right; font-weight: 900; color: #b45309; font-size: 8.5px;">£${item.gross_revenue.toFixed(2)}</td>
+            <td style="padding: 4px 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 7.5px; margin-bottom: 2px;">
                 <strong style="color: #0f172a;">${item.revenue_contribution_pct}%</strong>
                 <span style="color: #64748b;">of total</span>
               </div>
-              <div style="background: #e2e8f0; height: 5px; border-radius: 9999px; overflow: hidden;">
+              <div style="background: #e2e8f0; height: 4px; border-radius: 9999px; overflow: hidden;">
                 <div style="width: ${barWidth}%; height: 100%; background: ${barColor}; border-radius: 9999px;"></div>
               </div>
             </td>
-            <td style="padding: 5px 8px; text-align: right; font-weight: 900; color: #059669;">£${item.net_revenue.toFixed(2)}</td>
+            <td style="padding: 4px 5px; text-align: right; font-weight: 900; color: #059669; font-size: 8.5px;">£${item.net_revenue.toFixed(2)}</td>
           </tr>
         `;
       }).join('');
@@ -1230,81 +1444,81 @@
       const aiLeaksHTML = (analytics.aiRecommendations.lowSalesAlerts || []).map(s => `<p style="margin: 0 0 3px 0; line-height: 1.3;">${s.replace(/\*\*/g, '')}</p>`).join('') || '<p>Review tail menu performance.</p>';
 
       return `
-        <div id="pdf-report-document" style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #0f172a; background: #ffffff; padding: 26px; width: 800px; margin: 0 auto; box-sizing: border-box; line-height: 1.35;">
+        <div id="pdf-report-document" style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #0f172a; background: #ffffff; padding: 18px 20px; width: 750px; max-width: 750px; margin: 0 auto; box-sizing: border-box; line-height: 1.35;">
           
-          <!-- LETTERHEAD -->
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0f3d2e; padding-bottom: 14px; margin-bottom: 18px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 44px; height: 44px; background: #0f3d2e; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 20px; font-weight: 900; font-family: 'Outfit', sans-serif;">
+          <!-- LETTERHEAD (HEADER) -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0f3d2e; padding-bottom: 12px; margin-bottom: 14px; page-break-inside: avoid;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 42px; height: 42px; background: #0f3d2e; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 19px; font-weight: 900; font-family: 'Outfit', sans-serif;">
                 TS
               </div>
               <div>
-                <h1 style="margin: 0; font-size: 20px; font-weight: 900; color: #0f3d2e; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif;">
+                <h1 style="margin: 0; font-size: 19px; font-weight: 900; color: #0f3d2e; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif;">
                   TREAT STREET
                 </h1>
-                <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: 800; color: #059669; text-transform: uppercase; letter-spacing: 0.8px;">
+                <p style="margin: 2px 0 0 0; font-size: 9.5px; font-weight: 800; color: #059669; text-transform: uppercase; letter-spacing: 0.8px;">
                   Executive Sales Performance & Omnichannel Revenue Report
                 </p>
               </div>
             </div>
             
-            <div style="text-align: right; font-size: 9.5px; color: #475569;">
-              <p style="margin: 0 0 2px 0; font-size: 12px; font-weight: 800; color: #0f3d2e;">
+            <div style="text-align: right; font-size: 9px; color: #475569;">
+              <p style="margin: 0 0 2px 0; font-size: 11.5px; font-weight: 800; color: #0f3d2e;">
                 Branch: <span style="color: #059669;">${branchName}</span>
               </p>
               <p style="margin: 0 0 2px 0;"><strong>Period:</strong> ${period}</p>
               <p style="margin: 0 0 3px 0;"><strong>Generated:</strong> ${genTimestamp}</p>
-              <p style="margin: 0;"><span style="display: inline-block; padding: 2px 7px; background: #ecfdf5; color: #059669; border-radius: 9999px; font-weight: 800; font-size: 8.5px; border: 1px solid #a7f3d0;">EXECUTIVE AUDIT COPY</span></p>
+              <p style="margin: 0;"><span style="display: inline-block; padding: 2px 6px; background: #ecfdf5; color: #059669; border-radius: 9999px; font-weight: 800; font-size: 8px; border: 1px solid #a7f3d0;">EXECUTIVE AUDIT COPY</span></p>
             </div>
           </div>
 
-          <!-- EXECUTIVE FINANCIAL KPIS -->
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 18px; page-break-inside: avoid;">
+          <!-- EXECUTIVE FINANCIAL KPIS (4 CARDS) -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; page-break-inside: avoid;">
             
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #059669; border-radius: 8px; padding: 9px;">
-              <p style="margin: 0 0 2px 0; font-size: 8.5px; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Gross Sales</p>
-              <p style="margin: 0; font-size: 17px; font-weight: 900; color: #0f3d2e;">£${totals.gross.toFixed(2)}</p>
-              <p style="margin: 2px 0 0 0; font-size: 8.5px; color: #64748b;">Pre-commission list revenue</p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #059669; border-radius: 7px; padding: 8px;">
+              <p style="margin: 0 0 2px 0; font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Gross Sales</p>
+              <p style="margin: 0; font-size: 16px; font-weight: 900; color: #0f3d2e;">£${totals.gross.toFixed(2)}</p>
+              <p style="margin: 2px 0 0 0; font-size: 8px; color: #64748b;">Pre-commission list sales</p>
             </div>
 
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #4f46e5; border-radius: 8px; padding: 9px;">
-              <p style="margin: 0 0 2px 0; font-size: 8.5px; font-weight: 800; color: #64748b; text-transform: uppercase;">Volume Sold</p>
-              <p style="margin: 0; font-size: 17px; font-weight: 900; color: #1e293b;">${totals.units} Units</p>
-              <p style="margin: 2px 0 0 0; font-size: 8.5px; color: #4f46e5; font-weight: 700;">£${avgPrice.toFixed(2)} avg item price</p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #4f46e5; border-radius: 7px; padding: 8px;">
+              <p style="margin: 0 0 2px 0; font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase;">Volume Sold</p>
+              <p style="margin: 0; font-size: 16px; font-weight: 900; color: #1e293b;">${totals.units} Units</p>
+              <p style="margin: 2px 0 0 0; font-size: 8px; color: #4f46e5; font-weight: 700;">£${avgPrice.toFixed(2)} avg item price</p>
             </div>
 
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #f59e0b; border-radius: 8px; padding: 9px;">
-              <p style="margin: 0 0 2px 0; font-size: 8.5px; font-weight: 800; color: #d97706; text-transform: uppercase;">🌟 Star Performer</p>
-              <p style="margin: 0; font-size: 12px; font-weight: 900; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${star.master_item_name}</p>
-              <p style="margin: 2px 0 0 0; font-size: 8.5px; color: #d97706; font-weight: 800;">£${star.gross_revenue.toFixed(2)} (${star.revenue_contribution_pct}% share)</p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #f59e0b; border-radius: 7px; padding: 8px;">
+              <p style="margin: 0 0 2px 0; font-size: 8px; font-weight: 800; color: #d97706; text-transform: uppercase;">🌟 Star Performer</p>
+              <p style="margin: 0; font-size: 11px; font-weight: 900; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${star.master_item_name}</p>
+              <p style="margin: 2px 0 0 0; font-size: 8px; color: #d97706; font-weight: 800;">£${star.gross_revenue.toFixed(2)} (${star.revenue_contribution_pct}% share)</p>
             </div>
 
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #0d9488; border-radius: 8px; padding: 9px;">
-              <p style="margin: 0 0 2px 0; font-size: 8.5px; font-weight: 800; color: #64748b; text-transform: uppercase;">Net Realized Cash</p>
-              <p style="margin: 0; font-size: 17px; font-weight: 900; color: #059669;">£${totals.net.toFixed(2)}</p>
-              <p style="margin: 2px 0 0 0; font-size: 8.5px; color: #e11d48; font-weight: 700;">-£${totals.commission.toFixed(2)} (${totals.effective_commission_rate}% fee)</p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #0d9488; border-radius: 7px; padding: 8px;">
+              <p style="margin: 0 0 2px 0; font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase;">Net Realized Cash</p>
+              <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">£${totals.net.toFixed(2)}</p>
+              <p style="margin: 2px 0 0 0; font-size: 8px; color: #e11d48; font-weight: 700;">-£${totals.commission.toFixed(2)} (${totals.effective_commission_rate}% fee)</p>
             </div>
 
           </div>
 
-          <!-- CHANNEL COMPARISON TABLE -->
-          <div style="margin-bottom: 18px; page-break-inside: avoid;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <h2 style="margin: 0; font-size: 11px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+          <!-- SECTION 1: CHANNEL COMPARISON TABLE -->
+          <div style="margin-bottom: 14px; page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <h2 style="margin: 0; font-size: 10.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
                 1. Channel Sales & Revenue Contribution Economics
               </h2>
-              <span style="font-size: 8.5px; font-weight: 700; color: #64748b;">Consolidated In-Store & Aggregators</span>
+              <span style="font-size: 8px; font-weight: 700; color: #64748b;">Consolidated In-Store POS & Aggregators</span>
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: left; border: 1px solid #e2e8f0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; text-align: left; border: 1px solid #e2e8f0; table-layout: fixed;">
               <thead>
-                <tr style="background: #0f3d2e; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 8.5px;">
-                  <th style="padding: 5px 8px;">Platform</th>
-                  <th style="padding: 5px 6px; text-align: center;">Units Sold</th>
-                  <th style="padding: 5px 6px; text-align: right;">Gross Sales (£)</th>
-                  <th style="padding: 5px 6px; text-align: center;">Revenue Share</th>
-                  <th style="padding: 5px 6px; text-align: right;">Platform Take</th>
-                  <th style="padding: 5px 6px; text-align: right;">Net Payout</th>
-                  <th style="padding: 5px 8px; text-align: left;">Top Selling Product</th>
+                <tr style="background: #0f3d2e; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 8px;">
+                  <th style="padding: 5px 8px; width: 155px;">Platform</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">Units Sold</th>
+                  <th style="padding: 5px 6px; width: 85px; text-align: right;">Gross Sales (£)</th>
+                  <th style="padding: 5px 6px; width: 80px; text-align: center;">Revenue Share</th>
+                  <th style="padding: 5px 6px; width: 105px; text-align: right;">Platform Take</th>
+                  <th style="padding: 5px 6px; width: 90px; text-align: right;">Net Payout</th>
+                  <th style="padding: 5px 8px; width: 130px; text-align: left;">Top Selling Product</th>
                 </tr>
               </thead>
               <tbody>
@@ -1313,70 +1527,111 @@
             </table>
           </div>
 
-          <!-- 3-TIER PERFORMANCE CLASSIFICATION (BEST, MODERATE, LEAST) -->
-          <div style="margin-bottom: 18px; page-break-inside: avoid;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <h2 style="margin: 0; font-size: 11px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
-                2. Product Velocity & Pareto Performance Tiers
+          <!-- SECTION 2: MAINS & CORE DESSERT BASES VELOCITY TRACKER (CRUCIAL USER REQUIREMENT) -->
+          <div style="margin-bottom: 14px; page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <div>
+                <h2 style="margin: 0; font-size: 10.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+                  2. Mains & Core Dessert Bases Velocity Tracker
+                </h2>
+                <p style="margin: 1px 0 0 0; font-size: 8px; color: #64748b;">
+                  Culinary Anchor Volumes Disambiguated From Flavours & Modifiers (Total Mains: ${totalMainsUnits} Units)
+                </p>
+              </div>
+              <span style="font-size: 8px; font-weight: 800; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 6px; border-radius: 4px;">
+                WAFFLES & PANCAKES AUDIT
+              </span>
+            </div>
+
+            <!-- 6 Base Highlight Cards -->
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 8px;">
+              ${mainsCardsHTML}
+            </div>
+
+            <!-- Mains Channel Distribution Table -->
+            <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; text-align: left; border: 1px solid #e2e8f0; table-layout: fixed;">
+              <thead>
+                <tr style="background: #1e293b; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 8px;">
+                  <th style="padding: 5px 8px; width: 180px;">Main Base Category</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">In-Store (SQ)</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">Uber Eats</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">Just Eat</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">Deliveroo</th>
+                  <th style="padding: 5px 6px; width: 75px; text-align: right;">Total Units</th>
+                  <th style="padding: 5px 8px; width: 95px; text-align: right;">Gross Sales (£)</th>
+                  <th style="padding: 5px 8px; width: 100px; text-align: right;">% of Mains</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${mainsTableRowsHTML}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SECTION 3: 3-TIER PERFORMANCE CLASSIFICATION (BEST, MODERATE, LEAST) -->
+          <div style="margin-bottom: 14px; page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <h2 style="margin: 0; font-size: 10.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+                3. Product Velocity & Pareto Performance Tiers
               </h2>
-              <span style="font-size: 8.5px; font-weight: 700; color: #64748b;">Top, Core & Review Segments</span>
+              <span style="font-size: 8px; font-weight: 700; color: #64748b;">Top, Core & Review Segments</span>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
               
               <!-- BEST -->
-              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 7px; padding: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid #fef3c7; padding-bottom: 3px;">
-                  <span style="font-weight: 900; font-size: 9.5px; color: #b45309;">🌟 BEST PERFORMERS</span>
-                  <span style="font-size: 8.5px; font-weight: 800; color: #b45309;">${(analytics.bestPerformers||[]).length} Items</span>
+              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 7px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; border-bottom: 1px solid #fef3c7; padding-bottom: 3px;">
+                  <span style="font-weight: 900; font-size: 9px; color: #b45309;">🌟 BEST PERFORMERS</span>
+                  <span style="font-size: 8px; font-weight: 800; color: #b45309;">${(analytics.bestPerformers||[]).length} Items</span>
                 </div>
-                <div style="font-size: 8.5px;">${bestItemsListHTML}</div>
+                <div style="font-size: 8px;">${bestItemsListHTML}</div>
               </div>
 
               <!-- MODERATE -->
-              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 7px; padding: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid #dcfce7; padding-bottom: 3px;">
-                  <span style="font-weight: 900; font-size: 9.5px; color: #15803d;">⚡ MODERATE PERFORMERS</span>
-                  <span style="font-size: 8.5px; font-weight: 800; color: #15803d;">${(analytics.moderatePerformers||[]).length} Items</span>
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 7px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; border-bottom: 1px solid #dcfce7; padding-bottom: 3px;">
+                  <span style="font-weight: 900; font-size: 9px; color: #15803d;">⚡ MODERATE PERFORMERS</span>
+                  <span style="font-size: 8px; font-weight: 800; color: #15803d;">${(analytics.moderatePerformers||[]).length} Items</span>
                 </div>
-                <div style="font-size: 8.5px;">${modItemsListHTML}</div>
+                <div style="font-size: 8px;">${modItemsListHTML}</div>
               </div>
 
               <!-- LEAST -->
-              <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 7px; padding: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid #fee2e2; padding-bottom: 3px;">
-                  <span style="font-weight: 900; font-size: 9.5px; color: #b91c1c;">⚠️ LEAST PERFORMERS</span>
-                  <span style="font-size: 8.5px; font-weight: 800; color: #b91c1c;">${(analytics.leastPerformers||[]).length} Items</span>
+              <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 7px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; border-bottom: 1px solid #fee2e2; padding-bottom: 3px;">
+                  <span style="font-weight: 900; font-size: 9px; color: #b91c1c;">⚠️ LEAST PERFORMERS</span>
+                  <span style="font-size: 8px; font-weight: 800; color: #b91c1c;">${(analytics.leastPerformers||[]).length} Items</span>
                 </div>
-                <div style="font-size: 8.5px;">${leastItemsListHTML}</div>
+                <div style="font-size: 8px;">${leastItemsListHTML}</div>
               </div>
 
             </div>
           </div>
 
-          <!-- COMPLETE MASTER PRODUCT SALES & REVENUE CONTRIBUTION LEDGER -->
-          <div style="margin-bottom: 18px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <h2 style="margin: 0; font-size: 11px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
-                3. Master Product Sales & Revenue Contribution Ledger
+          <!-- SECTION 4: COMPLETE MASTER PRODUCT SALES & REVENUE CONTRIBUTION LEDGER -->
+          <div style="margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <h2 style="margin: 0; font-size: 10.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+                4. Master Product Sales & Revenue Contribution Ledger
               </h2>
-              <span style="font-size: 8.5px; font-weight: 700; color: #64748b;">${(data.masterLedger||[]).length} Products Sold</span>
+              <span style="font-size: 8px; font-weight: 700; color: #64748b;">${(data.masterLedger||[]).length} Products Sold (Base Disambiguated)</span>
             </div>
 
-            <table style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: left; border: 1px solid #e2e8f0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; text-align: left; border: 1px solid #e2e8f0; table-layout: fixed;">
               <thead>
-                <tr style="background: #1e293b; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 8px;">
-                  <th style="padding: 5px 6px; width: 22px;">#</th>
-                  <th style="padding: 5px 6px;">Product Name & Category</th>
-                  <th style="padding: 5px 6px; text-align: center;">Tier</th>
-                  <th style="padding: 5px 4px; text-align: center;">SQ</th>
-                  <th style="padding: 5px 4px; text-align: center;">UB</th>
-                  <th style="padding: 5px 4px; text-align: center;">JE</th>
-                  <th style="padding: 5px 4px; text-align: center;">DL</th>
-                  <th style="padding: 5px 6px; text-align: right;">Units</th>
-                  <th style="padding: 5px 6px; text-align: right;">Gross (£)</th>
-                  <th style="padding: 5px 8px; width: 130px;">Revenue Share %</th>
-                  <th style="padding: 5px 6px; text-align: right;">Net (£)</th>
+                <tr style="background: #1e293b; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 7.5px;">
+                  <th style="padding: 5px 4px; width: 22px; text-align: center;">#</th>
+                  <th style="padding: 5px 6px; width: 200px;">Product Name & Main Base</th>
+                  <th style="padding: 5px 4px; width: 52px; text-align: center;">Tier</th>
+                  <th style="padding: 5px 3px; width: 32px; text-align: center;">SQ</th>
+                  <th style="padding: 5px 3px; width: 32px; text-align: center;">UB</th>
+                  <th style="padding: 5px 3px; width: 32px; text-align: center;">JE</th>
+                  <th style="padding: 5px 3px; width: 32px; text-align: center;">DL</th>
+                  <th style="padding: 5px 4px; width: 44px; text-align: right;">Units</th>
+                  <th style="padding: 5px 5px; width: 65px; text-align: right;">Gross (£)</th>
+                  <th style="padding: 5px 6px; width: 105px;">Revenue Share %</th>
+                  <th style="padding: 5px 5px; width: 74px; text-align: right;">Net (£)</th>
                 </tr>
               </thead>
               <tbody>
@@ -1385,14 +1640,14 @@
             </table>
           </div>
 
-          <!-- AI STRATEGIC EXECUTIVE RECOMMENDATIONS -->
-          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 7px; padding: 10px; margin-bottom: 18px; page-break-inside: avoid;">
-            <h3 style="margin: 0 0 5px 0; font-size: 10px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
-              4. Executive Strategic AI Insights & Margin Preservation
+          <!-- SECTION 5: AI STRATEGIC EXECUTIVE RECOMMENDATIONS -->
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px; margin-bottom: 14px; page-break-inside: avoid;">
+            <h3 style="margin: 0 0 5px 0; font-size: 9.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+              5. Executive Strategic AI Insights & Margin Preservation
             </h3>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; font-size: 8.5px; color: #334155;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 8px; color: #334155;">
               <div>
-                <strong style="color: #b45309; display: block; margin-bottom: 2px;">🌟 Star Drivers:</strong>
+                <strong style="color: #b45309; display: block; margin-bottom: 2px;">🌟 Star Drivers & Main Velocity:</strong>
                 ${aiStarsHTML}
               </div>
               <div>
@@ -1406,14 +1661,14 @@
             </div>
           </div>
 
-          <!-- FOOTER & SIGN-OFF -->
-          <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 12px; border-top: 1px dashed #cbd5e1; font-size: 8.5px; color: #64748b; page-break-inside: avoid;">
+          <!-- SECTION 6: FOOTER & SIGN-OFF -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 8px; color: #64748b; page-break-inside: avoid;">
             <div>
-              <p style="margin: 0 0 2px 0;">Treat Street Internal Operations & Revenue Governance System</p>
+              <p style="margin: 0 0 2px 0; font-weight: 700;">Treat Street Internal Operations & Revenue Governance System</p>
               <p style="margin: 0;">Confidential • Generated for ${branchName} Management Audit</p>
             </div>
             <div style="text-align: right;">
-              <p style="margin: 0 0 12px 0;">Authorized Branch Manager Signature: _______________________</p>
+              <p style="margin: 0 0 10px 0;">Authorized Branch Manager Signature: _______________________</p>
               <p style="margin: 0;">Date: ________________________</p>
             </div>
           </div>
@@ -1436,6 +1691,16 @@
       const safeDate = (currentConsolidated.reportingDate || 'ALL').replace(/[^a-zA-Z0-9]/g, '_');
 
       const container = document.getElementById('pdf-export-container');
+      container.style.display = 'block';
+      container.style.position = 'fixed';
+      container.style.top = '0';
+      container.style.left = '0';
+      container.style.width = '750px';
+      container.style.zIndex = '-9999';
+      container.style.opacity = '1';
+      container.style.pointerEvents = 'none';
+      container.style.background = '#ffffff';
+
       container.innerHTML = buildExecutivePDFHTML(currentConsolidated, branchName);
 
       const element = document.getElementById('pdf-report-document');
@@ -1447,18 +1712,21 @@
         margin:       [0.2, 0.2, 0.2, 0.2],
         filename:     `Treat_Street_Sales_Performance_${safeBranch}_${safeDate}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 750, scrollY: 0 },
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
-        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak:    { mode: ['css', 'legacy'], avoid: ['.pdf-avoid-break', 'tr'] }
       };
 
       html2pdf().set(opt).from(element).save().then(() => {
         if (btn) btn.innerHTML = originalText;
         if (window.lucide) lucide.createIcons();
+        container.style.display = 'none';
+        container.innerHTML = '';
       }).catch(err => {
         console.error("PDF generation failed:", err);
         alert("PDF generation completed. If download didn't trigger, please use the Preview button to print directly.");
         if (btn) btn.innerHTML = originalText;
+        container.style.display = 'none';
       });
     }
 
@@ -1489,13 +1757,18 @@
 
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
+        <!DOCTYPE html>
         <html>
           <head>
             <title>Treat Street Sales Report</title>
             <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
             <style>
-              body { margin: 0; padding: 20px; font-family: 'Plus Jakarta Sans', Arial, sans-serif; background: #fff; }
-              @page { size: A4 portrait; margin: 8mm; }
+              body { margin: 0; padding: 10px; font-family: 'Plus Jakarta Sans', Arial, sans-serif; background: #fff; }
+              @page { size: A4 portrait; margin: 6mm; }
+              table { page-break-inside: auto; }
+              tr { page-break-inside: avoid; page-break-after: auto; }
+              thead { display: table-header-group; }
+              tfoot { display: table-footer-group; }
             </style>
           </head>
           <body>
