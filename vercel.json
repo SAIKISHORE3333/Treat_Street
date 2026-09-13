@@ -1,9 +1,18 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/sales-ledger",
+      "destination": "/sales_ledger.html"
+    },
+    {
+      "source": "/sales_ledger",
+      "destination": "/sales_ledger.html"
+    },
+    {
+      "source": "/sales",
       "destination": "/sales_ledger.html"
     },
     {

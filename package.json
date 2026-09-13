@@ -1,4 +1,9 @@
 {
+  "name": "treat-street-portal",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Static assets ready'"
+  },
   "dependencies": {
     "jsdom": "^30.0.1"
   }
