@@ -1187,8 +1187,6 @@
     MASTER_ITEM_REGISTRY: {
       "Y650451": { name: "EL Fudgee", base_type: "Cheesecake", deplete_batch: "Cheesecake_Base_Slice", qty: 1 },
       "EL Fudgee": { base_type: "Cheesecake", deplete_batch: "Cheesecake_Base_Slice", qty: 1 },
-      "9179172": { name: "Buenos Dias", base_type: "Waffle", deplete_batch: "Waffle_Batter_Portion", qty: 1 },
-      "Buenos Dias": { base_type: "Waffle", deplete_batch: "Waffle_Batter_Portion", qty: 1 },
       "4763263": { name: "Twist it, Lick it, Dunk it", base_type: "Cookie Dough", deplete_batch: "Cookie_Dough_Puck", qty: 1 },
       "Twist it, Lick it, Dunk it": { base_type: "Cookie Dough", deplete_batch: "Cookie_Dough_Puck", qty: 1 },
       "264776Y": { name: "My, Oh My Cherry Pie", base_type: "Waffle", deplete_batch: "Waffle_Batter_Portion", qty: 1 },
@@ -1250,6 +1248,147 @@
       if (norm.includes('crepe')) return 'Crepe_Batter_Portion';
       if (norm.includes('waffle')) return 'Waffle_Batter_Portion';
       return 'General_Base_Portion';
+    },
+
+    // -----------------------------------------------------------
+    // Dual-Base Ambiguity & Kitchen Production Logs Helpers
+    // -----------------------------------------------------------
+    isDualBaseCategory(category = '') {
+      const normCat = (category || '').toLowerCase().trim();
+      return (
+        normCat.includes('waffles, pancakes, cookie doughs, cheesecakes') ||
+        normCat.includes('waffles and pancakes') ||
+        normCat.includes('waffles & pancakes') ||
+        normCat.includes('pancakes and waffles') ||
+        normCat.includes('pancakes & waffles') ||
+        (normCat.includes('waffle') && normCat.includes('pancake'))
+      );
+    },
+
+    isDedicatedNonComboBase(rawName = '', category = '') {
+      const normName = (rawName || '').toLowerCase().trim();
+      return /cheesecake|fudgee|cookie\s*dough|cookiedough|brownie|croffle|croissant|crepe|crêpe|burger|fries|chicken|tenders|wings|shake|smoothie|frappe|gelato|sorbet|sundae|water|coke|cola|fanta|sprite/i.test(normName);
+    },
+
+    hasExplicitWaffleOrPancakeInName(rawName = '') {
+      const normName = (rawName || '').toLowerCase().trim();
+      const hasWaffle = /\bwaffles?\b/i.test(normName);
+      const hasPancake = /\bpancakes?\b|\bhotcakes?\b/i.test(normName);
+      if (hasWaffle && !hasPancake) return 'WAFFLE';
+      if (hasPancake && !hasWaffle) return 'PANCAKE';
+      return null;
+    },
+
+    getDailyBaseReconciliations() {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const stored = localStorage.getItem('ts_daily_sales_ledger_reconciliations') || localStorage.getItem('ts_daily_base_reconciliations');
+          if (stored) return JSON.parse(stored);
+        }
+      } catch (e) {}
+      return this._memoryDailyBaseReconciliations || {};
+    },
+
+    saveDailyBaseReconciliations(recs) {
+      this._memoryDailyBaseReconciliations = recs;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('ts_daily_sales_ledger_reconciliations', JSON.stringify(recs));
+          localStorage.setItem('ts_daily_base_reconciliations', JSON.stringify(recs));
+        }
+      } catch (e) {}
+    },
+
+    getKitchenProductionLogs() {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const stored = localStorage.getItem('ts_kitchen_production_logs');
+          if (stored) return JSON.parse(stored);
+        }
+      } catch (e) {}
+      return this._memoryKitchenProductionLogs || [];
+    },
+
+    saveKitchenProductionLogs(logs) {
+      this._memoryKitchenProductionLogs = logs;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('ts_kitchen_production_logs', JSON.stringify(logs));
+        }
+      } catch (e) {}
+    },
+
+    executeDailyBaseReconciliation(payload = {}) {
+      const reportingDate = payload.reportingDate || 'ALL';
+      const waffles = parseInt(payload.waffles, 10) || 0;
+      const pancakes = parseInt(payload.pancakes, 10) || 0;
+      const totalDualUnits = parseInt(payload.totalDualUnits, 10) || (waffles + pancakes);
+      const channelSummary = payload.channelSummary || 'All Platforms';
+      const confirmedByUser = payload.confirmedByUser || 'Store Manager';
+      const totalWafflesOverall = (payload.totalWafflesOverall !== undefined) ? payload.totalWafflesOverall : waffles;
+      const totalPancakesOverall = (payload.totalPancakesOverall !== undefined) ? payload.totalPancakesOverall : pancakes;
+      const timestamp = new Date().toISOString();
+
+      // 1. Save to daily base reconciliations
+      const reconciliations = this.getDailyBaseReconciliations();
+      const recRecord = {
+        date: reportingDate,
+        channel_summary: channelSummary,
+        total_waffles_sold: totalWafflesOverall,
+        total_pancakes_sold: totalPancakesOverall,
+        split_waffles: waffles,
+        split_pancakes: pancakes,
+        total_dual_units: totalDualUnits,
+        confirmed_by_user: confirmedByUser,
+        confirmed_at: timestamp
+      };
+      reconciliations[reportingDate] = recRecord;
+      reconciliations['LATEST'] = recRecord;
+      this.saveDailyBaseReconciliations(reconciliations);
+
+      // 2. Save to Kitchen Production Logs (ts_kitchen_production_logs)
+      const kitchenLogs = this.getKitchenProductionLogs();
+      const kplEntry = {
+        id: 'KPL-' + Date.now(),
+        date: reportingDate,
+        timestamp: timestamp,
+        action: 'DAILY_BASE_RECONCILIATION_DEPLETION',
+        channel_summary: channelSummary,
+        total_dual_base_units: totalDualUnits,
+        waffles_depleted: waffles,
+        pancakes_depleted: pancakes,
+        depleted_batches: [
+          { batch: 'Waffle_Batter_Portion', portions: waffles, description: 'Waffle Batter / Prepped Waffles' },
+          { batch: 'Pancake_Batter_Portion', portions: pancakes, description: 'Pancake Batter' },
+          { batch: 'Topping_Sauce_Portions', portions: totalDualUnits, description: 'Associated Toppings' },
+          { batch: 'Packaging_Containers_Boxes', portions: totalDualUnits, description: 'Packaging & Containers' }
+        ],
+        confirmed_by_user: confirmedByUser,
+        status: 'CONFIRMED'
+      };
+      kitchenLogs.unshift(kplEntry);
+      this.saveKitchenProductionLogs(kitchenLogs);
+
+      // 3. Deplete physical stock if available in localStorage
+      const stock = this.getOnHandStock();
+      if (stock['Waffle_Batter_Portion'] !== undefined) {
+        stock['Waffle_Batter_Portion'] = Math.max(0, parseFloat((stock['Waffle_Batter_Portion'] - waffles).toFixed(2)));
+      }
+      if (stock['Pancake_Batter_Portion'] !== undefined) {
+        stock['Pancake_Batter_Portion'] = Math.max(0, parseFloat((stock['Pancake_Batter_Portion'] - pancakes).toFixed(2)));
+      }
+      const storageKey = this.isDemoMode ? 'ts_demo_stock_levels' : 'ts_stock_levels';
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(storageKey, JSON.stringify(stock));
+        }
+      } catch (e) {}
+
+      return {
+        success: true,
+        reconciliation: recRecord,
+        kitchenLog: kplEntry
+      };
     },
 
     lookupRegistry(sku = '', rawName = '') {
@@ -1335,6 +1474,19 @@
       if (norm === 'unresolved_base') {
         return { type: 'UNRESOLVED_BASE', label: 'Unresolved Base', plural: 'Unresolved Bases', icon: '❓', badge: '❓ Unresolved Base', deplete_batch: '', deplete_qty: 0, is_unresolved: true, tier: tier };
       }
+      if (norm === 'dual_base_combo') {
+        return {
+          type: 'DUAL_BASE_COMBO',
+          label: 'Waffles & Pancakes Combo',
+          plural: 'Waffles & Pancakes Combos',
+          icon: '🧇🥞',
+          badge: '🧇🥞 Waffle & Pancake',
+          deplete_batch: '',
+          deplete_qty: 0,
+          is_dual_base_combo: true,
+          tier: tier || 'DUAL_BASE_AMBIGUOUS'
+        };
+      }
 
       return { type: 'OTHER', label: b || 'General Menu', plural: (b || 'General Item') + 's', icon: '🍽️', badge: `🍽️ ${b || 'General'}`, deplete_batch: depleteBatch, deplete_qty: qty, tier: tier };
     },
@@ -1352,7 +1504,7 @@
       if (mainType === 'MILKSHAKE') return 'Beverages & Shakes';
       if (mainType === 'GELATO_SUNDAE') return 'Scoops / Ice Cream';
       if (mainType === 'UNRESOLVED_BASE') return 'Unresolved Recipe Base';
-      if (mainType === 'WAFFLE' || mainType === 'PANCAKE' || mainType === 'COOKIE_DOUGH' || mainType === 'CROFFLE' || mainType === 'CREPE') {
+      if (mainType === 'WAFFLE' || mainType === 'PANCAKE' || mainType === 'COOKIE_DOUGH' || mainType === 'CROFFLE' || mainType === 'CREPE' || mainType === 'DUAL_BASE_COMBO') {
         return 'Desserts/Waffles Audit';
       }
 
@@ -1434,6 +1586,76 @@
       const normNotes = (notes || '').toLowerCase();
       const cleanSku = (sku || '').trim().toUpperCase();
 
+      // Check manager custom overrides first
+      const customOverrides = this.getCustomBaseMappings();
+      if (cleanSku && customOverrides[cleanSku]) {
+        const b = customOverrides[cleanSku];
+        return this.formatBaseTypeInfo(b, this.getDepleteBatchForBase(b), 1, 'CUSTOM_OVERRIDE_SKU');
+      }
+      if (rawName && customOverrides[rawName.trim()]) {
+        const b = customOverrides[rawName.trim()];
+        return this.formatBaseTypeInfo(b, this.getDepleteBatchForBase(b), 1, 'CUSTOM_OVERRIDE_NAME');
+      }
+
+      // Check if item belongs to dual-base categories (e.g. "Waffles, Pancakes, Cookie Doughs, Cheesecakes" or "Waffles and Pancakes")
+      if (this.isDualBaseCategory(category)) {
+        // Exclude dedicated non-combo bases via regex (e.g. Cheesecake, Cookie Dough, Brownie, Croffle, etc.)
+        if (this.isDedicatedNonComboBase(rawName, category)) {
+          if (normName.includes('cheesecake') || normName.includes('fudgee')) {
+            return this.formatBaseTypeInfo('Cheesecake', 'Cheesecake_Base_Slice', 1, 'TIER_1_DEDICATED');
+          }
+          if (normName.includes('cookie dough') || normName.includes('cookiedough')) {
+            return this.formatBaseTypeInfo('Cookie Dough', 'Cookie_Dough_Puck', 1, 'TIER_1_DEDICATED');
+          }
+          if (normName.includes('croffle') || normName.includes('croissant')) {
+            return this.formatBaseTypeInfo('Croffle', 'Croissant_Dough_Piece', 1, 'TIER_1_DEDICATED');
+          }
+          if (normName.includes('crepe') || normName.includes('crêpe')) {
+            return this.formatBaseTypeInfo('Crepe', 'Crepe_Batter_Portion', 1, 'TIER_1_DEDICATED');
+          }
+        }
+
+        // Check if row SKU matches a dedicated base in MASTER_ITEM_REGISTRY (e.g. EL Fudgee -> Cheesecake)
+        if (cleanSku && this.MASTER_ITEM_REGISTRY[cleanSku]) {
+          const regItem = this.MASTER_ITEM_REGISTRY[cleanSku];
+          if (regItem.base_type === 'Cheesecake' || regItem.base_type === 'Cookie Dough') {
+            return this.formatBaseTypeInfo(regItem.base_type, regItem.deplete_batch, regItem.qty || 1, 'TIER_1_SKU');
+          }
+        }
+
+        // Check if item name explicitly distinguishes Waffle vs Pancake
+        const explicitNameBase = this.hasExplicitWaffleOrPancakeInName(rawName);
+        if (explicitNameBase === 'WAFFLE') {
+          return this.formatBaseTypeInfo('Waffle', 'Waffle_Batter_Portion', 1, 'EXPLICIT_NAME_WAFFLE');
+        }
+        if (explicitNameBase === 'PANCAKE') {
+          return this.formatBaseTypeInfo('Pancake', 'Pancake_Batter_Portion', 1, 'EXPLICIT_NAME_PANCAKE');
+        }
+
+        // Check customer modifiers / variations for explicit Waffle vs Pancake
+        const allModText = `${normMod} ${normVar} ${normNotes}`;
+        if (/\bwaffles?\b/i.test(allModText) && !/\bpancakes?\b/i.test(allModText)) {
+          return this.formatBaseTypeInfo('Waffle', 'Waffle_Batter_Portion', 1, 'EXPLICIT_MODIFIER_WAFFLE');
+        }
+        if (/\bpancakes?\b|\bhotcakes?\b/i.test(allModText) && !/\bwaffles?\b/i.test(allModText)) {
+          return this.formatBaseTypeInfo('Pancake', 'Pancake_Batter_Portion', 1, 'EXPLICIT_MODIFIER_PANCAKE');
+        }
+
+        // If base is NOT explicitly distinguished in item name (e.g. 'Buenos Días', 'Strawberry Fields', 'Mulah Green'):
+        // It is an Ambiguous Dual-Base Combo Item!
+        return {
+          type: 'DUAL_BASE_COMBO',
+          label: 'Waffles & Pancakes Combo',
+          plural: 'Waffles & Pancakes Combos',
+          icon: '🧇🥞',
+          badge: '🧇🥞 Waffle & Pancake',
+          deplete_batch: '',
+          deplete_qty: 0,
+          is_dual_base_combo: true,
+          tier: 'DUAL_BASE_AMBIGUOUS'
+        };
+      }
+
       // =========================================================
       // TIER 1 (Highest Priority - SKU Match)
       // Match row SKU against Master Recipe Catalog / MASTER_ITEM_REGISTRY
@@ -1498,9 +1720,9 @@
       // TIER 3 (Fallback - Category Guessing)
       // ONLY use Category keyword guessing if Tier 1 and Tier 2 fail.
       // =========================================================
-      // If category is the bundled category "Waffles, Pancakes, Cookie Doughs, Cheesecakes":
+      // If category is unclassified/unknown or unresolved:
       // Do NOT default to Waffle! Tag it as UNRESOLVED_BASE!
-      if (normCat.includes('waffles, pancakes, cookie doughs, cheesecakes')) {
+      if (normCat.includes('unresolved') || normCat.includes('unclassified') || normCat.includes('unknown') || normCat.includes('waffles, pancakes, cookie doughs, cheesecakes')) {
         return {
           type: 'UNRESOLVED_BASE',
           label: 'Unresolved Base',
@@ -1549,8 +1771,11 @@
         normName.includes('buenos dias') ||
         normName.includes('twist it') ||
         normName.includes('cherry pie') ||
+        normName.includes('strawberry fields') ||
+        normName.includes('mulah green') ||
         mainInfo.type === 'CHEESECAKE' ||
-        mainInfo.type === 'UNRESOLVED_BASE'
+        mainInfo.type === 'UNRESOLVED_BASE' ||
+        mainInfo.type === 'DUAL_BASE_COMBO'
       ) {
         return baseItemName;
       }
@@ -1603,6 +1828,14 @@
       channelTotals['Square POS (In-Store)'] = channelTotals['Square'];
 
       const availableDatesSet = new Set();
+      const dualBaseAmbiguousItems = [];
+      let totalDualBaseUnits = 0;
+      const dualChannelCounts = {
+        'Square': 0,
+        'Uber Eats': 0,
+        'Just Eat': 0,
+        'Deliveroo': 0
+      };
 
       for (const file of parsedFiles) {
         for (const item of file.items) {
@@ -1725,6 +1958,27 @@
           grandTotalCommission += comm;
           grandTotalNet += net;
           grandTotalDiscounts += disc;
+ 
+          // Track ambiguous dual-base combo items (e.g. Buenos Días, Strawberry Fields, Mulah Green)
+          if (mainInfo.is_dual_base_combo || mainInfo.type === 'DUAL_BASE_COMBO') {
+            totalDualBaseUnits += qty;
+            const normChannelName = isSquareChannel ? 'Square' : (item.channel === 'Uber Eats' ? 'Uber Eats' : (item.channel === 'Just Eat' ? 'Just Eat' : (item.channel === 'Deliveroo' ? 'Deliveroo' : 'Square')));
+            if (dualChannelCounts[normChannelName] !== undefined) {
+              dualChannelCounts[normChannelName] += qty;
+            } else {
+              dualChannelCounts[normChannelName] = qty;
+            }
+            dualBaseAmbiguousItems.push({
+              raw_name: item.raw_name,
+              item_name: finalItemName,
+              sku: item.sku || '',
+              category: item.category || '',
+              channel: normChannelName,
+              quantity: qty,
+              gross_sales: gross,
+              date: item.date || ''
+            });
+          }
 
           // Track unresolved recipe base items for manager classification alert
           if (mainInfo.is_unresolved) {
@@ -1856,6 +2110,88 @@
         m.items_count++;
       });
 
+      // 3b. Resolve and apply Daily Base Splitter reconciliation (Waffles vs Pancakes combo allocation)
+      const storedReconciliations = this.getDailyBaseReconciliations();
+      const targetDateKey = reportingDate || 'ALL';
+      const existingRec = options.baseSplit ||
+        storedReconciliations[targetDateKey] ||
+        (targetDateKey !== 'ALL' ? storedReconciliations['ALL'] : null) ||
+        storedReconciliations['LATEST'] ||
+        null;
+
+      const isReconciled = totalDualBaseUnits === 0 || Boolean(existingRec && (
+        (existingRec.split_waffles !== undefined && existingRec.split_pancakes !== undefined && (parseInt(existingRec.split_waffles, 10) + parseInt(existingRec.split_pancakes, 10) === totalDualBaseUnits)) ||
+        (existingRec.waffles !== undefined && existingRec.pancakes !== undefined && (parseInt(existingRec.waffles, 10) + parseInt(existingRec.pancakes, 10) === totalDualBaseUnits))
+      ));
+
+      let splitWaffles = 0;
+      let splitPancakes = 0;
+
+      if (isReconciled && totalDualBaseUnits > 0 && existingRec) {
+        splitWaffles = parseInt(existingRec.split_waffles !== undefined ? existingRec.split_waffles : existingRec.waffles, 10) || 0;
+        splitPancakes = parseInt(existingRec.split_pancakes !== undefined ? existingRec.split_pancakes : existingRec.pancakes, 10) || 0;
+      }
+
+      // Build channel summary string
+      const channelSummaryParts = [];
+      ['Square', 'Uber Eats', 'Just Eat', 'Deliveroo'].forEach(ch => {
+        if (dualChannelCounts[ch] > 0) {
+          channelSummaryParts.push(`${ch}: ${dualChannelCounts[ch]}`);
+        }
+      });
+      const channelSummaryStr = channelSummaryParts.join(', ') || 'All Platforms';
+
+      // Allocate reconciled combo units into Waffles and Pancakes in mainsSummary
+      if (isReconciled && totalDualBaseUnits > 0) {
+        if (!mainsSummary['WAFFLE']) mainsSummary['WAFFLE'] = { type: 'WAFFLE', label: 'Dessert / Waffles', plural: 'Dessert / Waffles', icon: '🧇', badge: '🧇 Dessert / Waffles', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 };
+        if (!mainsSummary['PANCAKE']) mainsSummary['PANCAKE'] = { type: 'PANCAKE', label: 'Pancakes', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancakes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 };
+
+        mainsSummary['WAFFLE'].units += splitWaffles;
+        mainsSummary['PANCAKE'].units += splitPancakes;
+
+        const dualGross = dualBaseAmbiguousItems.reduce((s, i) => s + (i.gross_sales || 0), 0);
+        const wRatio = splitWaffles / totalDualBaseUnits;
+        const pRatio = splitPancakes / totalDualBaseUnits;
+        mainsSummary['WAFFLE'].gross += parseFloat((dualGross * wRatio).toFixed(2));
+        mainsSummary['PANCAKE'].gross += parseFloat((dualGross * pRatio).toFixed(2));
+
+        // Distribute channels proportionally
+        ['Square', 'Uber Eats', 'Just Eat', 'Deliveroo'].forEach(ch => {
+          const chCount = dualChannelCounts[ch] || 0;
+          if (chCount > 0) {
+            const chW = Math.round(chCount * wRatio);
+            const chP = chCount - chW;
+            if (ch === 'Square') {
+              mainsSummary['WAFFLE'].square_units = (mainsSummary['WAFFLE'].square_units || 0) + chW;
+              mainsSummary['PANCAKE'].square_units = (mainsSummary['PANCAKE'].square_units || 0) + chP;
+            } else if (ch === 'Uber Eats') {
+              mainsSummary['WAFFLE'].uber_units = (mainsSummary['WAFFLE'].uber_units || 0) + chW;
+              mainsSummary['PANCAKE'].uber_units = (mainsSummary['PANCAKE'].uber_units || 0) + chP;
+            } else if (ch === 'Just Eat') {
+              mainsSummary['WAFFLE'].just_eat_units = (mainsSummary['WAFFLE'].just_eat_units || 0) + chW;
+              mainsSummary['PANCAKE'].just_eat_units = (mainsSummary['PANCAKE'].just_eat_units || 0) + chP;
+            } else if (ch === 'Deliveroo') {
+              mainsSummary['WAFFLE'].deliveroo_units = (mainsSummary['WAFFLE'].deliveroo_units || 0) + chW;
+              mainsSummary['PANCAKE'].deliveroo_units = (mainsSummary['PANCAKE'].deliveroo_units || 0) + chP;
+            }
+          }
+        });
+      }
+
+      const dailyBaseSplit = {
+        totalDualBaseUnits: totalDualBaseUnits,
+        channelSummary: channelSummaryStr,
+        channelCounts: dualChannelCounts,
+        items: dualBaseAmbiguousItems,
+        isReconciled: isReconciled,
+        waffles: splitWaffles,
+        pancakes: splitPancakes,
+        confirmedByUser: existingRec ? (existingRec.confirmed_by_user || 'Store Manager') : null,
+        confirmedAt: existingRec ? (existingRec.confirmed_at || null) : null,
+        totalWafflesOverall: mainsSummary['WAFFLE'] ? mainsSummary['WAFFLE'].units : 0,
+        totalPancakesOverall: mainsSummary['PANCAKE'] ? mainsSummary['PANCAKE'].units : 0
+      };
+
       const coreMainsKeys = ['WAFFLE', 'PANCAKE', 'COOKIE_DOUGH', 'CROFFLE', 'CHEESECAKE', 'CREPE', 'SAVOURY_BURGER'];
       const totalCoreMainsVolume = coreMainsKeys.reduce((sum, k) => sum + (mainsSummary[k] ? mainsSummary[k].units : 0), 0);
 
@@ -1918,6 +2254,7 @@
         masterLedger: ledgerRows,
         mainsSummary,
         totalCoreMainsVolume,
+        dailyBaseSplit,
         unmappedQueue: unmappedRows,
         unmappedCount: unmappedRows.length,
         unresolvedBases: unresolvedBasesList,
@@ -2103,8 +2440,11 @@
       const baseline = {
         'Liege Waffle Base': 12.0,
         'Waffle_Batter_Portion': 30.0,
+        'Pancake_Batter_Portion': 25.0,
         'Cheesecake_Base_Slice': 12.0,
         'Cookie_Dough_Puck': 20.0,
+        'Topping_Sauce_Portions': 50.0,
+        'Packaging_Containers_Boxes': 60.0,
         'Cookie Dough Base': 2.5,
         'Belgian Milk Chocolate Chips': 1.8,
         'Comelle Ice Cream Mix 1 Litre': 3.2,
@@ -2136,6 +2476,9 @@
         'Belgian Milk Chocolate Chips': 2.0,
         'Liege Waffle Base': 5.0,
         'Waffle_Batter_Portion': 5.0,
+        'Pancake_Batter_Portion': 4.0,
+        'Topping_Sauce_Portions': 10.0,
+        'Packaging_Containers_Boxes': 15.0,
         'Cheesecake_Base_Slice': 3.0,
         'Comelle Ice Cream Mix 1 Litre': 2.0,
         'Chef Larder Fries 2.5kg': 2.0,
@@ -2161,7 +2504,7 @@
       return moqMap;
     },
 
-    calculateDepletionAndAlarms(consolidatedMatrix, onHandStock = null, moqMap = null) {
+    calculateDepletionAndAlarms(consolidatedMatrix, onHandStock = null, moqMap = null, dailyBaseSplit = null) {
       const stock = onHandStock || this.getOnHandStock();
       const moqs = moqMap || this.getSafetyStockMOQ();
 
@@ -2219,6 +2562,68 @@
           const rec = consumptionMap.get(ingName);
           rec.theoretical_consumption += portionQty;
           rec.dishes_using.add(row.master_item_name);
+        }
+      }
+
+      // 1b. Deplete reconciled Daily Base Splitter allocations (Waffles, Pancakes, Toppings, Packaging)
+      const splitInfo = dailyBaseSplit || (this.getDailyBaseReconciliations ? this.getDailyBaseReconciliations()['LATEST'] : null);
+      if (splitInfo) {
+        const wafflesCount = parseInt(splitInfo.split_waffles !== undefined ? splitInfo.split_waffles : splitInfo.waffles, 10) || 0;
+        const pancakesCount = parseInt(splitInfo.split_pancakes !== undefined ? splitInfo.split_pancakes : splitInfo.pancakes, 10) || 0;
+        const totalComboUnits = (splitInfo.totalDualBaseUnits !== undefined ? splitInfo.totalDualBaseUnits : (wafflesCount + pancakesCount)) || (wafflesCount + pancakesCount);
+
+        if (wafflesCount > 0) {
+          if (!consumptionMap.has('Waffle_Batter_Portion')) {
+            consumptionMap.set('Waffle_Batter_Portion', {
+              ingredient_name: 'Waffle_Batter_Portion',
+              theoretical_consumption: 0,
+              unit: 'portion',
+              dishes_using: new Set()
+            });
+          }
+          const wRec = consumptionMap.get('Waffle_Batter_Portion');
+          wRec.theoretical_consumption += wafflesCount;
+          wRec.dishes_using.add('Reconciled Waffle Base Split');
+        }
+
+        if (pancakesCount > 0) {
+          if (!consumptionMap.has('Pancake_Batter_Portion')) {
+            consumptionMap.set('Pancake_Batter_Portion', {
+              ingredient_name: 'Pancake_Batter_Portion',
+              theoretical_consumption: 0,
+              unit: 'portion',
+              dishes_using: new Set()
+            });
+          }
+          const pRec = consumptionMap.get('Pancake_Batter_Portion');
+          pRec.theoretical_consumption += pancakesCount;
+          pRec.dishes_using.add('Reconciled Pancake Base Split');
+        }
+
+        if (totalComboUnits > 0) {
+          if (!consumptionMap.has('Topping_Sauce_Portions')) {
+            consumptionMap.set('Topping_Sauce_Portions', {
+              ingredient_name: 'Topping_Sauce_Portions',
+              theoretical_consumption: 0,
+              unit: 'portion',
+              dishes_using: new Set()
+            });
+          }
+          const tRec = consumptionMap.get('Topping_Sauce_Portions');
+          tRec.theoretical_consumption += totalComboUnits;
+          tRec.dishes_using.add('Combo Desserts (Topping Sauce)');
+
+          if (!consumptionMap.has('Packaging_Containers_Boxes')) {
+            consumptionMap.set('Packaging_Containers_Boxes', {
+              ingredient_name: 'Packaging_Containers_Boxes',
+              theoretical_consumption: 0,
+              unit: 'unit',
+              dishes_using: new Set()
+            });
+          }
+          const bRec = consumptionMap.get('Packaging_Containers_Boxes');
+          bRec.theoretical_consumption += totalComboUnits;
+          bRec.dishes_using.add('Combo Desserts (Packaging & Boxes)');
         }
       }
 

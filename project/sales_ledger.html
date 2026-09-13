@@ -367,6 +367,46 @@
     </div>
 
     <!-- ======================================================== -->
+    <!-- DAILY BASE SPLITTER CONFIRMATION & AUDIT BANNER -->
+    <!-- ======================================================== -->
+    <div id="daily-base-reconciled-banner" class="hidden mb-6 glass-panel p-5 rounded-3xl border shadow-xl backdrop-blur-md transition-all">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+          <div id="reconciled-banner-icon" class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+            🧇🥞
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h4 id="reconciled-banner-title" class="text-base font-black text-white heading-font tracking-wide">
+                Daily Dessert Base Reconciliation
+              </h4>
+              <span id="reconciled-status-pill" class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono">
+                Verified
+              </span>
+            </div>
+            <p id="reconciled-banner-subtitle" class="text-xs text-slate-300 mt-1">
+              Exact division of combo dessert sales across Square, Uber Eats, Just Eat, and Deliveroo.
+            </p>
+            <div class="flex items-center gap-3 mt-2 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-200 text-xs font-bold">
+                🧇 <span id="banner-waffles-count">Total Waffles Sold: 0</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-200 text-xs font-bold">
+                🥞 <span id="banner-pancakes-count">Total Pancakes Sold: 0</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="openDailyBaseSplitterModal()" id="btn-open-splitter-modal" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs transition-all flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+            <i data-lucide="split" class="w-4 h-4"></i> <span id="btn-splitter-label">Reconcile Combo Bases</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
     <!-- UNRESOLVED BASE MANAGER CLASSIFICATION ALERT PANEL -->
     <!-- ======================================================== -->
     <div id="unresolved-base-alert-panel" class="hidden mb-6 glass-panel p-5 rounded-3xl border border-amber-500/50 bg-gradient-to-r from-amber-950/40 via-yellow-950/25 to-black/60 shadow-xl backdrop-blur-md">
@@ -640,6 +680,158 @@
           Close
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: DAILY BASE SPLITTER CONFIRMATION    -->
+  <!-- ========================================== -->
+  <div id="daily-base-splitter-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="bg-[#0b1f17] border border-amber-500/40 rounded-3xl max-w-xl w-full flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-black/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center text-xl shrink-0">
+            🧇🥞
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base heading-font">Reconcile Daily Dessert Bases</h3>
+            <p class="text-xs text-amber-200/90 mt-0.5">
+              You sold <span id="splitter-total-units" class="font-mono font-black text-amber-400">0</span> combo dessert items across Square, Uber Eats, Just Eat, and Deliveroo today.
+            </p>
+          </div>
+        </div>
+        <button onclick="closeDailyBaseSplitterModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-5 bg-slate-950/60 max-h-[75vh] overflow-y-auto">
+        
+        <!-- Channels Context Badge -->
+        <div class="flex items-center justify-between p-3 rounded-2xl bg-black/40 border border-white/10 text-xs">
+          <div class="flex items-center gap-2 text-slate-300">
+            <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i>
+            <span id="splitter-channel-summary-text">Channels: Square, Uber Eats, Just Eat, Deliveroo</span>
+          </div>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold">
+            5-Second Reconciliation
+          </span>
+        </div>
+
+        <!-- Quick 5-Second Preset Buttons -->
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+            Quick Split Presets:
+          </label>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" onclick="applySplitPreset(0.5)" class="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-bold text-slate-200 transition-all hover:scale-[1.02] text-center">
+              50 / 50 Split
+            </button>
+            <button type="button" onclick="applySplitPreset(0.7)" class="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-bold text-slate-200 transition-all hover:scale-[1.02] text-center">
+              70% Waffles
+            </button>
+            <button type="button" onclick="applySplitPreset(1.0)" class="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs font-bold text-amber-200 transition-all hover:scale-[1.02] text-center">
+              All Waffles
+            </button>
+            <button type="button" onclick="applySplitPreset(0.0)" class="px-2.5 py-1.5 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-xs font-bold text-orange-200 transition-all hover:scale-[1.02] text-center">
+              All Pancakes
+            </button>
+          </div>
+        </div>
+
+        <!-- Two Number Inputs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <!-- Input 1: Waffles -->
+          <div class="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex flex-col gap-2">
+            <label for="input-waffles-count" class="text-xs font-bold text-amber-200 flex items-center gap-1.5">
+              🧇 Waffles Prepared / Sold
+            </label>
+            <div class="relative">
+              <input
+                type="number"
+                id="input-waffles-count"
+                min="0"
+                autofocus
+                oninput="handleWaffleInput(this.value)"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-amber-500/40 text-white font-mono text-lg font-black outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/30 transition-all"
+                placeholder="0"
+              />
+              <span class="absolute right-3 top-3 text-xs text-slate-400 font-bold">portions</span>
+            </div>
+            <p class="text-[10px] text-amber-300/70">Depletes Waffle Batter / Prepped Waffles batch</p>
+          </div>
+
+          <!-- Input 2: Pancakes -->
+          <div class="p-4 rounded-2xl bg-orange-950/20 border border-orange-500/30 flex flex-col gap-2">
+            <label for="input-pancakes-count" class="text-xs font-bold text-orange-200 flex items-center gap-1.5">
+              🥞 Pancakes Prepared / Sold
+            </label>
+            <div class="relative">
+              <input
+                type="number"
+                id="input-pancakes-count"
+                min="0"
+                oninput="handlePancakeInput(this.value)"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-orange-500/40 text-white font-mono text-lg font-black outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-500/30 transition-all"
+                placeholder="0"
+              />
+              <span class="absolute right-3 top-3 text-xs text-slate-400 font-bold">portions</span>
+            </div>
+            <p class="text-[10px] text-orange-300/70">Depletes Pancake Batter batch</p>
+          </div>
+
+        </div>
+
+        <!-- Real-Time Validation Card -->
+        <div class="p-3.5 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-between gap-3 text-xs">
+          <div id="splitter-validation-msg" class="flex items-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+            <span class="text-emerald-300 font-bold">Perfect Allocation</span>
+          </div>
+          <div class="text-slate-400 font-mono text-[11px]">
+            Unallocated: <span id="splitter-remaining-units" class="font-bold text-white">0</span>
+          </div>
+        </div>
+
+        <!-- Ingested Combo Items Summary (Buenos Días, Strawberry Fields, etc.) -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Identified Dual-Base Combo Items:
+            </span>
+            <span class="text-[10px] text-slate-400">Auto-aggregated</span>
+          </div>
+          <div id="splitter-items-list" class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer Action Buttons -->
+      <div class="px-6 py-4 border-t border-white/10 bg-black/40 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onclick="closeDailyBaseSplitterModal()"
+          class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold text-xs transition-colors"
+        >
+          Cancel / Keep Pending
+        </button>
+
+        <button
+          type="button"
+          id="btn-confirm-base-split"
+          onclick="confirmDailyBaseSplit()"
+          class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-300 text-slate-950 font-black text-xs transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+        >
+          <i data-lucide="check" class="w-4 h-4"></i> Confirm & Deplete Stock
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -918,6 +1110,196 @@
       recalculatePipeline();
     }
 
+    function renderDailyBaseReconciledBanner(splitData) {
+      const banner = document.getElementById('daily-base-reconciled-banner');
+      if (!banner) return;
+
+      if (!splitData || splitData.totalDualBaseUnits <= 0) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      banner.classList.remove('hidden');
+      const wCountElem = document.getElementById('banner-waffles-count');
+      const pCountElem = document.getElementById('banner-pancakes-count');
+      const titleElem = document.getElementById('reconciled-banner-title');
+      const pillElem = document.getElementById('reconciled-status-pill');
+      const subElem = document.getElementById('reconciled-banner-subtitle');
+      const btnLabel = document.getElementById('btn-splitter-label');
+
+      if (splitData.isReconciled) {
+        banner.className = 'mb-6 glass-panel p-5 rounded-3xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-teal-950/25 to-black/60 shadow-xl backdrop-blur-md transition-all';
+        pillElem.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        pillElem.innerText = '✓ Verified & Reconciled';
+        titleElem.innerText = 'Daily Dessert Bases: Reconciled & Depleted';
+        subElem.innerText = `Reconciled by ${splitData.confirmedByUser || 'Store Manager'}: divided ${splitData.totalDualBaseUnits} combo units into ${splitData.waffles} Waffles and ${splitData.pancakes} Pancakes across all platforms.`;
+        wCountElem.innerText = `Total Waffles Sold: ${splitData.totalWafflesOverall}`;
+        pCountElem.innerText = `Total Pancakes Sold: ${splitData.totalPancakesOverall}`;
+        if (btnLabel) btnLabel.innerText = 'Modify Split';
+      } else {
+        banner.className = 'mb-6 glass-panel p-5 rounded-3xl border border-amber-500/50 bg-gradient-to-r from-amber-950/40 via-yellow-950/25 to-black/60 shadow-xl backdrop-blur-md transition-all';
+        pillElem.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse';
+        pillElem.innerText = '⚠️ Action Required';
+        titleElem.innerText = 'Reconcile Daily Dessert Bases';
+        subElem.innerText = `You sold ${splitData.totalDualBaseUnits} combo dessert items across ${splitData.channelSummary || 'Square, Uber Eats, Just Eat, Deliveroo'} today. Divide into exact Waffle and Pancake units.`;
+        wCountElem.innerText = `Explicit Waffles: ${splitData.totalWafflesOverall}`;
+        pCountElem.innerText = `Explicit Pancakes: ${splitData.totalPancakesOverall}`;
+        if (btnLabel) btnLabel.innerText = 'Reconcile Bases Now';
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function openDailyBaseSplitterModal() {
+      if (!currentConsolidated || !currentConsolidated.dailyBaseSplit) return;
+      const split = currentConsolidated.dailyBaseSplit;
+      const totalUnits = split.totalDualBaseUnits;
+      if (totalUnits <= 0) return;
+
+      const modal = document.getElementById('daily-base-splitter-modal');
+      if (!modal) return;
+
+      document.getElementById('splitter-total-units').innerText = totalUnits;
+      document.getElementById('splitter-channel-summary-text').innerText = `Channels: ${split.channelSummary || 'Square, Uber Eats, Just Eat, Deliveroo'}`;
+
+      // Set initial values (either existing split, or 50/50 default)
+      const initWaffles = split.isReconciled ? split.waffles : Math.ceil(totalUnits / 2);
+      const initPancakes = split.isReconciled ? split.pancakes : (totalUnits - initWaffles);
+
+      const inputW = document.getElementById('input-waffles-count');
+      const inputP = document.getElementById('input-pancakes-count');
+      inputW.value = initWaffles;
+      inputP.value = initPancakes;
+
+      renderSplitterItemsList(split.items || []);
+      updateSplitterValidation();
+
+      modal.classList.remove('hidden');
+      setTimeout(() => inputW.focus(), 50);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeDailyBaseSplitterModal() {
+      window._suppressAutoBaseSplitModal = true;
+      const modal = document.getElementById('daily-base-splitter-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renderSplitterItemsList(items) {
+      const container = document.getElementById('splitter-items-list');
+      if (!container) return;
+      if (!items || items.length === 0) {
+        container.innerHTML = '<p class="text-slate-400 text-xs italic">No dual-base combo items identified.</p>';
+        return;
+      }
+      container.innerHTML = items.map(item => `
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/5 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-amber-400 font-bold">🧇🥞</span>
+            <div>
+              <span class="text-white font-semibold">${item.raw_name || item.item_name}</span>
+              <span class="text-[10px] text-slate-400 ml-1.5">(${item.channel})</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-slate-300 font-mono font-bold">${item.quantity} sold</span>
+            <span class="text-emerald-400 font-mono">£${(item.gross_sales || 0).toFixed(2)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function handleWaffleInput(val) {
+      if (!currentConsolidated || !currentConsolidated.dailyBaseSplit) return;
+      const total = currentConsolidated.dailyBaseSplit.totalDualBaseUnits;
+      const w = parseInt(val, 10);
+      if (!isNaN(w) && w >= 0 && w <= total) {
+        document.getElementById('input-pancakes-count').value = total - w;
+      }
+      updateSplitterValidation();
+    }
+
+    function handlePancakeInput(val) {
+      updateSplitterValidation();
+    }
+
+    function applySplitPreset(waffleRatio) {
+      if (!currentConsolidated || !currentConsolidated.dailyBaseSplit) return;
+      const total = currentConsolidated.dailyBaseSplit.totalDualBaseUnits;
+      const w = Math.round(total * waffleRatio);
+      const p = total - w;
+      document.getElementById('input-waffles-count').value = w;
+      document.getElementById('input-pancakes-count').value = p;
+      updateSplitterValidation();
+    }
+
+    function updateSplitterValidation() {
+      if (!currentConsolidated || !currentConsolidated.dailyBaseSplit) return;
+      const total = currentConsolidated.dailyBaseSplit.totalDualBaseUnits;
+      const inputW = document.getElementById('input-waffles-count');
+      const inputP = document.getElementById('input-pancakes-count');
+      const w = parseInt(inputW.value, 10) || 0;
+      const p = parseInt(inputP.value, 10) || 0;
+      const allocated = w + p;
+      const remaining = total - allocated;
+
+      const remElem = document.getElementById('splitter-remaining-units');
+      const msgElem = document.getElementById('splitter-validation-msg');
+      const btn = document.getElementById('btn-confirm-base-split');
+
+      if (remaining === 0) {
+        if (remElem) remElem.innerText = '0';
+        if (msgElem) {
+          msgElem.innerHTML = '<span class="text-emerald-400 font-bold flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Perfectly Allocated (' + total + ' of ' + total + ' units)</span>';
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50', 'cursor-not-allowed');
+          btn.classList.add('hover:from-emerald-400', 'hover:to-teal-300', 'shadow-emerald-500/25');
+        }
+      } else {
+        if (remElem) remElem.innerText = remaining;
+        if (msgElem) {
+          const diffText = remaining > 0 ? `${remaining} unallocated units remaining` : `${Math.abs(remaining)} units over-allocated`;
+          msgElem.innerHTML = '<span class="text-amber-400 font-bold flex items-center gap-1"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> ' + diffText + '</span>';
+        }
+        if (btn) {
+          btn.disabled = true;
+          btn.classList.add('opacity-50', 'cursor-not-allowed');
+          btn.classList.remove('hover:from-emerald-400', 'hover:to-teal-300', 'shadow-emerald-500/25');
+        }
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function confirmDailyBaseSplit() {
+      if (!currentConsolidated || !currentConsolidated.dailyBaseSplit) return;
+      const total = currentConsolidated.dailyBaseSplit.totalDualBaseUnits;
+      const w = parseInt(document.getElementById('input-waffles-count').value, 10) || 0;
+      const p = parseInt(document.getElementById('input-pancakes-count').value, 10) || 0;
+      if (w + p !== total) return;
+
+      const btn = document.getElementById('btn-confirm-base-split');
+      if (btn) btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Depleting Stock...';
+
+      const res = SalesEngine.executeDailyBaseReconciliation({
+        reportingDate: activeReportingDate,
+        waffles: w,
+        pancakes: p,
+        totalDualUnits: total,
+        channelSummary: currentConsolidated.dailyBaseSplit.channelSummary,
+        confirmedByUser: 'Store Manager',
+        totalWafflesOverall: (currentConsolidated.mainsSummary['WAFFLE'] ? currentConsolidated.mainsSummary['WAFFLE'].units : 0) + w,
+        totalPancakesOverall: (currentConsolidated.mainsSummary['PANCAKE'] ? currentConsolidated.mainsSummary['PANCAKE'].units : 0) + p
+      });
+
+      window._suppressAutoBaseSplitModal = true;
+      closeDailyBaseSplitterModal();
+      if (btn) btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Confirm & Deplete Stock';
+
+      // Re-run pipeline to update metrics, stock alarms, and PDF reports
+      recalculatePipeline();
+    }
+
     function recalculatePipeline() {
       if (!currentParsedFeeds.length) return;
 
@@ -925,6 +1307,17 @@
       currentConsolidated = SalesEngine.consolidateSales(currentParsedFeeds, {
         reportingDate: activeReportingDate
       });
+
+      // 1b. Render Daily Base Reconciliation Banner
+      renderDailyBaseReconciledBanner(currentConsolidated.dailyBaseSplit);
+
+      // 1c. Intercept Workflow: If Total_Dual_Base_Units > 0 and not yet reconciled for today, auto-open modal!
+      if (currentConsolidated.dailyBaseSplit &&
+          currentConsolidated.dailyBaseSplit.totalDualBaseUnits > 0 &&
+          !currentConsolidated.dailyBaseSplit.isReconciled &&
+          !window._suppressAutoBaseSplitModal) {
+        openDailyBaseSplitterModal();
+      }
 
       // 2. Render Unresolved Base Manager Classification Alert
       renderUnresolvedBasesAlert(currentConsolidated.unresolvedBases || []);
@@ -939,7 +1332,12 @@
       renderMasterLedgerTable();
 
       // 6. Run Depletion in Background (Optional Drawer)
-      currentDepletionResult = SalesEngine.calculateDepletionAndAlarms(currentConsolidated.masterLedger);
+      currentDepletionResult = SalesEngine.calculateDepletionAndAlarms(
+        currentConsolidated.masterLedger,
+        null,
+        null,
+        currentConsolidated.dailyBaseSplit
+      );
       renderDepletionDetails(currentDepletionResult);
 
       if (window.lucide) lucide.createIcons();
@@ -1448,6 +1846,7 @@
             <td style="padding: 5px 8px; font-weight: 800; color: ${isHighlight ? '#b45309' : '#0f172a'};">
               ${k.label}
               ${isHighlight ? '<span style="font-size: 7.5px; background: #fef3c7; color: #92400e; padding: 1px 4px; border-radius: 3px; margin-left: 4px; font-weight: 800;">CORE ANCHOR</span>' : ''}
+              ${isHighlight && data.dailyBaseSplit && data.dailyBaseSplit.isReconciled ? '<span style="font-size: 7.5px; background: #d1fae5; color: #065f46; padding: 1px 4px; border-radius: 3px; margin-left: 4px; font-weight: 800;">VERIFIED SPLIT</span>' : ''}
             </td>
             <td style="padding: 5px 6px; text-align: center; color: #4338ca; font-weight: 700;">${sq || '-'}</td>
             <td style="padding: 5px 6px; text-align: center; color: #047857; font-weight: 700;">${ub || '-'}</td>
@@ -1602,9 +2001,16 @@
                   Culinary Anchor Volumes Disambiguated From Flavours & Modifiers (Total Mains: ${totalMainsUnits} Units)
                 </p>
               </div>
-              <span style="font-size: 8px; font-weight: 800; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 6px; border-radius: 4px;">
-                WAFFLES & PANCAKES AUDIT
-              </span>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 8px; font-weight: 800; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 6px; border-radius: 4px;">
+                  WAFFLES & PANCAKES AUDIT
+                </span>
+                ${data.dailyBaseSplit && data.dailyBaseSplit.isReconciled ? `
+                  <span style="font-size: 8px; font-weight: 800; color: #065f46; background: #d1fae5; border: 1px solid #6ee7b7; padding: 2px 6px; border-radius: 4px;">
+                    ✓ VERIFIED SPLIT: ${data.dailyBaseSplit.waffles} WAFFLES / ${data.dailyBaseSplit.pancakes} PANCAKES
+                  </span>
+                ` : ''}
+              </div>
             </div>
 
             <!-- 6 Base Highlight Cards -->

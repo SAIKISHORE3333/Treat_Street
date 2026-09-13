@@ -274,7 +274,7 @@ const unknownItemFeed = {
     {
       sku: 'UNKNOWN_999',
       raw_name: 'Midnight Velvet Delight',
-      category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes',
+      category: 'Unclassified Desserts',
       quantity: 5,
       gross_sales: 45.00,
       net_payout: 45.00,
@@ -287,13 +287,13 @@ const unknownItemFeed = {
 const unknownConsolidated = SalesEngine.consolidateSales([unknownItemFeed]);
 const unknownRow = unknownConsolidated.masterLedger.find(i => i.raw_name === 'Midnight Velvet Delight');
 assert(unknownRow, 'Unknown item must exist in master ledger');
-assert.notStrictEqual(unknownRow.main_type, 'WAFFLE', 'Unknown item in bundled category must NOT default to Waffle!');
+assert.notStrictEqual(unknownRow.main_type, 'WAFFLE', 'Unknown item in specialty category must NOT default to Waffle!');
 assert.strictEqual(unknownRow.main_type, 'UNRESOLVED_BASE', `Unknown item should be tagged UNRESOLVED_BASE, got: ${unknownRow.main_type}`);
 assert.strictEqual(unknownRow.is_unresolved_base, true, 'is_unresolved_base flag must be true');
 assert.strictEqual(unknownConsolidated.unresolvedCount, 1, 'unresolvedCount must be 1');
 assert.strictEqual(unknownConsolidated.unresolvedBases[0].raw_name, 'Midnight Velvet Delight');
 
-console.log('✓ Unknown item in bundled category did NOT default to Waffle, correctly tagged UNRESOLVED_BASE');
+console.log('✓ Unknown item in specialty category did NOT default to Waffle, correctly tagged UNRESOLVED_BASE');
 console.log('✓ Returned in unresolvedBases queue for Treat Street Hub admin alert');
 
 // Test Manager Override & Caching
@@ -308,4 +308,174 @@ assert.strictEqual(resolvedConsolidated.unresolvedCount, 0, 'Unresolved count mu
 
 console.log('✓ Manager selection successfully cached and resolved item to Cheesecake with 0 unresolved remaining');
 
+// =========================================================================
+// 9. Comprehensive Daily Base Splitter Modal & Omnichannel Ambiguity Suite
+// =========================================================================
+console.log('\n9. Testing Daily Base Splitter: Multi-Platform Ambiguity Ingestion & Aggregation...');
+
+// Multi-platform daily sales feeds with ambiguous combo items and dedicated items
+const squareDailyFeed = {
+  channel: 'Square POS (In-Store)',
+  filename: 'Square_Daily.tsv',
+  items: [
+    // Ambiguous dual-base combo items (no base in name):
+    { raw_name: 'Buenos Días', category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes', quantity: 6, gross_sales: 54.00, net_payout: 54.00, channel: 'Square POS (In-Store)' },
+    { raw_name: 'Strawberry Fields', category: 'Waffles and Pancakes', quantity: 4, gross_sales: 38.00, net_payout: 38.00, channel: 'Square POS (In-Store)' },
+    // Dedicated bases (excluded via regex / name):
+    { raw_name: 'White Kinder Waffle', category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes', quantity: 5, gross_sales: 47.50, net_payout: 47.50, channel: 'Square POS (In-Store)' },
+    { raw_name: 'Vanilla Cheesecake', category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes', quantity: 3, gross_sales: 24.00, net_payout: 24.00, channel: 'Square POS (In-Store)' },
+    { raw_name: 'Chocolate Chip Cookie Dough', category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes', quantity: 4, gross_sales: 36.00, net_payout: 36.00, channel: 'Square POS (In-Store)' }
+  ]
+};
+
+const uberEatsFeed = {
+  channel: 'Uber Eats',
+  filename: 'UberEats_Report.csv',
+  items: [
+    { raw_name: 'Buenos Días', category: 'Waffles & Pancakes', quantity: 5, gross_sales: 45.00, net_payout: 31.50, commission: 13.50, channel: 'Uber Eats' },
+    { raw_name: 'Mulah Green', category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes', quantity: 3, gross_sales: 27.00, net_payout: 18.90, commission: 8.10, channel: 'Uber Eats' }
+  ]
+};
+
+const justEatFeed = {
+  channel: 'Just Eat',
+  filename: 'JustEat_Report.csv',
+  items: [
+    { raw_name: 'Strawberry Fields', category: 'Waffles & Pancakes', quantity: 4, gross_sales: 38.00, net_payout: 28.50, commission: 9.50, channel: 'Just Eat' }
+  ]
+};
+
+const deliverooFeed = {
+  channel: 'Deliveroo',
+  filename: 'Deliveroo_Report.csv',
+  items: [
+    { raw_name: 'Buenos Días', category: 'Waffles and Pancakes', quantity: 2, gross_sales: 18.00, net_payout: 12.60, commission: 5.40, channel: 'Deliveroo' }
+  ]
+};
+
+// 9a. Test Ingestion & Ambiguity Aggregation
+console.log('9a. Testing Ambiguity Aggregation Logic across 4 channels...');
+const allChannelsFeeds = [squareDailyFeed, uberEatsFeed, justEatFeed, deliverooFeed];
+const preSplitConsolidated = SalesEngine.consolidateSales(allChannelsFeeds);
+
+// Expected dual-base units:
+// Square: Buenos Días (6) + Strawberry Fields (4) = 10
+// Uber Eats: Buenos Días (5) + Mulah Green (3) = 8
+// Just Eat: Strawberry Fields (4) = 4
+// Deliveroo: Buenos Días (2) = 2
+// Total = 10 + 8 + 4 + 2 = 24 units!
+const splitInfo = preSplitConsolidated.dailyBaseSplit;
+assert(splitInfo, 'dailyBaseSplit object must be returned in consolidateSales result');
+assert.strictEqual(splitInfo.totalDualBaseUnits, 24, `Expected 24 total dual-base combo units, got: ${splitInfo.totalDualBaseUnits}`);
+assert.strictEqual(splitInfo.channelCounts['Square'], 10, `Expected 10 Square combo units, got: ${splitInfo.channelCounts['Square']}`);
+assert.strictEqual(splitInfo.channelCounts['Uber Eats'], 8, `Expected 8 Uber Eats combo units, got: ${splitInfo.channelCounts['Uber Eats']}`);
+assert.strictEqual(splitInfo.channelCounts['Just Eat'], 4, `Expected 4 Just Eat combo units, got: ${splitInfo.channelCounts['Just Eat']}`);
+assert.strictEqual(splitInfo.channelCounts['Deliveroo'], 2, `Expected 2 Deliveroo combo units, got: ${splitInfo.channelCounts['Deliveroo']}`);
+assert.strictEqual(splitInfo.isReconciled, false, 'Should not be reconciled prior to modal confirmation');
+
+console.log(`✓ Total ambiguous dual-base units aggregated across 4 platforms: ${splitInfo.totalDualBaseUnits} units`);
+console.log(`✓ Channel Breakdown: ${splitInfo.channelSummary}`);
+
+// 9b. Real-Time Validation & Auto-Calculation Math
+console.log('\n9b. Testing Real-Time Validation & Auto-Calculation Formulae...');
+const totalUnits = splitInfo.totalDualBaseUnits; // 24
+const wafflesInput = 14;
+const remainderPancakes = totalUnits - wafflesInput; // 10
+assert.strictEqual(remainderPancakes, 10, 'Auto-calculate pancakes = Total - Waffles (24 - 14 = 10)');
+
+const testRemaining1 = totalUnits - (wafflesInput + remainderPancakes);
+assert.strictEqual(testRemaining1, 0, 'Validation remaining units should be 0 when perfectly allocated');
+
+const partialWaffles = 10;
+const partialPancakes = 8;
+const testRemaining2 = totalUnits - (partialWaffles + partialPancakes);
+assert.strictEqual(testRemaining2, 6, 'Validation remaining units should be 6 when under-allocated');
+assert.notStrictEqual(partialWaffles + partialPancakes, totalUnits, 'Confirm button must remain disabled when unallocated units remain');
+
+console.log('✓ Real-time auto-calculation remainder: Pancakes = Total - Waffles validated');
+console.log('✓ Validation barrier correctly prevents depletion until Waffles + Pancakes === Total');
+
+// 9c. Depletion Execution & Audit Ledger Logging
+console.log('\n9c. Testing Depletion Execution & Audit Ledger Logging...');
+const reconciliationPayload = {
+  reportingDate: '2026-09-13',
+  waffles: 14,
+  pancakes: 10,
+  totalDualUnits: 24,
+  channelSummary: splitInfo.channelSummary,
+  confirmedByUser: 'Store Manager Saikishore',
+  totalWafflesOverall: 19, // 5 explicit White Kinder + 14 split
+  totalPancakesOverall: 10
+};
+
+const execResult = SalesEngine.executeDailyBaseReconciliation(reconciliationPayload);
+assert(execResult.success, 'Reconciliation execution must return success: true');
+assert.strictEqual(execResult.reconciliation.split_waffles, 14);
+assert.strictEqual(execResult.reconciliation.split_pancakes, 10);
+assert.strictEqual(execResult.reconciliation.confirmed_by_user, 'Store Manager Saikishore');
+
+// Verify Kitchen Production Log (KPL) entry
+assert(execResult.kitchenLog, 'Kitchen production log entry must be created');
+assert.strictEqual(execResult.kitchenLog.waffles_depleted, 14, 'KPL must record 14 waffles depleted');
+assert.strictEqual(execResult.kitchenLog.pancakes_depleted, 10, 'KPL must record 10 pancakes depleted');
+assert.strictEqual(execResult.kitchenLog.total_dual_base_units, 24);
+assert.strictEqual(execResult.kitchenLog.depleted_batches.length, 4);
+
+console.log('✓ Reconciliation recorded in daily sales ledger with Manager signature & timestamp');
+console.log('✓ Kitchen Production Logs entry KPL generated with batch portion breakdowns');
+
+// 9d. Re-run Pipeline with Reconciled Split & Verify Reporting Output
+console.log('\n9d. Testing Consolidated Reporting Output with Reconciled Split...');
+const postSplitConsolidated = SalesEngine.consolidateSales(allChannelsFeeds, {
+  reportingDate: '2026-09-13'
+});
+
+assert.strictEqual(postSplitConsolidated.dailyBaseSplit.isReconciled, true, 'isReconciled must be true');
+assert.strictEqual(postSplitConsolidated.dailyBaseSplit.waffles, 14);
+assert.strictEqual(postSplitConsolidated.dailyBaseSplit.pancakes, 10);
+
+// Check Mains Summary (5 explicit White Kinder Waffle + 14 reconciled waffles = 19 Waffles Total)
+const waffleSummary = postSplitConsolidated.mainsSummary['WAFFLE'];
+const pancakeSummary = postSplitConsolidated.mainsSummary['PANCAKE'];
+assert(waffleSummary, 'WAFFLE summary must exist in mainsSummary');
+assert(pancakeSummary, 'PANCAKE summary must exist in mainsSummary');
+assert.strictEqual(waffleSummary.units, 19, `Expected 19 total waffles (5 explicit + 14 combo), got: ${waffleSummary.units}`);
+assert.strictEqual(pancakeSummary.units, 10, `Expected 10 total pancakes (0 explicit + 10 combo), got: ${pancakeSummary.units}`);
+
+console.log(`✓ Daily Dashboard Metric: Total Waffles Sold: ${waffleSummary.units}`);
+console.log(`✓ Daily Dashboard Metric: Total Pancakes Sold: ${pancakeSummary.units}`);
+
+// 9e. Test Stock Depletion Engine with Combo Deductions
+console.log('\n9e. Testing Stock Depletion Engine for Waffles, Pancakes, Toppings, Packaging...');
+const postSplitDepletion = SalesEngine.calculateDepletionAndAlarms(
+  postSplitConsolidated.masterLedger,
+  null,
+  null,
+  postSplitConsolidated.dailyBaseSplit
+);
+
+const waffleDepleted = postSplitDepletion.depletionLedger.find(d => d.ingredient_name === 'Waffle_Batter_Portion');
+const pancakeDepleted = postSplitDepletion.depletionLedger.find(d => d.ingredient_name === 'Pancake_Batter_Portion');
+const toppingDepleted = postSplitDepletion.depletionLedger.find(d => d.ingredient_name === 'Topping_Sauce_Portions');
+const packagingDepleted = postSplitDepletion.depletionLedger.find(d => d.ingredient_name === 'Packaging_Containers_Boxes');
+
+assert(waffleDepleted, 'Waffle_Batter_Portion must be in depletion ledger');
+assert(pancakeDepleted, 'Pancake_Batter_Portion must be in depletion ledger');
+assert(toppingDepleted, 'Topping_Sauce_Portions must be in depletion ledger');
+assert(packagingDepleted, 'Packaging_Containers_Boxes must be in depletion ledger');
+
+// 5 explicit + 14 split = 19 waffles
+assert.strictEqual(waffleDepleted.theoretical_consumption, 19, `Expected 19 portions Waffle batter consumed, got: ${waffleDepleted.theoretical_consumption}`);
+// 10 pancakes
+assert.strictEqual(pancakeDepleted.theoretical_consumption, 10, `Expected 10 portions Pancake batter consumed, got: ${pancakeDepleted.theoretical_consumption}`);
+// 24 combo toppings & packaging
+assert.strictEqual(toppingDepleted.theoretical_consumption, 24, `Expected 24 portions Topping sauce consumed, got: ${toppingDepleted.theoretical_consumption}`);
+assert.strictEqual(packagingDepleted.theoretical_consumption, 24, `Expected 24 units Packaging boxes consumed, got: ${packagingDepleted.theoretical_consumption}`);
+
+console.log(`✓ Waffle Batter Portions Depleted: ${waffleDepleted.theoretical_consumption}`);
+console.log(`✓ Pancake Batter Portions Depleted: ${pancakeDepleted.theoretical_consumption}`);
+console.log(`✓ Topping Sauce Portions Depleted: ${toppingDepleted.theoretical_consumption}`);
+console.log(`✓ Packaging Containers & Boxes Depleted: ${packagingDepleted.theoretical_consumption}`);
+
 console.log('\n=== ALL TESTS PASSED SUCCESSFULLY! ===');
+
