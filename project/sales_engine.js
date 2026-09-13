@@ -950,6 +950,343 @@
       return normalized;
     },
 
+    // -----------------------------------------------------------
+    // 4b. Parent-Modifier Context Binding & Base Keyword Scanner
+    // -----------------------------------------------------------
+    isModifierCategory(cat) {
+      if (!cat) return false;
+      const c = cat.toString().toLowerCase().trim();
+      return (
+        c === 'modifiers' ||
+        c === 'modifier' ||
+        c === 'item modifiers' ||
+        c === 'item modifier' ||
+        c === 'options' ||
+        c === 'customisations' ||
+        c === 'customizations'
+      );
+    },
+
+    detectBaseModifierKeyword(text) {
+      if (!text) return null;
+      const lower = text.toString().toLowerCase().trim();
+      // Detect base modifiers from the keyword list: ['Waffle', 'Pancake', 'Cheesecake', 'Cookie Dough', 'Liege Waffle']
+      if (lower.includes('liege waffle')) return 'Liege Waffle';
+      if (/\bwaffles?\b/i.test(lower)) return 'Waffle';
+      if (/\bpancakes?\b|\bhotcakes?\b/i.test(lower)) return 'Pancake';
+      if (/\bcheesecakes?\b/i.test(lower)) return 'Cheesecake';
+      if (/\bcookie[\s-]*doughs?\b/i.test(lower) || lower.includes('cookiedough')) return 'Cookie Dough';
+      return null;
+    },
+
+    detectBasesFromModifierString(modStr, parentQty = 1) {
+      if (!modStr) return [];
+      const str = modStr.toString();
+      const detected = [];
+
+      const hasWaffle = /\bwaffles?\b/i.test(str);
+      const hasPancake = /\bpancakes?\b|\bhotcakes?\b/i.test(str);
+      const hasCheesecake = /\bcheesecakes?\b/i.test(str);
+      const hasCookieDough = /\bcookie[\s-]*doughs?\b/i.test(str) || /cookiedough/i.test(str);
+      const hasLiege = /liege waffle/i.test(str);
+
+      // Multi-unit parent orders (e.g., "Buenos Dias", Quantity: 2):
+      // If modifiers indicate 1 Waffle and 1 Pancake:
+      if (parentQty >= 2 && hasWaffle && hasPancake) {
+        const half = Math.floor(parentQty / 2);
+        const remainder = parentQty - half;
+        detected.push({ base: 'Waffle', qty: half, raw: 'Waffle' });
+        detected.push({ base: 'Pancake', qty: remainder, raw: 'Pancake' });
+        return detected;
+      }
+
+      if (hasLiege) {
+        detected.push({ base: 'Liege Waffle', qty: parentQty, raw: 'Liege Waffle' });
+      } else if (hasWaffle) {
+        detected.push({ base: 'Waffle', qty: parentQty, raw: 'Waffle' });
+      } else if (hasPancake) {
+        detected.push({ base: 'Pancake', qty: parentQty, raw: 'Pancake' });
+      } else if (hasCheesecake) {
+        detected.push({ base: 'Cheesecake', qty: parentQty, raw: 'Cheesecake' });
+      } else if (hasCookieDough) {
+        detected.push({ base: 'Cookie Dough', qty: parentQty, raw: 'Cookie Dough' });
+      }
+
+      return detected;
+    },
+
+    cleanBaseName(name) {
+      if (!name) return 'Unnamed Product';
+      return name.replace(/\s*\((Waffle|Pancake|Cheesecake|Cookie Dough|Liege Waffle|Croffle|Crepe|Pancakes)\)\s*$/i, '').trim();
+    },
+
+    detectInherentTitleBase(name) {
+      if (!name) return null;
+      const lower = name.toLowerCase();
+      // Exclude ambiguous combo parent items that require modifier context
+      if (
+        lower.includes('buenos dias') ||
+        lower.includes('buenos días') ||
+        lower.includes('mulah green') ||
+        lower.includes('strawberry fields') ||
+        lower.includes('twist it')
+      ) {
+        return null;
+      }
+      if (lower.includes('cheesecake')) return 'Cheesecake';
+      if (lower.includes('cookie dough') || lower.includes('cookiedough')) return 'Cookie Dough';
+      if (/\bpancakes?\b/i.test(lower)) return 'Pancake';
+      if (/\bwaffles?\b/i.test(lower)) return 'Waffle';
+      if (lower.includes('croffle')) return 'Croffle';
+      if (lower.includes('crepe') || lower.includes('crêpe')) return 'Crepe';
+      return null;
+    },
+
+    standardizeInherentTitleName(name, inherentBase) {
+      if (!name) return 'Unnamed Product';
+      // For items that inherently include the base in their title:
+      // Preserve name as-is or standardize as "Biscoff (Cheesecake)", "Triple Choc (Cookie Dough)"
+      if (/biscoff.*loaded.*cheesecake/i.test(name)) return 'Biscoff (Cheesecake)';
+      if (/triple choc.*cookie\s*dough/i.test(name)) return 'Triple Choc (Cookie Dough)';
+      return name;
+    },
+
+    getBaseUsedLabel(baseType, disambiguatedName = '') {
+      const norm = `${baseType || ''} ${disambiguatedName || ''}`.toLowerCase();
+      if (norm.includes('cheesecake') || norm.includes('(cheesecake)')) return 'Cheesecake Slice';
+      if (norm.includes('cookie dough') || norm.includes('cookiedough') || norm.includes('(cookie dough)')) return 'Cookie Dough Puck';
+      if (norm.includes('pancake') || norm.includes('(pancake)')) return 'Pancake Batter Portion';
+      if (norm.includes('waffle') || norm.includes('(waffle)') || norm.includes('liege waffle')) return 'Waffle Batter Portion';
+      if (norm.includes('croffle') || norm.includes('(croffle)')) return 'Croissant Dough Piece';
+      if (norm.includes('crepe') || norm.includes('(crepe)')) return 'Crepe Batter Portion';
+      if (norm.includes('savoury') || norm.includes('burger')) return 'Brioche Bun & Patty';
+      if (norm.includes('shake')) return 'Shake Mix Portion';
+      if (norm.includes('gelato') || norm.includes('scoop')) return 'Gelato Scoop Portion';
+      return 'General Portion';
+    },
+
+    isValidSaleItem(item) {
+      if (!item || !item.raw_name) return false;
+      const nameLower = item.raw_name.toLowerCase().trim();
+      if (
+        nameLower === 'total' ||
+        nameLower === 'summary' ||
+        nameLower === 'subtotal' ||
+        nameLower === 'no side' ||
+        nameLower === 'no extras' ||
+        nameLower === 'no extra' ||
+        nameLower.startsWith('no side') ||
+        nameLower.includes('bag fee') ||
+        nameLower.includes('carrier bag') ||
+        nameLower.includes('delivery fee') ||
+        nameLower.includes('courier tip') ||
+        nameLower.includes('driver tip') ||
+        nameLower.includes('restaurant tip') ||
+        nameLower.includes('service fee') ||
+        nameLower.includes('cutlery') ||
+        nameLower.includes('napkins')
+      ) {
+        return false;
+      }
+      if (item.gross_sales <= 0 && item.discounts <= 0) {
+        return false;
+      }
+      return true;
+    },
+
+    flushParentItem(parent) {
+      if (!parent || !parent.adapted) return [];
+      const parentName = (parent.current_parent_item || parent.adapted.raw_name || '').trim();
+      const parentQty = parent.parent_quantity > 0 ? parent.parent_quantity : (parent.adapted.quantity || 1);
+      let detectedBases = [...(parent.detected_base_modifiers || [])];
+
+      // If no sequential modifier rows were attached, inspect inline modifiers string
+      if (detectedBases.length === 0 && parent.adapted.modifiers) {
+        const inlineDetected = this.detectBasesFromModifierString(parent.adapted.modifiers, parentQty);
+        if (inlineDetected.length > 0) {
+          detectedBases = inlineDetected;
+        }
+      }
+
+      // Check if parent item inherently includes base in title
+      const inherentBase = this.detectInherentTitleBase(parentName);
+      if (inherentBase) {
+        const standardizedName = this.standardizeInherentTitleName(parentName, inherentBase);
+        const baseUsed = this.getBaseUsedLabel(inherentBase, standardizedName);
+        const depleteBatch = this.getDepleteBatchForBase(inherentBase);
+        return [{
+          ...parent.adapted,
+          raw_name: standardizedName,
+          master_item_name: standardizedName,
+          item_name: standardizedName,
+          quantity: parentQty,
+          base_type: inherentBase,
+          base_used: baseUsed,
+          deplete_batch: depleteBatch,
+          modifiers: parent.adapted.modifiers || inherentBase,
+          source_filename: parent.source_filename,
+          row_index: parent.row_index
+        }];
+      }
+
+      // If bases detected from modifiers (Sequential Order Parsing & Line-Item Splitting)
+      if (detectedBases.length > 0) {
+        const totalBaseUnits = detectedBases.reduce((sum, b) => sum + (b.qty || 1), 0);
+        const uniqueBases = [...new Set(detectedBases.map(b => b.base))];
+
+        // Multi-unit parent orders (e.g., "Buenos Dias", Quantity: 2):
+        // If modifiers indicate 1 Waffle and 1 Pancake:
+        // Generate two distinct output lines:
+        // 1. "Buenos Dias (Waffle)" -> Qty: 1
+        // 2. "Buenos Dias (Pancake)" -> Qty: 1
+        if (uniqueBases.length > 1) {
+          const splitLines = [];
+          const baseGroups = {};
+          detectedBases.forEach(b => {
+            baseGroups[b.base] = (baseGroups[b.base] || 0) + (b.qty || 1);
+          });
+
+          for (const base of Object.keys(baseGroups)) {
+            const bQty = baseGroups[base];
+            const ratio = bQty / (totalBaseUnits || parentQty);
+            const cleanName = this.cleanBaseName(parentName);
+            const disambiguatedName = `${cleanName} (${base})`;
+            const baseUsed = this.getBaseUsedLabel(base, disambiguatedName);
+            const depleteBatch = this.getDepleteBatchForBase(base);
+            const baseNet = parent.adapted.net_sales !== undefined ? parent.adapted.net_sales : (parent.adapted.net_payout !== undefined ? parent.adapted.net_payout : parent.adapted.gross_sales);
+
+            splitLines.push({
+              ...parent.adapted,
+              raw_name: disambiguatedName,
+              master_item_name: disambiguatedName,
+              item_name: disambiguatedName,
+              quantity: bQty,
+              gross_sales: parseFloat((parent.adapted.gross_sales * ratio).toFixed(2)),
+              net_sales: parseFloat((baseNet * ratio).toFixed(2)),
+              net_payout: parseFloat((parent.adapted.net_payout * ratio).toFixed(2)),
+              commission: parseFloat((parent.adapted.commission * ratio).toFixed(2)),
+              discounts: parseFloat((parent.adapted.discounts * ratio).toFixed(2)),
+              tax: parseFloat((parent.adapted.tax * ratio).toFixed(2)),
+              base_type: base,
+              base_used: baseUsed,
+              deplete_batch: depleteBatch,
+              modifiers: base,
+              source_filename: parent.source_filename,
+              row_index: parent.row_index
+            });
+          }
+          return splitLines;
+        } else {
+          // Single base detected across all units (e.g., "Mulah Green" with "Pancake" -> "Mulah Green (Pancake)")
+          const base = uniqueBases[0];
+          const cleanName = this.cleanBaseName(parentName);
+          const disambiguatedName = `${cleanName} (${base})`;
+          const baseUsed = this.getBaseUsedLabel(base, disambiguatedName);
+          const depleteBatch = this.getDepleteBatchForBase(base);
+
+          return [{
+            ...parent.adapted,
+            raw_name: disambiguatedName,
+            master_item_name: disambiguatedName,
+            item_name: disambiguatedName,
+            quantity: parentQty,
+            base_type: base,
+            base_used: baseUsed,
+            deplete_batch: depleteBatch,
+            modifiers: base,
+            source_filename: parent.source_filename,
+            row_index: parent.row_index
+          }];
+        }
+      }
+
+      // No base modifiers detected: preserve parent order
+      return [{
+        ...parent.adapted,
+        raw_name: parentName,
+        master_item_name: parentName,
+        item_name: parentName,
+        quantity: parentQty,
+        source_filename: parent.source_filename,
+        row_index: parent.row_index
+      }];
+    },
+
+    bindParentModifiers(rows) {
+      if (!Array.isArray(rows) || rows.length === 0) return [];
+      
+      // If rows are already transaction objects
+      const items = [];
+      let currentParent = null;
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row) continue;
+
+        const cat = (row.category || row.Category || '').toString().trim();
+        const isModifier = this.isModifierCategory(cat);
+
+        if (isModifier) {
+          if (currentParent) {
+            currentParent.parent_modifiers.push(row);
+            const modName = (row.item || row.Item || row.item_name || row.Item_Name || row.raw_name || '').toString().trim();
+            const modQty = this.cleanInteger(row.quantity || row.Quantity || row.qty || row.Qty || 1);
+            const baseKeyword = this.detectBaseModifierKeyword(modName);
+            if (baseKeyword) {
+              currentParent.detected_base_modifiers.push({
+                base: baseKeyword,
+                qty: modQty,
+                raw: modName
+              });
+            }
+            if (currentParent.adapted.modifiers) {
+              currentParent.adapted.modifiers += `, ${modName}`;
+            } else {
+              currentParent.adapted.modifiers = modName;
+            }
+          }
+          continue;
+        }
+
+        // Non-modifier row: flush previous parent
+        if (currentParent) {
+          const flushed = this.flushParentItem(currentParent);
+          for (const item of flushed) {
+            if (this.isValidSaleItem(item)) items.push(item);
+          }
+          currentParent = null;
+        }
+
+        const adapted = row.raw_name ? row : this.adaptChannelRow(row, row.channel || 'Square POS (In-Store)');
+        if (adapted.is_cancelled || !this.isValidSaleItem(adapted)) continue;
+
+        const pName = (row.item_name || row.Item_Name || row.item || row.Item || adapted.raw_name || '').toString().trim();
+        const pQty = adapted.quantity > 0 ? adapted.quantity : this.cleanInteger(row.quantity || row.Quantity || row.qty || row.Qty || 1);
+
+        currentParent = {
+          current_parent_item: pName,
+          parent_quantity: pQty,
+          parent_modifiers: [],
+          detected_base_modifiers: [],
+          adapted: {
+            ...adapted,
+            quantity: pQty
+          },
+          source_filename: row.source_filename || 'manual',
+          row_index: i
+        };
+      }
+
+      if (currentParent) {
+        const flushed = this.flushParentItem(currentParent);
+        for (const item of flushed) {
+          if (this.isValidSaleItem(item)) items.push(item);
+        }
+      }
+
+      return items;
+    },
+
     parseUniversalFile(fileData, filename = '') {
       let rawGrid = [];
       const lowerFilename = (filename || '').toLowerCase();
@@ -972,16 +1309,24 @@
           } catch (e2) {}
         }
       } else if (Array.isArray(fileData)) {
-        rawGrid = fileData;
+        if (fileData.length > 0 && !Array.isArray(fileData[0]) && typeof fileData[0] === 'object') {
+          const keys = Object.keys(fileData[0]);
+          rawGrid = [keys, ...fileData.map(obj => keys.map(k => obj[k]))];
+        } else {
+          rawGrid = fileData;
+        }
       }
 
       if (rawGrid.length < 2) {
-        return { channel: 'Unknown', filename, items: [], rawRowsCount: 0 };
+        return { channel: 'Unknown', filename, items: [], transactions: [], rawRowsCount: 0 };
       }
 
       const headers = rawGrid[0].map(h => (h || '').toString().trim());
       const channel = this.detectChannel(headers, filename);
       const items = [];
+
+      // Sequential Order Parsing & Context Binding
+      let currentParent = null;
 
       for (let i = 1; i < rawGrid.length; i++) {
         const row = rawGrid[i];
@@ -999,41 +1344,81 @@
           continue;
         }
 
-        // Skip non-item summary rows or delivery fee/bag fee/tip rows
-        if (!adapted.raw_name) continue;
-        const nameLower = adapted.raw_name.toLowerCase().trim();
-        if (
-          nameLower === 'total' ||
-          nameLower === 'summary' ||
-          nameLower === 'subtotal' ||
-          nameLower === 'no side' ||
-          nameLower === 'no extras' ||
-          nameLower === 'no extra' ||
-          nameLower.startsWith('no side') ||
-          nameLower.includes('bag fee') ||
-          nameLower.includes('carrier bag') ||
-          nameLower.includes('delivery fee') ||
-          nameLower.includes('courier tip') ||
-          nameLower.includes('driver tip') ||
-          nameLower.includes('restaurant tip') ||
-          nameLower.includes('service fee') ||
-          nameLower.includes('cutlery') ||
-          nameLower.includes('napkins')
-        ) {
+        const rawCat = (rowObj['Category'] || rowObj['category'] || adapted.category || '').toString().trim();
+        const isModifier = this.isModifierCategory(rawCat);
+
+        if (isModifier) {
+          // When subsequent rows with Category == 'Modifiers' appear:
+          // Attach these rows as modifiers belonging directly to current_parent_item.
+          if (currentParent) {
+            currentParent.parent_modifiers.push(rowObj);
+            const modName = (rowObj['Item'] || rowObj['Item Name'] || rowObj['Item_Name'] || adapted.raw_name || '').trim();
+            const modQty = adapted.quantity > 0 ? adapted.quantity : this.cleanInteger(rowObj['Qty'] || rowObj['Quantity'] || rowObj['Units Sold'] || rowObj['Items Sold'] || 1);
+            const baseKeyword = this.detectBaseModifierKeyword(modName);
+            if (baseKeyword) {
+              // Associate detected base modifier directly with parent item
+              currentParent.detected_base_modifiers.push({
+                base: baseKeyword,
+                qty: modQty,
+                raw: modName
+              });
+            }
+            if (currentParent.adapted.modifiers) {
+              currentParent.adapted.modifiers += `, ${modName}`;
+            } else {
+              currentParent.adapted.modifiers = modName;
+            }
+          }
+          // Standalone modifier rows must not clutter output sales table
           continue;
         }
 
-        // Filter out zero-revenue modifier / free option choices (e.g. Free base choices like 'Pancake' £0.00, 'No Side' £0.00)
-        // Genuine products have gross_sales > 0 (or explicit promo discounts). Free modifier options must not clutter sales!
-        if (adapted.gross_sales <= 0 && adapted.discounts <= 0) {
+        // When a row with Category != 'Modifiers' is encountered:
+        // Flush previous parent if exists
+        if (currentParent) {
+          const flushed = this.flushParentItem(currentParent);
+          for (const fItem of flushed) {
+            if (this.isValidSaleItem(fItem)) {
+              items.push(fItem);
+            }
+          }
+          currentParent = null;
+        }
+
+        if (!this.isValidSaleItem(adapted)) {
           continue;
         }
 
-        items.push({
-          ...adapted,
+        // Set this item as current_parent_item = row.Item_Name
+        // Track parent_quantity = row.Quantity
+        // Initialize an array: parent_modifiers = []
+        const parentItemName = (rowObj['Item'] || rowObj['Item Name'] || rowObj['Item_Name'] || adapted.raw_name || '').trim();
+        const parentQuantity = adapted.quantity > 0 ? adapted.quantity : this.cleanInteger(rowObj['Qty'] || rowObj['Quantity'] || rowObj['Units Sold'] || rowObj['Items Sold'] || 1);
+
+        currentParent = {
+          current_parent_item: parentItemName,
+          parent_quantity: parentQuantity,
+          parent_modifiers: [],
+          detected_base_modifiers: [],
+          adapted: {
+            ...adapted,
+            quantity: parentQuantity,
+            source_filename: filename,
+            row_index: i
+          },
           source_filename: filename,
           row_index: i
-        });
+        };
+      }
+
+      // Flush final parent at end of file
+      if (currentParent) {
+        const flushed = this.flushParentItem(currentParent);
+        for (const fItem of flushed) {
+          if (this.isValidSaleItem(fItem)) {
+            items.push(fItem);
+          }
+        }
       }
 
       return {
@@ -1041,6 +1426,7 @@
         filename,
         headers,
         items,
+        transactions: items,
         rawRowsCount: items.length
       };
     },
@@ -1586,6 +1972,20 @@
       const normNotes = (notes || '').toLowerCase();
       const cleanSku = (sku || '').trim().toUpperCase();
 
+      // Check if disambiguated label in parentheses is already in rawName
+      if (/\(pancakes?\)/i.test(normName)) {
+        return this.formatBaseTypeInfo('Pancake', 'Pancake_Batter_Portion', 1, 'DISAMBIGUATED_LABEL_PANCAKE');
+      }
+      if (/\(waffles?\)/i.test(normName) || /\(liege waffle\)/i.test(normName)) {
+        return this.formatBaseTypeInfo('Waffle', 'Waffle_Batter_Portion', 1, 'DISAMBIGUATED_LABEL_WAFFLE');
+      }
+      if (/\(cheesecakes?\)/i.test(normName)) {
+        return this.formatBaseTypeInfo('Cheesecake', 'Cheesecake_Base_Slice', 1, 'DISAMBIGUATED_LABEL_CHEESECAKE');
+      }
+      if (/\(cookie[\s-]*doughs?\)/i.test(normName)) {
+        return this.formatBaseTypeInfo('Cookie Dough', 'Cookie_Dough_Puck', 1, 'DISAMBIGUATED_LABEL_COOKIE_DOUGH');
+      }
+
       // Check manager custom overrides first
       const customOverrides = this.getCustomBaseMappings();
       if (cleanSku && customOverrides[cleanSku]) {
@@ -1632,8 +2032,14 @@
           return this.formatBaseTypeInfo('Pancake', 'Pancake_Batter_Portion', 1, 'EXPLICIT_NAME_PANCAKE');
         }
 
-        // Check customer modifiers / variations for explicit Waffle vs Pancake
-        const allModText = `${normMod} ${normVar} ${normNotes}`;
+        // Check customer modifiers / variations for explicit base keywords
+        const allModText = `${normMod} ${normVar} ${normNotes}`.toLowerCase();
+        if (allModText.includes('cheesecake')) {
+          return this.formatBaseTypeInfo('Cheesecake', 'Cheesecake_Base_Slice', 1, 'EXPLICIT_MODIFIER_CHEESECAKE');
+        }
+        if (allModText.includes('cookie dough') || allModText.includes('cookiedough')) {
+          return this.formatBaseTypeInfo('Cookie Dough', 'Cookie_Dough_Puck', 1, 'EXPLICIT_MODIFIER_COOKIE_DOUGH');
+        }
         if (/\bwaffles?\b/i.test(allModText) && !/\bpancakes?\b/i.test(allModText)) {
           return this.formatBaseTypeInfo('Waffle', 'Waffle_Batter_Portion', 1, 'EXPLICIT_MODIFIER_WAFFLE');
         }
@@ -1765,15 +2171,15 @@
         return baseItemName;
       }
 
-      // Explicit registry items or items already properly branded keep clean name
+      // If already disambiguated with a parenthesized base label, return as-is
+      if (/\((Waffle|Pancake|Cheesecake|Cookie Dough|Liege Waffle|Croffle|Crepe|Pancakes)\)\s*$/i.test(baseItemName)) {
+        return baseItemName;
+      }
+
+      // Explicit registry items or items already properly branded keep clean name if not dual base or unresolved
       if (
         normName.includes('fudgee') ||
-        normName.includes('buenos dias') ||
-        normName.includes('twist it') ||
         normName.includes('cherry pie') ||
-        normName.includes('strawberry fields') ||
-        normName.includes('mulah green') ||
-        mainInfo.type === 'CHEESECAKE' ||
         mainInfo.type === 'UNRESOLVED_BASE' ||
         mainInfo.type === 'DUAL_BASE_COMBO'
       ) {
@@ -1786,13 +2192,16 @@
         return `${baseItemName} (${specificType})`;
       }
       if (mainInfo.type === 'PANCAKE' && !normName.includes('pancake')) {
-        return `${baseItemName} (Pancakes)`;
+        return `${baseItemName} (Pancake)`;
       }
-      if (mainInfo.type === 'CROFFLE' && !normName.includes('croffle')) {
-        return `${baseItemName} (Croffle)`;
+      if (mainInfo.type === 'CHEESECAKE' && !normName.includes('cheesecake')) {
+        return `${baseItemName} (Cheesecake)`;
       }
       if (mainInfo.type === 'COOKIE_DOUGH' && !normName.includes('cookie dough') && !normName.includes('cookiedough')) {
         return `${baseItemName} (Cookie Dough)`;
+      }
+      if (mainInfo.type === 'CROFFLE' && !normName.includes('croffle')) {
+        return `${baseItemName} (Croffle)`;
       }
       if (mainInfo.type === 'CREPE' && !normName.includes('crepe') && !normName.includes('crêpe')) {
         return `${baseItemName} (Crepe)`;
@@ -1837,8 +2246,21 @@
         'Deliveroo': 0
       };
 
-      for (const file of parsedFiles) {
-        for (const item of file.items) {
+      let filesList = [];
+      if (Array.isArray(parsedFiles)) {
+        if (parsedFiles.length > 0 && parsedFiles[0].items) {
+          filesList = parsedFiles;
+        } else if (parsedFiles.length > 0 && (parsedFiles[0].raw_name || parsedFiles[0].item_name || parsedFiles[0].item)) {
+          filesList = [{ filename: 'direct_items', items: parsedFiles }];
+        } else {
+          filesList = parsedFiles;
+        }
+      } else if (parsedFiles && parsedFiles.items) {
+        filesList = [parsedFiles];
+      }
+
+      for (const file of filesList) {
+        for (const item of (file.items || [])) {
           if (item.date) availableDatesSet.add(item.date);
 
           // Date filter
@@ -1873,8 +2295,10 @@
               main_plural: mainInfo.plural,
               main_badge: mainInfo.badge,
               main_icon: mainInfo.icon,
-              deplete_batch: mainInfo.deplete_batch || '',
+              base_used: item.base_used || this.getBaseUsedLabel(mainInfo.type, finalItemName),
+              deplete_batch: mainInfo.deplete_batch || item.deplete_batch || this.getDepleteBatchForBase(mainInfo.type),
               deplete_qty: mainInfo.deplete_qty || 1,
+              unit_price: 0,
               is_unresolved_base: Boolean(mainInfo.is_unresolved),
               tier_resolution: mainInfo.tier || '',
               modifiers_applied: item.modifiers || '',
@@ -1911,7 +2335,7 @@
           const qty = item.quantity;
           const gross = (item.gross_sales || 0);
           const comm = (item.commission || 0);
-          const net = (item.net_payout || 0);
+          const net = (item.net_payout !== undefined && item.net_payout > 0 ? item.net_payout : (item.net_sales !== undefined ? item.net_sales : (item.gross_sales || 0)));
           const disc = (item.discounts || 0);
 
           row.total_volume += qty;
@@ -1998,16 +2422,16 @@
             const uRec = unresolvedBasesMap.get(unresKey);
             uRec.total_volume += qty;
             uRec.gross_sales += gross;
-            if (item.channel) uRec.channels.add(item.channel);
+            uRec.channels.add(item.channel || 'Square');
           }
 
-          // Keep unmapped tracking purely for optional SOP recipe linking (never blocks sales report!)
+          // Unmapped Recipe Tracker (Items without SOP recipe link)
           if (!hasRecipe) {
-            const key = this.normalizeText(item.raw_name);
+            const key = item.raw_name;
             if (!unmappedMap.has(key)) {
               unmappedMap.set(key, {
                 raw_name: item.raw_name,
-                normalized_name: key,
+                category: item.category || '',
                 channel: item.channel,
                 count: 0,
                 sample_revenue: 0,
@@ -2030,7 +2454,14 @@
       // 2. Compute Revenue Contribution & Performance Tier (Pareto ABC Classification based on Net Revenue)
       let cumulativeNet = 0;
       ledgerRows.forEach(row => {
+        row.item_name = row.master_item_name;
+        row.quantity = row.total_volume;
+        row.net_sales = row.net_revenue;
         row.avg_price = row.total_volume > 0 ? parseFloat((row.gross_revenue / row.total_volume).toFixed(2)) : 0;
+        row.unit_price = row.total_volume > 0 ? parseFloat((row.net_revenue / row.total_volume).toFixed(2)) : 0;
+        if (!row.base_used || row.base_used === 'General Portion') {
+          row.base_used = this.getBaseUsedLabel(row.main_type, row.master_item_name);
+        }
         // Item Revenue Share % = (Item Net Sales / Total Store Net Sales) * 100
         row.revenue_contribution_pct = grandTotalNet > 0 ? parseFloat(((row.net_revenue / grandTotalNet) * 100).toFixed(1)) : 0;
         row.units_contribution_pct = grandTotalUnits > 0 ? parseFloat(((row.total_volume / grandTotalUnits) * 100).toFixed(1)) : 0;
@@ -2510,24 +2941,46 @@
 
       const consumptionMap = new Map();
 
-      // 1. Deplete both recipe-level ingredients and prepped recipe bases (e.g. Cheesecake_Base_Slice)
-      for (const row of consolidatedMatrix) {
-        const totalSold = row.total_volume;
+      const matrix = Array.isArray(consolidatedMatrix) ? consolidatedMatrix : (consolidatedMatrix && consolidatedMatrix.masterLedger ? consolidatedMatrix.masterLedger : []);
+      for (const row of matrix) {
+        const totalSold = row.total_volume !== undefined ? row.total_volume : (row.quantity || 0);
         const recipe = row.recipe_obj;
 
         // Deduct prepped base stock (e.g. Cheesecake_Base_Slice, Waffle_Batter_Portion, Cookie_Dough_Puck)
-        if (row.deplete_batch && totalSold > 0) {
-          const batchName = row.deplete_batch;
+        let batchName = row.deplete_batch;
+
+        // Requirement 4: Direct Stock Depletion Link
+        // Use the disambiguated label inside parentheses to trigger the exact recipe batch:
+        // (Pancake) -> Deducts 1 portion from Kitchen Pancake Batter Batch
+        // (Waffle) -> Deducts 1 portion from Kitchen Waffle Batter Batch
+        // (Cheesecake) -> Deducts 1 slice from Cheesecake inventory
+        // (Cookie Dough) -> Deducts 1 puck from Cookie Dough batch
+        const itemName = (row.master_item_name || row.raw_name || '').toLowerCase();
+        if (itemName.includes('(pancake') || itemName.includes('(pancakes)')) {
+          batchName = 'Pancake_Batter_Portion';
+        } else if (itemName.includes('(waffle') || itemName.includes('(liege waffle)')) {
+          batchName = 'Waffle_Batter_Portion';
+        } else if (itemName.includes('(cheesecake')) {
+          batchName = 'Cheesecake_Base_Slice';
+        } else if (itemName.includes('(cookie dough') || itemName.includes('(cookiedough)')) {
+          batchName = 'Cookie_Dough_Puck';
+        }
+
+        if (batchName && totalSold > 0) {
           const alreadyInRecipe = recipe && Array.isArray(recipe.ingredients) &&
             recipe.ingredients.some(i => i.name && i.name.toLowerCase() === batchName.toLowerCase());
 
           if (!alreadyInRecipe) {
             const batchQty = (parseFloat(row.deplete_qty) || 1) * totalSold;
+            let unit = 'portion';
+            if (batchName === 'Cheesecake_Base_Slice') unit = 'slice';
+            else if (batchName === 'Cookie_Dough_Puck') unit = 'puck';
+
             if (!consumptionMap.has(batchName)) {
               consumptionMap.set(batchName, {
                 ingredient_name: batchName,
                 theoretical_consumption: 0,
-                unit: 'portion',
+                unit: unit,
                 dishes_using: new Set()
               });
             }
@@ -2644,11 +3097,18 @@
         const dishes = consumedRecord ? Array.from(consumedRecord.dishes_using) : [];
 
         // Current On-Hand (in units/pots)
-        let currentUnits = stock[ingName] !== undefined ? parseFloat(stock[ingName]) : 0;
-        // Search by lower-case key if not found directly
-        if (stock[ingName] === undefined) {
+        let currentUnits = 0;
+        if (stock[ingName] !== undefined) {
+          currentUnits = typeof stock[ingName] === 'object' && stock[ingName] !== null 
+            ? parseFloat(stock[ingName].current_stock || stock[ingName].stock || 0) 
+            : parseFloat(stock[ingName]) || 0;
+        } else {
           const matchedKey = Object.keys(stock).find(k => k.toLowerCase() === ingName.toLowerCase());
-          if (matchedKey) currentUnits = parseFloat(stock[matchedKey]) || 0;
+          if (matchedKey) {
+            currentUnits = typeof stock[matchedKey] === 'object' && stock[matchedKey] !== null
+              ? parseFloat(stock[matchedKey].current_stock || stock[matchedKey].stock || 0)
+              : parseFloat(stock[matchedKey]) || 0;
+          }
         }
 
         // Convert theoretical consumption (e.g. grams to units if pack is in kg/units)
@@ -2698,6 +3158,18 @@
         }
       });
 
+      // Build key-indexed depletions lookup map
+      const depletions = {};
+      depletionLedger.forEach(row => {
+        depletions[row.ingredient_name] = {
+          quantity_deducted: row.theoretical_consumption,
+          current_stock: row.current_on_hand,
+          remaining_stock: row.projected_remaining_stock,
+          unit: row.unit,
+          status: row.status
+        };
+      });
+
       // Sort by status (CRITICAL first, then WARNING, then HEALTHY)
       depletionLedger.sort((a, b) => {
         if (a.status === 'CRITICAL_LOW_STOCK_ALARM' && b.status !== 'CRITICAL_LOW_STOCK_ALARM') return -1;
@@ -2707,6 +3179,7 @@
 
       return {
         depletionLedger,
+        depletions,
         criticalLowStockAlarms,
         alarmsCount: criticalLowStockAlarms.length,
         hasCriticalBreaches: criticalLowStockAlarms.length > 0,
@@ -2824,7 +3297,8 @@
     generateMasterExportData(consolidated) {
       const headers = [
         'Rank',
-        'Product Name',
+        'Product Disambiguated Name',
+        'Base Used',
         'Main Base',
         'Category',
         'Performance Tier',
@@ -2832,12 +3306,12 @@
         'Uber Eats Units',
         'Just Eat Units',
         'Deliveroo Units',
-        'Total Volume Sold',
-        'Avg Unit Price (£)',
+        'Quantity Sold',
+        'Unit Price (£)',
         'Gross Revenue (£)',
         'Revenue Contribution (%)',
         'Platform Commissions (£)',
-        'Net Revenue Realized (£)',
+        'Net Sales (£)',
         'Square Share (%)',
         'Uber Eats Share (%)',
         'Just Eat Share (%)',
@@ -2851,6 +3325,7 @@
         rows.push([
           idx + 1,
           item.master_item_name,
+          item.base_used || item.main_label || 'General Portion',
           item.main_label || 'General',
           item.category || 'General Menu',
           item.performance_tier,
@@ -2859,7 +3334,7 @@
           item.just_eat_units || 0,
           item.deliveroo_units || 0,
           item.total_volume || 0,
-          (item.avg_price || 0).toFixed(2),
+          (item.unit_price !== undefined ? item.unit_price : (item.avg_price || 0)).toFixed(2),
           (item.gross_revenue || 0).toFixed(2),
           (item.revenue_contribution_pct || 0) + '%',
           (item.total_commissions || 0).toFixed(2),
