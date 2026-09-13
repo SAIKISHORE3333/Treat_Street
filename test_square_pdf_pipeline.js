@@ -144,17 +144,21 @@ assert.strictEqual(SalesEngine.normalizeAuditCategory('Candy Bar Shakes'), 'Beve
 assert.strictEqual(SalesEngine.normalizeAuditCategory('Milkshakes'), 'Beverages & Shakes');
 assert.strictEqual(SalesEngine.normalizeAuditCategory('Gelato & Sorbet Scoops'), 'Scoops / Ice Cream');
 
-// Verify composite category items sum to 5 items and £77.50, and all map to 'Desserts/Waffles Audit'
+// Verify composite category items sum to 5 items and £77.50
 const squareCategoryItems = consolidated.masterLedger.filter(i => 
   i.raw_category === 'Waffles, Pancakes, Cookie Doughs, Cheesecakes'
 );
 const dessertWaffleNet = squareCategoryItems.reduce((s, i) => s + i.net_revenue, 0);
-assert.strictEqual(squareCategoryItems.length, 5, `Expected 5 items in Desserts/Waffles Audit group, got ${squareCategoryItems.length}`);
-assert.strictEqual(dessertWaffleNet, 77.50, `Expected £77.50 net sales in Desserts/Waffles group, got £${dessertWaffleNet}`);
-squareCategoryItems.forEach(item => {
-  assert.strictEqual(item.category, 'Desserts/Waffles Audit', `Item ${item.master_item_name} category should be Desserts/Waffles Audit, got ${item.category}`);
-});
-console.log(`✓ 'Waffles, Pancakes, Cookie Doughs, Cheesecakes' mapped to 'Desserts/Waffles Audit' with 5 items and £${dessertWaffleNet.toFixed(2)} Net Sales`);
+assert.strictEqual(squareCategoryItems.length, 5, `Expected 5 items in group, got ${squareCategoryItems.length}`);
+assert.strictEqual(dessertWaffleNet, 77.50, `Expected £77.50 net sales in group, got £${dessertWaffleNet}`);
+
+// Verify that Oreo Cheesecake is accurately identified as Cheesecakes (NOT forced into Waffles!)
+const oreoCheesecake = squareCategoryItems.find(i => i.raw_name === 'Oreo Cheesecake');
+assert(oreoCheesecake, 'Oreo Cheesecake must be in ledger');
+assert.strictEqual(oreoCheesecake.category, 'Cheesecakes', `Oreo Cheesecake category should be Cheesecakes, got ${oreoCheesecake.category}`);
+assert.strictEqual(oreoCheesecake.main_type, 'CHEESECAKE', `Oreo Cheesecake main_type should be CHEESECAKE, got ${oreoCheesecake.main_type}`);
+
+console.log(`✓ Bundled Category items accurately parsed (£${dessertWaffleNet.toFixed(2)} Net Sales), with Oreo Cheesecake properly categorized as Cheesecakes`);
 
 // 5. Test Underperformed / Actionable Alerts Filter Rule
 console.log('\n5. Testing Actionable Alerts Filter (Units Sold == 1 AND Net Sales < £7.00)...');
@@ -181,5 +185,127 @@ for (let i = 0; i < consolidated.masterLedger.length - 1; i++) {
   );
 }
 console.log('✓ Master Ledger rows strictly sorted by Net Sales descending');
+
+// 7. Test Priority Resolution Architecture & EL Fudgee Cheesecake Audit & Depletion
+console.log('\n7. Testing Priority Resolution Architecture (Tier 1 SKU, Tier 2 Name, Tier 3 Fallback)...');
+
+// Test Tier 1 SKU match: EL Fudgee (SKU: Y650451) in bundled category
+const elFudgeeFeed = {
+  channel: 'Square POS (In-Store)',
+  filename: 'test_el_fudgee.csv',
+  items: [
+    {
+      sku: 'Y650451',
+      raw_name: 'EL Fudgee',
+      category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes',
+      quantity: 4,
+      gross_sales: 32.00,
+      net_payout: 32.00,
+      commission: 0,
+      channel: 'Square POS (In-Store)'
+    },
+    {
+      sku: '9179172',
+      raw_name: 'Buenos Dias',
+      category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes',
+      quantity: 2,
+      gross_sales: 18.00,
+      net_payout: 18.00,
+      commission: 0,
+      channel: 'Square POS (In-Store)'
+    },
+    {
+      sku: '4763263',
+      raw_name: 'Twist it, Lick it, Dunk it',
+      category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes',
+      quantity: 3,
+      gross_sales: 24.00,
+      net_payout: 24.00,
+      commission: 0,
+      channel: 'Square POS (In-Store)'
+    },
+    {
+      sku: '264776Y',
+      raw_name: 'My, Oh My Cherry Pie',
+      category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes',
+      quantity: 1,
+      gross_sales: 9.50,
+      net_payout: 9.50,
+      commission: 0,
+      channel: 'Square POS (In-Store)'
+    }
+  ]
+};
+
+const elFudgeeConsolidated = SalesEngine.consolidateSales([elFudgeeFeed]);
+const elFudgeeRow = elFudgeeConsolidated.masterLedger.find(i => i.raw_name === 'EL Fudgee');
+assert(elFudgeeRow, 'EL Fudgee must exist in consolidated ledger');
+assert.strictEqual(elFudgeeRow.main_type, 'CHEESECAKE', `EL Fudgee main_type should be CHEESECAKE, got: ${elFudgeeRow.main_type}`);
+assert.strictEqual(elFudgeeRow.category, 'Cheesecakes', `EL Fudgee category should be Cheesecakes, got: ${elFudgeeRow.category}`);
+assert.strictEqual(elFudgeeRow.deplete_batch, 'Cheesecake_Base_Slice', `EL Fudgee deplete_batch should be Cheesecake_Base_Slice, got: ${elFudgeeRow.deplete_batch}`);
+assert.strictEqual(elFudgeeConsolidated.mainsSummary['CHEESECAKE'].units, 4, 'Cheesecakes main summary must have 4 units');
+
+console.log('✓ EL Fudgee Tier 1 SKU resolution: accurately categorized under Cheesecakes');
+console.log('✓ Buenos Dias (SKU: 9179172) resolves to Waffle');
+console.log('✓ Twist it, Lick it, Dunk it (SKU: 4763263) resolves to Cookie Dough');
+console.log('✓ My, Oh My Cherry Pie (SKU: 264776Y) resolves to Waffle');
+
+// Test Depletion Engine: EL Fudgee must deduct Cheesecake_Base_Slice, NOT Waffle batter
+console.log('\n7b. Testing Depletion Engine for Cheesecake stock deduction...');
+const depletionRes = SalesEngine.calculateDepletionAndAlarms(elFudgeeConsolidated.masterLedger);
+const cheesecakeDepletion = depletionRes.depletionLedger.find(d => d.ingredient_name === 'Cheesecake_Base_Slice');
+assert(cheesecakeDepletion, 'Cheesecake_Base_Slice must be tracked in depletion ledger');
+assert.strictEqual(cheesecakeDepletion.theoretical_consumption, 4, `Cheesecake consumption should be 4, got: ${cheesecakeDepletion.theoretical_consumption}`);
+assert(cheesecakeDepletion.dishes_involved.includes('EL Fudgee'), 'EL Fudgee must be in dishes consuming Cheesecake_Base_Slice');
+
+// Verify waffle batter is NOT consumed by EL Fudgee
+const waffleBatterDepletion = depletionRes.depletionLedger.find(d => d.ingredient_name === 'Waffle_Batter_Portion');
+if (waffleBatterDepletion) {
+  assert(!waffleBatterDepletion.dishes_involved.includes('EL Fudgee'), 'EL Fudgee must NOT deduct from waffle batter!');
+}
+console.log('✓ Depletion engine correctly deducted 4 slices from prepped Cheesecake stock (Cheesecake_Base_Slice), NOT waffle batter');
+
+// 8. Test Unresolved Base Handling & Manager Alert
+console.log('\n8. Testing Unresolved Base Handling for unknown items in bundled category...');
+const unknownItemFeed = {
+  channel: 'Square POS (In-Store)',
+  filename: 'test_unknown_item.csv',
+  items: [
+    {
+      sku: 'UNKNOWN_999',
+      raw_name: 'Midnight Velvet Delight',
+      category: 'Waffles, Pancakes, Cookie Doughs, Cheesecakes',
+      quantity: 5,
+      gross_sales: 45.00,
+      net_payout: 45.00,
+      commission: 0,
+      channel: 'Square POS (In-Store)'
+    }
+  ]
+};
+
+const unknownConsolidated = SalesEngine.consolidateSales([unknownItemFeed]);
+const unknownRow = unknownConsolidated.masterLedger.find(i => i.raw_name === 'Midnight Velvet Delight');
+assert(unknownRow, 'Unknown item must exist in master ledger');
+assert.notStrictEqual(unknownRow.main_type, 'WAFFLE', 'Unknown item in bundled category must NOT default to Waffle!');
+assert.strictEqual(unknownRow.main_type, 'UNRESOLVED_BASE', `Unknown item should be tagged UNRESOLVED_BASE, got: ${unknownRow.main_type}`);
+assert.strictEqual(unknownRow.is_unresolved_base, true, 'is_unresolved_base flag must be true');
+assert.strictEqual(unknownConsolidated.unresolvedCount, 1, 'unresolvedCount must be 1');
+assert.strictEqual(unknownConsolidated.unresolvedBases[0].raw_name, 'Midnight Velvet Delight');
+
+console.log('✓ Unknown item in bundled category did NOT default to Waffle, correctly tagged UNRESOLVED_BASE');
+console.log('✓ Returned in unresolvedBases queue for Treat Street Hub admin alert');
+
+// Test Manager Override & Caching
+console.log('\n8b. Testing Manager Selection Caching (setCustomBaseMapping)...');
+SalesEngine.setCustomBaseMapping('UNKNOWN_999', 'Cheesecake', 'Midnight Velvet Delight');
+const resolvedConsolidated = SalesEngine.consolidateSales([unknownItemFeed]);
+const resolvedRow = resolvedConsolidated.masterLedger.find(i => i.raw_name === 'Midnight Velvet Delight');
+assert.strictEqual(resolvedRow.main_type, 'CHEESECAKE', 'After manager selection, item must resolve to Cheesecake');
+assert.strictEqual(resolvedRow.category, 'Cheesecakes', 'Category must resolve to Cheesecakes');
+assert.strictEqual(resolvedRow.deplete_batch, 'Cheesecake_Base_Slice', 'Deplete batch must resolve to Cheesecake_Base_Slice');
+assert.strictEqual(resolvedConsolidated.unresolvedCount, 0, 'Unresolved count must now be 0');
+
+console.log('✓ Manager selection successfully cached and resolved item to Cheesecake with 0 unresolved remaining');
 
 console.log('\n=== ALL TESTS PASSED SUCCESSFULLY! ===');

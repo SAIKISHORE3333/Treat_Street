@@ -367,6 +367,33 @@
     </div>
 
     <!-- ======================================================== -->
+    <!-- UNRESOLVED BASE MANAGER CLASSIFICATION ALERT PANEL -->
+    <!-- ======================================================== -->
+    <div id="unresolved-base-alert-panel" class="hidden mb-6 glass-panel p-5 rounded-3xl border border-amber-500/50 bg-gradient-to-r from-amber-950/40 via-yellow-950/25 to-black/60 shadow-xl backdrop-blur-md">
+      <div class="flex items-start gap-4">
+        <div class="p-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 shrink-0">
+          <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h4 class="text-base font-bold text-amber-300 heading-font flex items-center gap-2">
+              Action Required: Bundled Category Item Classification
+            </h4>
+            <span id="unresolved-count-pill" class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/40 text-xs font-mono font-bold">
+              0 Items Pending
+            </span>
+          </div>
+          <p class="text-xs text-slate-300 mt-1">
+            Square exports bundled items under <code class="text-amber-200 bg-black/40 px-1.5 py-0.5 rounded border border-white/10 font-mono">"Waffles, Pancakes, Cookie Doughs, Cheesecakes"</code>. Select the accurate recipe base below to direct depletion to the correct stock and segment PDF audits appropriately. Selections are permanently cached.
+          </p>
+          <div id="unresolved-bases-list" class="mt-4 space-y-3">
+            <!-- Dynamic unresolved item cards populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
     <!-- 3. COMPREHENSIVE PRODUCT SALES & REVENUE CONTRIBUTION LEDGER -->
     <!-- ======================================================== -->
     <div id="ledger-section" class="glass-panel p-6 rounded-3xl hidden flex flex-col gap-5">
@@ -821,6 +848,76 @@
     // -------------------------------------------------------------
     // Recalculate Consolidation, Analytics & Depletion
     // -------------------------------------------------------------
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderUnresolvedBasesAlert(unresolvedBases = []) {
+      const panel = document.getElementById('unresolved-base-alert-panel');
+      const list = document.getElementById('unresolved-bases-list');
+      const countPill = document.getElementById('unresolved-count-pill');
+      if (!panel || !list) return;
+
+      if (!unresolvedBases || unresolvedBases.length === 0) {
+        panel.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+      }
+
+      panel.classList.remove('hidden');
+      if (countPill) countPill.innerText = `${unresolvedBases.length} Item${unresolvedBases.length > 1 ? 's' : ''} Pending`;
+
+      list.innerHTML = unresolvedBases.map(item => {
+        const idSafe = encodeURIComponent(item.identifier || item.sku || item.raw_name);
+        const nameSafe = encodeURIComponent(item.raw_name || '');
+        return `
+          <div class="p-3.5 rounded-2xl bg-black/50 border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-inner">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-white text-sm">${escapeHTML(item.raw_name || 'Unnamed Item')}</span>
+                ${item.sku ? `<span class="px-2 py-0.5 rounded bg-white/10 text-[11px] font-mono text-amber-300">SKU: ${escapeHTML(item.sku)}</span>` : ''}
+                <span class="text-xs text-slate-400 font-mono">(${item.total_volume} sold • £${item.gross_sales.toFixed(2)})</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5">
+                Category: <span class="text-slate-300">${escapeHTML(item.category || 'Bundled Category')}</span>
+                ${item.channels && item.channels.length ? `• Channels: <span class="text-slate-300">${escapeHTML(item.channels.join(', '))}</span>` : ''}
+              </p>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs text-amber-200 font-semibold mr-1">Assign Base:</span>
+              <button onclick="resolveBaseMapping('${idSafe}', 'Waffle', '${nameSafe}')" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-200 border border-amber-500/40 text-xs font-bold transition-all flex items-center gap-1">
+                🧇 Waffle
+              </button>
+              <button onclick="resolveBaseMapping('${idSafe}', 'Pancake', '${nameSafe}')" class="px-2.5 py-1.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/40 text-orange-200 border border-orange-500/40 text-xs font-bold transition-all flex items-center gap-1">
+                🥞 Pancake
+              </button>
+              <button onclick="resolveBaseMapping('${idSafe}', 'Cookie Dough', '${nameSafe}')" class="px-2.5 py-1.5 rounded-xl bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-200 border border-yellow-500/40 text-xs font-bold transition-all flex items-center gap-1">
+                🍪 Cookie Dough
+              </button>
+              <button onclick="resolveBaseMapping('${idSafe}', 'Cheesecake', '${nameSafe}')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 border border-rose-500/40 text-xs font-bold transition-all flex items-center gap-1">
+                🍰 Cheesecake
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function resolveBaseMapping(encodedIdentifier, selectedBase, encodedRawName) {
+      const id = decodeURIComponent(encodedIdentifier);
+      const rawName = encodedRawName ? decodeURIComponent(encodedRawName) : '';
+      SalesEngine.setCustomBaseMapping(id, selectedBase, rawName);
+      recalculatePipeline();
+    }
+
     function recalculatePipeline() {
       if (!currentParsedFeeds.length) return;
 
@@ -829,16 +926,19 @@
         reportingDate: activeReportingDate
       });
 
-      // 2. Update Date Selector
+      // 2. Render Unresolved Base Manager Classification Alert
+      renderUnresolvedBasesAlert(currentConsolidated.unresolvedBases || []);
+
+      // 3. Update Date Selector
       updateDateFilterDropdown(currentConsolidated.availableDates);
 
-      // 3. Render Executive Metrics & Channel Breakdown
+      // 4. Render Executive Metrics & Channel Breakdown
       renderExecutiveDashboard(currentConsolidated);
 
-      // 4. Render Master Product Sales & Revenue Contribution Table
+      // 5. Render Master Product Sales & Revenue Contribution Table
       renderMasterLedgerTable();
 
-      // 5. Run Depletion in Background (Optional Drawer)
+      // 6. Run Depletion in Background (Optional Drawer)
       currentDepletionResult = SalesEngine.calculateDepletionAndAlarms(currentConsolidated.masterLedger);
       renderDepletionDetails(currentDepletionResult);
 

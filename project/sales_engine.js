@@ -798,6 +798,7 @@
         time: '',
         channel: channel,
         raw_name: '',
+        sku: '',
         quantity: 0,
         gross_sales: 0,
         commission: 0,
@@ -933,6 +934,9 @@
         'notes', 'note', 'details', 'special_instructions', 'item_notes', 'customer_note', 'instructions'
       ]) || '').trim();
 
+      const rawSku = (findKey(['sku', 'item_sku', 'product_sku', 'barcode', 'item_code', 'plu']) || '').trim();
+
+      normalized.sku = rawSku;
       normalized.modifiers = rawModifiers;
       normalized.category = rawCategory;
       normalized.variation = rawVariation;
@@ -1178,14 +1182,203 @@
     },
 
     // -----------------------------------------------------------
+    // Master Recipe Base Definitions & 3-Tier Lookup Registry
+    // -----------------------------------------------------------
+    MASTER_ITEM_REGISTRY: {
+      "Y650451": { name: "EL Fudgee", base_type: "Cheesecake", deplete_batch: "Cheesecake_Base_Slice", qty: 1 },
+      "EL Fudgee": { base_type: "Cheesecake", deplete_batch: "Cheesecake_Base_Slice", qty: 1 },
+      "9179172": { name: "Buenos Dias", base_type: "Waffle", deplete_batch: "Waffle_Batter_Portion", qty: 1 },
+      "Buenos Dias": { base_type: "Waffle", deplete_batch: "Waffle_Batter_Portion", qty: 1 },
+      "4763263": { name: "Twist it, Lick it, Dunk it", base_type: "Cookie Dough", deplete_batch: "Cookie_Dough_Puck", qty: 1 },
+      "Twist it, Lick it, Dunk it": { base_type: "Cookie Dough", deplete_batch: "Cookie_Dough_Puck", qty: 1 },
+      "264776Y": { name: "My, Oh My Cherry Pie", base_type: "Waffle", deplete_batch: "Waffle_Batter_Portion", qty: 1 },
+      "My, Oh My Cherry Pie": { base_type: "Waffle", deplete_batch: "Waffle_Batter_Portion", qty: 1 }
+    },
+
+    getCustomBaseMappings() {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const stored = localStorage.getItem('ts_custom_base_mappings');
+          if (stored) return JSON.parse(stored);
+        }
+      } catch (e) {}
+      return this._memoryCustomBaseMappings || {};
+    },
+
+    setCustomBaseMapping(identifier, baseType, rawName = '') {
+      if (!identifier || !baseType) return;
+      if (!this._memoryCustomBaseMappings) this._memoryCustomBaseMappings = {};
+      
+      const mappings = this.getCustomBaseMappings();
+      const cleanId = String(identifier).trim().toUpperCase();
+      mappings[cleanId] = baseType;
+      mappings[String(identifier).trim()] = baseType;
+      this._memoryCustomBaseMappings[cleanId] = baseType;
+      this._memoryCustomBaseMappings[String(identifier).trim()] = baseType;
+
+      if (rawName) {
+        const cleanName = String(rawName).trim();
+        mappings[cleanName] = baseType;
+        this._memoryCustomBaseMappings[cleanName] = baseType;
+        const norm = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        mappings[norm] = baseType;
+        this._memoryCustomBaseMappings[norm] = baseType;
+      }
+
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('ts_custom_base_mappings', JSON.stringify(mappings));
+        }
+      } catch (e) {}
+    },
+
+    clearCustomBaseMappings() {
+      this._memoryCustomBaseMappings = {};
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('ts_custom_base_mappings');
+        }
+      } catch (e) {}
+    },
+
+    getDepleteBatchForBase(baseType) {
+      const norm = (baseType || '').toLowerCase();
+      if (norm.includes('cheesecake')) return 'Cheesecake_Base_Slice';
+      if (norm.includes('cookie dough') || norm.includes('cookiedough')) return 'Cookie_Dough_Puck';
+      if (norm.includes('pancake')) return 'Pancake_Batter_Portion';
+      if (norm.includes('croffle')) return 'Croissant_Dough_Piece';
+      if (norm.includes('crepe')) return 'Crepe_Batter_Portion';
+      if (norm.includes('waffle')) return 'Waffle_Batter_Portion';
+      return 'General_Base_Portion';
+    },
+
+    lookupRegistry(sku = '', rawName = '') {
+      const custom = this.getCustomBaseMappings();
+      const cleanSku = (sku || '').trim().toUpperCase();
+      const cleanName = (rawName || '').trim();
+      const normName = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      // Check manager custom overrides first
+      if (cleanSku && custom[cleanSku]) {
+        const b = custom[cleanSku];
+        return { name: cleanName, base_type: b, deplete_batch: this.getDepleteBatchForBase(b), qty: 1, source: 'CUSTOM_OVERRIDE_SKU' };
+      }
+      if (cleanName && custom[cleanName]) {
+        const b = custom[cleanName];
+        return { name: cleanName, base_type: b, deplete_batch: this.getDepleteBatchForBase(b), qty: 1, source: 'CUSTOM_OVERRIDE_NAME' };
+      }
+      if (normName && custom[normName]) {
+        const b = custom[normName];
+        return { name: cleanName, base_type: b, deplete_batch: this.getDepleteBatchForBase(b), qty: 1, source: 'CUSTOM_OVERRIDE_NORM_NAME' };
+      }
+
+      // Tier 1 (Highest Priority - SKU Match)
+      if (cleanSku) {
+        if (this.MASTER_ITEM_REGISTRY[cleanSku]) {
+          return { ...this.MASTER_ITEM_REGISTRY[cleanSku], source: 'TIER1_SKU' };
+        }
+        for (const [k, val] of Object.entries(this.MASTER_ITEM_REGISTRY)) {
+          if (k.trim().toUpperCase() === cleanSku) {
+            return { ...val, source: 'TIER1_SKU' };
+          }
+        }
+      }
+
+      // Tier 2 (Name Match)
+      if (cleanName) {
+        if (this.MASTER_ITEM_REGISTRY[cleanName]) {
+          return { ...this.MASTER_ITEM_REGISTRY[cleanName], source: 'TIER2_NAME' };
+        }
+        for (const [k, val] of Object.entries(this.MASTER_ITEM_REGISTRY)) {
+          const kNorm = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const valNameNorm = (val.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (kNorm === normName || valNameNorm === normName) {
+            return { ...val, source: 'TIER2_NAME' };
+          }
+        }
+      }
+
+      return null;
+    },
+
+    formatBaseTypeInfo(baseType, depleteBatch = '', qty = 1, tier = '') {
+      const b = (baseType || '').trim();
+      const norm = b.toLowerCase();
+
+      if (norm === 'cheesecake') {
+        return { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecake', deplete_batch: depleteBatch || 'Cheesecake_Base_Slice', deplete_qty: qty, tier: tier };
+      }
+      if (norm === 'waffle') {
+        return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle', deplete_batch: depleteBatch || 'Waffle_Batter_Portion', deplete_qty: qty, tier: tier };
+      }
+      if (norm === 'cookie dough' || norm === 'cookiedough') {
+        return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough', deplete_batch: depleteBatch || 'Cookie_Dough_Puck', deplete_qty: qty, tier: tier };
+      }
+      if (norm === 'pancake') {
+        return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake', deplete_batch: depleteBatch || 'Pancake_Batter_Portion', deplete_qty: qty, tier: tier };
+      }
+      if (norm === 'croffle') {
+        return { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffle', deplete_batch: depleteBatch || 'Croissant_Dough_Piece', deplete_qty: qty, tier: tier };
+      }
+      if (norm === 'crepe' || norm === 'crêpe') {
+        return { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepe', deplete_batch: depleteBatch || 'Crepe_Batter_Portion', deplete_qty: qty, tier: tier };
+      }
+      if (norm.includes('savoury') || norm.includes('burger')) {
+        return { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides', deplete_batch: depleteBatch || 'Savoury_Portion', deplete_qty: qty, tier: tier };
+      }
+      if (norm.includes('shake') || norm.includes('smoothie')) {
+        return { type: 'MILKSHAKE', label: 'Beverages & Shakes', plural: 'Beverages & Shakes', icon: '🥤', badge: '🥤 Beverages & Shakes', deplete_batch: depleteBatch || 'Shake_Mix_Portion', deplete_qty: qty, tier: tier };
+      }
+      if (norm.includes('gelato') || norm.includes('scoop') || norm.includes('sorbet')) {
+        return { type: 'GELATO_SUNDAE', label: 'Ice Cream / Scoops', plural: 'Ice Cream / Scoops', icon: '🍨', badge: '🍨 Ice Cream / Scoops', deplete_batch: depleteBatch || 'Gelato_Scoop_Portion', deplete_qty: qty, tier: tier };
+      }
+      if (norm === 'unresolved_base') {
+        return { type: 'UNRESOLVED_BASE', label: 'Unresolved Base', plural: 'Unresolved Bases', icon: '❓', badge: '❓ Unresolved Base', deplete_batch: '', deplete_qty: 0, is_unresolved: true, tier: tier };
+      }
+
+      return { type: 'OTHER', label: b || 'General Menu', plural: (b || 'General Item') + 's', icon: '🍽️', badge: `🍽️ ${b || 'General'}`, deplete_batch: depleteBatch, deplete_qty: qty, tier: tier };
+    },
+
+    // -----------------------------------------------------------
     // Fuzzy Category & Sub-Category Normalization
     // -----------------------------------------------------------
-    normalizeAuditCategory(category = '', rawName = '') {
+    normalizeAuditCategory(category = '', rawName = '', sku = '', mainType = '') {
       const cat = (category || '').toLowerCase().trim();
       const name = (rawName || '').toLowerCase().trim();
 
-      // 1. Desserts / Waffles audit segment
-      // "Waffles, Pancakes, Cookie Doughs, Cheesecakes" -> Map to Desserts/Waffles Audit
+      // 1. Direct resolution from identified mainType (Tier 1 & Tier 2 override)
+      if (mainType === 'CHEESECAKE') return 'Cheesecakes';
+      if (mainType === 'SAVOURY_BURGER') return 'Savoury Mains & Sides';
+      if (mainType === 'MILKSHAKE') return 'Beverages & Shakes';
+      if (mainType === 'GELATO_SUNDAE') return 'Scoops / Ice Cream';
+      if (mainType === 'UNRESOLVED_BASE') return 'Unresolved Recipe Base';
+      if (mainType === 'WAFFLE' || mainType === 'PANCAKE' || mainType === 'COOKIE_DOUGH' || mainType === 'CROFFLE' || mainType === 'CREPE') {
+        return 'Desserts/Waffles Audit';
+      }
+
+      // 2. Registry match if sku or name provided
+      const reg = this.lookupRegistry ? this.lookupRegistry(sku, rawName) : null;
+      if (reg && reg.base_type) {
+        if (reg.base_type === 'Cheesecake') return 'Cheesecakes';
+        if (reg.base_type === 'Savoury Mains & Sides') return 'Savoury Mains & Sides';
+        if (reg.base_type === 'Beverages & Shakes') return 'Beverages & Shakes';
+        if (reg.base_type === 'Ice Cream / Scoops') return 'Scoops / Ice Cream';
+        return 'Desserts/Waffles Audit';
+      }
+
+      // 3. Explicit Name Checks
+      if (name.includes('cheesecake') || name.includes('fudgee')) return 'Cheesecakes';
+      if (name.includes('burger') || name.includes('fries') || name.includes('side ting') || name.includes('bloc prty') || name.includes('cajun') || name.includes('tender') || name.includes('wing')) {
+        return 'Savoury Mains & Sides';
+      }
+      if (name.includes('shake') || name.includes('smoothie') || name.includes('water') || name.includes('coke') || name.includes('fanta') || name.includes('sprite') || name.includes('cola')) {
+        return 'Beverages & Shakes';
+      }
+      if (name.includes('scoop') || name.includes('gelato') || name.includes('sorbet') || name.includes('sundae')) {
+        return 'Scoops / Ice Cream';
+      }
+
+      // 4. Desserts / Waffles audit segment
       if (
         cat.includes('waffles, pancakes, cookie doughs, cheesecakes') ||
         cat.includes('desserts/waffles audit') ||
@@ -1198,69 +1391,31 @@
         cat.includes('crepe') ||
         cat.includes('dessert')
       ) {
+        if (cat.includes('cheesecake') && !cat.includes('waffle')) return 'Cheesecakes';
         return 'Desserts/Waffles Audit';
       }
 
-      // 2. Savoury Mains & Sides
-      // Map "Burgers", "Fully Funked Fries", "Side Ting", "BLOC PRTY" -> Map to Savoury Mains & Sides
+      // 5. Savoury Mains & Sides
       if (
-        cat.includes('burger') ||
-        cat.includes('fully funked fries') ||
-        cat.includes('side ting') ||
-        cat.includes('bloc prty') ||
-        cat.includes('savoury mains & sides') ||
-        cat.includes('fries') ||
-        cat.includes('savoury') ||
-        cat.includes('savory') ||
-        cat.includes('chicken') ||
-        name.includes('burger') ||
-        name.includes('fries') ||
-        name.includes('side ting') ||
-        name.includes('bloc prty') ||
-        name.includes('cajun') ||
-        name.includes('tender') ||
-        name.includes('wing')
+        cat.includes('burger') || cat.includes('fully funked fries') || cat.includes('side ting') || cat.includes('bloc prty') ||
+        cat.includes('savoury mains & sides') || cat.includes('fries') || cat.includes('savoury') || cat.includes('savory') || cat.includes('chicken')
       ) {
         return 'Savoury Mains & Sides';
       }
 
-      // 3. Beverages & Shakes
-      // Map "Candy Bar Shakes", "Milkshakes" -> Map to Beverages & Shakes
+      // 6. Beverages & Shakes
       if (
-        cat.includes('candy bar shakes') ||
-        cat.includes('milkshakes') ||
-        cat.includes('milkshake') ||
-        cat.includes('beverages & shakes') ||
-        cat.includes('shake') ||
-        cat.includes('smoothie') ||
-        cat.includes('drink') ||
-        cat.includes('beverage') ||
-        name.includes('shake') ||
-        name.includes('smoothie') ||
-        name.includes('water') ||
-        name.includes('coke') ||
-        name.includes('fanta') ||
-        name.includes('sprite') ||
-        name.includes('cola')
+        cat.includes('candy bar shakes') || cat.includes('milkshakes') || cat.includes('milkshake') ||
+        cat.includes('beverages & shakes') || cat.includes('shake') || cat.includes('smoothie') ||
+        cat.includes('drink') || cat.includes('beverage')
       ) {
         return 'Beverages & Shakes';
       }
 
-      // 4. Scoops / Ice Cream
-      // Map "Gelato & Sorbet Scoops" -> Map to Scoops / Ice Cream
+      // 7. Scoops / Ice Cream
       if (
-        cat.includes('gelato & sorbet scoops') ||
-        cat.includes('scoops / ice cream') ||
-        cat.includes('ice cream / scoops') ||
-        cat.includes('gelato') ||
-        cat.includes('sorbet') ||
-        cat.includes('scoop') ||
-        cat.includes('ice cream') ||
-        cat.includes('sundae') ||
-        name.includes('scoop') ||
-        name.includes('gelato') ||
-        name.includes('sorbet') ||
-        name.includes('sundae')
+        cat.includes('gelato & sorbet scoops') || cat.includes('scoops / ice cream') || cat.includes('ice cream / scoops') ||
+        cat.includes('gelato') || cat.includes('sorbet') || cat.includes('scoop') || cat.includes('ice cream') || cat.includes('sundae')
       ) {
         return 'Scoops / Ice Cream';
       }
@@ -1269,139 +1424,113 @@
     },
 
     // -----------------------------------------------------------
-    // 5b. Smart Mains & Dessert Base Classification Engine
+    // 5b. Smart Mains & Dessert Base Classification Engine (3-Tier Priority)
     // -----------------------------------------------------------
-    detectMainBase(rawName = '', modifiers = '', category = '', variation = '', notes = '', recipeObj = null) {
+    detectMainBase(rawName = '', modifiers = '', category = '', variation = '', notes = '', recipeObj = null, sku = '') {
       const normMod = (modifiers || '').toLowerCase();
       const normName = (rawName || '').toLowerCase();
       const normCat = (category || '').toLowerCase();
       const normVar = (variation || '').toLowerCase();
       const normNotes = (notes || '').toLowerCase();
+      const cleanSku = (sku || '').trim().toUpperCase();
 
-      // Combined metadata text for modifier & option choices
-      const allModText = `${normMod} ${normVar} ${normNotes}`.toLowerCase();
-
-      // Priority 1: Explicit Modifiers / Options / Choices / Variation / Notes
-      // (e.g. customer ordered a flavor like "Banoffee" and picked "American Pancakes", "Waffle", "Croffle", etc.)
-      if (
-        allModText.includes('pancake') || allModText.includes('pancakes') ||
-        allModText.includes('american pancake') || allModText.includes('hotcake') ||
-        allModText.includes('pancake stack') || allModText.includes('buttermilk pancake')
-      ) {
-        return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
-      }
-      if (
-        allModText.includes('liege waffle') || allModText.includes('belgian waffle') ||
-        allModText.includes('bubble waffle') || allModText.includes('waffle')
-      ) {
-        return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
-      }
-      if (allModText.includes('croffle') || allModText.includes('croissant waffle')) {
-        return { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffle' };
-      }
-      if (allModText.includes('cookie dough') || allModText.includes('cookiedough') || allModText.includes('cookie-dough')) {
-        return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
-      }
-      if (allModText.includes('cheesecake')) {
-        return { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecake' };
-      }
-      if (allModText.includes('crepe') || allModText.includes('crêpe')) {
-        return { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepe' };
-      }
-      if (allModText.includes('brioche bun') || allModText.includes('fries') || allModText.includes('chicken patty')) {
-        return { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides' };
+      // =========================================================
+      // TIER 1 (Highest Priority - SKU Match)
+      // Match row SKU against Master Recipe Catalog / MASTER_ITEM_REGISTRY
+      // =========================================================
+      if (cleanSku) {
+        const skuMatch = this.lookupRegistry(cleanSku, '');
+        if (skuMatch && skuMatch.base_type) {
+          return this.formatBaseTypeInfo(skuMatch.base_type, skuMatch.deplete_batch, skuMatch.qty || 1, 'TIER_1_SKU');
+        }
       }
 
-      // Priority 2: Product Name / Dish Title
-      if (normName.includes('pancake') || normName.includes('hotcake') || normName.includes('pancake stack')) {
-        return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
-      }
-      if (normName.includes('waffle')) {
-        return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
-      }
-      if (normName.includes('croffle')) {
-        return { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffle' };
-      }
-      if (normName.includes('cookie dough') || normName.includes('cookiedough')) {
-        return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
-      }
-      if (normName.includes('cheesecake')) {
-        return { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecake' };
-      }
-      if (normName.includes('crepe') || normName.includes('crêpe')) {
-        return { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepe' };
-      }
-      if (
-        normName.includes('burger') || normName.includes('chicken') || normName.includes('tenders') ||
-        normName.includes('cajun') || normName.includes('wings') || normName.includes('louisiana') ||
-        normName.includes('papi chulo') || normName.includes('fries') || normName.includes('chick n') ||
-        normName.includes('side ting') || normName.includes('bloc prty')
-      ) {
-        return { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides' };
-      }
-      if (normName.includes('shake') || normName.includes('smoothie') || normName.includes('frappe')) {
-        return { type: 'MILKSHAKE', label: 'Beverages & Shakes', plural: 'Beverages & Shakes', icon: '🥤', badge: '🥤 Beverages & Shakes' };
-      }
-      if (normName.includes('gelato') || normName.includes('scoop') || normName.includes('sundae') || normName.includes('sorbet')) {
-        return { type: 'GELATO_SUNDAE', label: 'Ice Cream / Scoops', plural: 'Ice Cream / Scoops', icon: '🍨', badge: '🍨 Ice Cream / Scoops' };
-      }
-      if (
-        normName.includes('water') || normName.includes('coke') || normName.includes('cola') ||
-        normName.includes('fanta') || normName.includes('sprite') || normName.includes('drink') ||
-        normName.includes('tea') || normName.includes('coffee')
-      ) {
-        return { type: 'BEVERAGE_OTHER', label: 'Beverages & Other', plural: 'Beverages & Other', icon: '☕', badge: '☕ Beverage' };
+      // =========================================================
+      // TIER 2 (Name Match)
+      // Match normalized Item Name against internal recipe definitions
+      // =========================================================
+      if (rawName && rawName.trim()) {
+        const nameMatch = this.lookupRegistry('', rawName);
+        if (nameMatch && nameMatch.base_type) {
+          return this.formatBaseTypeInfo(nameMatch.base_type, nameMatch.deplete_batch, nameMatch.qty || 1, 'TIER_2_NAME');
+        }
       }
 
-      // Priority 3: Linked SOP Recipe ingredients (evaluated BEFORE ambiguous category strings!)
+      // Tier 2b: Check Linked SOP Recipe ingredients
       if (recipeObj && Array.isArray(recipeObj.ingredients)) {
         const ingNames = recipeObj.ingredients.map(i => (i.name || '').toLowerCase()).join(' ');
-        if (ingNames.includes('pancake')) return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
-        if (ingNames.includes('waffle')) return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
-        if (ingNames.includes('cookie dough')) return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
-        if (ingNames.includes('brioche') || ingNames.includes('patty') || ingNames.includes('fries')) {
-          return { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides' };
-        }
-        if (ingNames.includes('milk') && ingNames.includes('mix')) return { type: 'MILKSHAKE', label: 'Beverages & Shakes', plural: 'Beverages & Shakes', icon: '🥤', badge: '🥤 Beverages & Shakes' };
+        if (ingNames.includes('cheesecake')) return this.formatBaseTypeInfo('Cheesecake', 'Cheesecake_Base_Slice', 1, 'TIER_2_RECIPE');
+        if (ingNames.includes('pancake')) return this.formatBaseTypeInfo('Pancake', 'Pancake_Batter_Portion', 1, 'TIER_2_RECIPE');
+        if (ingNames.includes('waffle')) return this.formatBaseTypeInfo('Waffle', 'Waffle_Batter_Portion', 1, 'TIER_2_RECIPE');
+        if (ingNames.includes('cookie dough')) return this.formatBaseTypeInfo('Cookie Dough', 'Cookie_Dough_Puck', 1, 'TIER_2_RECIPE');
+        if (ingNames.includes('croffle') || ingNames.includes('croissant')) return this.formatBaseTypeInfo('Croffle', 'Croissant_Dough_Piece', 1, 'TIER_2_RECIPE');
+        if (ingNames.includes('brioche') || ingNames.includes('patty') || ingNames.includes('fries')) return this.formatBaseTypeInfo('Savoury Mains & Sides', 'Savoury_Portion', 1, 'TIER_2_RECIPE');
+        if (ingNames.includes('milk') && ingNames.includes('mix')) return this.formatBaseTypeInfo('Beverages & Shakes', 'Shake_Mix_Portion', 1, 'TIER_2_RECIPE');
       }
 
-      // Priority 4: Category (Substring / Alias Normalized Rules)
-      // "Waffles, Pancakes, Cookie Doughs, Cheesecakes" must map to Dessert/Waffle audit segment
+      // Tier 2c: Explicit Item Name & Customer Modifier Keywords
+      const allModText = `${normMod} ${normVar} ${normNotes}`.toLowerCase();
+      if (allModText.includes('cheesecake')) return this.formatBaseTypeInfo('Cheesecake', 'Cheesecake_Base_Slice', 1, 'TIER_2_MODIFIER');
+      if (allModText.includes('pancake') || allModText.includes('pancakes') || allModText.includes('american pancake') || allModText.includes('hotcake')) return this.formatBaseTypeInfo('Pancake', 'Pancake_Batter_Portion', 1, 'TIER_2_MODIFIER');
+      if (allModText.includes('croffle') || allModText.includes('croissant waffle')) return this.formatBaseTypeInfo('Croffle', 'Croissant_Dough_Piece', 1, 'TIER_2_MODIFIER');
+      if (allModText.includes('cookie dough') || allModText.includes('cookiedough') || allModText.includes('cookie-dough')) return this.formatBaseTypeInfo('Cookie Dough', 'Cookie_Dough_Puck', 1, 'TIER_2_MODIFIER');
+      if (allModText.includes('liege waffle') || allModText.includes('belgian waffle') || allModText.includes('bubble waffle') || allModText.includes('waffle')) return this.formatBaseTypeInfo('Waffle', 'Waffle_Batter_Portion', 1, 'TIER_2_MODIFIER');
+      if (allModText.includes('crepe') || allModText.includes('crêpe')) return this.formatBaseTypeInfo('Crepe', 'Crepe_Batter_Portion', 1, 'TIER_2_MODIFIER');
+      if (allModText.includes('brioche bun') || allModText.includes('fries') || allModText.includes('chicken patty')) return this.formatBaseTypeInfo('Savoury Mains & Sides', 'Savoury_Portion', 1, 'TIER_2_MODIFIER');
+
+      // Explicit Item Name Keywords
+      if (normName.includes('cheesecake') || normName.includes('fudgee')) return this.formatBaseTypeInfo('Cheesecake', 'Cheesecake_Base_Slice', 1, 'TIER_2_NAME_KEYWORD');
+      if (normName.includes('pancake') || normName.includes('hotcake') || normName.includes('pancake stack')) return this.formatBaseTypeInfo('Pancake', 'Pancake_Batter_Portion', 1, 'TIER_2_NAME_KEYWORD');
+      if (normName.includes('waffle')) return this.formatBaseTypeInfo('Waffle', 'Waffle_Batter_Portion', 1, 'TIER_2_NAME_KEYWORD');
+      if (normName.includes('croffle')) return this.formatBaseTypeInfo('Croffle', 'Croissant_Dough_Piece', 1, 'TIER_2_NAME_KEYWORD');
+      if (normName.includes('cookie dough') || normName.includes('cookiedough')) return this.formatBaseTypeInfo('Cookie Dough', 'Cookie_Dough_Puck', 1, 'TIER_2_NAME_KEYWORD');
+      if (normName.includes('crepe') || normName.includes('crêpe')) return this.formatBaseTypeInfo('Crepe', 'Crepe_Batter_Portion', 1, 'TIER_2_NAME_KEYWORD');
+      if (normName.includes('burger') || normName.includes('chicken') || normName.includes('tenders') || normName.includes('cajun') || normName.includes('wings') || normName.includes('louisiana') || normName.includes('papi chulo') || normName.includes('fries') || normName.includes('chick n') || normName.includes('side ting') || normName.includes('bloc prty')) {
+        return this.formatBaseTypeInfo('Savoury Mains & Sides', 'Savoury_Portion', 1, 'TIER_2_NAME_KEYWORD');
+      }
+      if (normName.includes('shake') || normName.includes('smoothie') || normName.includes('frappe')) return this.formatBaseTypeInfo('Beverages & Shakes', 'Shake_Mix_Portion', 1, 'TIER_2_NAME_KEYWORD');
+      if (normName.includes('gelato') || normName.includes('scoop') || normName.includes('sundae') || normName.includes('sorbet')) return this.formatBaseTypeInfo('Ice Cream / Scoops', 'Gelato_Scoop_Portion', 1, 'TIER_2_NAME_KEYWORD');
+      if (normName.includes('water') || normName.includes('coke') || normName.includes('cola') || normName.includes('fanta') || normName.includes('sprite') || normName.includes('drink') || normName.includes('tea') || normName.includes('coffee')) {
+        return this.formatBaseTypeInfo('General Menu', '', 0, 'TIER_2_NAME_KEYWORD');
+      }
+
+      // =========================================================
+      // TIER 3 (Fallback - Category Guessing)
+      // ONLY use Category keyword guessing if Tier 1 and Tier 2 fail.
+      // =========================================================
+      // If category is the bundled category "Waffles, Pancakes, Cookie Doughs, Cheesecakes":
+      // Do NOT default to Waffle! Tag it as UNRESOLVED_BASE!
       if (normCat.includes('waffles, pancakes, cookie doughs, cheesecakes')) {
-        return { type: 'WAFFLE', label: 'Dessert / Waffle', plural: 'Dessert / Waffles', icon: '🧇', badge: '🧇 Dessert/Waffle' };
-      }
-      if (
-        normCat.includes('burger') || normCat.includes('fully funked fries') ||
-        normCat.includes('side ting') || normCat.includes('bloc prty') ||
-        normCat.includes('chicken') || normCat.includes('savory') || normCat.includes('savoury')
-      ) {
-        return { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides' };
-      }
-      if (
-        normCat.includes('candy bar shakes') || normCat.includes('milkshake') ||
-        normCat.includes('shake') || normCat.includes('smoothie')
-      ) {
-        return { type: 'MILKSHAKE', label: 'Beverages & Shakes', plural: 'Beverages & Shakes', icon: '🥤', badge: '🥤 Beverages & Shakes' };
-      }
-      if (
-        normCat.includes('gelato & sorbet scoops') || normCat.includes('gelato') ||
-        normCat.includes('scoop') || normCat.includes('sorbet') || normCat.includes('sundae')
-      ) {
-        return { type: 'GELATO_SUNDAE', label: 'Ice Cream / Scoops', plural: 'Ice Cream / Scoops', icon: '🍨', badge: '🍨 Ice Cream / Scoops' };
+        return {
+          type: 'UNRESOLVED_BASE',
+          label: 'Unresolved Base',
+          plural: 'Unresolved Bases',
+          icon: '❓',
+          badge: '❓ Unresolved Base',
+          deplete_batch: '',
+          deplete_qty: 0,
+          is_unresolved: true,
+          tier: 'TIER_3_UNRESOLVED'
+        };
       }
 
-      if (normCat.includes('pancake') && !normCat.includes('waffle')) {
-        return { type: 'PANCAKE', label: 'Pancake', plural: 'Pancakes', icon: '🥞', badge: '🥞 Pancake' };
+      if (normCat.includes('cheesecake')) return this.formatBaseTypeInfo('Cheesecake', 'Cheesecake_Base_Slice', 1, 'TIER_3_CATEGORY');
+      if (normCat.includes('burger') || normCat.includes('fully funked fries') || normCat.includes('side ting') || normCat.includes('bloc prty') || normCat.includes('chicken') || normCat.includes('savory') || normCat.includes('savoury')) {
+        return this.formatBaseTypeInfo('Savoury Mains & Sides', 'Savoury_Portion', 1, 'TIER_3_CATEGORY');
       }
-      if (normCat.includes('waffle') && !normCat.includes('pancake')) {
-        return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle' };
+      if (normCat.includes('candy bar shakes') || normCat.includes('milkshake') || normCat.includes('shake') || normCat.includes('smoothie')) {
+        return this.formatBaseTypeInfo('Beverages & Shakes', 'Shake_Mix_Portion', 1, 'TIER_3_CATEGORY');
       }
-      if (normCat.includes('cookie dough')) return { type: 'COOKIE_DOUGH', label: 'Cookie Dough', plural: 'Cookie Doughs', icon: '🍪', badge: '🍪 Cookie Dough' };
-      if (normCat.includes('croffle')) return { type: 'CROFFLE', label: 'Croffle', plural: 'Croffles', icon: '🥐', badge: '🥐 Croffle' };
-      if (normCat.includes('crepe')) return { type: 'CREPE', label: 'Crepe', plural: 'Crepes', icon: '🥞', badge: '🥞 Crepe' };
-      if (normCat.includes('cheesecake')) return { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecake' };
+      if (normCat.includes('gelato & sorbet scoops') || normCat.includes('gelato') || normCat.includes('scoop') || normCat.includes('sorbet') || normCat.includes('sundae')) {
+        return this.formatBaseTypeInfo('Ice Cream / Scoops', 'Gelato_Scoop_Portion', 1, 'TIER_3_CATEGORY');
+      }
+      if (normCat.includes('pancake') && !normCat.includes('waffle')) return this.formatBaseTypeInfo('Pancake', 'Pancake_Batter_Portion', 1, 'TIER_3_CATEGORY');
+      if (normCat.includes('waffle') && !normCat.includes('pancake')) return this.formatBaseTypeInfo('Waffle', 'Waffle_Batter_Portion', 1, 'TIER_3_CATEGORY');
+      if (normCat.includes('cookie dough')) return this.formatBaseTypeInfo('Cookie Dough', 'Cookie_Dough_Puck', 1, 'TIER_3_CATEGORY');
+      if (normCat.includes('croffle')) return this.formatBaseTypeInfo('Croffle', 'Croissant_Dough_Piece', 1, 'TIER_3_CATEGORY');
+      if (normCat.includes('crepe')) return this.formatBaseTypeInfo('Crepe', 'Crepe_Batter_Portion', 1, 'TIER_3_CATEGORY');
 
-      return { type: 'OTHER', label: 'General Menu', plural: 'General Items', icon: '🍽️', badge: '🍽️ General' };
+      return { type: 'OTHER', label: 'General Menu', plural: 'General Items', icon: '🍽️', badge: '🍽️ General', deplete_batch: '', deplete_qty: 0, tier: 'TIER_3_FALLBACK' };
     },
 
     disambiguateItemName(baseItemName, mainInfo, modifiers = '') {
@@ -1411,6 +1540,18 @@
 
       // Don't append croffle/waffle suffix to Viral Dubai Chocolate - Kunafa
       if (normName.includes('dubai') || normName.includes('kunafa')) {
+        return baseItemName;
+      }
+
+      // Explicit registry items or items already properly branded keep clean name
+      if (
+        normName.includes('fudgee') ||
+        normName.includes('buenos dias') ||
+        normName.includes('twist it') ||
+        normName.includes('cherry pie') ||
+        mainInfo.type === 'CHEESECAKE' ||
+        mainInfo.type === 'UNRESOLVED_BASE'
+      ) {
         return baseItemName;
       }
 
@@ -1428,9 +1569,6 @@
       if (mainInfo.type === 'COOKIE_DOUGH' && !normName.includes('cookie dough') && !normName.includes('cookiedough')) {
         return `${baseItemName} (Cookie Dough)`;
       }
-      if (mainInfo.type === 'CHEESECAKE' && !normName.includes('cheesecake')) {
-        return `${baseItemName} (Cheesecake)`;
-      }
       if (mainInfo.type === 'CREPE' && !normName.includes('crepe') && !normName.includes('crêpe')) {
         return `${baseItemName} (Crepe)`;
       }
@@ -1447,6 +1585,7 @@
 
       const ledgerMap = new Map(); // final_item_name -> row
       const unmappedMap = new Map(); // raw_name -> details
+      const unresolvedBasesMap = new Map(); // identifier -> unresolved item details
       
       let grandTotalUnits = 0;
       let grandTotalGross = 0;
@@ -1479,17 +1618,20 @@
           const matchedName = hasRecipe ? match.master_name : (item.raw_name || 'Unnamed Product');
 
           // Detect Main Base (Waffles, Pancakes, Cookie Dough, Croffles, Cheesecakes, etc.)
-          const mainInfo = this.detectMainBase(item.raw_name, item.modifiers, item.category, item.variation, item.notes, hasRecipe ? match.recipe_obj : null);
+          const mainInfo = this.detectMainBase(item.raw_name, item.modifiers, item.category, item.variation, item.notes, hasRecipe ? match.recipe_obj : null, item.sku);
           const finalItemName = this.disambiguateItemName(matchedName, mainInfo, item.modifiers);
-          const auditCategory = this.normalizeAuditCategory(item.category, item.raw_name);
+          const auditCategory = this.normalizeAuditCategory(item.category, item.raw_name, item.sku, mainInfo.type);
 
           if (!ledgerMap.has(finalItemName)) {
-            const formattedCategory = auditCategory || (hasRecipe && match.recipe_obj && match.recipe_obj.category ? match.recipe_obj.category : (item.category || 'Desserts & Mains'));
+            const formattedCategory = (mainInfo.type === 'CHEESECAKE')
+              ? 'Cheesecakes'
+              : (auditCategory || (hasRecipe && match.recipe_obj && match.recipe_obj.category ? match.recipe_obj.category : (item.category || 'Desserts & Mains')));
 
             ledgerMap.set(finalItemName, {
               master_item_name: finalItemName,
               base_product_name: matchedName,
               raw_name: item.raw_name,
+              sku: item.sku || '',
               raw_category: item.category || '',
               category: formattedCategory,
               audit_segment: auditCategory,
@@ -1498,6 +1640,10 @@
               main_plural: mainInfo.plural,
               main_badge: mainInfo.badge,
               main_icon: mainInfo.icon,
+              deplete_batch: mainInfo.deplete_batch || '',
+              deplete_qty: mainInfo.deplete_qty || 1,
+              is_unresolved_base: Boolean(mainInfo.is_unresolved),
+              tier_resolution: mainInfo.tier || '',
               modifiers_applied: item.modifiers || '',
               has_sop_recipe: hasRecipe,
               recipe_obj: hasRecipe ? match.recipe_obj : null,
@@ -1580,6 +1726,27 @@
           grandTotalNet += net;
           grandTotalDiscounts += disc;
 
+          // Track unresolved recipe base items for manager classification alert
+          if (mainInfo.is_unresolved) {
+            const unresKey = item.sku ? `SKU:${item.sku.trim()}` : `NAME:${this.normalizeText(item.raw_name)}`;
+            if (!unresolvedBasesMap.has(unresKey)) {
+              unresolvedBasesMap.set(unresKey, {
+                identifier: item.sku || item.raw_name,
+                sku: item.sku || '',
+                raw_name: item.raw_name,
+                item_name: finalItemName,
+                category: item.category || '',
+                channels: new Set(),
+                total_volume: 0,
+                gross_sales: 0
+              });
+            }
+            const uRec = unresolvedBasesMap.get(unresKey);
+            uRec.total_volume += qty;
+            uRec.gross_sales += gross;
+            if (item.channel) uRec.channels.add(item.channel);
+          }
+
           // Keep unmapped tracking purely for optional SOP recipe linking (never blocks sales report!)
           if (!hasRecipe) {
             const key = this.normalizeText(item.raw_name);
@@ -1654,7 +1821,8 @@
         'SAVOURY_BURGER': { type: 'SAVOURY_BURGER', label: 'Savoury Mains & Sides', plural: 'Savoury Mains & Sides', icon: '🍔', badge: '🍔 Savoury Mains & Sides', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
         'MILKSHAKE': { type: 'MILKSHAKE', label: 'Beverages & Shakes', plural: 'Beverages & Shakes', icon: '🥤', badge: '🥤 Beverages & Shakes', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
         'GELATO_SUNDAE': { type: 'GELATO_SUNDAE', label: 'Ice Cream / Scoops', plural: 'Ice Cream / Scoops', icon: '🍨', badge: '🍨 Ice Cream / Scoops', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
-        'BEVERAGE_OTHER': { type: 'BEVERAGE_OTHER', label: 'Other Drinks & Desserts', plural: 'Other Drinks & Desserts', icon: '☕', badge: '☕ Other', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 }
+        'BEVERAGE_OTHER': { type: 'BEVERAGE_OTHER', label: 'Other Drinks & Desserts', plural: 'Other Drinks & Desserts', icon: '☕', badge: '☕ Other', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 },
+        'UNRESOLVED_BASE': { type: 'UNRESOLVED_BASE', label: 'Unresolved Base', plural: 'Unresolved Bases', icon: '❓', badge: '❓ Unresolved Base', units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, items_count: 0, pct_of_mains: 0 }
       };
 
       ledgerRows.forEach(row => {
@@ -1722,7 +1890,8 @@
         ['gelato_sundaes', 'GELATO_SUNDAE'], ['gelato', 'GELATO_SUNDAE'],
         ['ice cream / scoops', 'GELATO_SUNDAE'], ['ice_cream_scoops', 'GELATO_SUNDAE'],
         ['scoops / ice cream', 'GELATO_SUNDAE'], ['scoops/ice cream', 'GELATO_SUNDAE'],
-        ['beverage_other', 'BEVERAGE_OTHER'], ['beverages', 'BEVERAGE_OTHER']
+        ['beverage_other', 'BEVERAGE_OTHER'], ['beverages', 'BEVERAGE_OTHER'],
+        ['unresolved_base', 'UNRESOLVED_BASE'], ['unresolved', 'UNRESOLVED_BASE'], ['unresolved bases', 'UNRESOLVED_BASE']
       ];
       aliasKeyPairs.forEach(([alias, sourceKey]) => {
         if (mainsSummary[sourceKey]) {
@@ -1735,6 +1904,11 @@
         source_files: Array.from(u.source_files)
       })).sort((a, b) => b.count - a.count);
 
+      const unresolvedBasesList = Array.from(unresolvedBasesMap.values()).map(u => ({
+        ...u,
+        channels: Array.from(u.channels)
+      })).sort((a, b) => b.total_volume - a.total_volume);
+
       // Performance analytics & AI Insights
       const analytics = this.generatePerformanceAnalytics(ledgerRows, channelTotals, grandTotalGross, grandTotalNet, grandTotalCommission, grandTotalUnits, mainsSummary, totalCoreMainsVolume);
 
@@ -1746,6 +1920,8 @@
         totalCoreMainsVolume,
         unmappedQueue: unmappedRows,
         unmappedCount: unmappedRows.length,
+        unresolvedBases: unresolvedBasesList,
+        unresolvedCount: unresolvedBasesList.length,
         matchedCount: ledgerRows.filter(r => r.has_sop_recipe).length,
         totalItemsCount: ledgerRows.length,
         grandTotals: {
@@ -1926,6 +2102,9 @@
       // Default baseline on-hand units if empty (5.0 units standard pot size)
       const baseline = {
         'Liege Waffle Base': 12.0,
+        'Waffle_Batter_Portion': 30.0,
+        'Cheesecake_Base_Slice': 12.0,
+        'Cookie_Dough_Puck': 20.0,
         'Cookie Dough Base': 2.5,
         'Belgian Milk Chocolate Chips': 1.8,
         'Comelle Ice Cream Mix 1 Litre': 3.2,
@@ -1953,8 +2132,11 @@
       // Reads MOQ thresholds from 'ts_min_stock_levels' or fallback default 2.0 units
       const moqMap = {
         'Cookie Dough Base': 2.0,
+        'Cookie_Dough_Puck': 4.0,
         'Belgian Milk Chocolate Chips': 2.0,
         'Liege Waffle Base': 5.0,
+        'Waffle_Batter_Portion': 5.0,
+        'Cheesecake_Base_Slice': 3.0,
         'Comelle Ice Cream Mix 1 Litre': 2.0,
         'Chef Larder Fries 2.5kg': 2.0,
         'Crispy Chicken Tenders 1kg': 2.0,
@@ -1985,10 +2167,33 @@
 
       const consumptionMap = new Map();
 
-      // 1. Multiply each item's total units by its standard SOP portion breakdown
+      // 1. Deplete both recipe-level ingredients and prepped recipe bases (e.g. Cheesecake_Base_Slice)
       for (const row of consolidatedMatrix) {
         const totalSold = row.total_volume;
         const recipe = row.recipe_obj;
+
+        // Deduct prepped base stock (e.g. Cheesecake_Base_Slice, Waffle_Batter_Portion, Cookie_Dough_Puck)
+        if (row.deplete_batch && totalSold > 0) {
+          const batchName = row.deplete_batch;
+          const alreadyInRecipe = recipe && Array.isArray(recipe.ingredients) &&
+            recipe.ingredients.some(i => i.name && i.name.toLowerCase() === batchName.toLowerCase());
+
+          if (!alreadyInRecipe) {
+            const batchQty = (parseFloat(row.deplete_qty) || 1) * totalSold;
+            if (!consumptionMap.has(batchName)) {
+              consumptionMap.set(batchName, {
+                ingredient_name: batchName,
+                theoretical_consumption: 0,
+                unit: 'portion',
+                dishes_using: new Set()
+              });
+            }
+            const bRec = consumptionMap.get(batchName);
+            bRec.theoretical_consumption += batchQty;
+            bRec.dishes_using.add(row.master_item_name);
+          }
+        }
+
         if (!recipe || !Array.isArray(recipe.ingredients) || totalSold <= 0) continue;
 
         const recipeYield = parseFloat(recipe.yield || 1) || 1;
