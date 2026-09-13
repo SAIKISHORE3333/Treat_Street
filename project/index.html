@@ -1,16 +1,884 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Treat Street Purchase Inventory</title>
-    <meta property="og:image" content="https://bolt.new/static/og_default.png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Treat Street Operations Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="default_orders.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-primary: #0f3d2e;
+      --brand-accent: #10b981;
+      --brand-gold: #f59e0b;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    h1, h2, h3, .heading-font {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Ambient Mesh Gradient Background */
+    .ambient-bg {
+      background-color: #081a14;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.16) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.14) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(5, 150, 105, 0.2) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(15, 61, 46, 0.4) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(52, 211, 153, 0.35);
+      box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.22);
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.035);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-dock {
+      background: rgba(11, 34, 26, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+    }
+
+    /* Glow Orb Animation */
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      opacity: 0.6;
+      animation: pulseGlow 10s ease-in-out infinite alternate;
+    }
+    @keyframes pulseGlow {
+      0% { transform: scale(1) translate(0, 0); opacity: 0.4; }
+      50% { transform: scale(1.15) translate(20px, -20px); opacity: 0.7; }
+      100% { transform: scale(0.95) translate(-20px, 20px); opacity: 0.5; }
+    }
+
+    .filter-btn-active {
+      background: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.5);
+      font-weight: 700;
+    }
+    .filter-btn-inactive {
+      background: rgba(255, 255, 255, 0.05);
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .filter-btn-inactive:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+    }
+  </style>
+</head>
+<body class="ambient-bg text-slate-100 min-h-screen flex flex-col justify-between relative overflow-x-hidden selection:bg-emerald-500 selection:text-white">
+
+  <!-- Ambient Glow Orbs -->
+  <div class="glow-orb w-96 h-96 bg-emerald-600/20 top-0 left-10"></div>
+  <div class="glow-orb w-[500px] h-[500px] bg-amber-500/10 top-1/3 right-0"></div>
+  <div class="glow-orb w-96 h-96 bg-teal-600/20 bottom-10 left-1/4"></div>
+
+  <!-- TOP STATUS NAVBAR -->
+  <header class="w-full relative z-20 border-b border-white/10 glass-dock">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-300 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-emerald-500/30 heading-font">
+          TS
+        </div>
+        <div>
+          <h1 class="text-base font-extrabold tracking-wide text-white flex items-center gap-2">
+            TREAT STREET <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">HQ</span>
+          </h1>
+          <p id="nav-subtitle" class="text-[11px] text-emerald-400/80 font-medium">Kitchen Operations & Purchasing Terminal</p>
+        </div>
+      </div>
+
+      <!-- Mode Switch & Station Telemetry -->
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        
+        <!-- Direct Link to Sales Ledger & PDF Studio (Always Visible) -->
+        <a id="nav-sales-report-link" href="sales_ledger.html" class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/25 via-teal-500/25 to-cyan-500/20 hover:from-emerald-500/35 hover:to-cyan-500/30 border border-emerald-400/40 text-emerald-300 text-xs font-bold transition-all shadow-md shadow-emerald-950/40 group">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform"></i>
+          <span>Sales & PDF Studio</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        </a>
+
+        <!-- Role Mode Switcher Container -->
+        <div id="nav-role-container">
+          <!-- Dynamically populated: Staff Button vs Manager Badge -->
+        </div>
+
+        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Station Status: <strong class="text-emerald-400">Ready</strong></span>
+        </div>
+
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-xs font-semibold text-emerald-300">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>MK Stadium</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN HUB CONTENT -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10 flex flex-col justify-center space-y-8">
+    
+    <!-- ========================================== -->
+    <!-- DYNAMIC PERSPECTIVE BANNER -->
+    <!-- ========================================== -->
+
+    <!-- STAFF VIEW HERO BANNER -->
+    <div id="staff-hero-banner" class="flex flex-col gap-6">
+      <div class="text-center max-w-2xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-emerald-500/15 via-teal-500/20 to-amber-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-bold mb-3 shadow-sm">
+          <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i>
+          <span>Store & Kitchen Purchasing Station • Staff Active Portal</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight heading-font mb-2">
+          Kitchen <span class="bg-gradient-to-r from-amber-400 via-yellow-300 to-emerald-300 bg-clip-text text-transparent">Purchasing Terminal</span>
+        </h2>
+        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl mx-auto">
+          Welcome to your store supply hub. Select needed ingredients, review carton quantities, and download verified supplier purchase orders for daily deliveries.
+        </p>
+      </div>
+
+      <!-- Hero Centerpiece: Purchase Orders Portal -->
+      <div onclick="window.location.href='purchase.html'" class="glass-card rounded-3xl p-6 sm:p-9 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 cursor-pointer border-amber-500/40 hover:border-amber-400 bg-gradient-to-br from-amber-950/40 via-emerald-950/30 to-slate-900/70 shadow-2xl relative overflow-hidden group">
+        <div class="absolute top-0 right-0 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl group-hover:bg-amber-500/25 transition-all"></div>
+        <div class="flex items-start sm:items-center gap-5 relative z-10">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-500/30 shrink-0 group-hover:scale-105 transition-transform">
+            <i data-lucide="shopping-bag" class="w-8 h-8 sm:w-10 sm:h-10"></i>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Active Staff Terminal
+              </span>
+              <span class="text-slate-400 text-xs font-semibold">100+ Catalog Ingredients</span>
+              <span class="text-slate-500 text-xs">•</span>
+              <span class="text-amber-400/90 text-xs font-medium">Bookers & Brakes Ready</span>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-white heading-font group-hover:text-amber-300 transition-colors">
+              Purchase Orders & Stock Supplies
+            </h3>
+            <p class="text-slate-300 text-xs sm:text-sm mt-1 max-w-xl leading-relaxed">
+              Browse dairy, waffle mixes, sauces, toppings, and packaging. Adjust case quantities, input order details, and download verified supplier purchase orders.
+            </p>
+            <div class="flex flex-wrap items-center gap-2 mt-3">
+              <span class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] text-slate-300 font-medium">📦 Dairy & Bakery</span>
+              <span class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] text-slate-300 font-medium">🍓 Sauces & Fruit</span>
+              <span class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] text-slate-300 font-medium">🛍️ Packaging</span>
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 font-semibold">📄 Instant PDF Export</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 shrink-0 w-full md:w-auto">
+          <button onclick="event.stopPropagation(); window.location.href='purchase.html'" class="w-full md:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm transition-all shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 group-hover:gap-3">
+            <span>Launch Purchasing Portal</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 transition-transform"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3 Operational Flow Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- 3-Step Ordering -->
+        <div class="glass-panel p-5 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col justify-between hover:border-emerald-500/30 transition-all">
+          <div>
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-md shadow-emerald-950">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-white text-sm heading-font">3-Step Ordering</h4>
+                <p class="text-[10px] text-slate-400">Quick kitchen flow</p>
+              </div>
+            </div>
+            <ol class="text-xs text-slate-300 space-y-2 list-decimal list-inside leading-relaxed">
+              <li><span class="font-semibold text-slate-200">Check Par:</span> Inspect store shelves & pots</li>
+              <li><span class="font-semibold text-slate-200">Select Cartons:</span> Add needed cases to cart</li>
+              <li><span class="font-semibold text-slate-200">Export PDF:</span> Add name, branch & download</li>
+            </ol>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/5 text-[10px] text-emerald-400 font-semibold flex items-center gap-1.5">
+            <i data-lucide="calculator" class="w-3.5 h-3.5"></i>
+            <span>Automated carton quantities & total math</span>
+          </div>
+        </div>
+
+        <!-- Cut-Off Times -->
+        <div class="glass-panel p-5 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col justify-between hover:border-amber-500/30 transition-all">
+          <div>
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shadow-md shadow-amber-950">
+                <i data-lucide="clock" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-white text-sm heading-font">Supplier Cut-Offs</h4>
+                <p class="text-[10px] text-slate-400">Guaranteed next-day delivery</p>
+              </div>
+            </div>
+            <div class="text-xs text-slate-300 space-y-2">
+              <div class="flex justify-between items-center bg-white/[0.03] px-3 py-1.5 rounded-lg border border-white/5">
+                <span class="font-medium text-slate-200">Bookers Wholesale</span>
+                <strong class="text-amber-300 font-bold">2:00 PM</strong>
+              </div>
+              <div class="flex justify-between items-center bg-white/[0.03] px-3 py-1.5 rounded-lg border border-white/5">
+                <span class="font-medium text-slate-200">Brakes Foodservice</span>
+                <strong class="text-amber-300 font-bold">4:00 PM</strong>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/5 text-[10px] text-amber-400 font-semibold flex items-center gap-1.5">
+            <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+            <span>Daily morning receiving at MK Stadium</span>
+          </div>
+        </div>
+
+        <!-- Receiving Standards -->
+        <div class="glass-panel p-5 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col justify-between hover:border-teal-500/30 transition-all">
+          <div>
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center shadow-md shadow-teal-950">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-white text-sm heading-font">Receiving Standards</h4>
+                <p class="text-[10px] text-slate-400">Kitchen QA best practices</p>
+              </div>
+            </div>
+            <ul class="text-xs text-slate-300 space-y-2">
+              <li class="flex items-start gap-2">
+                <i data-lucide="thermometer" class="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5"></i>
+                <span><strong class="text-slate-200">Temps:</strong> Chilled items 1°C – 5°C.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5"></i>
+                <span><strong class="text-slate-200">FIFO:</strong> Rotate earlier dates forward.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/5 text-[10px] text-teal-400 font-semibold flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Treat Street MK Stadium Quality Assurance</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direct Feature: Multi-Channel Sales Performance & PDF Studio -->
+      <div onclick="window.location.href='sales_ledger.html'" class="glass-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 cursor-pointer border-emerald-500/40 hover:border-emerald-400 bg-gradient-to-br from-emerald-950/40 via-teal-950/30 to-slate-900/70 shadow-2xl relative overflow-hidden group">
+        <div class="absolute top-0 right-0 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl group-hover:bg-emerald-500/25 transition-all"></div>
+        <div class="flex items-start sm:items-center gap-5 relative z-10">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-300 text-slate-950 flex items-center justify-center shadow-xl shadow-emerald-500/30 shrink-0 group-hover:scale-105 transition-transform">
+            <i data-lucide="file-spreadsheet" class="w-8 h-8 sm:w-10 sm:h-10"></i>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Multi-Channel Sales Studio
+              </span>
+              <span class="text-slate-400 text-xs font-semibold">Square • Deliveroo • UberEats • JustEat</span>
+              <span class="text-slate-500 text-xs">•</span>
+              <span class="text-cyan-400/90 text-xs font-medium">Automatic TSV/CSV Parser</span>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-white heading-font group-hover:text-emerald-300 transition-colors">
+              Sales Ledger & Executive PDF Studio
+            </h3>
+            <p class="text-slate-300 text-xs sm:text-sm mt-1 max-w-xl leading-relaxed">
+              Consolidate Square in-store registers, Deliveroo, UberEats, and JustEat sales. View real-time revenue KPIs, base-level dessert velocity tracking, and export verified executive PDF ledgers.
+            </p>
+            <div class="flex flex-wrap items-center gap-2 mt-3">
+              <span class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] text-slate-300 font-medium">⚡ Square UTF-16 TSV Auto-Detect</span>
+              <span class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] text-slate-300 font-medium">🍰 Waffles & Mains Velocity</span>
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 font-semibold">📄 1-Click Executive PDF</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 shrink-0 w-full md:w-auto">
+          <button onclick="event.stopPropagation(); window.location.href='sales_ledger.html'" class="w-full md:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-sm transition-all shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 group-hover:gap-3">
+            <span>Open Sales Ledger</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 transition-transform"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANAGER VIEW HERO BANNER -->
+    <div id="manager-hero-banner" class="hidden flex flex-col gap-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-5">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold mb-2 shadow-sm">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+            <span>Executive Operations Command • Passcode ALAIYA Active</span>
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight heading-font">
+            Operations <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">Management Suite</span>
+          </h2>
+          <p class="text-slate-400 text-xs sm:text-sm mt-1">
+            Complete executive oversight: Theoretical stock pots, inward invoice tracking, recipe costing, and analytics.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <button onclick="lockToStaffMode()" class="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span>Lock to Staff View</span>
+          </button>
+          <button onclick="restoreVerifiedHubData()" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Restore Whole Orders Data</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Executive Metrics -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div class="glass-panel p-4 rounded-2xl">
+          <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Active Catalog</p>
+          <p class="text-xl sm:text-2xl font-black text-white heading-font">100+ Ingredients</p>
+          <p class="text-[10px] text-emerald-400 font-semibold mt-1">Wholesale verified</p>
+        </div>
+        <div class="glass-panel p-4 rounded-2xl">
+          <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Orders System</p>
+          <p id="kpi-orders-count" class="text-xl sm:text-2xl font-black text-amber-400 heading-font">16 Orders</p>
+          <p class="text-[10px] text-amber-300 font-semibold mt-1">With £1,222 gross ref</p>
+        </div>
+        <div class="glass-panel p-4 rounded-2xl">
+          <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Pot Capacity Rule</p>
+          <p class="text-xl sm:text-2xl font-black text-emerald-400 heading-font">5.0 Units Max</p>
+          <p class="text-[10px] text-slate-400 font-medium mt-1">≤2 alarm / 3 moderate</p>
+        </div>
+        <div class="glass-panel p-4 rounded-2xl">
+          <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Franchise Station</p>
+          <p class="text-xl sm:text-2xl font-black text-white heading-font">MK Stadium HQ</p>
+          <p class="text-[10px] text-emerald-400 font-semibold mt-1">Operational & Ready</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SECTION: FULL OPERATIONS SUITE (6 PORTALS) -->
+    <!-- (Manager View Only - Hidden by Default)    -->
+    <!-- ========================================== -->
+    <div id="manager-operations-suite" class="space-y-5 hidden">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/10 pb-4">
+        <div>
+          <h3 class="text-xl sm:text-2xl font-extrabold text-white heading-font flex items-center gap-2">
+            <span>Operations & Kitchen Suite</span>
+            <span id="suite-status-tag" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">Purchasing Accessible</span>
+          </h3>
+          <p id="suite-status-desc" class="text-xs text-slate-400 mt-0.5">Staff access is enabled for Purchase Orders. Manager passcode unlocks other modules.</p>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="filterPortals('all')" id="filter-all" class="filter-btn-active px-4 py-1.5 rounded-full text-xs font-semibold border transition-all">
+            All Portals (6)
+          </button>
+          <button onclick="filterPortals('inventory')" id="filter-inventory" class="filter-btn-inactive px-4 py-1.5 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5">
+            <i data-lucide="layers" class="w-3.5 h-3.5"></i> Inventory & Orders
+          </button>
+          <button onclick="filterPortals('kitchen')" id="filter-kitchen" class="filter-btn-inactive px-4 py-1.5 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5">
+            <i data-lucide="chef-hat" class="w-3.5 h-3.5"></i> Kitchen & Recipes
+          </button>
+        </div>
+      </div>
+
+      <!-- PORTALS GRID (Staff Accessible: Purchase. Other: Click triggers passcode ALAIYA) -->
+      <div id="portals-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        
+        <!-- 1. Purchase Orders Portal (ALWAYS ACCESSIBLE TO STAFF) -->
+        <div data-category="inventory" onclick="openPortal('purchase.html', false)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-amber-500/40 hover:border-amber-400 bg-gradient-to-br from-amber-950/40 to-slate-900/60 shadow-xl">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/15 rounded-full blur-2xl group-hover:bg-amber-500/30 transition-all"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+              <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
+              <i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> STAFF ACCESSIBLE
+            </span>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-amber-300 transition-colors">
+            Purchase Orders & Deliveries
+          </h3>
+          <p class="text-slate-300 text-xs leading-relaxed mb-5">
+            Order stock from Bookers Wholesale and Brakes Foodservice. Auto-generate official PDF requisition orders, manage delivery statuses, and sync to stock.
+          </p>
+          <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-amber-400">
+            <span>Open Purchasing Portal</span>
+            <i data-lucide="arrow-up-right" class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+          </div>
+        </div>
+
+        <!-- 2. Stock & Inventory Control (MANAGER REQUIRED) -->
+        <div data-category="inventory" onclick="openPortal('inventory.html', true)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-indigo-500/40 hover:border-indigo-400 bg-gradient-to-br from-indigo-950/40 to-slate-900/60 shadow-xl">
+          <div class="absolute top-0 right-0 w-36 h-36 bg-indigo-500/15 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-blue-500 to-teal-400 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-110 transition-transform">
+              <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
+            </div>
+            <span class="portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> MANAGER ACCESS
+            </span>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-indigo-300 transition-colors">
+            Stock & Inventory Control
+          </h3>
+          <p class="text-slate-300 text-xs leading-relaxed mb-5">
+            Real-time animated stock pots (5.0 Max / 3.0 Moderate / ≤2.0 Min Stock Alarm). Track inward supplier deliveries, ingredient prices, and monthly audits.
+          </p>
+          <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-indigo-400">
+            <span class="portal-cta-text">Manager Access Required</span>
+            <i data-lucide="lock" class="portal-cta-icon w-4 h-4 text-amber-400"></i>
+          </div>
+        </div>
+
+        <!-- 3. Internal SOPs & Recipe System (MANAGER REQUIRED) -->
+        <div data-category="kitchen" onclick="openPortal('SOP.html', true)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-teal-500/30 hover:border-teal-400 bg-gradient-to-br from-teal-950/30 to-slate-900/60 shadow-xl">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl group-hover:bg-teal-500/20 transition-all"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-400 text-slate-950 flex items-center justify-center shadow-lg shadow-teal-600/30 group-hover:scale-110 transition-transform">
+              <i data-lucide="file-text" class="w-6 h-6"></i>
+            </div>
+            <span class="portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> MANAGER ACCESS
+            </span>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-teal-300 transition-colors">
+            Internal SOP's & Recipes
+          </h3>
+          <p class="text-slate-300 text-xs leading-relaxed mb-5">
+            Standard kitchen operating procedures, step-by-step waffle & crepe preparation guidelines, equipment settings, and yield cost breakdowns.
+          </p>
+          <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-teal-400">
+            <span class="portal-cta-text">Manager Access Required</span>
+            <i data-lucide="lock" class="portal-cta-icon w-4 h-4 text-amber-400"></i>
+          </div>
+        </div>
+
+        <!-- 4. Kitchen Operations (MANAGER REQUIRED) -->
+        <div data-category="kitchen" onclick="openPortal('kitchen_ops.html', true)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-rose-500/30 hover:border-rose-400 bg-gradient-to-br from-rose-950/30 to-slate-900/60 shadow-xl">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-400 text-white flex items-center justify-center shadow-lg shadow-rose-600/30 group-hover:scale-110 transition-transform">
+              <i data-lucide="chef-hat" class="w-6 h-6"></i>
+            </div>
+            <span class="portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> MANAGER ACCESS
+            </span>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-rose-300 transition-colors">
+            Kitchen Operations & Waste
+          </h3>
+          <p class="text-slate-300 text-xs leading-relaxed mb-5">
+            Log daily batch preparation of dough & sauces with dynamic recipe ingredient depletion. Record dropped or spoiled stock for HACCP compliance.
+          </p>
+          <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-rose-400">
+            <span class="portal-cta-text">Manager Access Required</span>
+            <i data-lucide="lock" class="portal-cta-icon w-4 h-4 text-amber-400"></i>
+          </div>
+        </div>
+
+        <!-- 5. Master Sales & Depletion Ledger (LIVE PRODUCTION DEPLOYED) -->
+        <div data-category="inventory" onclick="openPortal('sales_ledger.html', false)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-emerald-500/40 hover:border-emerald-400 bg-gradient-to-br from-emerald-950/40 via-teal-950/30 to-slate-900/60 shadow-xl">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl group-hover:bg-emerald-500/30 transition-all"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-300 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+              <i data-lucide="layers" class="w-6 h-6"></i>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold text-[9px] uppercase tracking-wider border border-emerald-500/40 flex items-center gap-1">
+                <i data-lucide="zap" class="w-2.5 h-2.5 text-emerald-400"></i> LIVE DEPLOYED
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
+                <i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> DIRECT ACCESS
+              </span>
+            </div>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-cyan-300 transition-colors">
+            Master Sales & Depletion Ledger
+          </h3>
+          <p class="text-slate-300 text-xs leading-relaxed mb-5">
+            Consolidate Square, UberEats, Deliveroo & JustEat sales reports. Unified ledger output, AI volume rankings, channel margin leakage, and automated recipe safety stock alarms.
+          </p>
+          <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-cyan-400">
+            <span>Launch Sales Ledger & PDF Report</span>
+            <i data-lucide="arrow-up-right" class="w-4 h-4 text-cyan-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+          </div>
+        </div>
+
+        <!-- 6. Executive AI Insights & Omnichannel Analytics (MANAGER REQUIRED) -->
+        <div data-category="inventory" onclick="openPortal('analytics.html', true)" class="glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden group cursor-pointer border-emerald-500/40 hover:border-emerald-400 bg-gradient-to-br from-emerald-950/40 to-slate-900/60 shadow-xl">
+          <div class="absolute top-0 right-0 w-36 h-36 bg-emerald-500/15 rounded-full blur-2xl group-hover:bg-emerald-500/30 transition-all"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-300 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition-transform">
+              <i data-lucide="trending-up" class="w-6 h-6"></i>
+            </div>
+            <span class="portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> MANAGER ACCESS
+            </span>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-1.5 heading-font group-hover:text-emerald-300 transition-colors">
+            Franchise Analytics & AI
+          </h3>
+          <p class="text-slate-300 text-xs leading-relaxed mb-5">
+            High-volume daily sales analytics engine, BCG menu matrix (Stars, Dogs, Puzzles, Plowhorses), channel margin breakdown, and AI insights feed.
+          </p>
+          <div class="mt-auto pt-3.5 border-t border-white/5 flex items-center justify-between text-xs font-bold text-emerald-400">
+            <span class="portal-cta-text">Manager Access Required</span>
+            <i data-lucide="lock" class="portal-cta-icon w-4 h-4 text-amber-400"></i>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- MANAGER PASSCODE MODAL -->
+  <div id="manager-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel bg-[#0b221a]/95 border border-amber-500/40 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center space-y-5">
+      <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-lg shadow-amber-950">
+        <i data-lucide="shield" class="w-7 h-7"></i>
+      </div>
+      <div>
+        <h3 class="text-xl font-bold text-white heading-font">Manager Passcode Required</h3>
+        <p class="text-xs text-slate-300 mt-1">Staff access is restricted to the Kitchen Purchasing Portal. Enter passcode to access operations suite.</p>
+      </div>
+
+      <div class="space-y-2 text-left">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager Passcode</label>
+        <div class="relative">
+          <input type="password" id="manager-passcode-input" placeholder="Enter Passcode" class="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-xl text-center text-sm font-semibold text-white tracking-widest outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500/50 transition-all">
+          <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors">
+            <i data-lucide="eye" id="manager-eye-icon" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <p id="manager-passcode-error" class="text-xs text-rose-400 font-semibold hidden text-center flex items-center justify-center gap-1">
+          <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Incorrect passcode. Try again.
+        </p>
+      </div>
+
+      <div class="flex gap-2.5 pt-2">
+        <button type="button" onclick="closeManagerModal()" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold rounded-xl text-xs transition-all">
+          Cancel
+        </button>
+        <button type="button" onclick="verifyManagerPasscode()" class="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20">
+          Unlock Suite
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="w-full relative z-20 border-t border-white/10 py-6 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400 text-xs font-medium">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+      <span>Treat Street Proprietary Operations System • Powered by ALAIYA Engine</span>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+
+    let pendingTargetUrl = null;
+
+    function isManagerMode() {
+      return sessionStorage.getItem('ts_hub_manager_mode') === 'true';
+    }
+
+    function openPortal(url, requiresManager) {
+      if (requiresManager && !isManagerMode()) {
+        openManagerModal(url);
+      } else {
+        window.location.href = url;
+      }
+    }
+
+    function handleManagerClick() {
+      openManagerModal();
+    }
+
+    function openManagerModal(targetUrl) {
+      pendingTargetUrl = targetUrl || null;
+      const modal = document.getElementById('manager-modal');
+      const input = document.getElementById('manager-passcode-input');
+      const errorMsg = document.getElementById('manager-passcode-error');
+      if (errorMsg) errorMsg.classList.add('hidden');
+      if (input) input.value = '';
+      modal.classList.remove('hidden');
+      setTimeout(() => { if (input) input.focus(); }, 100);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeManagerModal() {
+      const modal = document.getElementById('manager-modal');
+      const input = document.getElementById('manager-passcode-input');
+      const errorMsg = document.getElementById('manager-passcode-error');
+      modal.classList.add('hidden');
+      if (input) input.value = '';
+      if (errorMsg) errorMsg.classList.add('hidden');
+      pendingTargetUrl = null;
+    }
+
+    function verifyManagerPasscode() {
+      const input = document.getElementById('manager-passcode-input');
+      const errorMsg = document.getElementById('manager-passcode-error');
+      const val = (input?.value || '').trim().toUpperCase();
+
+      if (val === 'ALAIYA') {
+        sessionStorage.setItem('ts_hub_manager_mode', 'true');
+        closeManagerModal();
+        setHubPerspective('manager');
+        showHubToast('🔓 Manager Access Granted! Operations Suite Unlocked.');
+
+        if (pendingTargetUrl) {
+          const url = pendingTargetUrl;
+          pendingTargetUrl = null;
+          setTimeout(() => { window.location.href = url; }, 300);
+        }
+      } else {
+        if (errorMsg) errorMsg.classList.remove('hidden');
+        if (input) {
+          input.classList.add('ring-2', 'ring-rose-500');
+          setTimeout(() => input.classList.remove('ring-2', 'ring-rose-500'), 1500);
+        }
+      }
+    }
+
+    function lockToStaffMode() {
+      sessionStorage.removeItem('ts_hub_manager_mode');
+      setHubPerspective('staff');
+      showHubToast('🔒 Locked to Staff View. Passcode ALAIYA required for Manager View.');
+    }
+
+    function togglePasscodeVisibility() {
+      const input = document.getElementById('manager-passcode-input');
+      const icon = document.getElementById('manager-eye-icon');
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        if (icon) icon.setAttribute('data-lucide', 'eye');
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function ensureInitialData() {
+      try {
+        const stored = localStorage.getItem('ts_orders');
+        let list = stored ? JSON.parse(stored) : null;
+        if (!Array.isArray(list) || list.length === 0) {
+          if (typeof restoreTreatStreetDefaultOrders === 'function') {
+            restoreTreatStreetDefaultOrders();
+          }
+        }
+      } catch (e) {
+        if (typeof restoreTreatStreetDefaultOrders === 'function') {
+          restoreTreatStreetDefaultOrders();
+        }
+      }
+      updateKpiCounts();
+    }
+
+    function updateKpiCounts() {
+      try {
+        const stored = localStorage.getItem('ts_orders');
+        const list = stored ? JSON.parse(stored) : [];
+        const countLabel = document.getElementById('kpi-orders-count');
+        if (countLabel) {
+          countLabel.innerText = `${list.length} Orders`;
+        }
+      } catch(e) {}
+    }
+
+    function setHubPerspective(mode) {
+      const isManager = isManagerMode();
+      const staffBanner = document.getElementById('staff-hero-banner');
+      const managerBanner = document.getElementById('manager-hero-banner');
+      const managerOperationsSuite = document.getElementById('manager-operations-suite');
+      const navSalesLink = document.getElementById('nav-sales-report-link');
+      const navSubtitle = document.getElementById('nav-subtitle');
+      const roleContainer = document.getElementById('nav-role-container');
+      const suiteTag = document.getElementById('suite-status-tag');
+      const suiteDesc = document.getElementById('suite-status-desc');
+
+      // Update Top Nav Mode Switcher
+      if (isManager && mode === 'manager') {
+        if (staffBanner) staffBanner.classList.add('hidden');
+        if (managerBanner) managerBanner.classList.remove('hidden');
+        if (managerOperationsSuite) managerOperationsSuite.classList.remove('hidden');
+        if (navSalesLink) navSalesLink.classList.remove('hidden');
+        if (navSubtitle) navSubtitle.innerText = 'Executive Operations Command & Management';
+        if (suiteTag) {
+          suiteTag.innerText = 'All Portals Unlocked';
+          suiteTag.className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30';
+        }
+        if (suiteDesc) suiteDesc.innerText = 'Manager Mode active. Full operations suite unlocked.';
+        
+        if (roleContainer) {
+          roleContainer.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> Manager Active
+              </span>
+              <button onclick="lockToStaffMode()" class="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                <span>Staff View</span>
+              </button>
+            </div>
+          `;
+        }
+
+        // Update cards to show unlocked
+        document.querySelectorAll('.portal-lock-badge').forEach(b => {
+          b.innerHTML = '<i data-lucide="shield-check" class="w-3 h-3 text-emerald-400"></i> MANAGER UNLOCKED';
+          b.className = 'portal-lock-badge px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1';
+        });
+        document.querySelectorAll('.portal-cta-text').forEach(t => t.innerText = 'Launch Management Module');
+        document.querySelectorAll('.portal-cta-icon').forEach(i => {
+          i.setAttribute('data-lucide', 'arrow-up-right');
+          i.className = 'portal-cta-icon w-4 h-4 text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform';
+        });
+
+      } else {
+        if (staffBanner) staffBanner.classList.remove('hidden');
+        if (managerBanner) managerBanner.classList.add('hidden');
+        if (managerOperationsSuite) managerOperationsSuite.classList.add('hidden');
+        if (navSalesLink) navSalesLink.classList.remove('hidden');
+        if (navSubtitle) navSubtitle.innerText = 'Store Staff View • Purchasing & Sales Studio';
+        if (suiteTag) {
+          suiteTag.innerText = 'Staff: Purchase Only';
+          suiteTag.className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30';
+        }
+        if (suiteDesc) suiteDesc.innerText = 'In Staff View, only the Purchase Portal is accessible. Manager passcode (ALAIYA) required for other modules.';
+
+        if (roleContainer) {
+          roleContainer.innerHTML = `
+            <div class="bg-black/40 p-1 rounded-2xl border border-white/10 flex items-center gap-1.5 shadow-sm">
+              <span class="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm">
+                <i data-lucide="chef-hat" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Staff View</span>
+              </span>
+              <button onclick="handleManagerClick()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-500/40 transition-all flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Manager View</span>
+              </button>
+            </div>
+          `;
+        }
+
+        // Update cards to show locked
+        document.querySelectorAll('.portal-lock-badge').forEach(b => {
+          b.innerHTML = '<i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> RESTRICTED • MANAGER ONLY';
+          b.className = 'portal-lock-badge px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider border border-amber-500/30 flex items-center gap-1';
+        });
+        document.querySelectorAll('.portal-cta-text').forEach(t => t.innerText = 'Locked (Passcode ALAIYA)');
+        document.querySelectorAll('.portal-cta-icon').forEach(i => {
+          i.setAttribute('data-lucide', 'lock');
+          i.className = 'portal-cta-icon w-4 h-4 text-amber-400';
+        });
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function restoreVerifiedHubData() {
+      if (typeof restoreTreatStreetDefaultOrders === 'function') {
+        restoreTreatStreetDefaultOrders();
+        updateKpiCounts();
+        showHubToast('✅ Whole data restored! 16 Purchase Orders & Stock Pots Active.');
+      }
+    }
+
+    function filterPortals(category) {
+      const cards = document.querySelectorAll('#portals-grid > div');
+      const buttons = {
+        'all': document.getElementById('filter-all'),
+        'inventory': document.getElementById('filter-inventory'),
+        'kitchen': document.getElementById('filter-kitchen')
+      };
+
+      Object.keys(buttons).forEach(k => {
+        if (buttons[k]) {
+          buttons[k].className = k === category 
+            ? 'filter-btn-active px-4 py-1.5 rounded-full text-xs font-semibold border transition-all'
+            : 'filter-btn-inactive px-4 py-1.5 rounded-full text-xs font-semibold border transition-all';
+        }
+      });
+
+      cards.forEach(card => {
+        if (category === 'all' || card.dataset.category === category) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    function showHubToast(message) {
+      let toast = document.getElementById('hub-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'hub-toast';
+        toast.className = 'fixed bottom-6 right-6 z-50 px-4 py-3 bg-[#0c2e22]/95 text-white text-xs font-bold rounded-2xl border border-emerald-500/40 shadow-2xl shadow-emerald-950 backdrop-blur-md flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4 text-amber-400 shrink-0"></i> <span>${message}</span>`;
+      if (window.lucide) lucide.createIcons();
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
+    // Keyboard support for Enter key in modal
+    const passInput = document.getElementById('manager-passcode-input');
+    if (passInput) {
+      passInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          verifyManagerPasscode();
+        }
+      });
+    }
+
+    // Auto initialize data on hub load
+    ensureInitialData();
+
+    // Default to manager if already authenticated in this session, otherwise staff
+    setHubPerspective(isManagerMode() ? 'manager' : 'staff');
+  </script>
+</body>
 </html>

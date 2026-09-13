@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Platform Sales Performance & Revenue Intelligence - Treat Street</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- html2pdf for generating executive PDF reports -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- PDF.js for parsing uploaded PDF reports directly in the browser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+  <script src="catalog.js"></script>
+  <script src="sales_engine.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-primary: #0f3d2e;
+      --brand-accent: #10b981;
+      --brand-gold: #f59e0b;
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    h1, h2, h3, h4, .heading-font { font-family: 'Outfit', sans-serif; }
+
+    /* Ambient Background */
+    .ambient-bg {
+      background-color: #061510;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(5, 150, 105, 0.18) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(15, 61, 46, 0.35) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.035);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    .glass-nav-dock {
+      background: rgba(6, 21, 16, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(52, 211, 153, 0.2);
+    }
+
+    .dropzone-box {
+      border: 2px dashed rgba(52, 211, 153, 0.35);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dropzone-box.dragover, .dropzone-box:hover {
+      border-color: rgba(52, 211, 153, 0.8);
+      background: rgba(16, 185, 129, 0.06);
+      transform: translateY(-2px);
+    }
+
+    .filter-btn-active {
+      background: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.5);
+      font-weight: 800;
+    }
+    .filter-btn-inactive {
+      background: rgba(255, 255, 255, 0.04);
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .filter-btn-inactive:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+    }
+
+    /* Print styling */
+    @media print {
+      body { background: white !important; color: black !important; }
+      header, #dropzone, #ingested-files-panel, footer, button, select { display: none !important; }
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+    ::-webkit-scrollbar-thumb { background: rgba(52, 211, 153, 0.25); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(52, 211, 153, 0.45); }
+  </style>
+</head>
+<body class="ambient-bg text-slate-100 min-h-screen flex flex-col justify-between relative selection:bg-emerald-500 selection:text-white">
+
+  <!-- TOP STATUS NAVBAR -->
+  <header class="sticky top-0 z-40 glass-nav-dock">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center gap-3.5">
+        <a href="index.html" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-300 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-emerald-500/30 heading-font hover:scale-105 transition-transform">
+          TS
+        </a>
+        <div>
+          <h1 class="text-base font-extrabold tracking-wide text-white flex items-center gap-2">
+            Multi-Platform Sales Ledger
+            <span id="nav-mode-tag" class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30">
+              🟢 LIVE PRODUCTION
+            </span>
+          </h1>
+          <p class="text-[11px] text-emerald-400/80 font-medium">Revenue Contribution • Channel Breakdown • Best/Moderate/Least Performers</p>
+        </div>
+      </div>
+
+      <!-- Action Nav Items -->
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        
+        <!-- Live SOP Synchronization Pill -->
+        <button id="sop-sync-pill" onclick="syncSOPLibrary()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all shadow-sm" title="Click to refresh recipes from SOP library">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span id="sop-sync-label">✓ Synced with SOP</span>
+        </button>
+
+        <!-- Sample Batch Button -->
+        <button onclick="loadDemoBatch()" class="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-white/10 shadow-sm">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Sample Batch
+        </button>
+
+        <a href="recipe_sop_manager.html" class="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-400"></i> Recipes & SOPs
+        </a>
+
+        <a href="index.html" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1">
+          <i data-lucide="home" class="w-3.5 h-3.5 text-emerald-400"></i> Hub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6 relative z-10">
+
+    <!-- ======================================================== -->
+    <!-- 1. MULTI-FORMAT FILE INGESTION STUDIO (PDF, CSV, EXCEL)  -->
+    <!-- ======================================================== -->
+    <div class="glass-panel p-6 rounded-3xl border-emerald-500/30 bg-emerald-950/15">
+      
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-extrabold text-white heading-font flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+              <i data-lucide="file-up" class="w-5 h-5"></i>
+            </span>
+            Multi-Platform Sales Ingestion Studio
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-300 mt-1">
+            Upload your sales reports in <strong>PDF, CSV, TSV, or Excel (.xlsx / .xls)</strong> from Square, Uber Eats, Just Eat, or Deliveroo.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <button onclick="loadDemoBatch()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4"></i> 1-Click Multi-Channel Demo
+          </button>
+        </div>
+      </div>
+
+      <!-- File Dropzone -->
+      <div id="dropzone" class="dropzone-box rounded-2xl p-7 text-center cursor-pointer bg-white/[0.02] flex flex-col items-center justify-center group" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" multiple accept=".pdf,.csv,.tsv,.txt,.xlsx,.xls" class="hidden" onchange="handleFileSelect(event)">
+        
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-400/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center mb-3 shadow-lg group-hover:scale-110 transition-transform">
+          <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+        </div>
+
+        <h3 class="font-bold text-white text-base sm:text-lg mb-1 heading-font">
+          Drop your Sales Report PDF, CSV, or Excel Here
+        </h3>
+        <p class="text-xs text-slate-400 max-w-lg mb-3.5 leading-relaxed">
+          Supports <strong>PDF exports</strong> directly from Square POS, Uber Eats, Deliveroo, and Just Eat, plus spreadsheets (.csv, .xlsx). The engine automatically parses all items, volumes, channel revenues, and computes product rankings.
+        </p>
+
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold flex items-center gap-1">
+            <i data-lucide="file-text" class="w-3 h-3"></i> PDF Reports
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold">Square POS</span>
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">Uber Eats</span>
+          <span class="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30 text-[11px] font-bold">Just Eat</span>
+          <span class="px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[11px] font-bold">Deliveroo</span>
+        </div>
+      </div>
+
+      <!-- Ingested Files Chips -->
+      <div id="ingested-files-panel" class="mt-4 hidden">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ingested Platform Feeds:</p>
+          <button onclick="clearIngestedFiles()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1">
+            <i data-lucide="trash-2" class="w-3 h-3"></i> Clear Ingested Feeds
+          </button>
+        </div>
+        <div id="ingested-files-list" class="flex flex-wrap gap-2.5">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 2. EXECUTIVE REVENUE & PERFORMANCE DASHBOARD (HERO VIEW)  -->
+    <!-- ======================================================== -->
+    <div id="executive-kpi-section" class="flex flex-col gap-6 hidden">
+      
+      <!-- Headline Metric Cards (4 Key Metrics) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Total Gross Revenue -->
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+            <span>Total Gross Sales</span>
+            <i data-lucide="pound-sterling" class="w-3.5 h-3.5 text-emerald-400"></i>
+          </p>
+          <p id="kpi-gross-revenue" class="text-2xl sm:text-3xl font-black text-amber-300 heading-font">£0.00</p>
+          <p class="text-[11px] text-slate-400 mt-1">Pre-commission list revenue</p>
+        </div>
+
+        <!-- Total Volume Sold -->
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+            <span>Total Volume Sold</span>
+            <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-indigo-400"></i>
+          </p>
+          <p id="kpi-total-units" class="text-2xl sm:text-3xl font-black text-white heading-font">0</p>
+          <p id="kpi-avg-price-sub" class="text-[11px] text-indigo-300 font-semibold mt-1">£0.00 avg per item</p>
+        </div>
+
+        <!-- Star Performer Product -->
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-yellow-300"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-amber-300 mb-1 flex items-center justify-between">
+            <span>🌟 Star Performer</span>
+            <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i>
+          </p>
+          <p id="kpi-star-item-name" class="text-lg sm:text-xl font-black text-white heading-font truncate">-</p>
+          <p id="kpi-star-item-sub" class="text-[11px] text-amber-300/90 font-semibold mt-1">0% of total revenue</p>
+        </div>
+
+        <!-- Net Realized Cash -->
+        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+            <span>Net Realized Payout</span>
+            <i data-lucide="wallet" class="w-3.5 h-3.5 text-teal-400"></i>
+          </p>
+          <p id="kpi-net-realized" class="text-2xl sm:text-3xl font-black text-emerald-400 heading-font">£0.00</p>
+          <p id="kpi-leakage-sub" class="text-[11px] text-rose-300 font-semibold mt-1">£0.00 platform take</p>
+        </div>
+      </div>
+
+      <!-- Mains & Dessert Bases Velocity Tracker (Waffles, Pancakes, Cookie Dough, Croffles, etc.) -->
+      <div class="glass-panel p-6 rounded-3xl border-amber-500/30 bg-gradient-to-br from-amber-950/15 via-slate-900/40 to-slate-950/60 shadow-xl">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white heading-font flex items-center gap-2">
+              <span class="text-xl">🧇🥞</span> Mains & Dessert Bases Velocity Tracker
+            </h3>
+            <p class="text-xs text-slate-300 mt-0.5">Accurate unit volume & revenue tracking across Waffles, Pancakes, Cookie Dough, Croffles, Cheesecakes and Savoury Mains.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="mains-total-units-badge" class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-black">0 Mains Sold</span>
+          </div>
+        </div>
+
+        <div id="mains-summary-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Channel Revenue Contribution & Comparison Grid -->
+      <div class="glass-panel p-6 rounded-3xl">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white heading-font flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-5 h-5 text-emerald-400"></i> Channel Revenue Share & Platform Breakdown
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Contribution to overall store revenue across In-Store POS and Delivery Aggregators.</p>
+          </div>
+          <span class="text-[11px] text-emerald-400 font-bold">100% Realized Share</span>
+        </div>
+
+        <div id="channel-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Cross-Channel Performance Tiers (Best, Moderate, Least) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <!-- 🌟 BEST PERFORMERS CARD -->
+        <div class="glass-panel p-5 rounded-3xl border-amber-500/40 bg-gradient-to-b from-amber-950/20 to-transparent flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-black flex items-center gap-1.5">
+                <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>
+                <span>Best Performers</span>
+              </span>
+              <span id="best-performers-count" class="text-xs font-black text-amber-300 font-mono">0 Items</span>
+            </div>
+            <p class="text-xs text-slate-300 mb-3">High revenue & volume drivers generating the top ~60% of sales.</p>
+            <div id="best-performers-list" class="space-y-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="pt-3 mt-3 border-t border-white/10 text-[10px] text-amber-300/80 font-semibold flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-3 h-3 text-amber-400"></i> Primary revenue anchors
+          </div>
+        </div>
+
+        <!-- ⚡ MODERATE PERFORMERS CARD -->
+        <div class="glass-panel p-5 rounded-3xl border-emerald-500/40 bg-gradient-to-b from-emerald-950/20 to-transparent flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Moderate Performers</span>
+              </span>
+              <span id="moderate-performers-count" class="text-xs font-black text-emerald-300 font-mono">0 Items</span>
+            </div>
+            <p class="text-xs text-slate-300 mb-3">Stable core menu items maintaining volume and steady contribution.</p>
+            <div id="moderate-performers-list" class="space-y-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="pt-3 mt-3 border-t border-white/10 text-[10px] text-emerald-300/80 font-semibold flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3 h-3 text-emerald-400"></i> Reliable volume baseline
+          </div>
+        </div>
+
+        <!-- ⚠️ LEAST PERFORMERS CARD -->
+        <div class="glass-panel p-5 rounded-3xl border-rose-500/40 bg-gradient-to-b from-rose-950/20 to-transparent flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-black flex items-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>Least Performers</span>
+              </span>
+              <span id="least-performers-count" class="text-xs font-black text-rose-300 font-mono">0 Items</span>
+            </div>
+            <p class="text-xs text-slate-300 mb-3">Low-volume or lagging contributors needing promotion or review.</p>
+            <div id="least-performers-list" class="space-y-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="pt-3 mt-3 border-t border-white/10 text-[10px] text-rose-300/80 font-semibold flex items-center gap-1">
+            <i data-lucide="arrow-down-right" class="w-3 h-3 text-rose-400"></i> Candidates for bundling or revision
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 3. COMPREHENSIVE PRODUCT SALES & REVENUE CONTRIBUTION LEDGER -->
+    <!-- ======================================================== -->
+    <div id="ledger-section" class="glass-panel p-6 rounded-3xl hidden flex flex-col gap-5">
+      
+      <!-- Table Header & Action Controls -->
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h3 class="text-xl font-bold text-white heading-font flex items-center gap-2">
+              <i data-lucide="table-2" class="w-5 h-5 text-emerald-400"></i> Product Sales & Revenue Contribution Ledger
+            </h3>
+            <span id="items-count-badge" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+              0 Items
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Every sold item with units, gross sales, platform split, and exact revenue contribution percentage.</p>
+        </div>
+
+        <!-- Controls: Branch, Date & Export Actions -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          
+          <!-- Branch Selector -->
+          <div class="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 text-xs shadow-sm">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="text-slate-400 font-medium">Branch:</span>
+            <select id="branch-select" class="bg-transparent text-white font-bold outline-none cursor-pointer">
+              <option value="MK Stadium (Milton Keynes)" class="bg-slate-900" selected>MK Stadium</option>
+              <option value="Bedford Central" class="bg-slate-900">Bedford Central</option>
+              <option value="Northampton" class="bg-slate-900">Northampton</option>
+              <option value="Luton Mall" class="bg-slate-900">Luton Mall</option>
+              <option value="Treat Street Flagship" class="bg-slate-900">Flagship</option>
+            </select>
+          </div>
+
+          <!-- Date Filter -->
+          <div class="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 text-xs shadow-sm">
+            <span class="text-slate-400 font-medium">Date:</span>
+            <select id="reporting-date-select" onchange="changeReportingDate(this.value)" class="bg-transparent text-white font-bold outline-none cursor-pointer">
+              <option value="ALL" class="bg-slate-900">All Ingested Dates</option>
+            </select>
+          </div>
+
+          <!-- GENERATE EXECUTIVE PDF REPORT BUTTON -->
+          <button onclick="downloadExecutivePDFReport()" id="btn-generate-pdf" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-300 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-500/25">
+            <i data-lucide="file-text" class="w-4 h-4"></i> Download Executive PDF
+          </button>
+
+          <!-- PDF PREVIEW BUTTON -->
+          <button onclick="previewPDFModal()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-white/10 shadow-sm" title="Preview PDF document on screen">
+            <i data-lucide="eye" class="w-4 h-4 text-amber-400"></i> Preview PDF
+          </button>
+
+          <!-- Excel Export -->
+          <button onclick="exportMasterExcel()" class="px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-bold text-emerald-300 transition-all flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel
+          </button>
+          
+          <!-- CSV Export -->
+          <button onclick="exportMasterCSV()" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 transition-all flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i> CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar: Performance Tier & Channel Filters -->
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pt-2 pb-1 border-t border-b border-white/5">
+        
+        <!-- Performance Tier Filter Tabs -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Tier:</span>
+          <button onclick="setTierFilter('ALL')" id="filter-tier-all" class="px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-active">
+            All Items (<span id="count-tier-all">0</span>)
+          </button>
+          <button onclick="setTierFilter('BEST')" id="filter-tier-best" class="px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🌟 Best (<span id="count-tier-best">0</span>)
+          </button>
+          <button onclick="setTierFilter('MODERATE')" id="filter-tier-mod" class="px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-inactive">
+            ⚡ Moderate (<span id="count-tier-mod">0</span>)
+          </button>
+          <button onclick="setTierFilter('LEAST')" id="filter-tier-least" class="px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-inactive">
+            ⚠️ Least (<span id="count-tier-least">0</span>)
+          </button>
+        </div>
+
+        <!-- Channel Filter & Search -->
+        <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <select id="channel-filter-select" onchange="setChannelFilter(this.value)" class="px-3 py-1.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white font-bold outline-none cursor-pointer">
+            <option value="ALL">All Channels</option>
+            <option value="Square">Square POS (In-Store)</option>
+            <option value="Uber Eats">Uber Eats</option>
+            <option value="Just Eat">Just Eat</option>
+            <option value="Deliveroo">Deliveroo</option>
+          </select>
+
+          <div class="relative flex-1 sm:w-60">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
+            <input type="text" id="item-search-input" oninput="handleSearchInput(this.value)" placeholder="Search products..." class="w-full pl-8 pr-3 py-1.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <!-- Main Base Filter Tabs (Waffles, Pancakes, Cookie Dough, etc.) -->
+        <div class="flex flex-wrap items-center gap-1.5 w-full pt-2.5 border-t border-white/5">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1.5">Main Base:</span>
+          <button onclick="setMainFilter('ALL')" id="filter-main-all" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-active">
+            All Mains
+          </button>
+          <button onclick="setMainFilter('WAFFLE')" id="filter-main-waffle" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🧇 Waffles (<span id="count-main-waffle">0</span>)
+          </button>
+          <button onclick="setMainFilter('PANCAKE')" id="filter-main-pancake" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🥞 Pancakes (<span id="count-main-pancake">0</span>)
+          </button>
+          <button onclick="setMainFilter('COOKIE_DOUGH')" id="filter-main-cookie_dough" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🍪 Cookie Dough (<span id="count-main-cookie_dough">0</span>)
+          </button>
+          <button onclick="setMainFilter('CROFFLE')" id="filter-main-croffle" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🥐 Croffles (<span id="count-main-croffle">0</span>)
+          </button>
+          <button onclick="setMainFilter('CHEESECAKE')" id="filter-main-cheesecake" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🍰 Cheesecakes (<span id="count-main-cheesecake">0</span>)
+          </button>
+          <button onclick="setMainFilter('SAVOURY_BURGER')" id="filter-main-savoury_burger" class="px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive">
+            🍔 Savoury (<span id="count-main-savoury_burger">0</span>)
+          </button>
+        </div>
+      </div>
+
+      <!-- Master Table -->
+      <div class="overflow-x-auto rounded-2xl border border-white/10 max-h-[600px] overflow-y-auto">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead class="sticky top-0 bg-[#082218] z-20 shadow-md">
+            <tr class="text-slate-300 border-b border-white/10 text-[11px] font-bold uppercase tracking-wider">
+              <th class="p-3.5"># Rank & Sold Item</th>
+              <th class="p-3.5 text-center">Performance Tier</th>
+              <th class="p-3.5 text-center text-indigo-300">Square</th>
+              <th class="p-3.5 text-center text-emerald-300">Uber Eats</th>
+              <th class="p-3.5 text-center text-orange-300">Just Eat</th>
+              <th class="p-3.5 text-center text-teal-300">Deliveroo</th>
+              <th class="p-3.5 text-right font-black text-white">Units Sold</th>
+              <th class="p-3.5 text-right text-amber-300">Gross Sales (£)</th>
+              <th class="p-3.5 text-left w-44">Revenue Contribution %</th>
+              <th class="p-3.5 text-right text-emerald-400 font-bold">Net Payout (£)</th>
+            </tr>
+          </thead>
+          <tbody id="master-ledger-tbody" class="divide-y divide-white/5">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div id="table-empty-msg" class="text-center py-8 text-slate-400 text-xs hidden">
+        No items match your selected filter criteria.
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 4. OPTIONAL INVENTORY & THEORETICAL STOCK DEPLETION DRAWER -->
+    <!-- ======================================================== -->
+    <div id="depletion-section" class="glass-panel p-6 rounded-3xl hidden flex flex-col gap-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h4 class="text-base font-bold text-white heading-font flex items-center gap-2">
+            <i data-lucide="package-minus" class="w-4 h-4 text-emerald-400"></i>
+            Theoretical Ingredient Depletion & Stock Pot Handshake
+          </h4>
+          <p class="text-xs text-slate-400 mt-0.5">
+            Portion breakdown calculated automatically from your synced SOP recipes.
+          </p>
+        </div>
+        <button onclick="toggleDepletionDrawer()" id="depletion-toggle-btn" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-all">
+          <span id="depletion-toggle-label">Show Stock Pot Details</span>
+          <i data-lucide="chevron-down" id="depletion-toggle-icon" class="w-4 h-4 text-slate-400"></i>
+        </button>
+      </div>
+
+      <div id="depletion-drawer-content" class="space-y-4 hidden pt-2">
+        <!-- Critical Alarms if Any -->
+        <div id="critical-alarms-container" class="space-y-2"></div>
+
+        <!-- Depletion Table -->
+        <div class="overflow-x-auto rounded-2xl border border-white/10 max-h-[400px] overflow-y-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="sticky top-0 bg-[#082218] z-10">
+              <tr class="text-slate-300 border-b border-white/10 text-[10px] font-bold uppercase tracking-wider">
+                <th class="p-3">Raw Ingredient / Batch</th>
+                <th class="p-3 text-center">On-Hand Pots</th>
+                <th class="p-3 text-center text-rose-400">Depletion (Sales)</th>
+                <th class="p-3 text-center">Projected Balance</th>
+                <th class="p-3 text-center text-amber-300">MOQ Target</th>
+                <th class="p-3 text-center">Status</th>
+                <th class="p-3 text-center text-emerald-400">Suggested Reorder</th>
+              </tr>
+            </thead>
+            <tbody id="depletion-table-tbody" class="divide-y divide-white/5"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: PDF DOCUMENT PREVIEW                -->
+  <!-- ========================================== -->
+  <div id="pdf-preview-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="bg-[#0b1f17] border border-emerald-500/40 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-black/40">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-sm">Executive PDF Report Preview</h3>
+            <p class="text-[10px] text-slate-400">Formatted with Treat Street branding, branch telemetry, and Pareto ranking</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="downloadExecutivePDFReport()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Download PDF
+          </button>
+          <button onclick="printPDFReport()" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold flex items-center gap-1.5">
+            <i data-lucide="printer" class="w-3.5 h-3.5 text-amber-400"></i> Print
+          </button>
+          <button onclick="closePDFModal()" class="text-slate-400 hover:text-white p-1 ml-2">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview Document Canvas -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-900/60 flex justify-center">
+        <div id="pdf-modal-canvas" class="bg-white shadow-2xl rounded-xl w-full max-w-[760px] min-h-[500px]">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-white/10 bg-black/40 flex justify-between items-center text-xs text-slate-400">
+        <span>Ready for executive audit and franchise distribution</span>
+        <button onclick="closePDFModal()" class="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIDDEN PDF GENERATION TEMPLATE CONTAINER -->
+  <div id="pdf-export-container" class="fixed left-0 top-0 pointer-events-none w-[750px] bg-white opacity-0 -z-50"></div>
+
+  <!-- ========================================== -->
+  <!-- FOOTER -->
+  <!-- ========================================== -->
+  <footer class="w-full border-t border-white/10 py-6 text-center text-xs text-slate-400">
+    <p>Treat Street Omnichannel Sales Intelligence & Revenue Consolidation • Powered by ALAIYA Architecture</p>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT PIPELINE CONTROLLER -->
+  <!-- ========================================== -->
+  <script>
+    let currentParsedFeeds = [];
+    let currentConsolidated = null;
+    let currentDepletionResult = null;
+    let activeReportingDate = 'ALL';
+    let activeTierFilter = 'ALL';
+    let activeChannelFilter = 'ALL';
+    let activeMainFilter = 'ALL';
+    let activeSearchQuery = '';
+    let isDemoActive = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      setupDropzone();
+      syncSOPLibrary(false);
+      // Auto-load sample multi-channel batch so dashboard, tables, and PDF tools are immediately visible on launch
+      loadDemoBatch();
+    });
+
+    // -------------------------------------------------------------
+    // SOP Synchronization
+    // -------------------------------------------------------------
+    function syncSOPLibrary(showToast = true) {
+      const recipes = window.SalesEngine ? SalesEngine.syncWithSOP() : [];
+      const label = document.getElementById('sop-sync-label');
+      if (label) {
+        label.innerText = `✓ Synced with SOP (${recipes.length} Recipes)`;
+      }
+      if (showToast) {
+        alert(`✓ Successfully synchronized with your SOP Recipe Library!\n\n${recipes.length} master recipes loaded and verified.`);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Dropzone & File Ingestion (Supports PDF, CSV, Excel, TSV)
+    // -------------------------------------------------------------
+    function setupDropzone() {
+      const dropzone = document.getElementById('dropzone');
+      if (!dropzone) return;
+
+      ['dragenter', 'dragover'].forEach(name => {
+        dropzone.addEventListener(name, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add('dragover');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(name => {
+        dropzone.addEventListener(name, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove('dragover');
+        }, false);
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length) processSelectedFiles(Array.from(files));
+      }, false);
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files && files.length) processSelectedFiles(Array.from(files));
+    }
+
+    async function processSelectedFiles(files) {
+      const parsedResults = [];
+
+      for (const file of files) {
+        const name = file.name.toLowerCase();
+        let parsed;
+
+        if (name.endsWith('.pdf')) {
+          const buffer = await file.arrayBuffer();
+          parsed = await SalesEngine.parsePdfArrayBuffer(buffer, file.name);
+        } else {
+          // Pass raw ArrayBuffer for universal encoding detection (UTF-16 LE, UTF-8 BOM, etc.)
+          const buffer = await file.arrayBuffer();
+          parsed = SalesEngine.parseUniversalFile(buffer, file.name);
+        }
+
+        parsed.isDemo = false;
+        parsedResults.push(parsed);
+      }
+
+      // If demo mode was previously active or if demo files exist in memory,
+      // completely wipe demo feeds so fake sample data NEVER pollutes real sales!
+      if (isDemoActive || currentParsedFeeds.some(f => f.isDemo)) {
+        currentParsedFeeds = [];
+        isDemoActive = false;
+      }
+
+      currentParsedFeeds = [...currentParsedFeeds, ...parsedResults];
+      renderIngestedChips();
+      recalculatePipeline();
+    }
+
+    function loadDemoBatch() {
+      isDemoActive = true;
+      const demoFiles = SalesEngine.generateDemoFiles();
+      const parsed = demoFiles.map(f => {
+        const res = SalesEngine.parseUniversalFile(f.content, f.filename);
+        res.isDemo = true;
+        return res;
+      });
+      currentParsedFeeds = parsed;
+      renderIngestedChips();
+      recalculatePipeline();
+    }
+
+    function clearIngestedFiles() {
+      currentParsedFeeds = [];
+      isDemoActive = false;
+      currentConsolidated = null;
+      document.getElementById('ingested-files-panel').classList.add('hidden');
+      document.getElementById('executive-kpi-section').classList.add('hidden');
+      document.getElementById('ledger-section').classList.add('hidden');
+      document.getElementById('depletion-section').classList.add('hidden');
+    }
+
+    function renderIngestedChips() {
+      const panel = document.getElementById('ingested-files-panel');
+      const list = document.getElementById('ingested-files-list');
+      if (!currentParsedFeeds.length) {
+        panel.classList.add('hidden');
+        return;
+      }
+      panel.classList.remove('hidden');
+
+      const bannerHTML = isDemoActive
+        ? `
+          <div class="w-full mb-3 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
+            <div class="flex items-center gap-2 font-bold">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+              <span>SIMULATED DEMO BATCH ACTIVE (4 Channels). Drop your real sales reports above to switch to live audited mode.</span>
+            </div>
+            <button onclick="clearIngestedFiles()" class="underline text-amber-200 hover:text-white font-semibold ml-2">Clear Demo</button>
+          </div>
+        `
+        : `
+          <div class="w-full mb-3 p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+            <div class="flex items-center gap-2 font-bold">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+              <span>LIVE AUDITED SALES DATA (${currentParsedFeeds.length} file${currentParsedFeeds.length > 1 ? 's' : ''} ingested). Exact numbers parsed from uploaded reports.</span>
+            </div>
+            <button onclick="clearIngestedFiles()" class="underline text-emerald-200 hover:text-white font-semibold ml-2">Clear All</button>
+          </div>
+        `;
+
+      const chipsHTML = currentParsedFeeds.map((feed, idx) => {
+        const badgeColor = 
+          feed.channel === 'Square' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' :
+          feed.channel === 'Uber Eats' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+          feed.channel === 'Just Eat' ? 'bg-orange-500/20 text-orange-300 border-orange-500/40' :
+          feed.channel === 'Deliveroo' ? 'bg-teal-500/20 text-teal-300 border-teal-500/40' :
+          'bg-slate-500/20 text-slate-300 border-slate-500/40';
+
+        return `
+          <div class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl shadow-sm flex items-center gap-2 text-xs">
+            <i data-lucide="file-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="font-bold text-white">${feed.filename}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${badgeColor}">
+              ${feed.channel} (${feed.items.length} rows)
+            </span>
+            <button onclick="removeFeed(${idx})" class="text-slate-400 hover:text-rose-400 transition-colors ml-1" title="Remove feed">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      list.innerHTML = bannerHTML + `<div class="flex flex-wrap gap-2.5 w-full">${chipsHTML}</div>`;
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function removeFeed(idx) {
+      currentParsedFeeds.splice(idx, 1);
+      if (currentParsedFeeds.length === 0) {
+        clearIngestedFiles();
+      } else {
+        renderIngestedChips();
+        recalculatePipeline();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Recalculate Consolidation, Analytics & Depletion
+    // -------------------------------------------------------------
+    function recalculatePipeline() {
+      if (!currentParsedFeeds.length) return;
+
+      // 1. Run Consolidation Engine
+      currentConsolidated = SalesEngine.consolidateSales(currentParsedFeeds, {
+        reportingDate: activeReportingDate
+      });
+
+      // 2. Update Date Selector
+      updateDateFilterDropdown(currentConsolidated.availableDates);
+
+      // 3. Render Executive Metrics & Channel Breakdown
+      renderExecutiveDashboard(currentConsolidated);
+
+      // 4. Render Master Product Sales & Revenue Contribution Table
+      renderMasterLedgerTable();
+
+      // 5. Run Depletion in Background (Optional Drawer)
+      currentDepletionResult = SalesEngine.calculateDepletionAndAlarms(currentConsolidated.masterLedger);
+      renderDepletionDetails(currentDepletionResult);
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function updateDateFilterDropdown(dates) {
+      const select = document.getElementById('reporting-date-select');
+      if (!select) return;
+
+      const currentVal = select.value;
+      select.innerHTML = '<option value="ALL" class="bg-slate-900">All Ingested Dates</option>' +
+        dates.map(d => `<option value="${d}" class="bg-slate-900" ${d === activeReportingDate ? 'selected' : ''}>${d}</option>`).join('');
+
+      if (activeReportingDate !== 'ALL' && dates.includes(activeReportingDate)) {
+        select.value = activeReportingDate;
+      } else {
+        select.value = 'ALL';
+      }
+    }
+
+    function changeReportingDate(val) {
+      activeReportingDate = val;
+      recalculatePipeline();
+    }
+
+    // -------------------------------------------------------------
+    // Executive Dashboard (Headline KPIs, Channels & Tiers)
+    // -------------------------------------------------------------
+    function renderExecutiveDashboard(data) {
+      document.getElementById('executive-kpi-section').classList.remove('hidden');
+
+      const totals = data.grandTotals;
+      const analytics = data.analytics;
+
+      // 1. Headline KPIs
+      document.getElementById('kpi-gross-revenue').innerText = `£${totals.gross.toFixed(2)}`;
+      document.getElementById('kpi-total-units').innerText = totals.units.toLocaleString();
+      const avgPrice = totals.units > 0 ? (totals.gross / totals.units) : 0;
+      document.getElementById('kpi-avg-price-sub').innerText = `£${avgPrice.toFixed(2)} avg per item`;
+
+      if (analytics.topRevenuePerformer) {
+        document.getElementById('kpi-star-item-name').innerText = analytics.topRevenuePerformer.master_item_name;
+        document.getElementById('kpi-star-item-sub').innerText = `£${analytics.topRevenuePerformer.gross_revenue.toFixed(2)} • ${analytics.topRevenuePerformer.revenue_contribution_pct}% of total sales`;
+      } else {
+        document.getElementById('kpi-star-item-name').innerText = '-';
+        document.getElementById('kpi-star-item-sub').innerText = '0% of total';
+      }
+
+      document.getElementById('kpi-net-realized').innerText = `£${totals.net.toFixed(2)}`;
+      document.getElementById('kpi-leakage-sub').innerText = `£${totals.commission.toFixed(2)} platform take (${totals.effective_commission_rate}%)`;
+
+      // 1b. Mains & Bases Summary Grid & Badges
+      const mainsGrid = document.getElementById('mains-summary-grid');
+      if (mainsGrid && data.mainsSummary) {
+        const priorityMains = ['WAFFLE', 'PANCAKE', 'COOKIE_DOUGH', 'CROFFLE', 'CHEESECAKE', 'SAVOURY_BURGER'];
+        const otherMains = Object.keys(data.mainsSummary).filter(k => !priorityMains.includes(k) && data.mainsSummary[k].units > 0);
+        const displayKeys = [...priorityMains, ...otherMains];
+
+        const totalMainsUnits = data.totalCoreMainsVolume || 0;
+        const totalBadge = document.getElementById('mains-total-units-badge');
+        if (totalBadge) totalBadge.innerText = `${totalMainsUnits} Core Mains Sold`;
+
+        mainsGrid.innerHTML = displayKeys.map(k => {
+          const m = data.mainsSummary[k] || { label: k, icon: '🍽️', units: 0, gross: 0, pct_of_mains: 0, plural: k + 's' };
+          const isHighlight = (k === 'WAFFLE' || k === 'PANCAKE');
+          const borderClass = isHighlight ? 'border-amber-500/40 bg-amber-500/10 shadow-sm' : 'border-white/10 bg-white/[0.02]';
+          const titleColor = isHighlight ? 'text-amber-300 font-black' : 'text-white font-bold';
+
+          return `
+            <div onclick="setMainFilter('${k}')" class="p-3.5 rounded-2xl border ${borderClass} hover:border-amber-400/60 cursor-pointer transition-all flex flex-col justify-between group">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xl">${m.icon}</span>
+                  <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/5 text-slate-300">${m.pct_of_mains}%</span>
+                </div>
+                <p class="text-xs ${titleColor} truncate group-hover:text-amber-300 transition-colors">${m.plural || m.label}</p>
+                <p class="text-xl font-black text-white heading-font mt-1">${m.units} <span class="text-[11px] font-normal text-slate-400">units</span></p>
+              </div>
+              <div class="pt-2 mt-2 border-t border-white/5 flex items-center justify-between text-[10px]">
+                <span class="text-slate-400">Gross</span>
+                <span class="font-bold text-amber-300">£${m.gross.toFixed(2)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Update Main Base Filter Pills
+        const updatePill = (id, count) => {
+          const el = document.getElementById(id);
+          if (el) el.innerText = count || 0;
+        };
+        updatePill('count-main-waffle', data.mainsSummary['WAFFLE'] ? data.mainsSummary['WAFFLE'].units : 0);
+        updatePill('count-main-pancake', data.mainsSummary['PANCAKE'] ? data.mainsSummary['PANCAKE'].units : 0);
+        updatePill('count-main-cookie_dough', data.mainsSummary['COOKIE_DOUGH'] ? data.mainsSummary['COOKIE_DOUGH'].units : 0);
+        updatePill('count-main-croffle', data.mainsSummary['CROFFLE'] ? data.mainsSummary['CROFFLE'].units : 0);
+        updatePill('count-main-cheesecake', data.mainsSummary['CHEESECAKE'] ? data.mainsSummary['CHEESECAKE'].units : 0);
+        updatePill('count-main-savoury_burger', data.mainsSummary['SAVOURY_BURGER'] ? data.mainsSummary['SAVOURY_BURGER'].units : 0);
+      }
+
+      // 2. Channel Cards Grid
+      const channelContainer = document.getElementById('channel-cards-grid');
+      const channelKeys = ['Square', 'Uber Eats', 'Just Eat', 'Deliveroo'];
+
+      channelContainer.innerHTML = channelKeys.map(ch => {
+        const cData = data.channelTotals[ch] || { units: 0, gross: 0, commission: 0, net: 0 };
+        const sharePct = totals.gross > 0 ? ((cData.gross / totals.gross) * 100).toFixed(1) : '0.0';
+        const rankObj = analytics.channelRankings[ch];
+        const topItem = (rankObj && rankObj.best_performers[0]) ? rankObj.best_performers[0].name : '-';
+
+        const borderCol = 
+          ch === 'Square' ? 'border-indigo-500/40 text-indigo-300' :
+          ch === 'Uber Eats' ? 'border-emerald-500/40 text-emerald-300' :
+          ch === 'Just Eat' ? 'border-orange-500/40 text-orange-300' :
+          'border-teal-500/40 text-teal-300';
+
+        const dotCol = 
+          ch === 'Square' ? 'bg-indigo-400' :
+          ch === 'Uber Eats' ? 'bg-emerald-400' :
+          ch === 'Just Eat' ? 'bg-orange-400' :
+          'bg-teal-400';
+
+        return `
+          <div class="p-4 rounded-2xl bg-white/[0.02] border ${borderCol} flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-black text-xs uppercase flex items-center gap-1.5 text-white">
+                  <span class="w-2 h-2 rounded-full ${dotCol}"></span>
+                  ${ch}
+                </span>
+                <span class="px-2 py-0.5 rounded-full bg-white/5 text-[10px] font-bold text-white">${sharePct}% share</span>
+              </div>
+              <p class="text-xl font-black text-white heading-font">£${cData.gross.toFixed(2)}</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">${cData.units} units sold • £${cData.net.toFixed(2)} net</p>
+            </div>
+            <div class="pt-3 mt-3 border-t border-white/5 text-[10px]">
+              <span class="text-slate-400 block">Top Channel Performer:</span>
+              <strong class="text-white truncate block">${topItem}</strong>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 3. Performance Tiers Summary Lists
+      document.getElementById('best-performers-count').innerText = `${analytics.bestPerformers.length} Items`;
+      document.getElementById('moderate-performers-count').innerText = `${analytics.moderatePerformers.length} Items`;
+      document.getElementById('least-performers-count').innerText = `${analytics.leastPerformers.length} Items`;
+
+      // Update Filter Pill Counts
+      document.getElementById('count-tier-all').innerText = data.masterLedger.length;
+      document.getElementById('count-tier-best').innerText = analytics.bestPerformers.length;
+      document.getElementById('count-tier-mod').innerText = analytics.moderatePerformers.length;
+      document.getElementById('count-tier-least').innerText = analytics.leastPerformers.length;
+
+      const renderTierList = (items, colorClass) => {
+        if (!items || items.length === 0) {
+          return '<p class="text-[11px] text-slate-500 italic">No items in this tier</p>';
+        }
+        return items.slice(0, 5).map(item => `
+          <div class="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs">
+            <div class="overflow-hidden pr-2">
+              <p class="font-bold text-white truncate">${item.master_item_name}</p>
+              <p class="text-[10px] text-slate-400">${item.total_volume} units sold • £${item.avg_price.toFixed(2)} avg</p>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="font-black ${colorClass} block">£${item.gross_revenue.toFixed(2)}</span>
+              <span class="text-[10px] text-slate-400">${item.revenue_contribution_pct}% share</span>
+            </div>
+          </div>
+        `).join('');
+      };
+
+      document.getElementById('best-performers-list').innerHTML = renderTierList(analytics.bestPerformers, 'text-amber-300');
+      document.getElementById('moderate-performers-list').innerHTML = renderTierList(analytics.moderatePerformers, 'text-emerald-300');
+      document.getElementById('least-performers-list').innerHTML = renderTierList(analytics.leastPerformers, 'text-rose-400');
+    }
+
+    // -------------------------------------------------------------
+    // Master Product Performance Table Rendering & Filtering
+    // -------------------------------------------------------------
+    function setTierFilter(tier) {
+      activeTierFilter = tier;
+      ['all', 'best', 'mod', 'least'].forEach(t => {
+        const btn = document.getElementById(`filter-tier-${t}`);
+        if (!btn) return;
+        const target = t === 'all' ? 'ALL' : t === 'best' ? 'BEST' : t === 'mod' ? 'MODERATE' : 'LEAST';
+        if (target === tier) {
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-active';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs border transition-all filter-btn-inactive';
+        }
+      });
+      renderMasterLedgerTable();
+    }
+
+    function setMainFilter(mainType) {
+      activeMainFilter = mainType;
+      const mainKeys = ['all', 'waffle', 'pancake', 'cookie_dough', 'croffle', 'cheesecake', 'savoury_burger'];
+      mainKeys.forEach(m => {
+        const btn = document.getElementById(`filter-main-${m}`);
+        if (!btn) return;
+        const target = m === 'all' ? 'ALL' : m.toUpperCase();
+        if (target === mainType) {
+          btn.className = 'px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-active';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-xl text-xs border transition-all filter-btn-inactive';
+        }
+      });
+      renderMasterLedgerTable();
+    }
+
+    function setChannelFilter(ch) {
+      activeChannelFilter = ch;
+      renderMasterLedgerTable();
+    }
+
+    function handleSearchInput(query) {
+      activeSearchQuery = (query || '').toLowerCase().trim();
+      renderMasterLedgerTable();
+    }
+
+    function renderMasterLedgerTable() {
+      if (!currentConsolidated) return;
+
+      document.getElementById('ledger-section').classList.remove('hidden');
+
+      let items = [...currentConsolidated.masterLedger];
+
+      // Tier Filter
+      if (activeTierFilter !== 'ALL') {
+        items = items.filter(i => i.performance_tier === activeTierFilter);
+      }
+
+      // Main Base Filter (Waffles, Pancakes, Cookie Dough, etc.)
+      if (activeMainFilter !== 'ALL') {
+        items = items.filter(i => i.main_type === activeMainFilter);
+      }
+
+      // Channel Filter
+      if (activeChannelFilter !== 'ALL') {
+        const field = activeChannelFilter === 'Square' ? 'square_units' :
+                      activeChannelFilter === 'Uber Eats' ? 'uber_eats_units' :
+                      activeChannelFilter === 'Just Eat' ? 'just_eat_units' : 'deliveroo_units';
+        items = items.filter(i => (i[field] || 0) > 0);
+      }
+
+      // Search Query
+      if (activeSearchQuery) {
+        items = items.filter(i => 
+          i.master_item_name.toLowerCase().includes(activeSearchQuery) ||
+          (i.category && i.category.toLowerCase().includes(activeSearchQuery)) ||
+          (i.main_label && i.main_label.toLowerCase().includes(activeSearchQuery))
+        );
+      }
+
+      document.getElementById('items-count-badge').innerText = `${items.length} of ${currentConsolidated.masterLedger.length} Items`;
+
+      const tbody = document.getElementById('master-ledger-tbody');
+      const emptyMsg = document.getElementById('table-empty-msg');
+
+      if (items.length === 0) {
+        tbody.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        return;
+      }
+
+      emptyMsg.classList.add('hidden');
+
+      tbody.innerHTML = items.map((item, idx) => {
+        // Tier Badge
+        const tierBadge = 
+          item.performance_tier === 'BEST'
+            ? '<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase inline-flex items-center gap-1"><i data-lucide="star" class="w-3 h-3 fill-amber-300"></i> Best</span>'
+            : item.performance_tier === 'MODERATE'
+            ? '<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase inline-flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3"></i> Moderate</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black uppercase inline-flex items-center gap-1"><i data-lucide="arrow-down-right" class="w-3 h-3"></i> Least</span>';
+
+        // Contribution Bar Color
+        const barColor = 
+          item.performance_tier === 'BEST' ? 'bg-gradient-to-r from-amber-400 to-yellow-300' :
+          item.performance_tier === 'MODERATE' ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+          'bg-gradient-to-r from-rose-500 to-orange-400';
+
+        // Main Base Badge
+        const mainBadgeColor = 
+          item.main_type === 'WAFFLE' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
+          item.main_type === 'PANCAKE' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+          item.main_type === 'COOKIE_DOUGH' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+          item.main_type === 'CROFFLE' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+          item.main_type === 'CHEESECAKE' ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
+          item.main_type === 'SAVOURY_BURGER' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
+          'bg-white/5 text-slate-300 border-white/10';
+        const mainBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${mainBadgeColor}">${item.main_badge || item.main_label || 'General'}</span>`;
+
+        // SOP indicator
+        const sopTag = item.has_sop_recipe
+          ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold" title="Synced with SOP Recipe">SOP Linked</span>'
+          : '<span class="text-[9px] px-1.5 py-0.2 rounded bg-white/5 text-slate-400 border border-white/10" title="Report item tracked directly">Sales Tracked</span>';
+
+        return `
+          <tr class="hover:bg-white/[0.03] transition-colors">
+            <td class="p-3.5 font-bold text-white">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono text-slate-500 font-normal">#${idx + 1}</span>
+                <span class="text-sm">${item.master_item_name}</span>
+                ${mainBadge}
+                ${sopTag}
+              </div>
+              <span class="text-[10px] text-slate-400 block mt-0.5 font-normal">${item.category || 'General'}</span>
+            </td>
+
+            <td class="p-3.5 text-center">${tierBadge}</td>
+
+            <td class="p-3.5 text-center font-medium text-indigo-300">${item.square_units || '-'}</td>
+            <td class="p-3.5 text-center font-medium text-emerald-300">${item.uber_eats_units || '-'}</td>
+            <td class="p-3.5 text-center font-medium text-orange-300">${item.just_eat_units || '-'}</td>
+            <td class="p-3.5 text-center font-medium text-teal-300">${item.deliveroo_units || '-'}</td>
+
+            <td class="p-3.5 text-right font-black text-white text-base">${item.total_volume}</td>
+            <td class="p-3.5 text-right font-bold text-amber-300 text-base">£${item.gross_revenue.toFixed(2)}</td>
+
+            <td class="p-3.5">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-black text-white">${item.revenue_contribution_pct}%</span>
+                <span class="text-[10px] text-slate-400">of total revenue</span>
+              </div>
+              <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                <div style="width: ${Math.min(100, Math.max(3, item.revenue_contribution_pct * 3.5))}%" class="h-full rounded-full ${barColor}"></div>
+              </div>
+            </td>
+
+            <td class="p-3.5 text-right font-black text-emerald-400 text-base">£${item.net_revenue.toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // Optional Inventory Depletion Drawer
+    // -------------------------------------------------------------
+    function toggleDepletionDrawer() {
+      const content = document.getElementById('depletion-drawer-content');
+      const label = document.getElementById('depletion-toggle-label');
+      const icon = document.getElementById('depletion-toggle-icon');
+      if (!content) return;
+
+      const isHidden = content.classList.contains('hidden');
+      if (isHidden) {
+        content.classList.remove('hidden');
+        label.innerText = 'Hide Stock Pot Details';
+        icon.setAttribute('data-lucide', 'chevron-up');
+      } else {
+        content.classList.add('hidden');
+        label.innerText = 'Show Stock Pot Details';
+        icon.setAttribute('data-lucide', 'chevron-down');
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderDepletionDetails(res) {
+      if (!res) return;
+      document.getElementById('depletion-section').classList.remove('hidden');
+
+      const tbody = document.getElementById('depletion-table-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = res.depletionLedger.map(row => {
+        const isCrit = row.status === 'CRITICAL_LOW_STOCK_ALARM';
+        const isWarn = row.status === 'WARNING_LOW';
+        const statusBadge = isCrit
+          ? '<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] font-black uppercase">CRITICAL</span>'
+          : isWarn
+          ? '<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold uppercase">LOW</span>'
+          : '<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-semibold uppercase">HEALTHY</span>';
+
+        return `
+          <tr class="hover:bg-white/[0.03] transition-colors ${isCrit ? 'bg-rose-950/10' : ''}">
+            <td class="p-3 font-bold text-white">
+              ${row.ingredient_name}
+              <span class="text-[9px] text-slate-400 block font-normal">${row.dishes_involved.slice(0, 2).join(', ')}</span>
+            </td>
+            <td class="p-3 text-center font-bold text-slate-200">${row.current_on_hand}</td>
+            <td class="p-3 text-center font-bold text-rose-400">-${row.theoretical_consumption} <span class="text-[9px] text-slate-400">${row.unit}</span></td>
+            <td class="p-3 text-center font-black ${row.projected_remaining_stock <= row.moq_safety_threshold ? 'text-rose-400' : 'text-white'}">${row.projected_remaining_stock}</td>
+            <td class="p-3 text-center font-bold text-amber-300">${row.moq_safety_threshold}</td>
+            <td class="p-3 text-center">${statusBadge}</td>
+            <td class="p-3 text-center font-black ${row.suggested_reorder_qty > 0 ? 'text-emerald-400' : 'text-slate-500'}">
+              ${row.suggested_reorder_qty > 0 ? `+${row.suggested_reorder_qty}` : '-'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // -------------------------------------------------------------
+    // PDF REPORT BUILDER & EXPORTER (EXECUTIVE AESTHETIC UI/UX)
+    // -------------------------------------------------------------
+    function getSelectedBranch() {
+      const select = document.getElementById('branch-select');
+      return select ? select.value : 'MK Stadium';
+    }
+
+    function buildExecutivePDFHTML(data, branchName) {
+      const totals = data.grandTotals;
+      const analytics = data.analytics;
+      const mains = data.mainsSummary || {};
+      const totalMainsUnits = data.totalCoreMainsVolume || 0;
+      const genTimestamp = new Date().toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const period = data.reportingDate === 'ALL' ? 'All Ingested Shifts / Dates' : `Date: ${data.reportingDate}`;
+      const avgPrice = totals.units > 0 ? (totals.gross / totals.units) : 0;
+      const star = analytics.topRevenuePerformer || { master_item_name: 'None', gross_revenue: 0, revenue_contribution_pct: 0 };
+
+      // Channel Rows HTML
+      const channelRowsHTML = ['Square', 'Uber Eats', 'Just Eat', 'Deliveroo'].map((ch, i) => {
+        const c = data.channelTotals[ch] || { units: 0, gross: 0, commission: 0, net: 0 };
+        const share = totals.gross > 0 ? ((c.gross / totals.gross) * 100).toFixed(1) : '0.0';
+        const rank = analytics.channelRankings[ch];
+        const topProd = (rank && rank.best_performers[0]) ? rank.best_performers[0].name : '-';
+        const commRate = c.gross > 0 ? ((c.commission / c.gross) * 100).toFixed(1) : '0.0';
+        const rowBg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+
+        return `
+          <tr style="background: ${rowBg}; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
+            <td style="padding: 6px 8px; font-weight: 800; color: #0f172a;">
+              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${ch==='Square'?'#4f46e5':ch==='Uber Eats'?'#059669':ch==='Just Eat'?'#ea580c':'#0d9488'}; margin-right: 5px;"></span>
+              ${ch === 'Square' ? 'In-Store POS (Square)' : ch}
+            </td>
+            <td style="padding: 6px 6px; text-align: center; font-weight: 700; color: #334155;">${c.units}</td>
+            <td style="padding: 6px 6px; text-align: right; font-weight: 800; color: #0f172a;">£${c.gross.toFixed(2)}</td>
+            <td style="padding: 6px 6px; text-align: center; font-weight: 800; color: #059669;">${share}%</td>
+            <td style="padding: 6px 6px; text-align: right; color: ${c.commission > 0 ? '#e11d48' : '#059669'}; font-weight: 700;">
+              ${c.commission > 0 ? `-£${c.commission.toFixed(2)} (${commRate}%)` : '£0.00 (0%)'}
+            </td>
+            <td style="padding: 6px 6px; text-align: right; font-weight: 900; color: #059669;">£${c.net.toFixed(2)}</td>
+            <td style="padding: 6px 8px; font-weight: 700; color: #1e293b; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${topProd}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Mains Cards Definition
+      const mainCardDefs = [
+        { key: 'WAFFLE', label: 'Waffles', emoji: '🧇', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+        { key: 'PANCAKE', label: 'Pancakes', emoji: '🥞', color: '#c2410c', bg: '#fff7ed', border: '#fed7aa' },
+        { key: 'COOKIE_DOUGH', label: 'Cookie Dough', emoji: '🍪', color: '#a16207', bg: '#fefce8', border: '#fef08a' },
+        { key: 'CROFFLE', label: 'Croffles', emoji: '🥐', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+        { key: 'CHEESECAKE', label: 'Cheesecakes', emoji: '🍰', color: '#be123c', bg: '#fff1f2', border: '#fecdd3' },
+        { key: 'SAVOURY_BURGER', label: 'Savoury Mains', emoji: '🍔', color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' }
+      ];
+
+      const mainsCardsHTML = mainCardDefs.map(def => {
+        const item = mains[def.key] || mains[def.key.toLowerCase()] || { units: 0, gross: 0, net: 0, pct_of_mains: 0, shareOfMains: 0 };
+        const shareVal = item.pct_of_mains ?? item.shareOfMains ?? 0;
+        return `
+          <div style="background: ${def.bg}; border: 1px solid ${def.border}; border-radius: 6px; padding: 7px 8px; text-align: center;">
+            <div style="font-size: 9px; font-weight: 800; color: ${def.color}; margin-bottom: 2px;">
+              ${def.emoji} ${def.label}
+            </div>
+            <div style="font-size: 15px; font-weight: 900; color: #0f172a; line-height: 1.1;">
+              ${item.units} <span style="font-size: 8.5px; font-weight: 700; color: #64748b;">Units</span>
+            </div>
+            <div style="font-size: 8px; color: ${def.color}; font-weight: 800; margin-top: 2px;">
+              £${item.gross.toFixed(2)} • ${shareVal}% mains
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // All Mains Table Rows (shows all categories with sales or core bases)
+      const allMainsKeys = [
+        { key: 'WAFFLE', label: '🧇 Belgian & Liege Waffles' },
+        { key: 'PANCAKE', label: '🥞 American Pancakes & Stacks' },
+        { key: 'COOKIE_DOUGH', label: '🍪 Warm Cookie Dough' },
+        { key: 'CROFFLE', label: '🥐 Croissant Waffles (Croffles)' },
+        { key: 'CHEESECAKE', label: '🍰 Artisan Cheesecakes & Slices' },
+        { key: 'CREPE', label: '🫓 French Crepes' },
+        { key: 'SAVOURY_BURGER', label: '🍔 Savoury Gourmet Burgers' },
+        { key: 'MILKSHAKE', label: '🥤 Premium Thick Shakes' },
+        { key: 'GELATO_SUNDAE', label: '🍨 Gelato & Sundaes' },
+        { key: 'BEVERAGE_OTHER', label: '☕ Beverages & Other Desserts' }
+      ];
+
+      const mainsTableRowsHTML = allMainsKeys.map((k, i) => {
+        const row = mains[k.key] || mains[k.key.toLowerCase()] || { units: 0, gross: 0, net: 0, square_units: 0, uber_units: 0, just_eat_units: 0, deliveroo_units: 0, pct_of_mains: 0 };
+        if (row.units === 0 && !['WAFFLE', 'PANCAKE', 'COOKIE_DOUGH', 'CROFFLE'].includes(k.key)) {
+          return ''; // omit zero-volume secondary bases to keep report tight
+        }
+        const rowBg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+        const isHighlight = k.key === 'WAFFLE' || k.key === 'PANCAKE';
+        const sq = row.square_units ?? row.channels?.Square ?? 0;
+        const ub = row.uber_units ?? row.channels?.UberEats ?? 0;
+        const je = row.just_eat_units ?? row.channels?.JustEat ?? 0;
+        const dl = row.deliveroo_units ?? row.channels?.Deliveroo ?? 0;
+        const sharePct = row.pct_of_mains ?? row.shareOfMains ?? 0;
+
+        return `
+          <tr style="background: ${isHighlight ? '#fffdf7' : rowBg}; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
+            <td style="padding: 5px 8px; font-weight: 800; color: ${isHighlight ? '#b45309' : '#0f172a'};">
+              ${k.label}
+              ${isHighlight ? '<span style="font-size: 7.5px; background: #fef3c7; color: #92400e; padding: 1px 4px; border-radius: 3px; margin-left: 4px; font-weight: 800;">CORE ANCHOR</span>' : ''}
+            </td>
+            <td style="padding: 5px 6px; text-align: center; color: #4338ca; font-weight: 700;">${sq || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #047857; font-weight: 700;">${ub || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #c2410c; font-weight: 700;">${je || '-'}</td>
+            <td style="padding: 5px 6px; text-align: center; color: #0f766e; font-weight: 700;">${dl || '-'}</td>
+            <td style="padding: 5px 6px; text-align: right; font-weight: 900; color: #0f172a;">${row.units}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 900; color: #b45309;">£${row.gross.toFixed(2)}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 800; color: #059669;">${sharePct}%</td>
+          </tr>
+        `;
+      }).filter(Boolean).join('');
+
+      // Top Performers List (Best)
+      const bestItemsListHTML = (analytics.bestPerformers || []).slice(0, 4).map(item => `
+        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #fde68a;">
+          <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
+          <span style="font-weight: 800; color: #b45309; font-size: 8px;">£${item.net_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
+        </div>
+      `).join('') || '<span style="color:#64748b;">No items recorded</span>';
+
+      // Moderate Performers List
+      const modItemsListHTML = (analytics.moderatePerformers || []).slice(0, 4).map(item => `
+        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #bbf7d0;">
+          <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
+          <span style="font-weight: 800; color: #15803d; font-size: 8px;">£${item.net_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
+        </div>
+      `).join('') || '<span style="color:#64748b;">No items recorded</span>';
+
+      // Least Performers List (Strictly Units Sold == 1 AND Net Sales < £7.00)
+      const leastItemsListHTML = (analytics.leastPerformers || []).slice(0, 4).map(item => `
+        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #fecaca;">
+          <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
+          <span style="font-weight: 800; color: #b91c1c; font-size: 8px;">£${item.net_revenue.toFixed(2)} (${item.revenue_contribution_pct}%)</span>
+        </div>
+      `).join('') || '<span style="color:#64748b;">No items under threshold</span>';
+
+      // Master Ledger Table Rows - Strictly Sorted by Net Sales descending
+      const sortedLedger = [...(data.masterLedger || [])].sort((a, b) => (b.net_revenue || 0) - (a.net_revenue || 0));
+      const ledgerRowsHTML = sortedLedger.map((item, idx) => {
+        const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+        return `
+          <tr style="background: ${rowBg}; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
+            <td style="padding: 5px 8px; vertical-align: middle;">
+              <strong style="color: #0f172a; font-size: 8.5px;">${item.master_item_name}</strong>
+              ${item.category ? `<span style="display: block; font-size: 7.5px; color: #64748b; margin-top: 1px;">${item.category}</span>` : ''}
+            </td>
+            <td style="padding: 5px 8px; text-align: center; font-weight: 900; color: #1e293b; font-size: 9px; vertical-align: middle;">${item.total_volume}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 800; color: #b45309; font-size: 8.5px; vertical-align: middle;">£${item.gross_revenue.toFixed(2)}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 900; color: #059669; font-size: 8.5px; vertical-align: middle;">£${item.net_revenue.toFixed(2)}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: 800; color: #0f172a; font-size: 8.5px; vertical-align: middle;">${item.revenue_contribution_pct}%</td>
+          </tr>
+        `;
+      }).join('');
+
+      // AI Recommendations Snippets
+      const aiStarsHTML = (analytics.aiRecommendations.starHighlights || []).map(s => `<p style="margin: 0 0 3px 0; line-height: 1.3;">${s.replace(/\*\*/g, '')}</p>`).join('') || '<p>Top revenue drivers maintained healthy volume.</p>';
+      const aiCoreHTML = (analytics.aiRecommendations.coreRecommendations || []).map(s => `<p style="margin: 0 0 3px 0; line-height: 1.3;">${s.replace(/\*\*/g, '')}</p>`).join('') || '<p>Core menu items consistent.</p>';
+      const aiLeaksHTML = (analytics.aiRecommendations.lowSalesAlerts || []).map(s => `<p style="margin: 0 0 3px 0; line-height: 1.3;">${s.replace(/\*\*/g, '')}</p>`).join('') || '<p>Review tail menu performance.</p>';
+
+      return `
+        <div id="pdf-report-document" style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #0f172a; background: #ffffff; padding: 18px 20px; width: 750px; max-width: 750px; margin: 0 auto; box-sizing: border-box; line-height: 1.35;">
+          
+          <!-- LETTERHEAD (HEADER) -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0f3d2e; padding-bottom: 12px; margin-bottom: 14px; page-break-inside: avoid;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 42px; height: 42px; background: #0f3d2e; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 19px; font-weight: 900; font-family: 'Outfit', sans-serif;">
+                TS
+              </div>
+              <div>
+                <h1 style="margin: 0; font-size: 19px; font-weight: 900; color: #0f3d2e; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif;">
+                  TREAT STREET
+                </h1>
+                <p style="margin: 2px 0 0 0; font-size: 9.5px; font-weight: 800; color: #059669; text-transform: uppercase; letter-spacing: 0.8px;">
+                  Executive Sales Performance & Omnichannel Revenue Report
+                </p>
+              </div>
+            </div>
+            
+            <div style="text-align: right; font-size: 9px; color: #475569;">
+              <p style="margin: 0 0 2px 0; font-size: 11.5px; font-weight: 800; color: #0f3d2e;">
+                Branch: <span style="color: #059669;">${branchName}</span>
+              </p>
+              <p style="margin: 0 0 2px 0;"><strong>Period:</strong> ${period}</p>
+              <p style="margin: 0 0 3px 0;"><strong>Generated:</strong> ${genTimestamp}</p>
+              <p style="margin: 0;"><span style="display: inline-block; padding: 2px 6px; background: #ecfdf5; color: #059669; border-radius: 9999px; font-weight: 800; font-size: 8px; border: 1px solid #a7f3d0;">EXECUTIVE AUDIT COPY</span></p>
+            </div>
+          </div>
+
+          <!-- EXECUTIVE FINANCIAL KPIS (4 CARDS) -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; page-break-inside: avoid;">
+            
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #059669; border-radius: 7px; padding: 8px;">
+              <p style="margin: 0 0 2px 0; font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Gross Sales</p>
+              <p style="margin: 0; font-size: 16px; font-weight: 900; color: #0f3d2e;">£${totals.gross.toFixed(2)}</p>
+              <p style="margin: 2px 0 0 0; font-size: 8px; color: #64748b;">Pre-commission list sales</p>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #4f46e5; border-radius: 7px; padding: 8px;">
+              <p style="margin: 0 0 2px 0; font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase;">Volume Sold</p>
+              <p style="margin: 0; font-size: 16px; font-weight: 900; color: #1e293b;">${totals.units} Units</p>
+              <p style="margin: 2px 0 0 0; font-size: 8px; color: #4f46e5; font-weight: 700;">£${avgPrice.toFixed(2)} avg item price</p>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #f59e0b; border-radius: 7px; padding: 8px;">
+              <p style="margin: 0 0 2px 0; font-size: 8px; font-weight: 800; color: #d97706; text-transform: uppercase;">🌟 Star Performer</p>
+              <p style="margin: 0; font-size: 11px; font-weight: 900; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${star.master_item_name}</p>
+              <p style="margin: 2px 0 0 0; font-size: 8px; color: #d97706; font-weight: 800;">£${(star.net_revenue ?? star.gross_revenue).toFixed(2)} Net (${star.revenue_contribution_pct}% share • ${star.total_volume || star.units || 1} units)</p>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #0d9488; border-radius: 7px; padding: 8px;">
+              <p style="margin: 0 0 2px 0; font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase;">Net Realized Cash</p>
+              <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">£${totals.net.toFixed(2)}</p>
+              <p style="margin: 2px 0 0 0; font-size: 8px; color: #e11d48; font-weight: 700;">-£${totals.commission.toFixed(2)} (${totals.effective_commission_rate}% fee)</p>
+            </div>
+
+          </div>
+
+          <!-- SECTION 1: CHANNEL COMPARISON TABLE -->
+          <div style="margin-bottom: 14px; page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <h2 style="margin: 0; font-size: 10.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+                1. Channel Sales & Revenue Contribution Economics
+              </h2>
+              <span style="font-size: 8px; font-weight: 700; color: #64748b;">Consolidated In-Store POS & Aggregators</span>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; text-align: left; border: 1px solid #e2e8f0; table-layout: fixed;">
+              <thead>
+                <tr style="background: #0f3d2e; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 8px;">
+                  <th style="padding: 5px 8px; width: 155px;">Platform</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">Units Sold</th>
+                  <th style="padding: 5px 6px; width: 85px; text-align: right;">Gross Sales (£)</th>
+                  <th style="padding: 5px 6px; width: 80px; text-align: center;">Revenue Share</th>
+                  <th style="padding: 5px 6px; width: 105px; text-align: right;">Platform Take</th>
+                  <th style="padding: 5px 6px; width: 90px; text-align: right;">Net Payout</th>
+                  <th style="padding: 5px 8px; width: 130px; text-align: left;">Top Selling Product</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${channelRowsHTML}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SECTION 2: MAINS & CORE DESSERT BASES VELOCITY TRACKER (CRUCIAL USER REQUIREMENT) -->
+          <div style="margin-bottom: 14px; page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <div>
+                <h2 style="margin: 0; font-size: 10.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+                  2. Mains & Core Dessert Bases Velocity Tracker
+                </h2>
+                <p style="margin: 1px 0 0 0; font-size: 8px; color: #64748b;">
+                  Culinary Anchor Volumes Disambiguated From Flavours & Modifiers (Total Mains: ${totalMainsUnits} Units)
+                </p>
+              </div>
+              <span style="font-size: 8px; font-weight: 800; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 6px; border-radius: 4px;">
+                WAFFLES & PANCAKES AUDIT
+              </span>
+            </div>
+
+            <!-- 6 Base Highlight Cards -->
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 8px;">
+              ${mainsCardsHTML}
+            </div>
+
+            <!-- Mains Channel Distribution Table -->
+            <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; text-align: left; border: 1px solid #e2e8f0; table-layout: fixed;">
+              <thead>
+                <tr style="background: #1e293b; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 8px;">
+                  <th style="padding: 5px 8px; width: 180px;">Main Base Category</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">In-Store (SQ)</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">Uber Eats</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">Just Eat</th>
+                  <th style="padding: 5px 6px; width: 65px; text-align: center;">Deliveroo</th>
+                  <th style="padding: 5px 6px; width: 75px; text-align: right;">Total Units</th>
+                  <th style="padding: 5px 8px; width: 95px; text-align: right;">Gross Sales (£)</th>
+                  <th style="padding: 5px 8px; width: 100px; text-align: right;">% of Mains</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${mainsTableRowsHTML}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SECTION 3: 3-TIER PERFORMANCE CLASSIFICATION (BEST, MODERATE, LEAST) -->
+          <div style="margin-bottom: 14px; page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <h2 style="margin: 0; font-size: 10.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+                3. Product Velocity & Pareto Performance Tiers
+              </h2>
+              <span style="font-size: 8px; font-weight: 700; color: #64748b;">Top, Core & Review Segments</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+              
+              <!-- BEST -->
+              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 7px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; border-bottom: 1px solid #fef3c7; padding-bottom: 3px;">
+                  <span style="font-weight: 900; font-size: 9px; color: #b45309;">🌟 BEST PERFORMERS</span>
+                  <span style="font-size: 8px; font-weight: 800; color: #b45309;">${(analytics.bestPerformers||[]).length} Items</span>
+                </div>
+                <div style="font-size: 8px;">${bestItemsListHTML}</div>
+              </div>
+
+              <!-- MODERATE -->
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 7px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; border-bottom: 1px solid #dcfce7; padding-bottom: 3px;">
+                  <span style="font-weight: 900; font-size: 9px; color: #15803d;">⚡ MODERATE PERFORMERS</span>
+                  <span style="font-size: 8px; font-weight: 800; color: #15803d;">${(analytics.moderatePerformers||[]).length} Items</span>
+                </div>
+                <div style="font-size: 8px;">${modItemsListHTML}</div>
+              </div>
+
+              <!-- LEAST / UNDERPERFORMERS -->
+              <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 7px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; border-bottom: 1px solid #fee2e2; padding-bottom: 3px;">
+                  <span style="font-weight: 900; font-size: 9px; color: #b91c1c;">⚠️ ACTIONABLE ALERTS / UNDERPERFORMERS</span>
+                  <span style="font-size: 8px; font-weight: 800; color: #b91c1c;">${(analytics.leastPerformers||[]).length} Items</span>
+                </div>
+                <div style="font-size: 8px;">${leastItemsListHTML}</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- SECTION 4: COMPLETE MASTER PRODUCT SALES & REVENUE CONTRIBUTION LEDGER -->
+          <div style="margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <h2 style="margin: 0; font-size: 10.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+                4. Master Product Sales & Revenue Contribution Ledger
+              </h2>
+              <span style="font-size: 8px; font-weight: 700; color: #64748b;">${sortedLedger.length} Products Sold (Sorted by Net Sales Descending)</span>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; text-align: left; border: 1px solid #e2e8f0; table-layout: fixed;">
+              <thead>
+                <tr style="background: #0f3d2e; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 8px;">
+                  <th style="padding: 6px 8px; width: 250px;">Item Name</th>
+                  <th style="padding: 6px 8px; width: 90px; text-align: center;">UNITS</th>
+                  <th style="padding: 6px 8px; width: 120px; text-align: right;">Gross Sales (£)</th>
+                  <th style="padding: 6px 8px; width: 120px; text-align: right;">Net Revenue (£)</th>
+                  <th style="padding: 6px 8px; width: 130px; text-align: right;">Revenue Share (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ledgerRowsHTML}
+              </tbody>
+              <tfoot>
+                <tr style="background: #f1f5f9; font-weight: 900; border-top: 2px solid #0f3d2e; font-size: 8.5px;">
+                  <td style="padding: 6px 8px; color: #0f3d2e;">Total Store Sales (${sortedLedger.length} Items)</td>
+                  <td style="padding: 6px 8px; text-align: center; color: #1e293b; font-size: 9px;">${totals.units}</td>
+                  <td style="padding: 6px 8px; text-align: right; color: #b45309;">£${totals.gross.toFixed(2)}</td>
+                  <td style="padding: 6px 8px; text-align: right; color: #059669;">£${totals.net.toFixed(2)}</td>
+                  <td style="padding: 6px 8px; text-align: right; color: #0f3d2e;">100.0%</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- SECTION 5: AI STRATEGIC EXECUTIVE RECOMMENDATIONS -->
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px; margin-bottom: 14px; page-break-inside: avoid;">
+            <h3 style="margin: 0 0 5px 0; font-size: 9.5px; font-weight: 900; color: #0f3d2e; text-transform: uppercase; letter-spacing: 0.5px;">
+              5. Executive Strategic AI Insights & Margin Preservation
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 8px; color: #334155;">
+              <div>
+                <strong style="color: #b45309; display: block; margin-bottom: 2px;">🌟 Star Drivers & Main Velocity:</strong>
+                ${aiStarsHTML}
+              </div>
+              <div>
+                <strong style="color: #15803d; display: block; margin-bottom: 2px;">⚡ Core Baseline:</strong>
+                ${aiCoreHTML}
+              </div>
+              <div>
+                <strong style="color: #b91c1c; display: block; margin-bottom: 2px;">⚠️ Actionable Alerts / Underperformers:</strong>
+                ${aiLeaksHTML}
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 6: FOOTER & SIGN-OFF -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 8px; color: #64748b; page-break-inside: avoid;">
+            <div>
+              <p style="margin: 0 0 2px 0; font-weight: 700;">Treat Street Internal Operations & Revenue Governance System</p>
+              <p style="margin: 0;">Confidential • Generated for ${branchName} Management Audit</p>
+            </div>
+            <div style="text-align: right;">
+              <p style="margin: 0 0 10px 0;">Authorized Branch Manager Signature: _______________________</p>
+              <p style="margin: 0;">Date: ________________________</p>
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    // -------------------------------------------------------------
+    // Download Executive PDF Report
+    // -------------------------------------------------------------
+    function downloadExecutivePDFReport() {
+      if (!currentConsolidated) {
+        alert("Please ingest at least one sales report file first.");
+        return;
+      }
+
+      const branchName = getSelectedBranch();
+      const safeBranch = branchName.replace(/[^a-zA-Z0-9]/g, '_');
+      const safeDate = (currentConsolidated.reportingDate || 'ALL').replace(/[^a-zA-Z0-9]/g, '_');
+
+      const container = document.getElementById('pdf-export-container');
+      container.style.display = 'block';
+      container.style.position = 'fixed';
+      container.style.top = '0';
+      container.style.left = '0';
+      container.style.width = '750px';
+      container.style.zIndex = '-9999';
+      container.style.opacity = '1';
+      container.style.pointerEvents = 'none';
+      container.style.background = '#ffffff';
+
+      container.innerHTML = buildExecutivePDFHTML(currentConsolidated, branchName);
+
+      const element = document.getElementById('pdf-report-document');
+      const btn = document.getElementById('btn-generate-pdf');
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating PDF...';
+
+      const opt = {
+        margin:       [0.2, 0.2, 0.2, 0.2],
+        filename:     `Treat_Street_Sales_Performance_${safeBranch}_${safeDate}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 750, scrollY: 0 },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'legacy'], avoid: ['.pdf-avoid-break', 'tr'] }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        if (btn) btn.innerHTML = originalText;
+        if (window.lucide) lucide.createIcons();
+        container.style.display = 'none';
+        container.innerHTML = '';
+      }).catch(err => {
+        console.error("PDF generation failed:", err);
+        alert("PDF generation completed. If download didn't trigger, please use the Preview button to print directly.");
+        if (btn) btn.innerHTML = originalText;
+        container.style.display = 'none';
+      });
+    }
+
+    // -------------------------------------------------------------
+    // PDF Preview Modal
+    // -------------------------------------------------------------
+    function previewPDFModal() {
+      if (!currentConsolidated) {
+        alert("Please ingest at least one sales report file first.");
+        return;
+      }
+
+      const branchName = getSelectedBranch();
+      const canvas = document.getElementById('pdf-modal-canvas');
+      canvas.innerHTML = buildExecutivePDFHTML(currentConsolidated, branchName);
+
+      document.getElementById('pdf-preview-modal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closePDFModal() {
+      document.getElementById('pdf-preview-modal').classList.add('hidden');
+    }
+
+    function printPDFReport() {
+      const modalCanvas = document.getElementById('pdf-modal-canvas');
+      if (!modalCanvas) return;
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Treat Street Sales Report</title>
+            <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+            <style>
+              body { margin: 0; padding: 10px; font-family: 'Plus Jakarta Sans', Arial, sans-serif; background: #fff; }
+              @page { size: A4 portrait; margin: 6mm; }
+              table { page-break-inside: auto; }
+              tr { page-break-inside: avoid; page-break-after: auto; }
+              thead { display: table-header-group; }
+              tfoot { display: table-footer-group; }
+            </style>
+          </head>
+          <body>
+            ${modalCanvas.innerHTML}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }
+
+    // -------------------------------------------------------------
+    // Export Data Utilities (Excel & CSV)
+    // -------------------------------------------------------------
+    function exportMasterExcel() {
+      if (!currentConsolidated) return;
+      const rows = SalesEngine.generateMasterExportData(currentConsolidated);
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Sales_Performance_Ledger");
+      const branchName = getSelectedBranch().replace(/[^a-zA-Z0-9]/g, '_');
+      XLSX.writeFile(wb, `Treat_Street_Sales_Performance_${branchName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    function exportMasterCSV() {
+      if (!currentConsolidated) return;
+      const rows = SalesEngine.generateMasterExportData(currentConsolidated);
+      const csvContent = rows.map(r => r.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const branchName = getSelectedBranch().replace(/[^a-zA-Z0-9]/g, '_');
+      a.href = url;
+      a.download = `Treat_Street_Sales_Performance_${branchName}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/sales-ledger",
+      "destination": "/sales_ledger.html"
+    },
+    {
+      "source": "/sales_ledger",
+      "destination": "/sales_ledger.html"
+    },
+    {
+      "source": "/sales",
+      "destination": "/sales_ledger.html"
+    },
+    {
+      "source": "/inventory",
+      "destination": "/inventory.html"
+    },
+    {
+      "source": "/purchase",
+      "destination": "/purchase.html"
+    },
+    {
+      "source": "/analytics",
+      "destination": "/analytics.html"
+    },
+    {
+      "source": "/kitchen-ops",
+      "destination": "/kitchen_ops.html"
+    },
+    {
+      "source": "/sop",
+      "destination": "/SOP.html"
+    }
+  ]
+}
