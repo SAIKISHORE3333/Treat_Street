@@ -417,7 +417,7 @@
         .trim();
     },
 
-    cleanNumber(val, defaultVal = 0) {
+    cleanNumber(val, defaultVal = 0.0) {
       if (val === null || val === undefined) return defaultVal;
       if (typeof val === 'number') return isNaN(val) ? defaultVal : val;
       let str = val.toString().trim();
@@ -425,15 +425,21 @@
       str = str.replace(/^["']+|["']+$/g, '').trim();
       if (!str) return defaultVal;
 
-      // Handle accounting negative formats: -£10.00, £-10.00, (£10.00), -10.00, (10.00)
-      const isNegative = str.includes('-') || (str.startsWith('(') && str.endsWith(')'));
+      // Handle accounting negative formats: -£10.00, £-10.00, (£10.00), £(10.00), -10.00, (10.00)
+      const isNegative = str.includes('-') || (str.includes('(') && str.includes(')'));
 
-      // Strip currency symbols ('£', '$', '€'), commas (thousands separator), quotes, and non-numeric chars except dot
-      const clean = str.replace(/[£$€,\s"']/g, '').replace(/[^0-9.]+/g, '');
+      // Strip currency symbols ('£', '$', '€'), commas (thousands separator), quotes, parens, and non-numeric chars except dot
+      const clean = str.replace(/[£$€,\s"'\(\)\-]/g, '');
       if (!clean) return defaultVal;
       const num = parseFloat(clean);
       if (isNaN(num)) return defaultVal;
       return isNegative ? -num : num;
+    },
+
+    cleanInteger(val, defaultVal = 0) {
+      const num = this.cleanNumber(val, defaultVal);
+      if (isNaN(num)) return defaultVal;
+      return Math.round(num);
     },
 
     normalizeDate(dateStr) {
@@ -476,7 +482,7 @@
       } else if (buffer.buffer instanceof ArrayBuffer) {
         bytes = new Uint8Array(buffer.buffer);
       } else {
-        return String(buffer);
+        return String(buffer).replace(/^\uFEFF/, '').replace(/\u0000/g, '');
       }
 
       if (bytes.length === 0) return '';
@@ -485,45 +491,69 @@
       // UTF-16 LE BOM: 0xFF, 0xFE
       if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
         try {
-          return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+          return new TextDecoder('utf-16le').decode(bytes.subarray(2)).replace(/\u0000/g, '');
         } catch (e) {}
       }
       // UTF-16 BE BOM: 0xFE, 0xFF
       if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
         try {
-          return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+          return new TextDecoder('utf-16be').decode(bytes.subarray(2)).replace(/\u0000/g, '');
         } catch (e) {}
       }
       // UTF-8 BOM: 0xEF, 0xBB, 0xBF
       if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
         try {
-          return new TextDecoder('utf-8').decode(bytes.subarray(3));
+          return new TextDecoder('utf-8').decode(bytes.subarray(3)).replace(/^\uFEFF/, '');
         } catch (e) {}
       }
 
-      // 2. Heuristic check for UTF-16 LE without BOM (common in Windows / Square POS exports)
-      // Check first 200 bytes for alternating null bytes
-      const checkLen = Math.min(bytes.length, 200);
-      let nullOdd = 0;
-      let nullEven = 0;
-      for (let i = 0; i < checkLen; i++) {
-        if (bytes[i] === 0x00) {
-          if (i % 2 === 1) nullOdd++;
-          else nullEven++;
-        }
-      }
-      if (nullOdd > checkLen * 0.25) {
+      // 2. Dynamic trial across candidate encodings: ['utf-16', 'utf-16-le', 'utf-8-sig', 'utf-8']
+      const encodings = ['utf-16', 'utf-16-le', 'utf-8-sig', 'utf-8'];
+      let bestCandidate = '';
+      let bestScore = -Infinity;
+
+      for (const enc of encodings) {
         try {
-          return new TextDecoder('utf-16le').decode(bytes);
-        } catch (e) {}
-      }
-      if (nullEven > checkLen * 0.25) {
-        try {
-          return new TextDecoder('utf-16be').decode(bytes);
-        } catch (e) {}
+          let decoded = '';
+          if (enc === 'utf-16' || enc === 'utf-16-le') {
+            decoded = new TextDecoder('utf-16le').decode(bytes);
+          } else if (enc === 'utf-8-sig') {
+            decoded = new TextDecoder('utf-8').decode(bytes).replace(/^\uFEFF/, '');
+          } else {
+            decoded = new TextDecoder('utf-8').decode(bytes);
+          }
+          if (!decoded) continue;
+
+          // Score candidate based on formatting:
+          // penalize null bytes and replacement chars \uFFFD
+          const nullCount = (decoded.match(/\u0000/g) || []).length;
+          const replCount = (decoded.match(/\uFFFD/g) || []).length;
+          const hasTabs = decoded.includes('\t');
+          const hasCommas = decoded.includes(',');
+          const hasNewlines = decoded.includes('\n') || decoded.includes('\r');
+          const sample = decoded.slice(0, 500).toLowerCase();
+          const hasKnownWords = (sample.includes('item') || sample.includes('sales') || sample.includes('gross') || sample.includes('net') || sample.includes('units') || sample.includes('category') || sample.includes('date'));
+
+          let score = 0;
+          if (hasNewlines) score += 10;
+          if (hasTabs) score += 20;
+          if (hasCommas) score += 15;
+          if (hasKnownWords) score += 50;
+          score -= nullCount * 2;
+          score -= replCount * 5;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestCandidate = decoded.replace(/\u0000/g, '');
+          }
+        } catch (err) {}
       }
 
-      // 3. Fallback to UTF-8
+      if (bestCandidate) {
+        return bestCandidate;
+      }
+
+      // Fallback to UTF-8 or latin1
       try {
         return new TextDecoder('utf-8').decode(bytes);
       } catch (e) {
@@ -552,26 +582,11 @@
       const lines = cleanText.split('\n');
       const result = [];
 
-      // Determine delimiter from first non-empty line (tab for Square TSV / UTF-16, comma fallback)
-      const firstLine = lines.find(l => l && l.trim()) || '';
-      let defaultDelimiter = ',';
-      if (firstLine.includes('\t')) {
-        defaultDelimiter = '\t';
-      } else if (firstLine.includes(';') && !firstLine.includes(',')) {
-        defaultDelimiter = ';';
-      } else if (firstLine.includes('|')) {
-        defaultDelimiter = '|';
-      }
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line || !line.trim()) continue;
-
+      // Helper function to split a line safely respecting quotes
+      const splitByDelim = (line, delim) => {
         const row = [];
         let curr = '';
         let inQuotes = false;
-        const delimiter = defaultDelimiter;
-
         for (let j = 0; j < line.length; j++) {
           const c = line[j];
           const next = line[j + 1];
@@ -583,8 +598,7 @@
             } else {
               inQuotes = !inQuotes;
             }
-          } else if (c === delimiter && !inQuotes) {
-            // Strip leading/trailing quotes and trim whitespace
+          } else if (c === delim && !inQuotes) {
             row.push(curr.trim().replace(/^["']+|["']+$/g, '').trim());
             curr = '';
           } else {
@@ -592,6 +606,35 @@
           }
         }
         row.push(curr.trim().replace(/^["']+|["']+$/g, '').trim());
+        return row;
+      };
+
+      // Test delimiters dynamically: try tab ('\t') first; if column count <= 1, fallback to comma (',')
+      const firstLine = lines.find(l => l && l.trim()) || '';
+      let defaultDelimiter = ',';
+      if (firstLine) {
+        const tabCols = splitByDelim(firstLine, '\t');
+        if (tabCols.length > 1) {
+          defaultDelimiter = '\t';
+        } else {
+          const commaCols = splitByDelim(firstLine, ',');
+          if (commaCols.length > 1) {
+            defaultDelimiter = ',';
+          } else if (firstLine.includes(';') && !firstLine.includes(',')) {
+            defaultDelimiter = ';';
+          } else if (firstLine.includes('|')) {
+            defaultDelimiter = '|';
+          } else {
+            defaultDelimiter = ',';
+          }
+        }
+      }
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line || !line.trim()) continue;
+
+        const row = splitByDelim(line, defaultDelimiter);
         if (row.some(val => val !== '')) {
           result.push(row);
         }
@@ -674,20 +717,19 @@
     // 4 Channel Schema Adapters
     // -----------------------------------------------------------
     detectChannel(headers, filename = '') {
-      const lower = headers.map(h => (h || '').toLowerCase().trim());
+      const lower = headers.map(h => (h || '').toString().toLowerCase().trim().replace(/[\s_-]+/g, ' '));
       const lowerFile = (filename || '').toLowerCase();
       const allText = lower.join(' ');
 
       // 1. Square POS Primary Header Signature Check
-      // If columns include ['Item Name', 'Item Variation', 'Product Sales', 'Net Sales', 'Units Sold']
-      // identify source as "Square POS (In-Store)", NOT Deliveroo or third-party aggregators.
-      const hasItemNameSig = lower.some(h => h === 'item name' || h.includes('item name') || h === 'item');
-      const hasItemVarSig = lower.some(h => h === 'item variation' || h.includes('item variation') || h === 'variation' || h === 'price point name');
-      const hasProductSalesSig = lower.some(h => h === 'product sales' || h.includes('product sales') || h === 'gross sales');
+      // If headers contain ['Item Name', 'Product Sales', 'Net Sales', 'Units Sold'],
+      // tag the channel as "Square POS (In-Store)", NOT Deliveroo.
+      const hasItemNameSig = lower.some(h => h === 'item name' || h.includes('item name'));
+      const hasProductSalesSig = lower.some(h => h === 'product sales' || h.includes('product sales'));
       const hasNetSalesSig = lower.some(h => h === 'net sales' || h.includes('net sales'));
-      const hasUnitsSoldSig = lower.some(h => h === 'units sold' || h.includes('units sold') || h === 'items sold' || h.includes('items sold') || h === 'qty' || h === 'quantity');
+      const hasUnitsSoldSig = lower.some(h => h === 'units sold' || h.includes('units sold') || h === 'items sold' || h.includes('items sold'));
 
-      if (hasItemNameSig && hasItemVarSig && hasProductSalesSig && hasNetSalesSig && hasUnitsSoldSig) {
+      if (hasItemNameSig && hasProductSalesSig && hasNetSalesSig && hasUnitsSoldSig) {
         return 'Square POS (In-Store)';
       }
 
@@ -756,11 +798,13 @@
         time: '',
         channel: channel,
         raw_name: '',
-        quantity: 1,
+        quantity: 0,
         gross_sales: 0,
         commission: 0,
         net_payout: 0,
         discounts: 0,
+        tax: 0,
+        refunds: 0,
         currency: 'GBP'
       };
 
@@ -798,15 +842,35 @@
         normalized.date = this.normalizeDate(findKey(['date', 'created_at', 'day']));
         normalized.time = findKey(['time', 'hour']) || '12:00:00';
         normalized.raw_name = (findKey(['item_name', 'item', 'description', 'product_name', 'product']) || '').trim();
-        const rawQty = findKey(['units_sold', 'items_sold', 'units', 'qty', 'quantity', 'count', 'items_quantity', 'items']);
-        normalized.gross_sales = this.cleanNumber(findKey(['product_sales', 'gross_sales', 'total_sales', 'sales', 'price']), 0);
-        normalized.quantity = (rawQty !== null && rawQty !== undefined && rawQty !== '') ? this.cleanNumber(rawQty, 0) : (normalized.gross_sales > 0 ? 1 : 0);
-        normalized.discounts = Math.abs(this.cleanNumber(findKey(['discounts', 'discount', 'promo']), 0));
-        normalized.commission = Math.abs(this.cleanNumber(findKey(['commission', 'fee', 'charge']), 0));
-        const explicitNet = findKey(['net_sales', 'net', 'net_total']);
-        normalized.net_payout = (explicitNet !== null && explicitNet !== undefined && explicitNet !== '')
-          ? this.cleanNumber(explicitNet, normalized.gross_sales - normalized.discounts - normalized.commission)
-          : (normalized.gross_sales - normalized.discounts - normalized.commission);
+
+        // Parse quantity columns ['Units Sold', 'Items Sold'] strictly as integers.
+        // If 'Units Sold' is missing or 0, fallback to 'Items Sold'.
+        const rawUnitsSold = findKey(['units_sold', 'units']);
+        let qty = (rawUnitsSold !== null && rawUnitsSold !== undefined && rawUnitsSold !== '') ? this.cleanInteger(rawUnitsSold, 0) : 0;
+        if (qty === 0) {
+          const rawItemsSold = findKey(['items_sold', 'items', 'qty', 'quantity', 'count', 'items_quantity']);
+          if (rawItemsSold !== null && rawItemsSold !== undefined && rawItemsSold !== '') {
+            qty = this.cleanInteger(rawItemsSold, 0);
+          }
+        }
+        normalized.quantity = qty;
+
+        // Financial columns sanitization: ['Product Sales', 'Net Sales', 'Gross Sales', 'Discounts & Comps', 'Tax', 'Refunds']
+        const rawProductSales = this.cleanNumber(findKey(['product_sales', 'product_sales_amount', 'item_sales']), 0.0);
+        const rawGrossSales = this.cleanNumber(findKey(['gross_sales', 'total_sales', 'gross', 'sales', 'price']), 0.0);
+        normalized.gross_sales = rawGrossSales > 0 ? rawGrossSales : (rawProductSales > 0 ? rawProductSales : 0.0);
+
+        normalized.discounts = Math.abs(this.cleanNumber(findKey(['discounts_comps', 'discounts_and_comps', 'discounts', 'discount', 'comps', 'discounts___comps', 'promo']), 0.0));
+        normalized.commission = Math.abs(this.cleanNumber(findKey(['commission', 'fee', 'charge']), 0.0));
+        normalized.tax = this.cleanNumber(findKey(['tax', 'taxes', 'vat']), 0.0);
+        normalized.refunds = this.cleanNumber(findKey(['refunds', 'refund', 'returns']), 0.0);
+
+        const explicitNet = findKey(['net_sales', 'net_sales_amount', 'net_payout', 'net', 'net_total']);
+        if (explicitNet !== null && explicitNet !== undefined && explicitNet !== '') {
+          normalized.net_payout = this.cleanNumber(explicitNet, 0.0);
+        } else {
+          normalized.net_payout = Math.max(0.0, normalized.gross_sales - normalized.discounts - normalized.commission);
+        }
       } else if (channel === 'Uber Eats') {
         normalized.date = this.normalizeDate(findKey(['order_date', 'date', 'time']));
         normalized.time = findKey(['order_time', 'time']) || '12:00:00';
@@ -1120,10 +1184,12 @@
       const cat = (category || '').toLowerCase().trim();
       const name = (rawName || '').toLowerCase().trim();
 
-      // 1. Dessert / Waffle audit segment
-      // "Waffles, Pancakes, Cookie Doughs, Cheesecakes" must map to the Dessert/Waffle audit segment
+      // 1. Desserts / Waffles audit segment
+      // "Waffles, Pancakes, Cookie Doughs, Cheesecakes" -> Map to Desserts/Waffles Audit
       if (
         cat.includes('waffles, pancakes, cookie doughs, cheesecakes') ||
+        cat.includes('desserts/waffles audit') ||
+        cat.includes('dessert/waffle') ||
         cat.includes('waffle') ||
         cat.includes('cookie dough') ||
         cat.includes('cheesecake') ||
@@ -1132,16 +1198,17 @@
         cat.includes('crepe') ||
         cat.includes('dessert')
       ) {
-        return 'Dessert/Waffle';
+        return 'Desserts/Waffles Audit';
       }
 
       // 2. Savoury Mains & Sides
-      // Map "Burgers", "Fully Funked Fries", "Side Ting", and "BLOC PRTY" to "Savoury Mains & Sides"
+      // Map "Burgers", "Fully Funked Fries", "Side Ting", "BLOC PRTY" -> Map to Savoury Mains & Sides
       if (
         cat.includes('burger') ||
         cat.includes('fully funked fries') ||
         cat.includes('side ting') ||
         cat.includes('bloc prty') ||
+        cat.includes('savoury mains & sides') ||
         cat.includes('fries') ||
         cat.includes('savoury') ||
         cat.includes('savory') ||
@@ -1158,11 +1225,12 @@
       }
 
       // 3. Beverages & Shakes
-      // Map "Candy Bar Shakes" and "Milkshakes" to "Beverages & Shakes"
+      // Map "Candy Bar Shakes", "Milkshakes" -> Map to Beverages & Shakes
       if (
         cat.includes('candy bar shakes') ||
         cat.includes('milkshakes') ||
         cat.includes('milkshake') ||
+        cat.includes('beverages & shakes') ||
         cat.includes('shake') ||
         cat.includes('smoothie') ||
         cat.includes('drink') ||
@@ -1178,10 +1246,12 @@
         return 'Beverages & Shakes';
       }
 
-      // 4. Ice Cream / Scoops
-      // Map "Gelato & Sorbet Scoops" to "Ice Cream / Scoops"
+      // 4. Scoops / Ice Cream
+      // Map "Gelato & Sorbet Scoops" -> Map to Scoops / Ice Cream
       if (
         cat.includes('gelato & sorbet scoops') ||
+        cat.includes('scoops / ice cream') ||
+        cat.includes('ice cream / scoops') ||
         cat.includes('gelato') ||
         cat.includes('sorbet') ||
         cat.includes('scoop') ||
@@ -1192,7 +1262,7 @@
         name.includes('sorbet') ||
         name.includes('sundae')
       ) {
-        return 'Ice Cream / Scoops';
+        return 'Scoops / Ice Cream';
       }
 
       return category || 'Desserts & Mains';
@@ -1639,6 +1709,7 @@
       // Alias mapping so audit segments and base variations all resolve seamlessly
       const aliasKeyPairs = [
         ['waffles', 'WAFFLE'], ['waffle', 'WAFFLE'], ['dessert/waffle', 'WAFFLE'], ['dessert_waffle', 'WAFFLE'], ['dessert / waffle', 'WAFFLE'],
+        ['desserts/waffles audit', 'WAFFLE'], ['desserts / waffles audit', 'WAFFLE'], ['dessert/waffles audit', 'WAFFLE'],
         ['pancakes', 'PANCAKE'], ['pancake', 'PANCAKE'],
         ['cookie_dough', 'COOKIE_DOUGH'], ['cookiedough', 'COOKIE_DOUGH'],
         ['croffles', 'CROFFLE'], ['croffle', 'CROFFLE'],
@@ -1650,6 +1721,7 @@
         ['beverages & shakes', 'MILKSHAKE'], ['beverages_shakes', 'MILKSHAKE'],
         ['gelato_sundaes', 'GELATO_SUNDAE'], ['gelato', 'GELATO_SUNDAE'],
         ['ice cream / scoops', 'GELATO_SUNDAE'], ['ice_cream_scoops', 'GELATO_SUNDAE'],
+        ['scoops / ice cream', 'GELATO_SUNDAE'], ['scoops/ice cream', 'GELATO_SUNDAE'],
         ['beverage_other', 'BEVERAGE_OTHER'], ['beverages', 'BEVERAGE_OTHER']
       ];
       aliasKeyPairs.forEach(([alias, sourceKey]) => {
