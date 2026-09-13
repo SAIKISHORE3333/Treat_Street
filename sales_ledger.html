@@ -644,7 +644,8 @@
       if (window.lucide) lucide.createIcons();
       setupDropzone();
       syncSOPLibrary(false);
-      // Clean slate on startup: do not load fake demo data automatically
+      // Auto-load sample multi-channel batch so dashboard, tables, and PDF tools are immediately visible on launch
+      loadDemoBatch();
     });
 
     // -------------------------------------------------------------
