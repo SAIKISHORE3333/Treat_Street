@@ -1,36 +1,30 @@
 {
-  "version": 2,
-  "name": "treat-street-portal",
   "cleanUrls": true,
   "trailingSlash": false,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/sales-ledger",
-      "dest": "/sales_ledger.html"
+      "source": "/sales-ledger",
+      "destination": "/sales_ledger.html"
     },
     {
-      "src": "/inventory",
-      "dest": "/inventory.html"
+      "source": "/inventory",
+      "destination": "/inventory.html"
     },
     {
-      "src": "/purchase",
-      "dest": "/purchase.html"
+      "source": "/purchase",
+      "destination": "/purchase.html"
     },
     {
-      "src": "/analytics",
-      "dest": "/analytics.html"
+      "source": "/analytics",
+      "destination": "/analytics.html"
     },
     {
-      "src": "/kitchen-ops",
-      "dest": "/kitchen_ops.html"
+      "source": "/kitchen-ops",
+      "destination": "/kitchen_ops.html"
     },
     {
-      "src": "/sop",
-      "dest": "/SOP.html"
-    },
-    {
-      "src": "/",
-      "dest": "/index.html"
+      "source": "/sop",
+      "destination": "/SOP.html"
     }
   ]
 }
