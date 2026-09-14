@@ -73,10 +73,10 @@
     {
       id: 'sop-twist-lick-dunk',
       title: 'Twist it, Lick it, Dunk it',
-      category: 'Pancakes & Waffles',
+      category: 'Waffles & Crepes',
       yield: 1,
       ingredients: [
-        { name: 'American Pancake Mix', quantity: 150, unit: 'g' },
+        { name: 'Liege Waffle Base', quantity: 1, unit: 'unit' },
         { name: 'Oreo Crushed Cookie Pieces 400g', quantity: 35, unit: 'g' },
         { name: 'Belgian White Chocolate Sauce', quantity: 35, unit: 'g' },
         { name: 'Comelle Ice Cream Mix 1 Litre', quantity: 0.1, unit: 'l' }
@@ -1056,7 +1056,8 @@
       if (norm.includes('cheesecake') || norm.includes('(cheesecake)')) return 'Cheesecake Slice';
       if (norm.includes('cookie dough') || norm.includes('cookiedough') || norm.includes('(cookie dough)')) return 'Cookie Dough Puck';
       if (norm.includes('pancake') || norm.includes('(pancake)')) return 'Pancake Batter Portion';
-      if (norm.includes('waffle') || norm.includes('(waffle)') || norm.includes('liege waffle')) return 'Waffle Batter Portion';
+      if (norm.includes('liege waffle') || norm.includes('(liege waffle)') || norm.includes('liege')) return 'Liege Waffle Base';
+      if (norm.includes('waffle') || norm.includes('(waffle)')) return 'Waffle Batter Portion';
       if (norm.includes('croffle') || norm.includes('(croffle)')) return 'Croissant Dough Piece';
       if (norm.includes('crepe') || norm.includes('(crepe)')) return 'Crepe Batter Portion';
       if (norm.includes('savoury') || norm.includes('burger')) return 'Brioche Bun & Patty';
@@ -1573,8 +1574,8 @@
     MASTER_ITEM_REGISTRY: {
       "Y650451": { name: "EL Fudgee", base_type: "Cheesecake", deplete_batch: "Cheesecake_Base_Slice", qty: 1 },
       "EL Fudgee": { base_type: "Cheesecake", deplete_batch: "Cheesecake_Base_Slice", qty: 1 },
-      "4763263": { name: "Twist it, Lick it, Dunk it", base_type: "Cookie Dough", deplete_batch: "Cookie_Dough_Puck", qty: 1 },
-      "Twist it, Lick it, Dunk it": { base_type: "Cookie Dough", deplete_batch: "Cookie_Dough_Puck", qty: 1 },
+      "4763263": { name: "Twist it, Lick it, Dunk it", base_type: "Liege Waffle", deplete_batch: "Liege Waffle Base", qty: 1 },
+      "Twist it, Lick it, Dunk it": { base_type: "Liege Waffle", deplete_batch: "Liege Waffle Base", qty: 1 },
       "264776Y": { name: "My, Oh My Cherry Pie", base_type: "Waffle", deplete_batch: "Waffle_Batter_Portion", qty: 1 },
       "My, Oh My Cherry Pie": { base_type: "Waffle", deplete_batch: "Waffle_Batter_Portion", qty: 1 }
     },
@@ -1833,6 +1834,9 @@
       if (norm === 'cheesecake') {
         return { type: 'CHEESECAKE', label: 'Cheesecake', plural: 'Cheesecakes', icon: '🍰', badge: '🍰 Cheesecake', deplete_batch: depleteBatch || 'Cheesecake_Base_Slice', deplete_qty: qty, tier: tier };
       }
+      if (norm === 'liege waffle' || norm.includes('liege')) {
+        return { type: 'WAFFLE', label: 'Liege Waffle', plural: 'Liege Waffles', icon: '🧇', badge: '🧇 Liege Waffle', deplete_batch: depleteBatch || 'Liege Waffle Base', deplete_qty: qty, tier: tier };
+      }
       if (norm === 'waffle') {
         return { type: 'WAFFLE', label: 'Waffle', plural: 'Waffles', icon: '🧇', badge: '🧇 Waffle', deplete_batch: depleteBatch || 'Waffle_Batter_Portion', deplete_qty: qty, tier: tier };
       }
@@ -2015,10 +2019,10 @@
           }
         }
 
-        // Check if row SKU matches a dedicated base in MASTER_ITEM_REGISTRY (e.g. EL Fudgee -> Cheesecake)
+        // Check if row SKU matches a dedicated base in MASTER_ITEM_REGISTRY (e.g. EL Fudgee -> Cheesecake, Twist it -> Liege Waffle)
         if (cleanSku && this.MASTER_ITEM_REGISTRY[cleanSku]) {
           const regItem = this.MASTER_ITEM_REGISTRY[cleanSku];
-          if (regItem.base_type === 'Cheesecake' || regItem.base_type === 'Cookie Dough') {
+          if (regItem.base_type === 'Cheesecake' || regItem.base_type === 'Cookie Dough' || regItem.base_type === 'Liege Waffle' || regItem.base_type === 'Waffle') {
             return this.formatBaseTypeInfo(regItem.base_type, regItem.deplete_batch, regItem.qty || 1, 'TIER_1_SKU');
           }
         }
@@ -2188,7 +2192,7 @@
 
       // Disambiguate if base item name does NOT already mention the main base
       if (mainInfo.type === 'WAFFLE' && !normName.includes('waffle')) {
-        const specificType = normMod.includes('liege') ? 'Liege Waffle' : 'Waffle';
+        const specificType = (mainInfo.label && mainInfo.label.toLowerCase().includes('liege')) || normMod.includes('liege') ? 'Liege Waffle' : 'Waffle';
         return `${baseItemName} (${specificType})`;
       }
       if (mainInfo.type === 'PANCAKE' && !normName.includes('pancake')) {
@@ -2958,7 +2962,9 @@
         const itemName = (row.master_item_name || row.raw_name || '').toLowerCase();
         if (itemName.includes('(pancake') || itemName.includes('(pancakes)')) {
           batchName = 'Pancake_Batter_Portion';
-        } else if (itemName.includes('(waffle') || itemName.includes('(liege waffle)')) {
+        } else if (itemName.includes('(liege waffle)') || itemName.includes('liege waffle')) {
+          batchName = 'Liege Waffle Base';
+        } else if (itemName.includes('(waffle')) {
           batchName = 'Waffle_Batter_Portion';
         } else if (itemName.includes('(cheesecake')) {
           batchName = 'Cheesecake_Base_Slice';
@@ -2975,6 +2981,7 @@
             let unit = 'portion';
             if (batchName === 'Cheesecake_Base_Slice') unit = 'slice';
             else if (batchName === 'Cookie_Dough_Puck') unit = 'puck';
+            else if (batchName === 'Liege Waffle Base') unit = 'unit';
 
             if (!consumptionMap.has(batchName)) {
               consumptionMap.set(batchName, {

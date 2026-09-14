@@ -247,7 +247,10 @@ assert.strictEqual(elFudgeeConsolidated.mainsSummary['CHEESECAKE'].units, 4, 'Ch
 
 console.log('✓ EL Fudgee Tier 1 SKU resolution: accurately categorized under Cheesecakes');
 console.log('✓ Buenos Dias (SKU: 9179172) resolves to Waffle');
-console.log('✓ Twist it, Lick it, Dunk it (SKU: 4763263) resolves to Cookie Dough');
+const twistRow = elFudgeeConsolidated.masterLedger.find(i => i.raw_name === 'Twist it, Lick it, Dunk it');
+assert(twistRow && twistRow.main_type === 'WAFFLE', 'Twist it must resolve to WAFFLE');
+assert.strictEqual(twistRow.deplete_batch, 'Liege Waffle Base', 'Twist it deplete_batch should be Liege Waffle Base');
+console.log('✓ Twist it, Lick it, Dunk it (SKU: 4763263) resolves to Liege Waffle');
 console.log('✓ My, Oh My Cherry Pie (SKU: 264776Y) resolves to Waffle');
 
 // Test Depletion Engine: EL Fudgee must deduct Cheesecake_Base_Slice, NOT Waffle batter
