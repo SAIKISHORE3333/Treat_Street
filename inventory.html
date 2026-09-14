@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="catalog.js"></script>
+  <script src="default_orders.js"></script>
   <script src="recipe_matcher.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -449,6 +450,9 @@
           <p class="text-xs sm:text-sm text-slate-400 mt-1">Directly integrated with the Purchase Portal. Mark delivered orders to automatically replenish your theoretical stock pot levels.</p>
         </div>
         <div class="flex items-center gap-2.5">
+          <button onclick="restoreVerifiedOrders()" title="Restore Verified Treat Street Purchase Orders" class="px-3.5 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="rotate-ccw" class="w-4 h-4 text-emerald-400"></i> Restore Orders
+          </button>
           <button onclick="renderPurchaseOrdersView()" class="px-3.5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
             <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i> Refresh Orders
           </button>
@@ -1894,14 +1898,41 @@
     function getPurchaseOrders() {
       try {
         const stored = localStorage.getItem('ts_orders');
-        let list = stored ? JSON.parse(stored) : [];
-        if (!Array.isArray(list)) list = [];
-        // Filter out any mock/sample template orders if present
-        list = list.filter(o => !o.primaryRef?.includes('TSMK-MULTI-') && !o.serial?.includes('016'));
+        let list = stored ? JSON.parse(stored) : null;
+        if (!Array.isArray(list) || list.length === 0) {
+          list = (typeof generateInitialSampleOrders === 'function') 
+            ? generateInitialSampleOrders() 
+            : [];
+          if (list.length > 0) {
+            try {
+              localStorage.setItem('ts_orders', JSON.stringify(list));
+            } catch(e) {}
+          }
+        }
         return list.map(normalizeOrder);
       } catch (e) {
-        return [];
+        const fallback = (typeof generateInitialSampleOrders === 'function') 
+          ? generateInitialSampleOrders() 
+          : [];
+        return fallback.map(normalizeOrder);
       }
+    }
+
+    function restoreVerifiedOrders() {
+      let restored = [];
+      if (typeof restoreTreatStreetDefaultOrders === 'function') {
+        const data = restoreTreatStreetDefaultOrders();
+        restored = data.orders || [];
+      } else if (typeof generateInitialSampleOrders === 'function') {
+        restored = generateInitialSampleOrders();
+      }
+      if (restored.length > 0) {
+        savePurchaseOrders(restored);
+      }
+      renderPurchaseOrdersView();
+      renderStockGrid();
+      renderAuditTable();
+      showInventoryToast('✓ Restored 16 verified Treat Street purchase orders & active stock pots!');
     }
 
     function savePurchaseOrders(orders) {
@@ -2845,9 +2876,14 @@
               <p class="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
                 When you create supplier purchase orders in the Purchase Portal, they will appear here ready to be received and automatically synced into your theoretical stock pots.
               </p>
-              <a href="purchase.html" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20">
-                <i data-lucide="external-link" class="w-4 h-4"></i> Open Purchase Portal
-              </a>
+              <div class="flex items-center gap-3">
+                <button onclick="restoreVerifiedOrders()" class="px-5 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-xs transition-all flex items-center gap-2 border border-emerald-500/40">
+                  <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Restore Orders
+                </button>
+                <a href="purchase.html" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20">
+                  <i data-lucide="external-link" class="w-4 h-4"></i> Open Purchase Portal
+                </a>
+              </div>
             </div>
           `;
         } else {
