@@ -394,6 +394,12 @@
           <i data-lucide="lock" id="edit-mode-lock-icon" class="w-3.5 h-3.5 text-amber-400"></i>
           <span id="edit-mode-btn-text">Edit Stock Limits</span>
         </button>
+
+        <!-- Refresh Catalog Button -->
+        <button type="button" onclick="refreshCatalogData(true)" title="Refresh Catalog & Sync Inventory" class="w-full sm:w-auto px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="hidden md:inline">Refresh Catalog</span>
+        </button>
       </div>
 
       <!-- Edit Mode Indicator Banner -->
@@ -520,12 +526,19 @@
     <section id="section-audit" class="glass-panel p-6 rounded-3xl hidden">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
         <div>
-          <h2 class="text-xl font-bold text-white heading-font flex items-center gap-2">
-            <i data-lucide="clipboard-check" class="w-5 h-5 text-indigo-400"></i> Physical Inventory Audit
-          </h2>
+          <div class="flex items-center gap-2.5">
+            <h2 class="text-xl font-bold text-white heading-font flex items-center gap-2">
+              <i data-lucide="clipboard-check" class="w-5 h-5 text-indigo-400"></i> Physical Inventory Audit
+            </h2>
+            <span id="audit-count-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">0 Items</span>
+          </div>
           <p class="text-xs text-slate-400 mt-1">Record physical counts to reconcile and automatically calibrate theoretical stock monitors.</p>
         </div>
-        <div class="flex items-center gap-2.5">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button type="button" id="btn-refresh-catalog-audit" onclick="refreshCatalogData(true)" class="px-3.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95" title="Refresh and sync all catalog ingredients from shared database and orders">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i>
+            <span>Refresh Catalog</span>
+          </button>
           <button onclick="exportAuditCSV()" class="px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
             <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i> Export CSV
           </button>
@@ -1017,7 +1030,162 @@
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    const catalogData = window.tsCatalog || [];
+    // Helper to generate a clean deterministic ID for items without an ID
+    function generateCleanItemId(name) {
+      let hash = 0;
+      const str = String(name || '').trim().toLowerCase();
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return 'item_' + Math.abs(hash);
+    }
+
+    // Unified Catalog Loader: Merges static catalog.js, localStorage ts_shared_catalog, and genuine purchase orders
+    function loadUnifiedCatalog() {
+      const map = new Map();
+      const nameMap = new Map();
+
+      const addItem = (rawItem, source) => {
+        if (!rawItem) return;
+        const name = (rawItem.name || '').trim();
+        if (!name) return;
+
+        const normName = name.toLowerCase();
+        const rawId = rawItem.id != null && rawItem.id !== '' ? String(rawItem.id) : null;
+
+        let existingKey = null;
+        if (rawId && map.has(rawId)) {
+          existingKey = rawId;
+        } else if (nameMap.has(normName)) {
+          existingKey = nameMap.get(normName);
+        }
+
+        const id = existingKey || rawId || generateCleanItemId(name);
+        const existing = existingKey ? map.get(existingKey) : null;
+
+        const itemObj = {
+          id: id,
+          name: name,
+          category: rawItem.category || (existing ? existing.category : 'General'),
+          size: rawItem.size || (existing ? existing.size : 'Unit'),
+          supplier: rawItem.supplier || (existing ? existing.supplier : 'Supplier'),
+          price: parseFloat(rawItem.price !== undefined ? rawItem.price : (existing ? existing.price : 0)) || 0,
+          vatRate: rawItem.vatRate !== undefined ? rawItem.vatRate : (existing && existing.vatRate !== undefined ? existing.vatRate : 0),
+          packBreakdown: rawItem.packBreakdown || (existing ? existing.packBreakdown : null),
+          source: source
+        };
+
+        map.set(id, itemObj);
+        nameMap.set(normName, id);
+      };
+
+      // 1. Static catalog (window.tsCatalog)
+      if (Array.isArray(window.tsCatalog)) {
+        window.tsCatalog.forEach(item => addItem(item, 'static'));
+      }
+
+      // 2. Shared catalog from purchase portal / recipe manager
+      try {
+        const shared = localStorage.getItem('ts_shared_catalog');
+        if (shared) {
+          const parsed = JSON.parse(shared);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(item => addItem(item, 'shared'));
+          }
+        }
+      } catch (e) {
+        console.warn('Error reading ts_shared_catalog:', e);
+      }
+
+      // 3. Custom items in genuine purchase orders
+      try {
+        const storedOrders = localStorage.getItem('ts_orders');
+        const orders = storedOrders ? JSON.parse(storedOrders) : [];
+        if (Array.isArray(orders)) {
+          orders.forEach(o => {
+            if (Array.isArray(o.items)) {
+              o.items.forEach(i => {
+                if (i && i.name) {
+                  addItem({
+                    id: i.id,
+                    name: i.name,
+                    category: i.category || 'Store Stock',
+                    size: i.size || 'Unit',
+                    supplier: i.supplier || o.supplier || 'Supplier',
+                    price: parseFloat(i.price || 0),
+                    vatRate: i.vatRate !== undefined ? i.vatRate : 0
+                  }, 'order');
+                }
+              });
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Error reading ts_orders in loadUnifiedCatalog:', e);
+      }
+
+      const list = Array.from(map.values());
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      return list;
+    }
+
+    // Remote sync with Supabase catalog table if available
+    async function syncCatalogFromSupabase() {
+      if (!supabaseClient) return false;
+      try {
+        const { data, error } = await supabaseClient.from('catalog').select('*').order('id', { ascending: true });
+        if (data && !error && data.length > 0) {
+          let currentShared = [];
+          try {
+            currentShared = JSON.parse(localStorage.getItem('ts_shared_catalog') || '[]');
+          } catch(e) {}
+          const map = new Map();
+          currentShared.forEach(it => { if (it && it.id != null) map.set(String(it.id), it); });
+          data.forEach(it => { if (it && it.id != null) map.set(String(it.id), { ...map.get(String(it.id)), ...it }); });
+          localStorage.setItem('ts_shared_catalog', JSON.stringify(Array.from(map.values())));
+          return true;
+        }
+      } catch(e) {
+        console.warn('Supabase catalog fetch error:', e);
+      }
+      return false;
+    }
+
+    let catalogData = loadUnifiedCatalog();
+
+    // User-triggered on-demand catalog refresh
+    async function refreshCatalogData(showToastNotification = true) {
+      const btn = document.getElementById('btn-refresh-catalog-audit');
+      const icon = btn ? btn.querySelector('svg, i') : null;
+      if (icon) icon.classList.add('animate-spin');
+
+      if (supabaseClient) {
+        try {
+          await syncCatalogFromSupabase();
+        } catch(e) {}
+      }
+
+      catalogData = loadUnifiedCatalog();
+      populateCategories();
+      renderAuditTable();
+      renderStockGrid();
+
+      if (typeof renderBatchMinStockTable === 'function') {
+        const batchModal = document.getElementById('batch-min-stock-modal');
+        if (batchModal && !batchModal.classList.contains('hidden')) {
+          renderBatchMinStockTable();
+        }
+      }
+
+      if (window.lucide) lucide.createIcons();
+      if (icon) icon.classList.remove('animate-spin');
+
+      if (showToastNotification) {
+        showInventoryToast(`✓ Catalog refreshed: ${catalogData.length} items active across Audit & Stock!`);
+      }
+    }
+
     let allSOPRecipes = [];
     let allAliases = [];
     let currentParsedFiles = [];
@@ -1601,7 +1769,11 @@
 
       if (tab === 'live-stock') renderStockGrid();
       else if (tab === 'purchase-orders') renderPurchaseOrdersView();
-      else if (tab === 'audit') renderAuditTable();
+      else if (tab === 'audit') {
+        catalogData = loadUnifiedCatalog();
+        populateCategories();
+        renderAuditTable();
+      }
       else if (tab === 'aliases-manager') renderAliasesTable();
       
       if (window.lucide) lucide.createIcons();
@@ -2371,23 +2543,33 @@
 
     function renderAuditTable() {
       const tbody = document.getElementById('audit-tbody');
-      const search = (document.getElementById('audit-search')?.value || '').toLowerCase();
+      if (!tbody) return;
+      const search = (document.getElementById('audit-search')?.value || '').toLowerCase().trim();
       const catFilter = document.getElementById('audit-category-filter')?.value || 'all';
       const stockLevels = getStockLevels();
 
       tbody.innerHTML = '';
+      let matchingCount = 0;
 
       catalogData.forEach(item => {
         if (catFilter !== 'all' && (item.category || 'General') !== catFilter) return;
-        if (search && !item.name.toLowerCase().includes(search)) return;
+        if (search && !item.name.toLowerCase().includes(search) && !(item.supplier || '').toLowerCase().includes(search)) return;
+        matchingCount++;
 
-        const theo = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
+        const theo = stockLevels[item.id] !== undefined 
+          ? parseFloat(stockLevels[item.id]) 
+          : (stockLevels[String(item.id)] !== undefined ? parseFloat(stockLevels[String(item.id)]) : 0);
         const price = parseFloat(item.price || 0);
 
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-white/5 transition-colors';
+        tr.className = 'hover:bg-white/5 transition-colors border-b border-white/5';
         tr.innerHTML = `
-          <td class="p-3.5 font-semibold text-white">${item.name}</td>
+          <td class="p-3.5 font-semibold text-white">
+            <div class="flex items-center gap-2">
+              <span>${item.name}</span>
+              ${item.size ? `<span class="text-[10px] text-slate-400 font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10">${item.size}</span>` : ''}
+            </div>
+          </td>
           <td class="p-3.5 text-xs text-slate-400">${item.category || 'General'}</td>
           <td class="p-3.5 text-right font-medium text-slate-300">£${price.toFixed(2)}</td>
           <td class="p-3.5 text-right font-bold text-emerald-400">${theo.toFixed(1)}</td>
@@ -2398,6 +2580,32 @@
         `;
         tbody.appendChild(tr);
       });
+
+      const countBadge = document.getElementById('audit-count-badge');
+      if (countBadge) {
+        countBadge.textContent = `${matchingCount} Item${matchingCount === 1 ? '' : 's'}`;
+      }
+
+      if (matchingCount === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-8 text-center text-slate-400">
+              <div class="flex flex-col items-center justify-center gap-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400">
+                  <i data-lucide="search-x" class="w-5 h-5"></i>
+                </div>
+                <p class="font-bold text-sm text-slate-300">No matching catalog items found</p>
+                <p class="text-xs text-slate-500 max-w-sm">If you recently added materials or purchase orders, click below to refresh the catalog cache.</p>
+                <button type="button" onclick="refreshCatalogData(true)" class="mt-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/40 flex items-center gap-2 transition-all shadow-sm">
+                  <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i>
+                  <span>Refresh Catalog Now</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        if (window.lucide) lucide.createIcons();
+      }
     }
 
     function updateVariance(input) {
@@ -2518,10 +2726,13 @@
       ];
 
       catalogData.forEach(item => {
-        const theo = stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0;
+        const theo = stockLevels[item.id] !== undefined 
+          ? parseFloat(stockLevels[item.id]) 
+          : (stockLevels[String(item.id)] !== undefined ? parseFloat(stockLevels[String(item.id)]) : 0);
         const price = parseFloat(item.price || 0);
+        const fullName = item.size ? `${item.name} (${item.size})` : item.name;
         rows.push([
-          `"${(item.name || '').replace(/"/g, '""')}"`,
+          `"${(fullName || '').replace(/"/g, '""')}"`,
           `"${(item.category || 'General').replace(/"/g, '""')}"`,
           price.toFixed(2),
           theo.toString(),
@@ -3593,36 +3804,62 @@
       const stockCatSelect = document.getElementById('stock-category-filter');
       const auditCatSelect = document.getElementById('audit-category-filter');
       
-      categories.forEach(cat => {
-        if (stockCatSelect) {
-          const opt1 = document.createElement('option');
-          opt1.value = cat;
-          opt1.textContent = cat;
-          stockCatSelect.appendChild(opt1);
-        }
+      const currentStockCat = stockCatSelect ? stockCatSelect.value : 'all';
+      const currentAuditCat = auditCatSelect ? auditCatSelect.value : 'all';
 
-        if (auditCatSelect) {
-          const opt2 = document.createElement('option');
-          opt2.value = cat;
-          opt2.textContent = cat;
-          auditCatSelect.appendChild(opt2);
+      if (stockCatSelect) {
+        stockCatSelect.innerHTML = '<option value="all">All Categories</option>';
+        categories.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat;
+          opt.textContent = cat;
+          stockCatSelect.appendChild(opt);
+        });
+        if (categories.includes(currentStockCat)) {
+          stockCatSelect.value = currentStockCat;
         }
-      });
+      }
+
+      if (auditCatSelect) {
+        auditCatSelect.innerHTML = '<option value="all">All Categories</option>';
+        categories.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat;
+          opt.textContent = cat;
+          auditCatSelect.appendChild(opt);
+        });
+        if (categories.includes(currentAuditCat)) {
+          auditCatSelect.value = currentAuditCat;
+        }
+      }
 
       // Populate PO Suppliers filter
       const suppliers = Array.from(new Set(catalogData.map(i => i.supplier).filter(Boolean))).sort();
       const poSupplierSelect = document.getElementById('po-supplier-filter');
       if (poSupplierSelect) {
+        const currentPoSupplier = poSupplierSelect.value || 'ALL';
+        poSupplierSelect.innerHTML = '<option value="ALL">All Suppliers</option>';
         suppliers.forEach(sup => {
           const opt = document.createElement('option');
           opt.value = sup;
           opt.textContent = sup;
           poSupplierSelect.appendChild(opt);
         });
+        if (suppliers.includes(currentPoSupplier)) {
+          poSupplierSelect.value = currentPoSupplier;
+        }
       }
     }
 
     async function init() {
+      // Sync latest catalog entries from Supabase if online
+      if (supabaseClient) {
+        try {
+          await syncCatalogFromSupabase();
+        } catch(e) {}
+      }
+      catalogData = loadUnifiedCatalog();
+
       const viewSelect = document.getElementById('stock-view-mode');
       if (viewSelect && currentStockViewMode) {
         viewSelect.value = currentStockViewMode;
