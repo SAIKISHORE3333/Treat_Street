@@ -361,7 +361,7 @@
             </span>
             Theoretical Stock Pot Monitor
           </h2>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">Real-time pot levels for genuine store ingredients. <span class="text-emerald-300 font-bold">Max: 5 Units</span> • <span class="text-amber-300 font-bold">Moderate: 3 Units</span> • <span class="text-rose-400 font-bold">Min Alarm: ≤2 Units</span>.</p>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Real-time pot levels for genuine store ingredients. Configurable <span class="text-emerald-300 font-bold">Max Capacity</span> • <span class="text-amber-300 font-bold">Moderate Level</span> • <span class="text-rose-400 font-bold">Min Alarm</span>.</p>
         </div>
         <div class="glass-panel px-5 py-3 rounded-2xl text-right">
           <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Valuation</p>
@@ -375,9 +375,21 @@
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
           <input type="text" id="stock-search" oninput="renderStockGrid()" placeholder="Search ingredient or supplier..." class="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white/10 transition-all">
         </div>
-        <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full sm:w-52 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
+        <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full sm:w-48 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
           <option value="all">All Categories</option>
         </select>
+        
+        <!-- Stock View Mode Dropdown (Cases / Sub-Units / Weight) -->
+        <div class="w-full sm:w-auto flex items-center gap-1.5 bg-[#0c2e22] border border-emerald-500/30 rounded-xl px-3 py-2 shrink-0">
+          <i data-lucide="scale" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+          <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider hidden lg:inline">View:</span>
+          <select id="stock-view-mode" onchange="handleStockViewModeChange(this.value)" class="bg-transparent text-xs font-bold text-emerald-300 outline-none cursor-pointer">
+            <option value="cases" class="bg-[#0b221a] text-white">📦 Order Units (Cases / Packs)</option>
+            <option value="sub_units" class="bg-[#0b221a] text-white">⚖️ By Weight / Sub-Units (e.g. 500g × 4 = 4 Units)</option>
+            <option value="net_weight" class="bg-[#0b221a] text-white">⚖️ Total Net Weight / Volume (g / kg / L)</option>
+          </select>
+        </div>
+
         <button type="button" onclick="restoreInventoryAndOrders()" title="Restore 16 Genuine Orders and Re-sync Pot Levels" class="w-full sm:w-auto px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
           <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-emerald-400"></i>
           <span>Restore Orders & Pots</span>
@@ -386,10 +398,10 @@
           <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
           <span>Sync Pots to Orders</span>
         </button>
-        <!-- Edit Min Stock Button -->
-        <button type="button" id="btn-toggle-edit-mode" onclick="toggleEditMode()" title="Unlock Edit Mode to configure minimum stock levels for ingredients" class="w-full sm:w-auto px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
+        <!-- Edit Stock Limits Button -->
+        <button type="button" id="btn-toggle-edit-mode" onclick="toggleEditMode()" title="Unlock Edit Mode to configure minimum alarm and maximum capacity levels for ingredients" class="w-full sm:w-auto px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
           <i data-lucide="lock" id="edit-mode-lock-icon" class="w-3.5 h-3.5 text-amber-400"></i>
-          <span id="edit-mode-btn-text">Edit Min Stock</span>
+          <span id="edit-mode-btn-text">Edit Stock Limits</span>
         </button>
       </div>
 
@@ -404,13 +416,13 @@
               <span class="text-xs font-bold text-amber-300 uppercase tracking-wider">Edit Mode Active (ALAIYA Unlocked)</span>
               <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">Live Editing</span>
             </div>
-            <p class="text-xs text-slate-300 mt-0.5">Adjust minimum stock alarm thresholds directly on pot cards below, or configure across all catalog ingredients.</p>
+            <p class="text-xs text-slate-300 mt-0.5">Adjust minimum stock alarm thresholds, maximum pot capacities, and pack weight breakdowns directly on pot cards below, or configure across all catalog ingredients.</p>
           </div>
         </div>
         <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
           <button type="button" onclick="openBatchMinStockModal()" class="flex-1 sm:flex-initial px-3.5 py-1.5 bg-white/10 hover:bg-white/15 border border-white/20 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
             <i data-lucide="list" class="w-3.5 h-3.5 text-amber-400"></i>
-            <span>All Catalog Min Levels</span>
+            <span>All Catalog Limits</span>
           </button>
           <button type="button" onclick="exitEditMode()" class="flex-1 sm:flex-initial px-3.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
             <i data-lucide="lock" class="w-3.5 h-3.5"></i>
@@ -806,7 +818,7 @@
       </div>
 
       <!-- Top Summary & Rate of Change Metrics -->
-      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div class="glass-panel p-4 rounded-2xl bg-white/[0.02]">
           <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Live Pot Stock</p>
           <p id="inward-metric-stock" class="text-2xl font-black text-white heading-font">0</p>
@@ -823,6 +835,18 @@
             <span class="text-xs text-slate-400">units</span>
           </div>
           <p id="inward-modal-min-level-sub" class="text-[10px] text-slate-400 mt-0.5">Threshold for warning</p>
+        </div>
+
+        <div class="glass-panel p-4 rounded-2xl bg-white/[0.02] border border-emerald-500/20">
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Max Capacity</p>
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+          </div>
+          <div class="flex items-baseline gap-1" id="inward-modal-max-level-container">
+            <span class="text-2xl font-black text-emerald-300 heading-font">5.0</span>
+            <span class="text-xs text-slate-400">units</span>
+          </div>
+          <p id="inward-modal-max-level-sub" class="text-[10px] text-slate-400 mt-0.5">Full capacity limit</p>
         </div>
 
         <div class="glass-panel p-4 rounded-2xl bg-white/[0.02]">
@@ -929,17 +953,17 @@
     </div>
   </div>
 
-  <!-- BATCH MINIMUM STOCK LEVELS MODAL -->
+  <!-- BATCH STOCK THRESHOLDS & CAPACITIES MODAL -->
   <div id="batch-min-stock-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
-    <div class="glass-panel bg-[#0b221a]/95 border-amber-500/30 rounded-3xl p-6 sm:p-8 max-w-4xl w-full shadow-2xl relative max-h-[90vh] flex flex-col gap-5">
+    <div class="glass-panel bg-[#0b221a]/95 border-amber-500/30 rounded-3xl p-6 sm:p-8 max-w-5xl w-full shadow-2xl relative max-h-[90vh] flex flex-col gap-5">
       <div class="flex items-center justify-between border-b border-white/10 pb-4">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-300 flex items-center justify-center">
             <i data-lucide="sliders" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-xl font-bold text-white heading-font">Configure Ingredient Minimum Stock Levels</h3>
-            <p class="text-xs text-slate-400">Set custom alarm thresholds (units) for each ingredient across your catalog & pots.</p>
+            <h3 class="text-xl font-bold text-white heading-font">Configure Ingredient Stock Limits & Pot Capacities</h3>
+            <p class="text-xs text-slate-400">Set custom minimum alarm thresholds and maximum pot capacities (units) for each ingredient across your catalog & pots.</p>
           </div>
         </div>
         <button onclick="closeBatchMinStockModal()" class="text-slate-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5">
@@ -965,9 +989,10 @@
             <tr>
               <th class="p-3">Ingredient</th>
               <th class="p-3">Category</th>
-              <th class="p-3">Pack Size</th>
+              <th class="p-3">Pack Size / Breakdown</th>
               <th class="p-3 text-right">Current Stock</th>
-              <th class="p-3 text-center">Min Stock Alarm Level</th>
+              <th class="p-3 text-center">Min Alarm Level</th>
+              <th class="p-3 text-center">Max Capacity</th>
               <th class="p-3 text-center">Status</th>
             </tr>
           </thead>
@@ -1080,6 +1105,203 @@
       return num;
     }
 
+    // ==========================================
+    // MAXIMUM STOCK CAPACITY & THRESHOLDS
+    // ==========================================
+    function getMaxStockLevels() {
+      try {
+        const stored = localStorage.getItem('ts_max_stock_levels');
+        return stored ? JSON.parse(stored) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveMaxStockLevels(levels) {
+      try {
+        localStorage.setItem('ts_max_stock_levels', JSON.stringify(levels));
+      } catch (e) {
+        console.error("Failed to save max stock levels:", e);
+      }
+    }
+
+    function getItemMaxStock(itemId, itemName) {
+      const levels = getMaxStockLevels();
+      if (itemId !== undefined && itemId !== null) {
+        const strId = String(itemId);
+        if (levels[strId] !== undefined) return parseFloat(levels[strId]);
+        if (levels[itemId] !== undefined) return parseFloat(levels[itemId]);
+      }
+      if (!itemName && itemId !== undefined && itemId !== null) {
+        itemName = getItemNameById(itemId);
+      }
+      if (itemName) {
+        const key = itemName.toLowerCase().trim();
+        if (levels[key] !== undefined) return parseFloat(levels[key]);
+      }
+      return 5.0; // Standard default maximum pot capacity
+    }
+
+    function setItemMaxStock(itemId, itemName, val) {
+      const levels = getMaxStockLevels();
+      const num = Math.max(0.5, parseFloat(val) || 5.0);
+      if (itemId !== undefined && itemId !== null) {
+        levels[String(itemId)] = num;
+        levels[itemId] = num;
+      }
+      if (!itemName && itemId !== undefined && itemId !== null) {
+        itemName = getItemNameById(itemId);
+      }
+      if (itemName) {
+        levels[itemName.toLowerCase().trim()] = num;
+      }
+      saveMaxStockLevels(levels);
+      return num;
+    }
+
+    // ==========================================
+    // PACK SIZE & WEIGHT INTELLIGENCE
+    // ==========================================
+    let currentStockViewMode = localStorage.getItem('ts_stock_view_mode') || 'cases';
+
+    function handleStockViewModeChange(mode) {
+      currentStockViewMode = mode;
+      localStorage.setItem('ts_stock_view_mode', mode);
+      const select = document.getElementById('stock-view-mode');
+      if (select && select.value !== mode) select.value = mode;
+      renderStockGrid();
+      const labels = {
+        'cases': '📦 Order Units (Cases)',
+        'sub_units': '⚖️ By Weight / Sub-Units',
+        'net_weight': '⚖️ Total Net Weight / Volume'
+      };
+      showInventoryToast(`Stock View: ${labels[mode] || mode}`);
+    }
+
+    function getCustomPackSizes() {
+      try {
+        const stored = localStorage.getItem('ts_custom_pack_sizes');
+        return stored ? JSON.parse(stored) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveCustomPackSizes(packs) {
+      try {
+        localStorage.setItem('ts_custom_pack_sizes', JSON.stringify(packs));
+      } catch (e) {
+        console.error("Failed to save custom pack sizes:", e);
+      }
+    }
+
+    function parsePackInfo(item) {
+      if (!item) return { subUnits: 1, unitWeight: 1, unitMeasure: 'unit', totalGrams: 0, label: '1 Unit', isMultiPack: false };
+
+      const customPacks = getCustomPackSizes();
+      const strId = String(item.id || '');
+      const nameKey = (item.name || '').toLowerCase().trim();
+      if (customPacks[strId]) return customPacks[strId];
+      if (customPacks[nameKey]) return customPacks[nameKey];
+
+      const sizeStr = (item.size || '').trim();
+      const nameStr = (item.name || '').trim();
+      const combinedStr = `${sizeStr} ${nameStr}`.trim();
+
+      // Multi-pack pattern: e.g. "4 x 500g", "4x500g", "4 * 500g", "8 x 750g", "10 x 500g", "6 x 2.5kg", "12 x 1L"
+      let m = combinedStr.match(/(\d+)\s*[x*×]\s*([\d.]+)\s*([a-zA-Z]+)?/i);
+      if (m) {
+        const count = parseFloat(m[1]);
+        const amount = parseFloat(m[2]);
+        const unit = (m[3] || 'g').toLowerCase();
+        let totalG = amount * count;
+        if (unit.includes('kg') || unit.includes('ltr') || unit === 'l') totalG *= 1000;
+        return {
+          subUnits: count > 0 ? count : 1,
+          unitWeight: amount,
+          unitMeasure: unit,
+          totalGrams: totalG,
+          label: `${count} × ${amount}${unit}`,
+          isMultiPack: count > 1
+        };
+      }
+
+      // Reverse pattern: e.g. "500g * 4", "500g x 4", "750g * 8", "1kg * 6"
+      m = combinedStr.match(/([\d.]+)\s*([a-zA-Z]+)?\s*[x*×]\s*(\d+)/i);
+      if (m) {
+        const amount = parseFloat(m[1]);
+        const unit = (m[2] || 'g').toLowerCase();
+        const count = parseFloat(m[3]);
+        let totalG = amount * count;
+        if (unit.includes('kg') || unit.includes('ltr') || unit === 'l') totalG *= 1000;
+        return {
+          subUnits: count > 0 ? count : 1,
+          unitWeight: amount,
+          unitMeasure: unit,
+          totalGrams: totalG,
+          label: `${count} × ${amount}${unit}`,
+          isMultiPack: count > 1
+        };
+      }
+
+      // Single weight/volume pack: e.g. "10kg Bag", "6kg Tub", "500g", "2ltr Bottle"
+      m = sizeStr.match(/([\d.]+)\s*([a-zA-Z]+)/i);
+      if (m) {
+        const amount = parseFloat(m[1]);
+        const unit = (m[2] || 'g').toLowerCase();
+        let totalG = amount;
+        if (unit.includes('kg') || unit.includes('ltr') || unit === 'l') totalG *= 1000;
+        return {
+          subUnits: 1,
+          unitWeight: amount,
+          unitMeasure: unit,
+          totalGrams: totalG,
+          label: `${amount}${unit}`,
+          isMultiPack: false
+        };
+      }
+
+      return {
+        subUnits: 1,
+        unitWeight: 1,
+        unitMeasure: 'unit',
+        totalGrams: 0,
+        label: item.size || '1 Unit',
+        isMultiPack: false
+      };
+    }
+
+    function setCustomPackBreakdown(itemId, subUnits, unitWeight, unitMeasure) {
+      const customPacks = getCustomPackSizes();
+      const numUnits = Math.max(1, parseFloat(subUnits) || 1);
+      const numWeight = Math.max(0, parseFloat(unitWeight) || 0);
+      const measure = (unitMeasure || 'g').trim();
+      let totalG = numWeight * numUnits;
+      if (measure.includes('kg') || measure.includes('ltr') || measure === 'l') totalG *= 1000;
+
+      const packObj = {
+        subUnits: numUnits,
+        unitWeight: numWeight,
+        unitMeasure: measure,
+        totalGrams: totalG,
+        label: `${numUnits} × ${numWeight}${measure}`,
+        isMultiPack: numUnits > 1,
+        custom: true
+      };
+
+      if (itemId !== undefined && itemId !== null) {
+        customPacks[String(itemId)] = packObj;
+        customPacks[itemId] = packObj;
+      }
+      const name = getItemNameById(itemId);
+      if (name) {
+        customPacks[name.toLowerCase().trim()] = packObj;
+      }
+      saveCustomPackSizes(customPacks);
+      renderStockGrid();
+      showInventoryToast(`✓ Pack breakdown saved: ${packObj.label}`);
+    }
+
     function openPasscodeModal() {
       const modal = document.getElementById('passcode-modal');
       const input = document.getElementById('admin-passcode-input');
@@ -1166,7 +1388,7 @@
         if (btn) {
           btn.className = 'w-full sm:w-auto px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0';
         }
-        if (btnText) btnText.innerText = 'Edit Min Stock';
+        if (btnText) btnText.innerText = 'Edit Stock Limits';
         if (lockIcon) lockIcon.setAttribute('data-lucide', 'lock');
         if (banner) banner.classList.add('hidden');
       }
@@ -1185,7 +1407,21 @@
       const parsed = Math.max(0, parseFloat(val) || 0);
       const name = getItemNameById(id);
       setItemMinStock(id, name, parsed);
-      showInventoryToast(`✓ Min stock for "${name || 'Ingredient'}" saved: ${parsed} units`);
+      showInventoryToast(`✓ Min alarm for "${name || 'Ingredient'}" saved: ${parsed} units`);
+      renderStockGrid();
+    }
+
+    function handleMaxStockInput(id, val) {
+      const parsed = Math.max(0.5, parseFloat(val) || 5.0);
+      const name = getItemNameById(id);
+      setItemMaxStock(id, name, parsed);
+    }
+
+    function handleMaxStockChange(id, val) {
+      const parsed = Math.max(0.5, parseFloat(val) || 5.0);
+      const name = getItemNameById(id);
+      setItemMaxStock(id, name, parsed);
+      showInventoryToast(`✓ Max capacity for "${name || 'Ingredient'}" saved: ${parsed} units`);
       renderStockGrid();
     }
 
@@ -1203,6 +1439,20 @@
       renderStockGrid();
     }
 
+    function handleBatchMaxStockInput(id, val) {
+      const parsed = Math.max(0.5, parseFloat(val) || 5.0);
+      const name = getItemNameById(id);
+      setItemMaxStock(id, name, parsed);
+    }
+
+    function handleBatchMaxStockChange(id, val) {
+      const parsed = Math.max(0.5, parseFloat(val) || 5.0);
+      const name = getItemNameById(id);
+      setItemMaxStock(id, name, parsed);
+      renderBatchMinStockTable();
+      renderStockGrid();
+    }
+
     function handleInwardModalMinStockInput(id, val) {
       const parsed = Math.max(0, parseFloat(val) || 0);
       const name = getItemNameById(id);
@@ -1213,7 +1463,22 @@
       const parsed = Math.max(0, parseFloat(val) || 0);
       const name = getItemNameById(id);
       setItemMinStock(id, name, parsed);
-      showInventoryToast(`✓ Min stock for "${name || 'Ingredient'}" saved: ${parsed} units`);
+      showInventoryToast(`✓ Min alarm for "${name || 'Ingredient'}" saved: ${parsed} units`);
+      openIngredientInwardModal(id);
+      renderStockGrid();
+    }
+
+    function handleInwardModalMaxStockInput(id, val) {
+      const parsed = Math.max(0.5, parseFloat(val) || 5.0);
+      const name = getItemNameById(id);
+      setItemMaxStock(id, name, parsed);
+    }
+
+    function handleInwardModalMaxStockChange(id, val) {
+      const parsed = Math.max(0.5, parseFloat(val) || 5.0);
+      const name = getItemNameById(id);
+      setItemMaxStock(id, name, parsed);
+      showInventoryToast(`✓ Max capacity for "${name || 'Ingredient'}" saved: ${parsed} units`);
       openIngredientInwardModal(id);
       renderStockGrid();
     }
@@ -1257,7 +1522,7 @@
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No matching ingredients found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No matching ingredients found.</td></tr>`;
         return;
       }
 
@@ -1265,7 +1530,10 @@
         const strId = String(item.id);
         const curQty = stockLevels[strId] !== undefined ? parseFloat(stockLevels[strId]) : (stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0);
         const minStock = getItemMinStock(item.id, item.name);
+        const maxStock = getItemMaxStock(item.id, item.name);
         const isAlarm = curQty <= minStock;
+        const isFull = curQty >= maxStock;
+        const packInfo = parsePackInfo(item);
 
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-white/5 transition-colors';
@@ -1275,7 +1543,10 @@
             <div class="text-[10px] text-slate-500">${escapeHtml(item.supplier || 'Supplier')}</div>
           </td>
           <td class="p-3 text-slate-400">${escapeHtml(item.category || 'General')}</td>
-          <td class="p-3 text-slate-400">${escapeHtml(item.size || 'Unit')}</td>
+          <td class="p-3 text-slate-400">
+            <div class="font-medium text-slate-300">${escapeHtml(item.size || 'Unit')}</div>
+            ${packInfo.isMultiPack ? `<div class="text-[10px] text-emerald-400 font-bold">${packInfo.label} (${(packInfo.totalGrams >= 1000 ? (packInfo.totalGrams / 1000).toFixed(1) + 'kg' : packInfo.totalGrams + packInfo.unitMeasure)})</div>` : ''}
+          </td>
           <td class="p-3 text-right font-bold ${isAlarm ? 'text-rose-400' : 'text-emerald-400'}">
             ${curQty.toFixed(1)} u
           </td>
@@ -1284,14 +1555,23 @@
               <input type="number" step="0.5" min="0" max="50" value="${minStock}"
                 oninput="handleBatchMinStockInput('${item.id}', this.value)"
                 onchange="handleBatchMinStockChange('${item.id}', this.value)"
-                class="w-20 px-2 py-1 bg-black/40 border border-amber-500/40 rounded-lg text-xs font-bold text-amber-300 text-center outline-none focus:ring-2 focus:ring-amber-400">
+                class="w-16 px-2 py-1 bg-black/40 border border-amber-500/40 rounded-lg text-xs font-bold text-amber-300 text-center outline-none focus:ring-2 focus:ring-amber-400">
+              <span class="text-[10px] text-slate-400">units</span>
+            </div>
+          </td>
+          <td class="p-3 text-center">
+            <div class="inline-flex items-center gap-1.5 justify-center">
+              <input type="number" step="0.5" min="0.5" max="100" value="${maxStock}"
+                oninput="handleBatchMaxStockInput('${item.id}', this.value)"
+                onchange="handleBatchMaxStockChange('${item.id}', this.value)"
+                class="w-16 px-2 py-1 bg-black/40 border border-emerald-500/40 rounded-lg text-xs font-bold text-emerald-300 text-center outline-none focus:ring-2 focus:ring-emerald-400">
               <span class="text-[10px] text-slate-400">units</span>
             </div>
           </td>
           <td class="p-3 text-center">
             ${isAlarm 
               ? '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">Alarm (≤' + minStock + ')</span>'
-              : '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Safe</span>'
+              : (isFull ? '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Full (' + maxStock + ')</span>' : '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Safe</span>')
             }
           </td>
         `;
@@ -2023,44 +2303,109 @@
         const strId = String(item.id);
         const currentQty = stockLevels[strId] !== undefined ? parseFloat(stockLevels[strId]) : (stockLevels[item.id] !== undefined ? parseFloat(stockLevels[item.id]) : 0);
         
-        // Exact Pot Rules: Max 5 units, Moderate level, Minimum stock level alarm <= minStock
+        // Exact Pot Rules: Configurable Max capacity, Min stock alarm <= minStock
         const minStock = getItemMinStock(item.id, item.name);
-        const maxCapacity = 5.0;
-        const percentage = Math.min(100, Math.max(5, (currentQty / maxCapacity) * 100));
+        const maxCapacity = getItemMaxStock(item.id, item.name);
+        const packInfo = parsePackInfo(item);
+
         const price = parseFloat(item.price || 0);
         const itemVal = currentQty * price;
         totalVal += itemVal;
 
+        // Display calculations based on view mode (cases vs sub_units vs net_weight)
+        let displayQty = currentQty;
+        let displayMax = maxCapacity;
+        let displayMin = minStock;
+        let unitLabel = 'units';
+        let subTextNote = '';
+
+        if (currentStockViewMode === 'sub_units') {
+          displayQty = currentQty * packInfo.subUnits;
+          displayMax = maxCapacity * packInfo.subUnits;
+          displayMin = minStock * packInfo.subUnits;
+          unitLabel = packInfo.isMultiPack ? 'sub-units' : 'units';
+          if (packInfo.isMultiPack) {
+            subTextNote = `${currentQty.toFixed(1)} case${currentQty === 1 ? '' : 's'} (${packInfo.label})`;
+          }
+        } else if (currentStockViewMode === 'net_weight') {
+          if (packInfo.totalGrams > 0) {
+            const isKg = packInfo.totalGrams >= 1000;
+            const factor = isKg ? (packInfo.totalGrams / 1000) : packInfo.totalGrams;
+            displayQty = currentQty * factor;
+            displayMax = maxCapacity * factor;
+            displayMin = minStock * factor;
+            unitLabel = isKg ? 'kg' : (packInfo.unitMeasure || 'g');
+            subTextNote = `${currentQty.toFixed(1)} case${currentQty === 1 ? '' : 's'} (${packInfo.label})`;
+          }
+        }
+
+        const percentage = Math.min(100, Math.max(5, (currentQty / maxCapacity) * 100));
+
         let liquidColor = '#10b981'; // Optimal (Green)
         let statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i data-lucide="check" class="w-2.5 h-2.5"></i> Optimal</span>`;
+
+        const moderateThreshold = Math.max(minStock + 0.5, (minStock + maxCapacity) / 2);
 
         if (currentQty <= minStock) {
           // At or below custom minimum stock level alarm
           liquidColor = '#ef4444'; // Red
-          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2.5 h-2.5"></i> Min Stock Alarm (≤${minStock})</span>`;
-        } else if (currentQty <= Math.max(minStock + 1, 3)) {
+          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2.5 h-2.5"></i> Min Alarm (≤${displayMin.toFixed(1)} ${unitLabel})</span>`;
+        } else if (currentQty < moderateThreshold) {
           // Moderate Level
           liquidColor = '#f59e0b'; // Amber
-          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1"><i data-lucide="clock" class="w-2.5 h-2.5"></i> Moderate (${currentQty.toFixed(1)}u)</span>`;
-        } else if (currentQty >= 5) {
-          // 5 units = Full Maximum Capacity
+          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1"><i data-lucide="clock" class="w-2.5 h-2.5"></i> Moderate (${displayQty.toFixed(1)} ${unitLabel})</span>`;
+        } else if (currentQty >= maxCapacity) {
+          // Full Maximum Capacity
           liquidColor = '#10b981'; // Green
-          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i data-lucide="shield-check" class="w-2.5 h-2.5"></i> Full (5.0 Max)</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i data-lucide="shield-check" class="w-2.5 h-2.5"></i> Full (${displayMax.toFixed(1)} Max)</span>`;
         }
 
         const editControlHtml = isEditModeActive ? `
-          <div class="mt-2.5 pt-2.5 border-t border-amber-500/20 flex items-center justify-between gap-2" onclick="event.stopPropagation()">
-            <span class="text-[10px] font-bold text-amber-300 flex items-center gap-1">
-              <i data-lucide="sliders" class="w-3 h-3 text-amber-400"></i> Min Stock Alarm:
-            </span>
-            <div class="flex items-center gap-1">
-              <input type="number" step="0.5" min="0" max="20" value="${minStock}" 
-                oninput="handleMinStockInput('${item.id}', this.value)"
-                onchange="handleMinStockChange('${item.id}', this.value)"
-                class="w-16 px-2 py-1 bg-black/40 border border-amber-500/40 rounded-lg text-xs font-bold text-amber-300 text-center outline-none focus:ring-2 focus:ring-amber-400">
-              <span class="text-[10px] text-slate-400">units</span>
+          <div class="mt-3 pt-2.5 border-t border-amber-500/30 flex flex-col gap-2" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[10px] font-bold text-amber-300 flex items-center gap-1 shrink-0">
+                <i data-lucide="sliders" class="w-3 h-3 text-amber-400"></i> Min:
+              </span>
+              <div class="flex items-center gap-1">
+                <input type="number" step="0.5" min="0" max="50" value="${minStock}" 
+                  oninput="handleMinStockInput('${item.id}', this.value)"
+                  onchange="handleMinStockChange('${item.id}', this.value)"
+                  class="w-14 px-1.5 py-0.5 bg-black/50 border border-amber-500/40 rounded-lg text-xs font-bold text-amber-300 text-center outline-none focus:ring-2 focus:ring-amber-400">
+                <span class="text-[9px] text-slate-400">cases</span>
+              </div>
+              <span class="text-[10px] font-bold text-emerald-300 flex items-center gap-1 ml-1 shrink-0">
+                <i data-lucide="shield-check" class="w-3 h-3 text-emerald-400"></i> Max:
+              </span>
+              <div class="flex items-center gap-1">
+                <input type="number" step="0.5" min="0.5" max="100" value="${maxCapacity}" 
+                  oninput="handleMaxStockInput('${item.id}', this.value)"
+                  onchange="handleMaxStockChange('${item.id}', this.value)"
+                  class="w-14 px-1.5 py-0.5 bg-black/50 border border-emerald-500/40 rounded-lg text-xs font-bold text-emerald-300 text-center outline-none focus:ring-2 focus:ring-emerald-400">
+                <span class="text-[9px] text-slate-400">cases</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-1 text-[10px] text-slate-400 bg-white/5 px-2 py-1 rounded-lg">
+              <span class="font-bold text-slate-300 shrink-0">Pack Breakdown:</span>
+              <div class="flex items-center gap-1">
+                <input type="number" min="1" max="50" value="${packInfo.subUnits}" title="Sub-units per case (e.g. 4 for 4x500g)"
+                  onchange="setCustomPackBreakdown('${item.id}', this.value, '${packInfo.unitWeight}', '${packInfo.unitMeasure}')"
+                  class="w-9 px-1 py-0.5 bg-black/60 border border-white/20 rounded text-center text-[10px] font-bold text-white">
+                <span>×</span>
+                <input type="number" min="1" max="10000" value="${packInfo.unitWeight}" title="Weight per sub-unit (e.g. 500 for 500g)"
+                  onchange="setCustomPackBreakdown('${item.id}', '${packInfo.subUnits}', this.value, '${packInfo.unitMeasure}')"
+                  class="w-12 px-1 py-0.5 bg-black/60 border border-white/20 rounded text-center text-[10px] font-bold text-white">
+                <input type="text" value="${packInfo.unitMeasure || 'g'}" title="Unit (e.g. g, kg, ml, L)"
+                  onchange="setCustomPackBreakdown('${item.id}', '${packInfo.subUnits}', '${packInfo.unitWeight}', this.value)"
+                  class="w-8 px-1 py-0.5 bg-black/60 border border-white/20 rounded text-center text-[10px] font-bold text-white">
+              </div>
             </div>
           </div>
+        ` : '';
+
+        const packBadgeHtml = packInfo.isMultiPack ? `
+          <span class="text-[9px] font-bold text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+            ⚖️ ${packInfo.label} (${(packInfo.totalGrams >= 1000 ? (packInfo.totalGrams / 1000).toFixed(1) + 'kg' : packInfo.totalGrams + packInfo.unitMeasure)})
+          </span>
         ` : '';
 
         const card = document.createElement('div');
@@ -2069,20 +2414,25 @@
         card.setAttribute('title', `Click to view inward history & supplier price analysis for ${item.name}`);
         card.innerHTML = `
           <div class="flex-1 pr-3">
-            <div class="flex items-center gap-2 mb-1">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
               <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${item.category || 'General'}</span>
               ${statusBadge}
+              ${packBadgeHtml}
             </div>
             <h4 class="font-bold text-white text-sm line-clamp-1 mb-1 heading-font group-hover:text-emerald-300 transition-colors" title="${item.name}">${item.name}</h4>
-            <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-2 flex-wrap">
               <span>${item.size || 'Unit'} • £${price.toFixed(2)}</span>
               <span class="text-[10px] text-slate-500">• ${item.supplier || 'Supplier'}</span>
-              <span class="text-[9px] font-semibold text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">Min: ${minStock}u</span>
+              <span class="text-[9px] font-semibold text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">Min: ${displayMin.toFixed(1)}${unitLabel.charAt(0)}</span>
+              <span class="text-[9px] font-semibold text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">Max: ${displayMax.toFixed(1)}${unitLabel.charAt(0)}</span>
             </div>
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-1.5">
-                <span class="text-base font-black text-white heading-font">${currentQty.toFixed(1)}</span>
-                <span class="text-[10px] text-slate-400">/ 5.0 units</span>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-base font-black text-white heading-font">${displayQty.toFixed(1)}</span>
+                  <span class="text-[10px] text-slate-400">/ ${displayMax.toFixed(1)} ${unitLabel}</span>
+                </div>
+                ${subTextNote ? `<p class="text-[10px] text-emerald-400 font-medium mt-0.5">${subTextNote}</p>` : ''}
               </div>
               <span class="text-[10px] text-emerald-400 font-bold opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
                 Inward & Rates <i data-lucide="chevron-right" class="w-3 h-3"></i>
@@ -2946,7 +3296,32 @@
         }
       }
 
-      document.getElementById('inward-metric-stock').innerText = `${currentQty.toFixed(1)} / 5.0`;
+      const maxStock = getItemMaxStock(item.id, item.name);
+      const maxLevelContainer = document.getElementById('inward-modal-max-level-container');
+      if (maxLevelContainer) {
+        if (isEditModeActive) {
+          maxLevelContainer.innerHTML = `
+            <input type="number" step="0.5" min="0.5" max="100" value="${maxStock}" 
+              oninput="handleInwardModalMaxStockInput('${item.id}', this.value)"
+              onchange="handleInwardModalMaxStockChange('${item.id}', this.value)"
+              class="w-20 px-2 py-1 bg-black/50 border border-emerald-500/50 rounded-lg text-lg font-black text-emerald-300 text-center outline-none focus:ring-2 focus:ring-emerald-400">
+            <span class="text-xs text-emerald-400 font-bold">units</span>
+          `;
+        } else {
+          maxLevelContainer.innerHTML = `
+            <span class="text-2xl font-black text-emerald-300 heading-font">${maxStock}</span>
+            <span class="text-xs text-slate-400">units</span>
+            <button onclick="promptUnlockFromModal()" class="ml-2 text-[10px] text-emerald-400/80 hover:text-emerald-300 underline flex items-center gap-0.5"><i data-lucide="lock" class="w-2.5 h-2.5"></i> Edit</button>
+          `;
+        }
+      }
+
+      const packInfo = parsePackInfo(item);
+      let inwardStockText = `${currentQty.toFixed(1)} / ${maxStock.toFixed(1)}`;
+      if (currentStockViewMode === 'sub_units' && packInfo.isMultiPack) {
+        inwardStockText = `${(currentQty * packInfo.subUnits).toFixed(1)} / ${(maxStock * packInfo.subUnits).toFixed(1)}`;
+      }
+      document.getElementById('inward-metric-stock').innerText = inwardStockText;
       document.getElementById('inward-metric-stock-val').innerText = `£${potVal.toFixed(2)} pot valuation`;
 
       // Query POs for Inward Records
@@ -3330,6 +3705,10 @@
     }
 
     async function init() {
+      const viewSelect = document.getElementById('stock-view-mode');
+      if (viewSelect && currentStockViewMode) {
+        viewSelect.value = currentStockViewMode;
+      }
       if (isEditModeActive) {
         updateEditModeUI();
       }
