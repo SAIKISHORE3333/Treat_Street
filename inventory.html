@@ -370,44 +370,64 @@
       </div>
 
       <!-- Search & Filters -->
-      <div class="glass-panel p-3.5 rounded-2xl flex flex-col sm:flex-row items-center gap-3">
-        <div class="relative flex-1 w-full">
-          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-          <input type="text" id="stock-search" oninput="renderStockGrid()" placeholder="Search ingredient or supplier..." class="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white/10 transition-all">
-        </div>
-        <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full sm:w-48 px-3.5 py-2 bg-[#0c2e22] border border-white/10 rounded-xl text-xs text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
-          <option value="all">All Categories</option>
-        </select>
-        
-        <!-- Stock View Mode Dropdown (Cases / Sub-Units / Weight) -->
-        <div class="w-full sm:w-auto flex items-center gap-1.5 bg-[#0c2e22] border border-emerald-500/30 rounded-xl px-3 py-2 shrink-0">
-          <i data-lucide="scale" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
-          <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider hidden lg:inline">View:</span>
-          <select id="stock-view-mode" onchange="handleStockViewModeChange(this.value)" class="bg-transparent text-xs font-bold text-emerald-300 outline-none cursor-pointer">
-            <option value="cases" class="bg-[#0b221a] text-white">📦 Order Units (Cases / Packs)</option>
-            <option value="sub_units" class="bg-[#0b221a] text-white">⚖️ By Weight / Sub-Units (e.g. 500g × 4 = 4 Units)</option>
-            <option value="net_weight" class="bg-[#0b221a] text-white">⚖️ Total Net Weight / Volume (g / kg / L)</option>
-          </select>
+      <div class="glass-panel p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-white/15 space-y-3.5 bg-[#061e15]/90 shadow-2xl">
+        <!-- Large High-Visibility Search Bar -->
+        <div class="relative w-full">
+          <div class="absolute inset-y-0 left-0 pl-4 sm:pl-5 flex items-center pointer-events-none">
+            <i data-lucide="search" class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400"></i>
+          </div>
+          <input type="text" id="stock-search" oninput="handleStockSearchInput()" placeholder="Search ingredients, raw items, suppliers, or wholesale catalog (e.g. sugar, vanilla, flour)..." 
+            class="w-full pl-12 sm:pl-14 pr-12 py-3.5 sm:py-4 bg-black/50 border-2 border-emerald-500/50 hover:border-emerald-400 focus:border-emerald-400 rounded-2xl text-sm sm:text-base text-white font-medium placeholder-slate-400 outline-none focus:ring-4 focus:ring-emerald-500/25 focus:bg-black/70 transition-all shadow-inner">
+          <button type="button" id="stock-search-clear-btn" onclick="clearStockSearch()" title="Clear search" 
+            class="absolute inset-y-0 right-0 pr-4 sm:pr-5 flex items-center text-slate-400 hover:text-white transition-colors hidden">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
         </div>
 
-        <!-- Edit Stock Limits Button -->
-        <button type="button" id="btn-toggle-edit-mode" onclick="toggleEditMode()" title="Unlock Edit Mode to configure minimum alarm and maximum capacity levels for ingredients" class="w-full sm:w-auto px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
-          <i data-lucide="lock" id="edit-mode-lock-icon" class="w-3.5 h-3.5 text-amber-400"></i>
-          <span id="edit-mode-btn-text">Edit Stock Limits</span>
-        </button>
+        <!-- Filter Dropdown & Action Controls Row -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-white/5">
+          <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+            <!-- Category Filter -->
+            <div class="relative min-w-[180px]">
+              <select id="stock-category-filter" onchange="renderStockGrid()" class="w-full pl-3.5 pr-8 py-2.5 bg-[#0c2e22] border border-white/15 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="all">All Categories</option>
+              </select>
+            </div>
+            
+            <!-- Stock View Mode Dropdown (Cases / Sub-Units / Weight) -->
+            <div class="flex items-center gap-2 bg-[#0c2e22] border border-emerald-500/30 rounded-xl px-3.5 py-2.5">
+              <i data-lucide="scale" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider hidden lg:inline">View:</span>
+              <select id="stock-view-mode" onchange="handleStockViewModeChange(this.value)" class="bg-transparent text-xs sm:text-sm font-bold text-emerald-300 outline-none cursor-pointer">
+                <option value="cases" class="bg-[#0b221a] text-white">📦 Order Units (Cases / Packs)</option>
+                <option value="sub_units" class="bg-[#0b221a] text-white">⚖️ By Weight / Sub-Units</option>
+                <option value="net_weight" class="bg-[#0b221a] text-white">⚖️ Total Net Weight / Volume</option>
+              </select>
+            </div>
+          </div>
 
-        <!-- Refresh Catalog Button -->
-        <button type="button" onclick="refreshCatalogData(true)" title="Refresh Catalog & Sync Inventory" class="w-full sm:w-auto px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0">
-          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
-          <span class="hidden md:inline">Refresh Catalog</span>
-        </button>
+          <!-- Action Buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Edit Stock Limits Button -->
+            <button type="button" id="btn-toggle-edit-mode" onclick="toggleEditMode()" title="Unlock Edit Mode to configure minimum alarm and maximum capacity levels for ingredients" class="px-3.5 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all">
+              <i data-lucide="lock" id="edit-mode-lock-icon" class="w-4 h-4 text-amber-400"></i>
+              <span id="edit-mode-btn-text">Edit Stock Limits</span>
+            </button>
 
-        <!-- Kitchen Production Batches Button -->
-        <button type="button" onclick="openKitchenBatchesModal()" title="View Kitchen Production Batches, detailed portions used, and deplete inventory" class="w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-emerald-500/20 hover:from-amber-500/30 hover:to-emerald-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 shadow-sm">
-          <i data-lucide="chef-hat" class="w-3.5 h-3.5 text-amber-400"></i>
-          <span>Production Batches</span>
-          <span id="inv-batch-count-badge" class="px-1.5 py-0.2 rounded bg-amber-400/30 text-amber-200 text-[10px] font-black">2</span>
-        </button>
+            <!-- Refresh Catalog Button -->
+            <button type="button" onclick="refreshCatalogData(true)" title="Refresh Catalog & Sync Inventory" class="px-3.5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all">
+              <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i>
+              <span class="hidden md:inline">Refresh</span>
+            </button>
+
+            <!-- Kitchen Production Batches Button -->
+            <button type="button" onclick="openKitchenBatchesModal()" title="View Kitchen Production Batches, detailed portions used, and deplete inventory" class="px-3.5 py-2.5 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-emerald-500/20 hover:from-amber-500/30 hover:to-emerald-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm">
+              <i data-lucide="chef-hat" class="w-4 h-4 text-amber-400"></i>
+              <span>Production Batches</span>
+              <span id="inv-batch-count-badge" class="px-1.5 py-0.2 rounded bg-amber-400/30 text-amber-200 text-[10px] font-black">0</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Edit Mode Indicator Banner -->
@@ -2521,9 +2541,34 @@
     // -------------------------------------------------------------
     // LIVE STOCK & AUDIT TABLES
     // -------------------------------------------------------------
+    function handleStockSearchInput() {
+      const input = document.getElementById('stock-search');
+      const clearBtn = document.getElementById('stock-search-clear-btn');
+      if (clearBtn && input) {
+        if (input.value && input.value.trim().length > 0) {
+          clearBtn.classList.remove('hidden');
+        } else {
+          clearBtn.classList.add('hidden');
+        }
+      }
+      renderStockGrid();
+    }
+
+    function clearStockSearch() {
+      const input = document.getElementById('stock-search');
+      const clearBtn = document.getElementById('stock-search-clear-btn');
+      if (input) {
+        input.value = '';
+        if (clearBtn) clearBtn.classList.add('hidden');
+        renderStockGrid();
+        input.focus();
+      }
+    }
+
     function renderStockGrid() {
       const grid = document.getElementById('stock-grid');
-      const search = (document.getElementById('stock-search')?.value || '').toLowerCase();
+      const searchRaw = (document.getElementById('stock-search')?.value || '').toLowerCase().trim();
+      const searchTokens = searchRaw.split(/\s+/).filter(Boolean);
       const catFilter = document.getElementById('stock-category-filter')?.value || 'all';
       const stockLevels = getStockLevels();
 
@@ -2536,7 +2581,11 @@
 
       itemsToRender.forEach(item => {
         if (catFilter !== 'all' && (item.category || 'General') !== catFilter) return;
-        if (search && !item.name.toLowerCase().includes(search) && !(item.supplier || '').toLowerCase().includes(search)) return;
+        if (searchTokens.length > 0) {
+          const targetStr = (item.name + ' ' + (item.supplier || '') + ' ' + (item.category || '') + ' ' + (item.size || '')).toLowerCase();
+          const matchesAll = searchTokens.every(token => targetStr.includes(token));
+          if (!matchesAll) return;
+        }
         renderedCount++;
 
         const strId = String(item.id);
