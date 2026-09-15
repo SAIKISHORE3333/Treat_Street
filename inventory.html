@@ -450,9 +450,6 @@
           <p class="text-xs sm:text-sm text-slate-400 mt-1">Directly integrated with the Purchase Portal. Mark delivered orders to automatically replenish your theoretical stock pot levels.</p>
         </div>
         <div class="flex items-center gap-2.5">
-          <button onclick="restoreVerifiedOrders()" title="Restore Verified Treat Street Purchase Orders" class="px-3.5 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
-            <i data-lucide="rotate-ccw" class="w-4 h-4 text-emerald-400"></i> Restore Orders
-          </button>
           <button onclick="renderPurchaseOrdersView()" class="px-3.5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
             <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i> Refresh Orders
           </button>
@@ -1107,7 +1104,7 @@
         const storedOrders = localStorage.getItem('ts_orders');
         const orders = storedOrders ? JSON.parse(storedOrders) : [];
         if (Array.isArray(orders)) {
-          orders.forEach(o => {
+          orders.filter(o => !isFakeOrder(o)).forEach(o => {
             if (Array.isArray(o.items)) {
               o.items.forEach(i => {
                 if (i && i.name) {
@@ -1895,44 +1892,64 @@
       return o;
     }
 
+    function isFakeOrder(o) {
+      if (!o) return false;
+      if (Array.isArray(o.items) && o.items.some(i => i.supplier === 'Bookers Wholesale' || i.supplier === 'Brakes Foodservice')) return true;
+      if (Array.isArray(o.supplierOrders) && o.supplierOrders.some(so => so.supplier === 'Bookers Wholesale' || so.supplier === 'Brakes Foodservice')) return true;
+      const total = parseFloat(o.grossTotal || o.total || o.netTotal || 0);
+      if (o.serial === '016' && Math.abs(total - 1222) < 5) return true;
+      if (o.serial === '015' && Math.abs(total - 442.8) < 1) return true;
+      if (o.serial === '014' && Math.abs(total - 368.5) < 1) return true;
+      if (o.serial === '013' && Math.abs(total - 295.4) < 1) return true;
+      if (o.serial === '012' && Math.abs(total - 345.0) < 1) return true;
+      if (Array.isArray(o.items) && o.items.some(i => i.delayReason === 'Supplier refrigerated transit vehicle maintenance')) return true;
+      const fakeSampleNames = [
+        'Luxury Belgian Waffle Mix 10kg',
+        'Warm Milk Chocolate Sauce 6kg',
+        'Crepe Complete Flour Mix 12.5kg',
+        'Italian White Chocolate Sauce 5kg',
+        'Soft Serve Ice Cream Liquid Mix 12x1L',
+        'Fresh Strawberry Dessert Topping 1kg',
+        'Takeaway Waffle Clamshell Trays (250s)',
+        'Signature Cookie Dough Base Tub 5kg',
+        'Belgian Milk Chocolate Chips 2.5kg',
+        'Mini Pink & White Marshmallows 1kg',
+        'Salted Caramel Drizzle Sauce 1L',
+        'Chocolate Fudge Brownie Pieces 1kg',
+        'Clear Milkshake Cups 16oz (1000s)',
+        'Dome Lids for 16oz Cups (1000s)',
+        'Churros Frozen Dough Loops (100s)',
+        'Cinnamon Sugar Shaker Mix 1kg'
+      ];
+      if (Array.isArray(o.items) && o.items.some(i => fakeSampleNames.includes(i.name) && ((i.id >= 101 && i.id <= 119) || (i.id >= 200 && i.id <= 230)))) {
+        return true;
+      }
+      return false;
+    }
+
     function getPurchaseOrders() {
       try {
         const stored = localStorage.getItem('ts_orders');
         let list = stored ? JSON.parse(stored) : null;
-        if (!Array.isArray(list) || list.length === 0) {
-          list = (typeof generateInitialSampleOrders === 'function') 
-            ? generateInitialSampleOrders() 
-            : [];
-          if (list.length > 0) {
-            try {
-              localStorage.setItem('ts_orders', JSON.stringify(list));
-            } catch(e) {}
-          }
+        if (!Array.isArray(list)) {
+          list = [];
+        } else {
+          list = list.filter(o => !isFakeOrder(o));
+          try {
+            localStorage.setItem('ts_orders', JSON.stringify(list));
+          } catch(e) {}
         }
         return list.map(normalizeOrder);
       } catch (e) {
-        const fallback = (typeof generateInitialSampleOrders === 'function') 
-          ? generateInitialSampleOrders() 
-          : [];
-        return fallback.map(normalizeOrder);
+        return [];
       }
     }
 
     function restoreVerifiedOrders() {
-      let restored = [];
-      if (typeof restoreTreatStreetDefaultOrders === 'function') {
-        const data = restoreTreatStreetDefaultOrders();
-        restored = data.orders || [];
-      } else if (typeof generateInitialSampleOrders === 'function') {
-        restored = generateInitialSampleOrders();
-      }
-      if (restored.length > 0) {
-        savePurchaseOrders(restored);
-      }
       renderPurchaseOrdersView();
       renderStockGrid();
       renderAuditTable();
-      showInventoryToast('✓ Restored 16 verified Treat Street purchase orders & active stock pots!');
+      showInventoryToast('All fake purchase orders have been removed.');
     }
 
     function savePurchaseOrders(orders) {
@@ -2877,9 +2894,6 @@
                 When you create supplier purchase orders in the Purchase Portal, they will appear here ready to be received and automatically synced into your theoretical stock pots.
               </p>
               <div class="flex items-center gap-3">
-                <button onclick="restoreVerifiedOrders()" class="px-5 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-xs transition-all flex items-center gap-2 border border-emerald-500/40">
-                  <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Restore Orders
-                </button>
                 <a href="purchase.html" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20">
                   <i data-lucide="external-link" class="w-4 h-4"></i> Open Purchase Portal
                 </a>

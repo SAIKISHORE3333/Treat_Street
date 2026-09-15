@@ -353,10 +353,6 @@
             <i data-lucide="lock" class="w-3.5 h-3.5"></i>
             <span>Lock to Staff View</span>
           </button>
-          <button onclick="restoreVerifiedHubData()" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
-            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-            <span>Restore Whole Orders Data</span>
-          </button>
         </div>
       </div>
 
@@ -694,20 +690,52 @@
       if (window.lucide) lucide.createIcons();
     }
 
+    function isFakeOrder(o) {
+      if (!o) return false;
+      if (Array.isArray(o.items) && o.items.some(i => i.supplier === 'Bookers Wholesale' || i.supplier === 'Brakes Foodservice')) return true;
+      if (Array.isArray(o.supplierOrders) && o.supplierOrders.some(so => so.supplier === 'Bookers Wholesale' || so.supplier === 'Brakes Foodservice')) return true;
+      const total = parseFloat(o.grossTotal || o.total || o.netTotal || 0);
+      if (o.serial === '016' && Math.abs(total - 1222) < 5) return true;
+      if (o.serial === '015' && Math.abs(total - 442.8) < 1) return true;
+      if (o.serial === '014' && Math.abs(total - 368.5) < 1) return true;
+      if (o.serial === '013' && Math.abs(total - 295.4) < 1) return true;
+      if (o.serial === '012' && Math.abs(total - 345.0) < 1) return true;
+      if (Array.isArray(o.items) && o.items.some(i => i.delayReason === 'Supplier refrigerated transit vehicle maintenance')) return true;
+      const fakeSampleNames = [
+        'Luxury Belgian Waffle Mix 10kg',
+        'Warm Milk Chocolate Sauce 6kg',
+        'Crepe Complete Flour Mix 12.5kg',
+        'Italian White Chocolate Sauce 5kg',
+        'Soft Serve Ice Cream Liquid Mix 12x1L',
+        'Fresh Strawberry Dessert Topping 1kg',
+        'Takeaway Waffle Clamshell Trays (250s)',
+        'Signature Cookie Dough Base Tub 5kg',
+        'Belgian Milk Chocolate Chips 2.5kg',
+        'Mini Pink & White Marshmallows 1kg',
+        'Salted Caramel Drizzle Sauce 1L',
+        'Chocolate Fudge Brownie Pieces 1kg',
+        'Clear Milkshake Cups 16oz (1000s)',
+        'Dome Lids for 16oz Cups (1000s)',
+        'Churros Frozen Dough Loops (100s)',
+        'Cinnamon Sugar Shaker Mix 1kg'
+      ];
+      if (Array.isArray(o.items) && o.items.some(i => fakeSampleNames.includes(i.name) && ((i.id >= 101 && i.id <= 119) || (i.id >= 200 && i.id <= 230)))) {
+        return true;
+      }
+      return false;
+    }
+
     function ensureInitialData() {
       try {
         const stored = localStorage.getItem('ts_orders');
         let list = stored ? JSON.parse(stored) : null;
-        if (!Array.isArray(list) || list.length === 0) {
-          if (typeof restoreTreatStreetDefaultOrders === 'function') {
-            restoreTreatStreetDefaultOrders();
+        if (Array.isArray(list)) {
+          const cleaned = list.filter(o => !isFakeOrder(o));
+          if (cleaned.length !== list.length) {
+            localStorage.setItem('ts_orders', JSON.stringify(cleaned));
           }
         }
-      } catch (e) {
-        if (typeof restoreTreatStreetDefaultOrders === 'function') {
-          restoreTreatStreetDefaultOrders();
-        }
-      }
+      } catch (e) {}
       updateKpiCounts();
     }
 
@@ -814,11 +842,8 @@
     }
 
     function restoreVerifiedHubData() {
-      if (typeof restoreTreatStreetDefaultOrders === 'function') {
-        restoreTreatStreetDefaultOrders();
-        updateKpiCounts();
-        showHubToast('✅ Whole data restored! 16 Purchase Orders & Stock Pots Active.');
-      }
+      updateKpiCounts();
+      showHubToast('All fake purchase orders have been removed.');
     }
 
     function filterPortals(category) {
