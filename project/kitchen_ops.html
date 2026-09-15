@@ -593,6 +593,148 @@
     </div>
   </div>
 
+  <!-- PRODUCTION BATCH PORTION & INVENTORY DEPLETION MODAL -->
+  <div id="batch-portion-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="glass-panel bg-[#0b221a]/95 border border-amber-500/40 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-black/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-xl shrink-0 shadow-lg shadow-amber-950">
+            <i data-lucide="scale" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="bpm-batch-code" class="font-mono font-black text-amber-300 text-sm">BATCH-CODE</span>
+              <span id="bpm-recipe-badge" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-teal-500/20 text-teal-300 border border-teal-500/30">Sub-Recipe</span>
+              <span id="bpm-status-badge" class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Fresh & Active</span>
+            </div>
+            <h3 id="bpm-recipe-title" class="font-bold text-white text-base sm:text-lg heading-font">Recipe Title</h3>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="printBatchPortionSheet()" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all">
+            <i data-lucide="printer" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span class="hidden sm:inline">Print Sheet</span>
+          </button>
+          <button onclick="closeBatchPortionModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+        
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Batches Produced</span>
+            <span id="bpm-batches-count" class="text-lg font-black text-amber-400 heading-font">1 Batch</span>
+            <span id="bpm-yield-sub" class="text-[10px] text-slate-400 block mt-0.5">Yield: 10 portions</span>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Prepared By</span>
+            <span id="bpm-staff-name" class="text-sm font-black text-white truncate block">Staff Member</span>
+            <span id="bpm-prep-date" class="text-[10px] text-slate-400 block mt-0.5">15/09/2026</span>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Use By / Expiry</span>
+            <span id="bpm-useby-date" class="text-sm font-black text-amber-300 block">19/09/2026</span>
+            <span id="bpm-storage-cond" class="text-[10px] text-slate-400 block mt-0.5">Refrigerated (&lt;5°C)</span>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Inventory Status</span>
+            <div id="bpm-depletion-status-indicator" class="flex items-center gap-1.5 mt-1">
+              <!-- e.g. Depleted vs Not Depleted -->
+            </div>
+            <span id="bpm-cost-sub" class="text-[10px] text-emerald-400 font-bold block mt-0.5">Est. Cost: £6.45</span>
+          </div>
+        </div>
+
+        <!-- Portions & Ingredient Depletion Breakdown Table -->
+        <div class="space-y-2">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div>
+              <h4 class="font-bold text-white text-sm heading-font flex items-center gap-2">
+                <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i>
+                Detailed Portion Usage & Inventory Depletion
+              </h4>
+              <p class="text-[11px] text-slate-400">Exact portion required per single batch vs total portion used for this production run, with corresponding stock pot deductions.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
+                Linked to Store Stock Pots
+              </span>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 overflow-hidden bg-black/30">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-white/5 border-b border-white/10 text-[10px] uppercase font-bold text-slate-300 tracking-wider">
+                    <th class="p-3">Raw Ingredient / Item</th>
+                    <th class="p-3 text-center bg-amber-500/10 text-amber-300 font-black">Portion Per 1 Batch</th>
+                    <th class="p-3 text-center bg-emerald-500/10 text-emerald-300 font-black">Total Portion Used (<span id="bpm-multiplier-header">1x</span>)</th>
+                    <th class="p-3 text-center">Stock Pot Deduction</th>
+                    <th class="p-3 text-center">Inventory Pot Level</th>
+                  </tr>
+                </thead>
+                <tbody id="bpm-ingredients-tbody" class="divide-y divide-white/5">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory Depletion Action Callout Banner -->
+        <div id="bpm-depletion-banner" class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900/60 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="package-check" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h5 id="bpm-banner-title" class="font-bold text-white text-xs">Deplete Store Inventory</h5>
+              <p id="bpm-banner-desc" class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                Deduct the exact total portions used above from your theoretical stock pots in the Inventory Dashboard.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button id="bpm-deplete-action-btn" onclick="triggerBatchInventoryDepletion()" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+              <span>Deplete Inventory Now</span>
+            </button>
+            <a href="inventory.html" target="_blank" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              <span>Open Stock Pots</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-3.5 border-t border-white/10 bg-black/40 flex justify-between items-center text-xs text-slate-400">
+        <span class="flex items-center gap-1.5">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+          HACCP Food Safety & Inventory Traceability Verified
+        </span>
+        <button onclick="closeBatchPortionModal()" class="px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold transition-all">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="kitchen-toast" class="fixed bottom-6 right-6 z-50 px-4 py-3 bg-[#0c2e22]/95 text-white text-xs font-bold rounded-2xl border border-amber-500/40 shadow-2xl backdrop-blur-md flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none"></div>
 
@@ -661,13 +803,115 @@
       } catch (e) {}
     }
 
+    const DEFAULT_SAMPLE_PRODUCTION_LOGS = [
+      {
+        log_id: "BATCH-260914-101",
+        branch_id: "MK-01",
+        recipe_id: "sop-sub-1",
+        recipe_name: "Signature Cookie Dough Base",
+        recipe_type: "Sub-Recipe",
+        batches_produced: 2,
+        yield_output: "2x [10 Portions (1.2 kg)] (20 Portions Total)",
+        prep_date: "2026-09-14",
+        use_by_date: "2026-09-19",
+        staff_name: "Saikishore",
+        core_temp: "3.5 °C",
+        storage_condition: "Refrigerated (<5°C)",
+        total_cost: "12.90",
+        inventory_depleted: true,
+        depleted_at: "2026-09-14T14:30:00.000Z",
+        deducted_ingredients: [
+          {
+            name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg",
+            raw_qty_per_batch: 300,
+            portion_per_batch: "300 g",
+            total_qty_used: 600,
+            total_portion_used: "600 g",
+            unit: "g",
+            deducted: 0.60,
+            deducted_unit: "kg",
+            isSubRecipe: false
+          },
+          {
+            name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g",
+            raw_qty_per_batch: 200,
+            portion_per_batch: "200 g",
+            total_qty_used: 400,
+            total_portion_used: "400 g",
+            unit: "g",
+            deducted: 0.40,
+            deducted_unit: "kg",
+            isSubRecipe: false
+          },
+          {
+            name: "Biscoff Biscuit Crumbs 750g",
+            raw_qty_per_batch: 150,
+            portion_per_batch: "150 g",
+            total_qty_used: 300,
+            total_portion_used: "300 g",
+            unit: "g",
+            deducted: 0.30,
+            deducted_unit: "kg",
+            isSubRecipe: false
+          }
+        ],
+        timestamp: "2026-09-14T14:30:00.000Z"
+      },
+      {
+        log_id: "BATCH-260915-204",
+        branch_id: "MK-01",
+        recipe_id: "sop-sub-2",
+        recipe_name: "Triple Chocolate Brownie Batter",
+        recipe_type: "Sub-Recipe",
+        batches_produced: 1,
+        yield_output: "1x [1 Tray (12 Slices)]",
+        prep_date: "2026-09-15",
+        use_by_date: "2026-09-19",
+        staff_name: "Saikishore",
+        core_temp: "4.0 °C",
+        storage_condition: "Refrigerated (<5°C)",
+        total_cost: "8.20",
+        inventory_depleted: true,
+        depleted_at: "2026-09-15T10:15:00.000Z",
+        deducted_ingredients: [
+          {
+            name: "Cadbury Drinking Hot Chocolate Cocoa Powder Large Tub 2KG",
+            raw_qty_per_batch: 250,
+            portion_per_batch: "250 g",
+            total_qty_used: 250,
+            total_portion_used: "250 g",
+            unit: "g",
+            deducted: 0.25,
+            deducted_unit: "kg",
+            isSubRecipe: false
+          },
+          {
+            name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g",
+            raw_qty_per_batch: 350,
+            portion_per_batch: "350 g",
+            total_qty_used: 350,
+            total_portion_used: "350 g",
+            unit: "g",
+            deducted: 0.35,
+            deducted_unit: "kg",
+            isSubRecipe: false
+          }
+        ],
+        timestamp: "2026-09-15T10:15:00.000Z"
+      }
+    ];
+
     function getProductionLogs() {
       try {
         const stored = localStorage.getItem('ts_production_logs');
-        return stored ? JSON.parse(stored) : [];
-      } catch (e) {
-        return [];
-      }
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+      // Pre-seed with sample batches so portion-per-batch features are immediately visible
+      saveProductionLogs(DEFAULT_SAMPLE_PRODUCTION_LOGS);
+      return DEFAULT_SAMPLE_PRODUCTION_LOGS;
     }
 
     function saveProductionLogs(logs) {
@@ -948,24 +1192,35 @@
           onHandStock = stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
         }
 
-        const isLow = hasMatchedCatalog && onHandStock < (scaledQty > 10 ? scaledQty / 100 : scaledQty); // heuristic check
+        const deductionAmount = scaledQty > 50 ? parseFloat((scaledQty / 1000).toFixed(2)) : scaledQty;
+        const deductedUnit = scaledQty > 50 ? 'kg' : unit;
 
         return `
-          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-3 text-xs">
+          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:border-amber-500/30 transition-all">
             <div class="flex-1 overflow-hidden">
               <p class="font-bold text-white truncate flex items-center gap-1.5">
                 ${ing.isSubRecipe ? '<span class="px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-300 text-[9px] font-extrabold">SUB</span>' : ''}
                 ${ing.name}
               </p>
-              <p class="text-[10px] text-slate-400 mt-0.5">
-                On-hand pot: <strong class="${onHandStock > 0 ? 'text-emerald-400' : 'text-slate-500'}">${onHandStock.toFixed(1)} units</strong>
-              </p>
+              <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
+                <span class="text-amber-300 font-bold">Portion / Batch: <strong class="text-white">${rawQty} ${unit}</strong></span>
+                <span class="text-slate-500">•</span>
+                <span>Pot: <strong class="${onHandStock > 0 ? 'text-emerald-400' : 'text-slate-500'}">${onHandStock.toFixed(1)} units</strong></span>
+              </div>
             </div>
-            <div class="text-right shrink-0">
-              <span class="text-sm font-black text-amber-400">${scaledQty}</span>
-              <span class="text-[10px] text-slate-400 font-bold ml-0.5">${unit}</span>
-              <div class="mt-0.5">
-                <span class="px-2 py-0.5 rounded-md text-[9px] font-bold ${onHandStock > 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-white/10 text-slate-400'}">
+            <div class="flex items-center gap-3 shrink-0 self-end sm:self-center">
+              <div class="text-right">
+                <div class="flex items-center gap-1 justify-end">
+                  <span class="text-sm font-black text-emerald-400">${scaledQty}</span>
+                  <span class="text-[10px] text-slate-400 font-bold">${unit}</span>
+                  <span class="text-[10px] text-slate-400 font-normal">(${batchMultiplier}x)</span>
+                </div>
+                <div class="text-[10px] text-rose-400 font-mono font-bold mt-0.5">
+                  -${deductionAmount} ${deductedUnit} stock pot
+                </div>
+              </div>
+              <div class="shrink-0">
+                <span class="px-2 py-1 rounded-lg text-[9px] font-bold ${onHandStock > 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-white/10 text-slate-400'}">
                   ${onHandStock > 0 ? 'Deductible' : 'Available'}
                 </span>
               </div>
@@ -1041,20 +1296,36 @@
       (currentSelectedRecipe.ingredients || []).forEach(ing => {
         const rawQty = parseFloat(ing.quantity || ing.qty || 0);
         const scaledQty = parseFloat((rawQty * batchQty).toFixed(2));
+        const unit = ing.unit || 'g';
         const matchedItem = catalogData.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim());
 
+        const deductionAmount = scaledQty > 50 ? parseFloat((scaledQty / 1000).toFixed(2)) : scaledQty;
+        const deductedUnit = scaledQty > 50 ? 'kg' : unit;
+
+        let onHandStock = 0;
+        let matchedId = null;
+
         if (matchedItem) {
+          matchedId = matchedItem.id;
           const cur = stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
-          // Deduct quantity (converted if necessary)
-          const deductionAmount = scaledQty > 50 ? scaledQty / 1000 : scaledQty; // kg vs units approximation
+          onHandStock = cur;
           stockLevels[matchedItem.id] = Math.max(0, parseFloat((cur - deductionAmount).toFixed(2)));
-          deductedIngredients.push({
-            id: matchedItem.id,
-            name: matchedItem.name,
-            deducted: deductionAmount,
-            unit: ing.unit || 'g'
-          });
         }
+
+        deductedIngredients.push({
+          id: matchedId,
+          name: ing.name,
+          raw_qty_per_batch: rawQty,
+          portion_per_batch: `${rawQty} ${unit}`,
+          total_qty_used: scaledQty,
+          total_portion_used: `${scaledQty} ${unit}`,
+          unit: unit,
+          isSubRecipe: !!ing.isSubRecipe,
+          deducted: deductionAmount,
+          deducted_unit: deductedUnit,
+          onHandBefore: onHandStock,
+          onHandAfter: Math.max(0, parseFloat((onHandStock - deductionAmount).toFixed(2)))
+        });
       });
 
       saveStockLevels(stockLevels);
@@ -1074,6 +1345,8 @@
         core_temp: temp ? `${temp} °C` : 'N/A',
         storage_condition: storage,
         total_cost: (parseFloat(currentSelectedRecipe.totalCost || 0) * batchQty).toFixed(2),
+        inventory_depleted: true,
+        depleted_at: new Date().toISOString(),
         deducted_ingredients: deductedIngredients,
         timestamp: new Date().toISOString()
       };
@@ -1106,14 +1379,294 @@
       if (window.lucide) lucide.createIcons();
 
       showToast(`✅ Batch ${batchCode} Logged! Raw ingredients depleted from Stock Pots.`);
-      openLabelModal(newBatchLog);
+      openBatchPortionDetailModal(batchCode);
       updateBatchHistoryBadge();
       generateNewBatchCode();
     }
 
     // -------------------------------------------------------------
-    // BATCH HISTORY & REVERT ACTION
+    // BATCH HISTORY & DETAILED PORTION INSPECTION
     // -------------------------------------------------------------
+    function getBatchPortionDetails(log) {
+      if (!log) return [];
+      const batchesCount = parseFloat(log.batches_produced) || 1;
+      const stockLevels = getStockLevels();
+
+      // If already contains full rich deducted_ingredients
+      if (Array.isArray(log.deducted_ingredients) && log.deducted_ingredients.length > 0) {
+        return log.deducted_ingredients.map(ing => {
+          const rawQty = ing.raw_qty_per_batch !== undefined 
+            ? parseFloat(ing.raw_qty_per_batch) 
+            : (parseFloat(ing.deducted || 0) > 0 ? parseFloat((ing.deducted * (ing.deducted_unit === 'kg' ? 1000 : 1) / batchesCount).toFixed(1)) : 0);
+          const totalQty = ing.total_qty_used !== undefined 
+            ? parseFloat(ing.total_qty_used) 
+            : parseFloat((rawQty * batchesCount).toFixed(1));
+          const unit = ing.unit || (totalQty > 50 ? 'g' : 'unit');
+          const deductionAmount = ing.deducted !== undefined 
+            ? parseFloat(ing.deducted) 
+            : (totalQty > 50 ? parseFloat((totalQty / 1000).toFixed(2)) : totalQty);
+          const deductedUnit = ing.deducted_unit || (totalQty > 50 ? 'kg' : unit);
+
+          const matchedItem = catalogData.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim()) ||
+                              (ing.id ? catalogData.find(c => String(c.id) === String(ing.id)) : null);
+
+          let currentPotLevel = 0;
+          let hasMatchedPot = false;
+          if (matchedItem) {
+            hasMatchedPot = true;
+            currentPotLevel = stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
+          }
+
+          return {
+            id: matchedItem ? matchedItem.id : (ing.id || null),
+            name: ing.name,
+            isSubRecipe: !!ing.isSubRecipe,
+            raw_qty_per_batch: rawQty,
+            portion_per_batch: ing.portion_per_batch || `${rawQty} ${unit}`,
+            total_qty_used: totalQty,
+            total_portion_used: ing.total_portion_used || `${totalQty} ${unit}`,
+            unit: unit,
+            deducted: deductionAmount,
+            deducted_unit: deductedUnit,
+            hasMatchedPot: hasMatchedPot,
+            currentPotLevel: currentPotLevel,
+            projectedPotLevel: Math.max(0, parseFloat((currentPotLevel - deductionAmount).toFixed(2)))
+          };
+        });
+      }
+
+      // Fallback: lookup recipe from allSOPRecipes or default sample recipes
+      const recipe = (allSOPRecipes || []).find(r => r.id === log.recipe_id || r.title === log.recipe_name);
+      if (recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
+        return recipe.ingredients.map(ing => {
+          const rawQty = parseFloat(ing.quantity || ing.qty || 0);
+          const totalQty = parseFloat((rawQty * batchesCount).toFixed(2));
+          const unit = ing.unit || 'g';
+          const deductionAmount = totalQty > 50 ? parseFloat((totalQty / 1000).toFixed(2)) : totalQty;
+          const deductedUnit = totalQty > 50 ? 'kg' : unit;
+
+          const matchedItem = catalogData.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim());
+          let currentPotLevel = 0;
+          let hasMatchedPot = false;
+          if (matchedItem) {
+            hasMatchedPot = true;
+            currentPotLevel = stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
+          }
+
+          return {
+            id: matchedItem ? matchedItem.id : null,
+            name: ing.name,
+            isSubRecipe: !!ing.isSubRecipe,
+            raw_qty_per_batch: rawQty,
+            portion_per_batch: `${rawQty} ${unit}`,
+            total_qty_used: totalQty,
+            total_portion_used: `${totalQty} ${unit}`,
+            unit: unit,
+            deducted: deductionAmount,
+            deducted_unit: deductedUnit,
+            hasMatchedPot: hasMatchedPot,
+            currentPotLevel: currentPotLevel,
+            projectedPotLevel: Math.max(0, parseFloat((currentPotLevel - deductionAmount).toFixed(2)))
+          };
+        });
+      }
+
+      return [];
+    }
+
+    let currentBatchModalLog = null;
+
+    function openBatchPortionDetailModal(logId) {
+      const logs = getProductionLogs();
+      const log = logs.find(l => l.log_id === logId);
+      if (!log) {
+        showToast("⚠️ Production batch not found.");
+        return;
+      }
+      currentBatchModalLog = log;
+
+      // Header
+      document.getElementById('bpm-batch-code').innerText = log.log_id;
+      document.getElementById('bpm-recipe-title').innerText = log.recipe_name;
+      
+      const isSub = log.recipe_type === 'Sub-Recipe';
+      const typeBadge = document.getElementById('bpm-recipe-badge');
+      typeBadge.innerText = isSub ? 'Sub-Recipe (Prep)' : (log.recipe_type || 'Main Recipe');
+      typeBadge.className = isSub 
+        ? 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-teal-500/20 text-teal-300 border border-teal-500/30'
+        : 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30';
+
+      const isExpired = new Date(log.use_by_date) < new Date();
+      const statusBadge = document.getElementById('bpm-status-badge');
+      statusBadge.innerText = isExpired ? 'Expired' : 'Fresh & Active';
+      statusBadge.className = isExpired
+        ? 'px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-500/20 text-red-300 border border-red-500/30'
+        : 'px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+
+      // Metrics
+      const batches = parseFloat(log.batches_produced) || 1;
+      document.getElementById('bpm-batches-count').innerText = `${batches} ${batches === 1 ? 'Batch' : 'Batches'}`;
+      document.getElementById('bpm-yield-sub').innerText = log.yield_output || `${batches} batches produced`;
+      document.getElementById('bpm-staff-name').innerText = log.staff_name || 'Kitchen Staff';
+      document.getElementById('bpm-prep-date').innerText = `Prepared: ${log.prep_date || 'N/A'}`;
+      document.getElementById('bpm-useby-date').innerText = log.use_by_date || 'N/A';
+      document.getElementById('bpm-storage-cond').innerText = `${log.storage_condition || 'Refrigerated'} (${log.core_temp || 'Normal'})`;
+      document.getElementById('bpm-cost-sub').innerText = `Est. Cost: £${parseFloat(log.total_cost || 0).toFixed(2)}`;
+
+      // Depletion status indicator
+      const isDepleted = log.inventory_depleted !== false;
+      const depletionIndicator = document.getElementById('bpm-depletion-status-indicator');
+      if (isDepleted) {
+        depletionIndicator.innerHTML = `
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+            <i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-400"></i> Depleted from Pots
+          </span>
+        `;
+      } else {
+        depletionIndicator.innerHTML = `
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+            <i data-lucide="alert-triangle" class="w-3 h-3 text-amber-400"></i> Not Depleted Yet
+          </span>
+        `;
+      }
+
+      // Multiplier header
+      document.getElementById('bpm-multiplier-header').innerText = `${batches}x Run`;
+
+      // Detailed Ingredients & Portions Table
+      const details = getBatchPortionDetails(log);
+      const tbody = document.getElementById('bpm-ingredients-tbody');
+
+      if (details.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="p-6 text-center text-slate-400 text-xs">
+              No raw ingredient portion data recorded for this batch.
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = details.map((ing, idx) => {
+          return `
+            <tr class="hover:bg-white/[0.02] transition-colors">
+              <td class="p-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500 font-mono text-[10px]">#${idx + 1}</span>
+                  <div class="font-bold text-white text-xs">
+                    ${ing.name}
+                  </div>
+                  ${ing.isSubRecipe ? '<span class="px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-300 text-[9px] font-black">SUB-RECIPE</span>' : ''}
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                  <span>Catalog Linked: <strong class="${ing.hasMatchedPot ? 'text-emerald-400' : 'text-slate-500'}">${ing.hasMatchedPot ? 'Yes (Wholesale ID ' + ing.id + ')' : 'Custom Recipe Item'}</strong></span>
+                </div>
+              </td>
+
+              <!-- Portion per 1 Batch (THE KEY USER REQUIREMENT) -->
+              <td class="p-3 text-center bg-amber-500/[0.06] border-x border-white/5">
+                <span class="font-black text-amber-300 text-sm font-mono">${ing.raw_qty_per_batch}</span>
+                <span class="text-[11px] font-bold text-amber-200/80 ml-0.5">${ing.unit}</span>
+                <span class="block text-[9px] uppercase font-bold text-slate-400 mt-0.5">per batch</span>
+              </td>
+
+              <!-- Total Portion Used -->
+              <td class="p-3 text-center bg-emerald-500/[0.06] border-r border-white/5">
+                <span class="font-black text-emerald-300 text-sm font-mono">${ing.total_qty_used}</span>
+                <span class="text-[11px] font-bold text-emerald-200/80 ml-0.5">${ing.unit}</span>
+                <span class="block text-[9px] font-bold text-slate-400 mt-0.5">(${ing.raw_qty_per_batch} × ${batches})</span>
+              </td>
+
+              <!-- Stock Pot Deduction -->
+              <td class="p-3 text-center font-mono">
+                <span class="px-2 py-0.5 rounded-lg text-xs font-black bg-rose-500/20 text-rose-300 border border-rose-500/30 inline-block">
+                  -${ing.deducted} ${ing.deducted_unit}
+                </span>
+              </td>
+
+              <!-- Inventory Pot Level -->
+              <td class="p-3 text-center">
+                ${ing.hasMatchedPot ? `
+                  <div class="inline-flex flex-col items-center">
+                    <span class="text-xs font-black ${ing.currentPotLevel <= 2 ? 'text-rose-400' : 'text-emerald-400'}">
+                      ${ing.currentPotLevel.toFixed(1)} units
+                    </span>
+                    <span class="text-[9px] text-slate-400">Live Pot</span>
+                  </div>
+                ` : `
+                  <span class="text-[10px] text-slate-500 italic">No Pot Assigned</span>
+                `}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Depletion Action Banner
+      const btnDeplete = document.getElementById('bpm-deplete-action-btn');
+      const bannerTitle = document.getElementById('bpm-banner-title');
+      const bannerDesc = document.getElementById('bpm-banner-desc');
+
+      if (isDepleted) {
+        bannerTitle.innerText = "Stock Pots Already Depleted";
+        bannerDesc.innerText = `This production batch deducted ${details.length} ingredients from your store inventory on ${log.depleted_at ? new Date(log.depleted_at).toLocaleDateString() : log.prep_date}. You can re-deduct or restore levels anytime.`;
+        btnDeplete.className = "flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5 border border-white/15";
+        btnDeplete.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-amber-400"></i> <span>Re-Apply Depletion</span>`;
+      } else {
+        bannerTitle.innerText = "Deplete Store Inventory";
+        bannerDesc.innerText = `Deduct the exact total portions used (${details.length} ingredients) from your live theoretical stock pots in the Inventory Dashboard.`;
+        btnDeplete.className = "flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5";
+        btnDeplete.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i> <span>Deplete Inventory Now</span>`;
+      }
+
+      document.getElementById('batch-portion-modal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeBatchPortionModal() {
+      document.getElementById('batch-portion-modal').classList.add('hidden');
+    }
+
+    function triggerBatchInventoryDepletion() {
+      if (!currentBatchModalLog) return;
+      const logId = currentBatchModalLog.log_id;
+      const logs = getProductionLogs();
+      const target = logs.find(l => l.log_id === logId);
+      if (!target) return;
+
+      const details = getBatchPortionDetails(target);
+      if (details.length === 0) {
+        showToast("⚠️ No ingredient details found to deplete.");
+        return;
+      }
+
+      const stockLevels = getStockLevels();
+      let deductedCount = 0;
+
+      details.forEach(item => {
+        if (item.id && stockLevels[item.id] !== undefined) {
+          const cur = parseFloat(stockLevels[item.id]) || 0;
+          stockLevels[item.id] = Math.max(0, parseFloat((cur - item.deducted).toFixed(2)));
+          deductedCount++;
+        }
+      });
+
+      saveStockLevels(stockLevels);
+
+      target.inventory_depleted = true;
+      target.depleted_at = new Date().toISOString();
+      target.deducted_ingredients = details;
+      saveProductionLogs(logs);
+
+      showToast(`✅ Successfully depleted inventory for Batch ${logId}! Updated ${deductedCount} stock pots.`);
+      renderBatchHistory();
+      openBatchPortionDetailModal(logId);
+    }
+
+    function printBatchPortionSheet() {
+      if (!currentBatchModalLog) return;
+      window.print();
+    }
+
     function renderBatchHistory() {
       const container = document.getElementById('batch-history-container');
       const search = (document.getElementById('history-search')?.value || '').toLowerCase().trim();
@@ -1148,38 +1701,65 @@
       container.innerHTML = filtered.map(log => {
         const isExpired = new Date(log.use_by_date) < new Date();
         const isSub = log.recipe_type === 'Sub-Recipe';
+        const isDepleted = log.inventory_depleted !== false;
+        const details = getBatchPortionDetails(log);
+        const ingCount = details.length;
+        const ingSummary = details.slice(0, 3).map(d => `${d.name.split(' ')[0]}: ${d.portion_per_batch}`).join(', ');
 
         return `
-          <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card-hover">
-            <div class="space-y-1">
-              <div class="flex items-center gap-2">
-                <span class="font-mono font-black text-amber-400 text-sm">${log.log_id}</span>
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                  isSub ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                }">${log.recipe_type || 'Main Recipe'}</span>
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                  isExpired ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                }">${isExpired ? 'Expired' : 'Fresh & Active'}</span>
+          <div onclick="openBatchPortionDetailModal('${log.log_id}')" class="glass-panel p-4 sm:p-5 rounded-2xl border border-white/10 hover:border-amber-400/50 hover:bg-white/[0.05] transition-all cursor-pointer flex flex-col gap-3.5 group shadow-lg">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="font-mono font-black text-amber-400 text-sm group-hover:text-amber-300 transition-colors">${log.log_id}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                    isSub ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  }">${log.recipe_type || 'Main Recipe'}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                    isExpired ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                  }">${isExpired ? 'Expired' : 'Fresh & Active'}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                    isDepleted ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1'
+                  }">
+                    <i data-lucide="${isDepleted ? 'check-circle-2' : 'alert-triangle'}" class="w-2.5 h-2.5"></i>
+                    ${isDepleted ? 'Stock Depleted' : 'Stock Not Depleted'}
+                  </span>
+                </div>
+                <h4 class="font-bold text-white text-sm sm:text-base heading-font group-hover:text-amber-300 transition-colors">${log.recipe_name}</h4>
+                <p class="text-xs text-slate-300">
+                  <strong class="text-amber-300">${log.batches_produced} Batches</strong> (${log.yield_output}) • Prepared by <strong class="text-white">${log.staff_name}</strong> on ${log.prep_date}
+                </p>
+                <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 pt-1">
+                  <span>Use By: <strong class="${isExpired ? 'text-red-400' : 'text-amber-300'}">${log.use_by_date}</strong></span>
+                  <span>Temp: <strong class="text-white">${log.core_temp || 'N/A'}</strong></span>
+                  <span>Storage: <strong class="text-slate-300">${log.storage_condition || 'Refrigerated'}</strong></span>
+                </div>
               </div>
-              <h4 class="font-bold text-white text-sm sm:text-base heading-font">${log.recipe_name}</h4>
-              <p class="text-xs text-slate-400">
-                <strong>${log.batches_produced} Batches</strong> (${log.yield_output}) • Prepared by <strong class="text-white">${log.staff_name}</strong> on ${log.prep_date}
-              </p>
-              <div class="flex items-center gap-3 text-[11px] text-slate-400 pt-1">
-                <span>Use By: <strong class="${isExpired ? 'text-red-400' : 'text-amber-300'}">${log.use_by_date}</strong></span>
-                <span>Temp: <strong class="text-white">${log.core_temp || 'N/A'}</strong></span>
-                <span>Storage: <strong class="text-slate-300">${log.storage_condition || 'Refrigerated'}</strong></span>
+
+              <!-- Actions -->
+              <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <button onclick="event.stopPropagation(); openBatchPortionDetailModal('${log.log_id}')" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20">
+                  <i data-lucide="scale" class="w-3.5 h-3.5"></i> Portion Details
+                </button>
+                <button onclick="event.stopPropagation(); openLabelModal(${JSON.stringify(log).replace(/"/g, '&quot;')})" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-amber-300 border border-white/10 text-xs font-bold transition-all flex items-center gap-1.5">
+                  <i data-lucide="printer" class="w-3.5 h-3.5"></i> Label
+                </button>
+                <button onclick="event.stopPropagation(); revertProductionBatch('${log.log_id}')" title="Revert Batch & Restore Stock" class="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-all flex items-center gap-1">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                </button>
               </div>
             </div>
 
-            <!-- Actions -->
-            <div class="flex items-center gap-2 self-end sm:self-center">
-              <button onclick='openLabelModal(${JSON.stringify(log)})' class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-amber-300 border border-white/10 text-xs font-bold transition-all flex items-center gap-1.5">
-                <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print Sticker
-              </button>
-              <button onclick="revertProductionBatch('${log.log_id}')" title="Revert Batch & Restore Stock" class="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-all flex items-center gap-1">
-                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Revert
-              </button>
+            <!-- Clickable Portion Preview Strip -->
+            <div class="pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-1.5 text-slate-300 text-[11px]">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span><strong>${ingCount} Ingredients Used:</strong> <span class="text-slate-400">${ingSummary}${ingCount > 3 ? '...' : ''}</span></span>
+              </div>
+              <span class="text-[11px] font-bold text-amber-400 group-hover:text-amber-300 flex items-center gap-1">
+                <span>View portion per batch & inventory depletions</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform"></i>
+              </span>
             </div>
           </div>
         `;

@@ -401,6 +401,13 @@
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
           <span class="hidden md:inline">Refresh Catalog</span>
         </button>
+
+        <!-- Kitchen Production Batches Button -->
+        <button type="button" onclick="openKitchenBatchesModal()" title="View Kitchen Production Batches, detailed portions used, and deplete inventory" class="w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-emerald-500/20 hover:from-amber-500/30 hover:to-emerald-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 shadow-sm">
+          <i data-lucide="chef-hat" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Production Batches</span>
+          <span id="inv-batch-count-badge" class="px-1.5 py-0.2 rounded bg-amber-400/30 text-amber-200 text-[10px] font-black">2</span>
+        </button>
       </div>
 
       <!-- Edit Mode Indicator Banner -->
@@ -1010,6 +1017,112 @@
           Done
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- KITCHEN PRODUCTION BATCHES & DEPLETIONS MODAL -->
+  <div id="kitchen-batches-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="glass-panel bg-[#0b221a]/95 border border-amber-500/40 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-black/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center text-xl shrink-0">
+            <i data-lucide="chef-hat" class="w-5 h-5 text-amber-400"></i>
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-white heading-font">Kitchen Production Batches & Inventory Depletion</h3>
+            <p class="text-xs text-slate-300">Click any batch below to see exact portions used per batch and deplete stock pot levels in 1 click.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <a href="kitchen_ops.html" target="_blank" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Kitchen Terminal</span>
+          </a>
+          <button onclick="closeKitchenBatchesModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body: Batches List & Selected Batch Detail -->
+      <div class="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+        
+        <!-- Batch List Container -->
+        <div>
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Available Production Batches:</span>
+            <span class="text-[11px] text-amber-300 font-medium">Click a batch to inspect portions used</span>
+          </div>
+          <div id="inv-batches-cards-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Selected Batch Detail Box -->
+        <div id="inv-selected-batch-detail-box" class="hidden p-5 rounded-2xl bg-black/40 border border-amber-500/30 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span id="inv-detail-batch-code" class="font-mono font-black text-amber-300 text-sm">BATCH-CODE</span>
+                <span id="inv-detail-batch-type" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-teal-500/20 text-teal-300 border border-teal-500/30">Sub-Recipe</span>
+                <span id="inv-detail-depleted-tag" class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Stock Depleted</span>
+              </div>
+              <h4 id="inv-detail-recipe-name" class="font-bold text-white text-base heading-font">Recipe Title</h4>
+              <p class="text-[11px] text-slate-400">
+                Produced: <strong id="inv-detail-batch-count" class="text-amber-300">1 Batch</strong> (<span id="inv-detail-yield-text">10 portions</span>) • Prepared by <strong id="inv-detail-staff" class="text-white">Staff</strong> on <span id="inv-detail-date">Date</span>
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="inv-btn-apply-depletion" onclick="triggerDepletionFromInventoryModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                <span>Deplete Stock Pots</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Portions Table -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <h5 class="font-bold text-white text-xs flex items-center gap-1.5">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-amber-400"></i>
+                Portion Usage Per Batch & Stock Pot Deductions
+              </h5>
+              <span class="text-[10px] text-slate-400">Direct theoretical stock deduction</span>
+            </div>
+
+            <div class="rounded-xl border border-white/10 overflow-hidden bg-white/[0.02]">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-white/5 border-b border-white/10 text-[10px] uppercase font-bold text-slate-300 tracking-wider">
+                    <th class="p-2.5">Ingredient</th>
+                    <th class="p-2.5 text-center bg-amber-500/10 text-amber-300">Portion Per 1 Batch</th>
+                    <th class="p-2.5 text-center bg-emerald-500/10 text-emerald-300">Total Portion Used</th>
+                    <th class="p-2.5 text-center">Pot Deduction</th>
+                    <th class="p-2.5 text-center">Live Stock Pot</th>
+                  </tr>
+                </thead>
+                <tbody id="inv-batch-portions-tbody" class="divide-y divide-white/5">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3.5 border-t border-white/10 bg-black/40 flex justify-between items-center text-xs text-slate-400">
+        <span>Treat Street Integrated Kitchen & Inventory Sync</span>
+        <button onclick="closeKitchenBatchesModal()" class="px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold transition-all">
+          Close
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -3938,7 +4051,310 @@
       }
     }
 
+    // -------------------------------------------------------------
+    // KITCHEN PRODUCTION BATCHES & DEPLETION INTEGRATION
+    // -------------------------------------------------------------
+    let selectedInvBatch = null;
+
+    function getKitchenProductionLogs() {
+      try {
+        const stored = localStorage.getItem('ts_production_logs');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+
+      // Fallback default sample batches if none in storage
+      return [
+        {
+          log_id: "BATCH-260914-101",
+          branch_id: "MK-01",
+          recipe_name: "Signature Cookie Dough Base",
+          recipe_type: "Sub-Recipe",
+          batches_produced: 2,
+          yield_output: "2x [10 Portions (1.2 kg)] (20 Portions Total)",
+          prep_date: "2026-09-14",
+          use_by_date: "2026-09-19",
+          staff_name: "Saikishore",
+          core_temp: "3.5 °C",
+          storage_condition: "Refrigerated (<5°C)",
+          total_cost: "12.90",
+          inventory_depleted: true,
+          depleted_at: "2026-09-14T14:30:00.000Z",
+          deducted_ingredients: [
+            {
+              name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg",
+              raw_qty_per_batch: 300,
+              portion_per_batch: "300 g",
+              total_qty_used: 600,
+              total_portion_used: "600 g",
+              unit: "g",
+              deducted: 0.60,
+              deducted_unit: "kg"
+            },
+            {
+              name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g",
+              raw_qty_per_batch: 200,
+              portion_per_batch: "200 g",
+              total_qty_used: 400,
+              total_portion_used: "400 g",
+              unit: "g",
+              deducted: 0.40,
+              deducted_unit: "kg"
+            },
+            {
+              name: "Biscoff Biscuit Crumbs 750g",
+              raw_qty_per_batch: 150,
+              portion_per_batch: "150 g",
+              total_qty_used: 300,
+              total_portion_used: "300 g",
+              unit: "g",
+              deducted: 0.30,
+              deducted_unit: "kg"
+            }
+          ]
+        },
+        {
+          log_id: "BATCH-260915-204",
+          branch_id: "MK-01",
+          recipe_name: "Triple Chocolate Brownie Batter",
+          recipe_type: "Sub-Recipe",
+          batches_produced: 1,
+          yield_output: "1x [1 Tray (12 Slices)]",
+          prep_date: "2026-09-15",
+          use_by_date: "2026-09-19",
+          staff_name: "Saikishore",
+          core_temp: "4.0 °C",
+          storage_condition: "Refrigerated (<5°C)",
+          total_cost: "8.20",
+          inventory_depleted: true,
+          depleted_at: "2026-09-15T10:15:00.000Z",
+          deducted_ingredients: [
+            {
+              name: "Cadbury Drinking Hot Chocolate Cocoa Powder Large Tub 2KG",
+              raw_qty_per_batch: 250,
+              portion_per_batch: "250 g",
+              total_qty_used: 250,
+              total_portion_used: "250 g",
+              unit: "g",
+              deducted: 0.25,
+              deducted_unit: "kg"
+            },
+            {
+              name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g",
+              raw_qty_per_batch: 350,
+              portion_per_batch: "350 g",
+              total_qty_used: 350,
+              total_portion_used: "350 g",
+              unit: "g",
+              deducted: 0.35,
+              deducted_unit: "kg"
+            }
+          ]
+        }
+      ];
+    }
+
+    function updateInvBatchBadge() {
+      const logs = getKitchenProductionLogs();
+      const badge = document.getElementById('inv-batch-count-badge');
+      if (badge) badge.innerText = logs.length;
+    }
+
+    function openKitchenBatchesModal() {
+      const modal = document.getElementById('kitchen-batches-modal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      renderKitchenBatchesCards();
+      const logs = getKitchenProductionLogs();
+      if (logs.length > 0) {
+        selectBatchForInventoryDetail(logs[0].log_id);
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeKitchenBatchesModal() {
+      const modal = document.getElementById('kitchen-batches-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renderKitchenBatchesCards() {
+      const container = document.getElementById('inv-batches-cards-list');
+      if (!container) return;
+      const logs = getKitchenProductionLogs();
+      updateInvBatchBadge();
+
+      if (logs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 p-4 text-center col-span-2">No production batches logged yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = logs.map(b => {
+        const isDepleted = b.inventory_depleted !== false;
+        const isSelected = selectedInvBatch && selectedInvBatch.log_id === b.log_id;
+        const borderClass = isSelected ? 'border-amber-400 bg-amber-500/10' : 'border-white/10 bg-white/[0.03] hover:border-amber-500/40';
+
+        return `
+          <div onclick="selectBatchForInventoryDetail('${b.log_id}')" class="p-3 rounded-xl border ${borderClass} cursor-pointer transition-all flex flex-col justify-between gap-2 group">
+            <div>
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <span class="font-mono font-bold text-amber-300 text-xs">${b.log_id}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${isDepleted ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
+                  ${isDepleted ? 'Depleted' : 'Not Depleted'}
+                </span>
+              </div>
+              <h5 class="font-bold text-white text-xs truncate group-hover:text-amber-300 transition-colors">${b.recipe_name}</h5>
+              <p class="text-[10px] text-slate-400 mt-0.5">
+                <strong class="text-slate-200">${b.batches_produced} Batches</strong> • Prepared ${b.prep_date}
+              </p>
+            </div>
+            <div class="pt-1.5 border-t border-white/5 flex items-center justify-between text-[10px] text-amber-400 font-bold">
+              <span>View Portions & Deplete</span>
+              <i data-lucide="chevron-right" class="w-3 h-3 group-hover:translate-x-0.5 transition-transform"></i>
+            </div>
+          </div>
+        `;
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function selectBatchForInventoryDetail(batchId) {
+      const logs = getKitchenProductionLogs();
+      const b = logs.find(l => l.log_id === batchId);
+      if (!b) return;
+      selectedInvBatch = b;
+      renderKitchenBatchesCards();
+
+      const box = document.getElementById('inv-selected-batch-detail-box');
+      if (!box) return;
+      box.classList.remove('hidden');
+
+      document.getElementById('inv-detail-batch-code').innerText = b.log_id;
+      document.getElementById('inv-detail-batch-type').innerText = b.recipe_type || 'Sub-Recipe';
+      document.getElementById('inv-detail-recipe-name').innerText = b.recipe_name;
+      const batchesCount = parseFloat(b.batches_produced) || 1;
+      document.getElementById('inv-detail-batch-count').innerText = `${batchesCount} ${batchesCount === 1 ? 'Batch' : 'Batches'}`;
+      document.getElementById('inv-detail-yield-text').innerText = b.yield_output || `${batchesCount} batches`;
+      document.getElementById('inv-detail-staff').innerText = b.staff_name || 'Kitchen Staff';
+      document.getElementById('inv-detail-date').innerText = b.prep_date || 'N/A';
+
+      const isDepleted = b.inventory_depleted !== false;
+      const tag = document.getElementById('inv-detail-depleted-tag');
+      const btn = document.getElementById('inv-btn-apply-depletion');
+
+      if (isDepleted) {
+        tag.innerText = "Stock Pots Depleted";
+        tag.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        btn.className = "px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 font-bold text-xs transition-all flex items-center gap-1.5 border border-white/15";
+        btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-amber-400"></i> Re-Apply Depletion`;
+      } else {
+        tag.innerText = "Stock Pots Not Depleted";
+        tag.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        btn.className = "px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5";
+        btn.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i> Deplete Stock Pots`;
+      }
+
+      // Ingredients table
+      const tbody = document.getElementById('inv-batch-portions-tbody');
+      const ings = Array.isArray(b.deducted_ingredients) ? b.deducted_ingredients : [];
+      const unifiedCatalog = loadUnifiedCatalog();
+
+      if (ings.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">No portion data available.</td></tr>`;
+      } else {
+        tbody.innerHTML = ings.map((ing, idx) => {
+          const rawQty = ing.raw_qty_per_batch !== undefined ? parseFloat(ing.raw_qty_per_batch) : 0;
+          const totalQty = ing.total_qty_used !== undefined ? parseFloat(ing.total_qty_used) : (rawQty * batchesCount);
+          const unit = ing.unit || 'g';
+          const deducted = ing.deducted !== undefined ? parseFloat(ing.deducted) : (totalQty > 50 ? parseFloat((totalQty / 1000).toFixed(2)) : totalQty);
+          const deductedUnit = ing.deducted_unit || (totalQty > 50 ? 'kg' : unit);
+
+          // Find stock pot
+          const matchedItem = unifiedCatalog.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim());
+          const curPot = matchedItem && stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
+
+          return `
+            <tr class="hover:bg-white/[0.02] transition-colors">
+              <td class="p-2.5">
+                <span class="font-bold text-white text-xs block">${ing.name}</span>
+                <span class="text-[10px] text-slate-400">${matchedItem ? 'Pot ID #' + matchedItem.id : 'Custom Ingredient'}</span>
+              </td>
+              <td class="p-2.5 text-center bg-amber-500/[0.04]">
+                <strong class="text-amber-300 font-mono text-sm">${rawQty}</strong>
+                <span class="text-[10px] text-amber-200/80 font-bold ml-0.5">${unit}</span>
+                <span class="block text-[9px] text-slate-400">/ batch</span>
+              </td>
+              <td class="p-2.5 text-center bg-emerald-500/[0.04]">
+                <strong class="text-emerald-300 font-mono text-sm">${totalQty}</strong>
+                <span class="text-[10px] text-emerald-200/80 font-bold ml-0.5">${unit}</span>
+                <span class="block text-[9px] text-slate-400">total (${batchesCount}x)</span>
+              </td>
+              <td class="p-2.5 text-center font-mono">
+                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  -${deducted} ${deductedUnit}
+                </span>
+              </td>
+              <td class="p-2.5 text-center">
+                ${matchedItem ? `
+                  <strong class="text-xs font-bold ${curPot <= 2 ? 'text-rose-400' : 'text-emerald-400'}">${curPot.toFixed(1)} units</strong>
+                ` : `
+                  <span class="text-[10px] text-slate-500 italic">No Pot</span>
+                `}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function triggerDepletionFromInventoryModal() {
+      if (!selectedInvBatch) return;
+      const batch = selectedInvBatch;
+      const ings = Array.isArray(batch.deducted_ingredients) ? batch.deducted_ingredients : [];
+      if (ings.length === 0) return;
+
+      const unifiedCatalog = loadUnifiedCatalog();
+      let count = 0;
+
+      ings.forEach(ing => {
+        const matchedItem = unifiedCatalog.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim());
+        if (matchedItem) {
+          const totalQty = ing.total_qty_used !== undefined ? parseFloat(ing.total_qty_used) : (parseFloat(ing.raw_qty_per_batch || 0) * (parseFloat(batch.batches_produced) || 1));
+          const deductionAmount = ing.deducted !== undefined ? parseFloat(ing.deducted) : (totalQty > 50 ? parseFloat((totalQty / 1000).toFixed(2)) : totalQty);
+          const cur = stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
+          stockLevels[matchedItem.id] = Math.max(0, parseFloat((cur - deductionAmount).toFixed(2)));
+          count++;
+        }
+      });
+
+      saveStockLevels(stockLevels);
+      renderStockGrid();
+
+      // Update in ts_production_logs
+      try {
+        const stored = localStorage.getItem('ts_production_logs');
+        if (stored) {
+          const logs = JSON.parse(stored);
+          const target = logs.find(l => l.log_id === batch.log_id);
+          if (target) {
+            target.inventory_depleted = true;
+            target.depleted_at = new Date().toISOString();
+            localStorage.setItem('ts_production_logs', JSON.stringify(logs));
+          }
+        }
+      } catch (e) {}
+
+      batch.inventory_depleted = true;
+      batch.depleted_at = new Date().toISOString();
+
+      showToast(`✅ Successfully depleted Batch ${batch.log_id}! Updated ${count} stock pots.`);
+      selectBatchForInventoryDetail(batch.log_id);
+    }
+
     init();
+    updateInvBatchBadge();
 
     // Keyboard support for passcode modal
     const passInput = document.getElementById('admin-passcode-input');
