@@ -4149,14 +4149,157 @@
               total_portion_used: "350 g",
               unit: "g",
               deducted: 0.35,
-              deducted_unit: "kg"
+              deducted_unit: "kg",
+              deduction_display: "-0.35 kg"
             }
           ]
         }
       ];
     }
 
+    // Authoritative unit and portion calculation helper
+    function resolveIngredientPortionAndDeduction(rawQty, batchesCount, rawUnit) {
+      rawQty = parseFloat(rawQty) || 0;
+      batchesCount = parseFloat(batchesCount) || 1;
+      const totalQty = parseFloat((rawQty * batchesCount).toFixed(2));
+      const u = (rawUnit || 'g').trim().toLowerCase();
+
+      let unit = rawUnit || 'g';
+      let deducted = totalQty;
+      let deductedUnit = unit;
+      let deductionDisplay = `-${totalQty} ${unit}`;
+
+      if (u === 'g' || u === 'gram' || u === 'grams') {
+        unit = 'g';
+        if (totalQty >= 1000) {
+          deducted = parseFloat((totalQty / 1000).toFixed(2));
+          deductedUnit = 'kg';
+          deductionDisplay = `-${deducted} kg`;
+        } else {
+          deducted = totalQty;
+          deductedUnit = 'g';
+          deductionDisplay = `-${totalQty} g`;
+        }
+      } else if (u === 'kg' || u === 'kilogram' || u === 'kilograms') {
+        unit = 'kg';
+        deducted = totalQty;
+        deductedUnit = 'kg';
+        deductionDisplay = `-${totalQty} kg`;
+      } else if (u === 'ml' || u === 'milliliter' || u === 'milliliters' || u === 'millilitres') {
+        unit = 'ml';
+        if (totalQty >= 1000) {
+          deducted = parseFloat((totalQty / 1000).toFixed(2));
+          deductedUnit = 'L';
+          deductionDisplay = `-${deducted} L`;
+        } else {
+          deducted = totalQty;
+          deductedUnit = 'ml';
+          deductionDisplay = `-${totalQty} ml`;
+        }
+      } else if (u === 'l' || u === 'litre' || u === 'liter' || u === 'litres' || u === 'liters') {
+        unit = 'L';
+        deducted = totalQty;
+        deductedUnit = 'L';
+        deductionDisplay = `-${totalQty} L`;
+      } else {
+        unit = rawUnit || 'unit';
+        deducted = totalQty;
+        deductedUnit = unit;
+        deductionDisplay = `-${totalQty} ${unit}`;
+      }
+
+      return {
+        raw_qty: rawQty,
+        portion_per_batch: `${rawQty} ${unit}`,
+        total_qty: totalQty,
+        total_portion_used: `${totalQty} ${unit}`,
+        unit: unit,
+        deducted: deducted,
+        deducted_unit: deductedUnit,
+        deduction_display: deductionDisplay
+      };
+    }
+
+    // Auto-heal legacy batches in localStorage that have corrupted 1000x-divided units
+    function healStoredProductionLogs() {
+      try {
+        const raw = localStorage.getItem('ts_production_logs');
+        if (!raw) return;
+        const logs = JSON.parse(raw);
+        if (!Array.isArray(logs) || logs.length === 0) return;
+
+        let modified = false;
+        logs.forEach(log => {
+          const batches = parseFloat(log.batches_produced) || 1;
+          let recipe = null;
+          try {
+            const recs = JSON.parse(localStorage.getItem('recipeSOPs') || '[]');
+            recipe = recs.find(r => 
+              (log.recipe_id && r.id === log.recipe_id) || 
+              (log.recipe_name && (r.title === log.recipe_name || r.name === log.recipe_name))
+            );
+          } catch (e) {}
+
+          if (recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
+            log.deducted_ingredients = recipe.ingredients.map(ing => {
+              const rawQty = parseFloat(ing.quantity || ing.qty || 0);
+              const unit = ing.unit || 'g';
+              const calc = resolveIngredientPortionAndDeduction(rawQty, batches, unit);
+              return {
+                name: ing.name,
+                raw_qty_per_batch: calc.raw_qty,
+                portion_per_batch: `${calc.raw_qty} ${calc.unit}`,
+                total_qty_used: calc.total_qty,
+                total_portion_used: `${calc.total_qty} ${calc.unit}`,
+                unit: calc.unit,
+                deducted: calc.deducted,
+                deducted_unit: calc.deducted_unit,
+                deduction_display: calc.deduction_display,
+                isSubRecipe: !!ing.isSubRecipe
+              };
+            });
+            modified = true;
+          } else if (Array.isArray(log.deducted_ingredients)) {
+            log.deducted_ingredients.forEach(item => {
+              let rawQty = item.raw_qty_per_batch !== undefined ? parseFloat(item.raw_qty_per_batch) : 0;
+              let unit = item.unit || 'g';
+              const cleanUnit = unit.trim().toLowerCase();
+
+              if (rawQty === 0 && item.deducted !== undefined) {
+                rawQty = parseFloat(item.deducted) / batches;
+              }
+
+              if ((cleanUnit === 'g' || cleanUnit === 'gram') && rawQty > 0 && rawQty < 25) {
+                rawQty = parseFloat((rawQty * 1000).toFixed(1));
+                modified = true;
+              } else if ((cleanUnit === 'ml') && rawQty > 0 && rawQty < 2) {
+                rawQty = Math.round(rawQty * 1000);
+                modified = true;
+              }
+
+              const calc = resolveIngredientPortionAndDeduction(rawQty, batches, unit);
+              item.raw_qty_per_batch = calc.raw_qty;
+              item.portion_per_batch = `${calc.raw_qty} ${calc.unit}`;
+              item.total_qty_used = calc.total_qty;
+              item.total_portion_used = `${calc.total_qty} ${calc.unit}`;
+              item.unit = calc.unit;
+              item.deducted = calc.deducted;
+              item.deducted_unit = calc.deducted_unit;
+              item.deduction_display = calc.deduction_display;
+            });
+          }
+        });
+
+        if (modified) {
+          localStorage.setItem('ts_production_logs', JSON.stringify(logs));
+        }
+      } catch (e) {
+        console.warn("Auto-heal production logs in inventory warning:", e);
+      }
+    }
+
     function updateInvBatchBadge() {
+      healStoredProductionLogs();
       const logs = getKitchenProductionLogs();
       const badge = document.getElementById('inv-batch-count-badge');
       if (badge) badge.innerText = logs.length;
@@ -4257,47 +4400,104 @@
 
       // Ingredients table
       const tbody = document.getElementById('inv-batch-portions-tbody');
-      const ings = Array.isArray(b.deducted_ingredients) ? b.deducted_ingredients : [];
       const unifiedCatalog = loadUnifiedCatalog();
 
-      if (ings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">No portion data available.</td></tr>`;
-      } else {
-        tbody.innerHTML = ings.map((ing, idx) => {
-          const rawQty = ing.raw_qty_per_batch !== undefined ? parseFloat(ing.raw_qty_per_batch) : 0;
-          const totalQty = ing.total_qty_used !== undefined ? parseFloat(ing.total_qty_used) : (rawQty * batchesCount);
-          const unit = ing.unit || 'g';
-          const deducted = ing.deducted !== undefined ? parseFloat(ing.deducted) : (totalQty > 50 ? parseFloat((totalQty / 1000).toFixed(2)) : totalQty);
-          const deductedUnit = ing.deducted_unit || (totalQty > 50 ? 'kg' : unit);
+      // Look up authoritative recipe first
+      let resolvedIngredients = [];
+      let recipe = null;
+      try {
+        const recs = JSON.parse(localStorage.getItem('recipeSOPs') || '[]');
+        recipe = recs.find(r => 
+          (b.recipe_id && r.id === b.recipe_id) || 
+          (b.recipe_name && (r.title === b.recipe_name || r.name === b.recipe_name))
+        );
+      } catch (e) {}
 
-          // Find stock pot
+      if (recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
+        resolvedIngredients = recipe.ingredients.map(ing => {
+          const rawQty = parseFloat(ing.quantity || ing.qty || 0);
+          const unit = ing.unit || 'g';
+          const calc = resolveIngredientPortionAndDeduction(rawQty, batchesCount, unit);
           const matchedItem = unifiedCatalog.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim());
           const curPot = matchedItem && stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
+          return {
+            id: matchedItem ? matchedItem.id : null,
+            name: ing.name,
+            raw_qty: calc.raw_qty,
+            total_qty: calc.total_qty,
+            unit: calc.unit,
+            deducted: calc.deducted,
+            deducted_unit: calc.deducted_unit,
+            deduction_display: calc.deduction_display,
+            matchedItem: matchedItem,
+            curPot: curPot
+          };
+        });
+      } else {
+        const ings = Array.isArray(b.deducted_ingredients) ? b.deducted_ingredients : [];
+        resolvedIngredients = ings.map(ing => {
+          let rawQty = ing.raw_qty_per_batch !== undefined ? parseFloat(ing.raw_qty_per_batch) : 0;
+          let unit = ing.unit || 'g';
+          const cleanUnit = unit.trim().toLowerCase();
 
+          if (rawQty === 0 && ing.deducted !== undefined) {
+            rawQty = parseFloat(ing.deducted) / batchesCount;
+          }
+
+          if ((cleanUnit === 'g' || cleanUnit === 'gram') && rawQty > 0 && rawQty < 25) {
+            rawQty = parseFloat((rawQty * 1000).toFixed(1));
+          } else if ((cleanUnit === 'ml') && rawQty > 0 && rawQty < 2) {
+            rawQty = Math.round(rawQty * 1000);
+          }
+
+          const calc = resolveIngredientPortionAndDeduction(rawQty, batchesCount, unit);
+          const matchedItem = unifiedCatalog.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim()) ||
+                              (ing.id ? unifiedCatalog.find(c => String(c.id) === String(ing.id)) : null);
+          const curPot = matchedItem && stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
+
+          return {
+            id: matchedItem ? matchedItem.id : (ing.id || null),
+            name: ing.name,
+            raw_qty: calc.raw_qty,
+            total_qty: calc.total_qty,
+            unit: calc.unit,
+            deducted: calc.deducted,
+            deducted_unit: calc.deducted_unit,
+            deduction_display: calc.deduction_display,
+            matchedItem: matchedItem,
+            curPot: curPot
+          };
+        });
+      }
+
+      if (resolvedIngredients.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">No portion data available.</td></tr>`;
+      } else {
+        tbody.innerHTML = resolvedIngredients.map((item, idx) => {
           return `
             <tr class="hover:bg-white/[0.02] transition-colors">
               <td class="p-2.5">
-                <span class="font-bold text-white text-xs block">${ing.name}</span>
-                <span class="text-[10px] text-slate-400">${matchedItem ? 'Pot ID #' + matchedItem.id : 'Custom Ingredient'}</span>
+                <span class="font-bold text-white text-xs block">${item.name}</span>
+                <span class="text-[10px] text-slate-400">${item.matchedItem ? 'Pot ID #' + item.matchedItem.id : 'Custom Ingredient'}</span>
               </td>
               <td class="p-2.5 text-center bg-amber-500/[0.04]">
-                <strong class="text-amber-300 font-mono text-sm">${rawQty}</strong>
-                <span class="text-[10px] text-amber-200/80 font-bold ml-0.5">${unit}</span>
+                <strong class="text-amber-300 font-mono text-sm">${item.raw_qty}</strong>
+                <span class="text-[10px] text-amber-200/80 font-bold ml-0.5">${item.unit}</span>
                 <span class="block text-[9px] text-slate-400">/ batch</span>
               </td>
               <td class="p-2.5 text-center bg-emerald-500/[0.04]">
-                <strong class="text-emerald-300 font-mono text-sm">${totalQty}</strong>
-                <span class="text-[10px] text-emerald-200/80 font-bold ml-0.5">${unit}</span>
+                <strong class="text-emerald-300 font-mono text-sm">${item.total_qty}</strong>
+                <span class="text-[10px] text-emerald-200/80 font-bold ml-0.5">${item.unit}</span>
                 <span class="block text-[9px] text-slate-400">total (${batchesCount}x)</span>
               </td>
               <td class="p-2.5 text-center font-mono">
                 <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                  -${deducted} ${deductedUnit}
+                  ${item.deduction_display || ('-' + item.deducted + ' ' + item.deducted_unit)}
                 </span>
               </td>
               <td class="p-2.5 text-center">
-                ${matchedItem ? `
-                  <strong class="text-xs font-bold ${curPot <= 2 ? 'text-rose-400' : 'text-emerald-400'}">${curPot.toFixed(1)} units</strong>
+                ${item.matchedItem ? `
+                  <strong class="text-xs font-bold ${item.curPot <= 2 ? 'text-rose-400' : 'text-emerald-400'}">${item.curPot.toFixed(1)} units</strong>
                 ` : `
                   <span class="text-[10px] text-slate-500 italic">No Pot</span>
                 `}
@@ -4312,19 +4512,85 @@
     function triggerDepletionFromInventoryModal() {
       if (!selectedInvBatch) return;
       const batch = selectedInvBatch;
-      const ings = Array.isArray(batch.deducted_ingredients) ? batch.deducted_ingredients : [];
-      if (ings.length === 0) return;
-
+      const batchesCount = parseFloat(batch.batches_produced) || 1;
       const unifiedCatalog = loadUnifiedCatalog();
-      let count = 0;
 
-      ings.forEach(ing => {
-        const matchedItem = unifiedCatalog.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim());
-        if (matchedItem) {
-          const totalQty = ing.total_qty_used !== undefined ? parseFloat(ing.total_qty_used) : (parseFloat(ing.raw_qty_per_batch || 0) * (parseFloat(batch.batches_produced) || 1));
-          const deductionAmount = ing.deducted !== undefined ? parseFloat(ing.deducted) : (totalQty > 50 ? parseFloat((totalQty / 1000).toFixed(2)) : totalQty);
-          const cur = stockLevels[matchedItem.id] !== undefined ? parseFloat(stockLevels[matchedItem.id]) : 0;
-          stockLevels[matchedItem.id] = Math.max(0, parseFloat((cur - deductionAmount).toFixed(2)));
+      // Resolve ingredients accurately
+      let resolvedIngredients = [];
+      let recipe = null;
+      try {
+        const recs = JSON.parse(localStorage.getItem('recipeSOPs') || '[]');
+        recipe = recs.find(r => 
+          (batch.recipe_id && r.id === batch.recipe_id) || 
+          (batch.recipe_name && (r.title === batch.recipe_name || r.name === batch.recipe_name))
+        );
+      } catch (e) {}
+
+      if (recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
+        resolvedIngredients = recipe.ingredients.map(ing => {
+          const rawQty = parseFloat(ing.quantity || ing.qty || 0);
+          const unit = ing.unit || 'g';
+          const calc = resolveIngredientPortionAndDeduction(rawQty, batchesCount, unit);
+          const matchedItem = unifiedCatalog.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim());
+          return {
+            id: matchedItem ? matchedItem.id : null,
+            name: ing.name,
+            raw_qty_per_batch: calc.raw_qty,
+            portion_per_batch: `${calc.raw_qty} ${calc.unit}`,
+            total_qty_used: calc.total_qty,
+            total_portion_used: `${calc.total_qty} ${calc.unit}`,
+            unit: calc.unit,
+            deducted: calc.deducted,
+            deducted_unit: calc.deducted_unit,
+            deduction_display: calc.deduction_display,
+            matchedItem: matchedItem
+          };
+        });
+      } else {
+        const ings = Array.isArray(batch.deducted_ingredients) ? batch.deducted_ingredients : [];
+        resolvedIngredients = ings.map(ing => {
+          let rawQty = ing.raw_qty_per_batch !== undefined ? parseFloat(ing.raw_qty_per_batch) : 0;
+          let unit = ing.unit || 'g';
+          const cleanUnit = unit.trim().toLowerCase();
+
+          if (rawQty === 0 && ing.deducted !== undefined) {
+            rawQty = parseFloat(ing.deducted) / batchesCount;
+          }
+
+          if ((cleanUnit === 'g' || cleanUnit === 'gram') && rawQty > 0 && rawQty < 25) {
+            rawQty = parseFloat((rawQty * 1000).toFixed(1));
+          } else if ((cleanUnit === 'ml') && rawQty > 0 && rawQty < 2) {
+            rawQty = Math.round(rawQty * 1000);
+          }
+
+          const calc = resolveIngredientPortionAndDeduction(rawQty, batchesCount, unit);
+          const matchedItem = unifiedCatalog.find(c => c.name.toLowerCase().trim() === ing.name.toLowerCase().trim()) ||
+                              (ing.id ? unifiedCatalog.find(c => String(c.id) === String(ing.id)) : null);
+
+          return {
+            id: matchedItem ? matchedItem.id : (ing.id || null),
+            name: ing.name,
+            raw_qty_per_batch: calc.raw_qty,
+            portion_per_batch: `${calc.raw_qty} ${calc.unit}`,
+            total_qty_used: calc.total_qty,
+            total_portion_used: `${calc.total_qty} ${calc.unit}`,
+            unit: calc.unit,
+            deducted: calc.deducted,
+            deducted_unit: calc.deducted_unit,
+            deduction_display: calc.deduction_display,
+            matchedItem: matchedItem
+          };
+        });
+      }
+
+      if (resolvedIngredients.length === 0) return;
+
+      let count = 0;
+      resolvedIngredients.forEach(item => {
+        if (item.matchedItem && item.matchedItem.id) {
+          const cur = stockLevels[item.matchedItem.id] !== undefined ? parseFloat(stockLevels[item.matchedItem.id]) : 0;
+          const potDeduct = item.deducted_unit === 'kg' ? item.deducted : (item.deducted_unit === 'g' ? parseFloat((item.deducted / 1000).toFixed(3)) : item.deducted);
+          stockLevels[item.matchedItem.id] = Math.max(0, parseFloat((cur - potDeduct).toFixed(2)));
           count++;
         }
       });
@@ -4341,6 +4607,7 @@
           if (target) {
             target.inventory_depleted = true;
             target.depleted_at = new Date().toISOString();
+            target.deducted_ingredients = resolvedIngredients;
             localStorage.setItem('ts_production_logs', JSON.stringify(logs));
           }
         }
@@ -4348,6 +4615,7 @@
 
       batch.inventory_depleted = true;
       batch.depleted_at = new Date().toISOString();
+      batch.deducted_ingredients = resolvedIngredients;
 
       showToast(`✅ Successfully depleted Batch ${batch.log_id}! Updated ${count} stock pots.`);
       selectBatchForInventoryDetail(batch.log_id);
