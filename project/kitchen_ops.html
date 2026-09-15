@@ -803,109 +803,6 @@
       } catch (e) {}
     }
 
-    const DEFAULT_SAMPLE_PRODUCTION_LOGS = [
-      {
-        log_id: "BATCH-260914-101",
-        branch_id: "MK-01",
-        recipe_id: "sop-sub-1",
-        recipe_name: "Signature Cookie Dough Base",
-        recipe_type: "Sub-Recipe",
-        batches_produced: 2,
-        yield_output: "2x [10 Portions (1.2 kg)] (20 Portions Total)",
-        prep_date: "2026-09-14",
-        use_by_date: "2026-09-19",
-        staff_name: "Saikishore",
-        core_temp: "3.5 °C",
-        storage_condition: "Refrigerated (<5°C)",
-        total_cost: "12.90",
-        inventory_depleted: true,
-        depleted_at: "2026-09-14T14:30:00.000Z",
-        deducted_ingredients: [
-          {
-            name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg",
-            raw_qty_per_batch: 300,
-            portion_per_batch: "300 g",
-            total_qty_used: 600,
-            total_portion_used: "600 g",
-            unit: "g",
-            deducted: 0.60,
-            deducted_unit: "kg",
-            deduction_display: "-0.60 kg",
-            isSubRecipe: false
-          },
-          {
-            name: "Betty Crocker Indulgent Chocolate Fudge Icing 400g",
-            raw_qty_per_batch: 200,
-            portion_per_batch: "200 g",
-            total_qty_used: 400,
-            total_portion_used: "400 g",
-            unit: "g",
-            deducted: 0.40,
-            deducted_unit: "kg",
-            deduction_display: "-0.40 kg",
-            isSubRecipe: false
-          },
-          {
-            name: "Biscoff Biscuit Crumbs 750g",
-            raw_qty_per_batch: 150,
-            portion_per_batch: "150 g",
-            total_qty_used: 300,
-            total_portion_used: "300 g",
-            unit: "g",
-            deducted: 0.30,
-            deducted_unit: "kg",
-            deduction_display: "-0.30 kg",
-            isSubRecipe: false
-          }
-        ],
-        timestamp: "2026-09-14T14:30:00.000Z"
-      },
-      {
-        log_id: "BATCH-260915-204",
-        branch_id: "MK-01",
-        recipe_id: "sop-sub-2",
-        recipe_name: "Triple Chocolate Brownie Batter",
-        recipe_type: "Sub-Recipe",
-        batches_produced: 1,
-        yield_output: "1x [1 Tray (12 Slices)]",
-        prep_date: "2026-09-15",
-        use_by_date: "2026-09-19",
-        staff_name: "Saikishore",
-        core_temp: "4.0 °C",
-        storage_condition: "Refrigerated (<5°C)",
-        total_cost: "8.20",
-        inventory_depleted: true,
-        depleted_at: "2026-09-15T10:15:00.000Z",
-        deducted_ingredients: [
-          {
-            name: "Cadbury Drinking Hot Chocolate Cocoa Powder Large Tub 2KG",
-            raw_qty_per_batch: 250,
-            portion_per_batch: "250 g",
-            total_qty_used: 250,
-            total_portion_used: "250 g",
-            unit: "g",
-            deducted: 0.25,
-            deducted_unit: "kg",
-            deduction_display: "-0.25 kg",
-            isSubRecipe: false
-          },
-          {
-            name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g",
-            raw_qty_per_batch: 350,
-            portion_per_batch: "350 g",
-            total_qty_used: 350,
-            total_portion_used: "350 g",
-            unit: "g",
-            deducted: 0.35,
-            deducted_unit: "kg",
-            deduction_display: "-0.35 kg",
-            isSubRecipe: false
-          }
-        ],
-        timestamp: "2026-09-15T10:15:00.000Z"
-      }
-    ];
-
     // Authoritative unit and portion calculation helper
     function resolveIngredientPortionAndDeduction(rawQty, batchesCount, rawUnit) {
       rawQty = parseFloat(rawQty) || 0;
@@ -1059,12 +956,17 @@
         const stored = localStorage.getItem('ts_production_logs');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed)) {
+            // Strip any mock sample batches so production batches are never interpreted or fabricated
+            const realLogs = parsed.filter(l => l && l.log_id !== 'BATCH-260914-101' && l.log_id !== 'BATCH-260915-204');
+            if (realLogs.length !== parsed.length) {
+              saveProductionLogs(realLogs);
+            }
+            return realLogs;
+          }
         }
       } catch (e) {}
-      // Pre-seed with sample batches so portion-per-batch features are immediately visible
-      saveProductionLogs(DEFAULT_SAMPLE_PRODUCTION_LOGS);
-      return DEFAULT_SAMPLE_PRODUCTION_LOGS;
+      return [];
     }
 
     function saveProductionLogs(logs) {
