@@ -537,6 +537,7 @@
     let isAdminUnlocked = false;
     let currentPage = 1;
     const itemsPerPage = 12;
+    window.MOCK_DATA_ALLOWED = false;
     let currentFilteredCatalog = [];
     let cart = [];
     let orders = [];
@@ -1043,6 +1044,8 @@
     }
 
     function isFakeOrder(o) {
+      if (!o) return true;
+      if (o.is_mock === true) return true;
       return false;
     }
 
@@ -1054,27 +1057,15 @@
       parsedOrders = null;
     }
 
-    if (!Array.isArray(parsedOrders) || parsedOrders.length === 0) {
-      orders = (typeof generateInitialSampleOrders === 'function') 
-        ? generateInitialSampleOrders().map(normalizeOrder) 
-        : [];
-      if (orders.length > 0) {
-        try {
-          localStorage.setItem('ts_orders', JSON.stringify(orders));
-        } catch(e) {}
-      }
+    if (!Array.isArray(parsedOrders)) {
+      orders = [];
     } else {
-      orders = parsedOrders.map(normalizeOrder);
+      orders = parsedOrders.filter(o => o && !o.is_mock && !isFakeOrder(o)).map(normalizeOrder);
     }
 
     function restoreVerifiedOrders() {
-      if (typeof restoreTreatStreetDefaultOrders === 'function') {
-        const res = restoreTreatStreetDefaultOrders();
-        orders = (res.orders || []).map(normalizeOrder);
-      }
-      saveOrdersToStorage();
       filterAndRenderAdminOrders();
-      showToast('Verified Treat Street purchase orders restored!');
+      showToast('Purchase orders refreshed.');
     }
     
     function saveOrdersToStorage() {

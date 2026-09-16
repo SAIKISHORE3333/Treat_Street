@@ -3235,6 +3235,10 @@
     // 10. Demo Mode Realistic Preset Files
     // -----------------------------------------------------------
     generateDemoFiles() {
+      if (typeof window !== 'undefined' && window.MOCK_DATA_ALLOWED === false) {
+        console.warn('[SalesEngine] Zero-mock constraint enforced: Dummy demo files are blocked.');
+        return [];
+      }
       const today = new Date().toISOString().split('T')[0];
 
       // 1. Square POS Report (TSV)

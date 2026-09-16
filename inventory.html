@@ -1175,6 +1175,8 @@
       return 'item_' + Math.abs(hash);
     }
 
+    window.MOCK_DATA_ALLOWED = false;
+
     function canonicalItemKey(name) {
       return (name || '').toLowerCase()
         .replace(/[‘’'\"`]/g, '')
@@ -2032,6 +2034,8 @@
     }
 
     function isFakeOrder(o) {
+      if (!o) return true;
+      if (o.is_mock === true) return true;
       return false;
     }
 
@@ -2039,35 +2043,22 @@
       try {
         const stored = localStorage.getItem('ts_orders');
         let list = stored ? JSON.parse(stored) : null;
-        if (!Array.isArray(list) || list.length === 0) {
-          list = (typeof generateInitialSampleOrders === 'function') 
-            ? generateInitialSampleOrders() 
-            : [];
-          if (list.length > 0) {
-            try {
-              localStorage.setItem('ts_orders', JSON.stringify(list));
-            } catch(e) {}
-          }
+        if (!Array.isArray(list)) {
+          return [];
         }
+        // Strict Zero-Mock Policy: Filter out any dummy synthetic test fixtures or mock flags
+        list = list.filter(o => o && !o.is_mock && !isFakeOrder(o));
         return list.map(normalizeOrder);
       } catch (e) {
-        const fallback = (typeof generateInitialSampleOrders === 'function') 
-          ? generateInitialSampleOrders() 
-          : [];
-        return fallback.map(normalizeOrder);
+        return [];
       }
     }
 
     function restoreVerifiedOrders() {
-      let restored = [];
-      if (typeof restoreTreatStreetDefaultOrders === 'function') {
-        const res = restoreTreatStreetDefaultOrders();
-        restored = res.orders || [];
-      }
       renderPurchaseOrdersView();
       renderStockGrid();
       renderAuditTable();
-      showInventoryToast('Verified Treat Street purchase orders & stock levels restored!');
+      showInventoryToast('Purchase orders refreshed.');
     }
 
     function savePurchaseOrders(orders) {
@@ -2826,8 +2817,8 @@
                 <div class="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400">
                   <i data-lucide="search-x" class="w-5 h-5"></i>
                 </div>
-                <p class="font-bold text-sm text-slate-300">No matching catalog items found</p>
-                <p class="text-xs text-slate-500 max-w-sm">If you recently added materials or purchase orders, click below to refresh the catalog cache.</p>
+                <p class="font-bold text-sm text-slate-300">No authentic records found for this period.</p>
+                <p class="text-xs text-slate-500 max-w-sm">Upload daily settlement reports to generate audit.</p>
                 <button type="button" onclick="refreshCatalogData(true)" class="mt-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/40 flex items-center gap-2 transition-all shadow-sm">
                   <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i>
                   <span>Refresh Catalog Now</span>
@@ -3073,17 +3064,14 @@
               <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
                 <i data-lucide="shopping-cart" class="w-8 h-8"></i>
               </div>
-              <h3 class="font-bold text-white text-lg mb-1 heading-font">No Purchase Orders Placed Yet</h3>
+              <h3 class="font-bold text-white text-lg mb-1 heading-font">No authentic purchase orders placed yet</h3>
               <p class="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
-                When you create supplier purchase orders in the Purchase Portal, they will appear here ready to be received and automatically synced into your theoretical stock pots.
+                When you create verified supplier purchase orders in the Purchase Portal, they will appear here ready to be received and automatically synced into your theoretical stock pots.
               </p>
               <div class="flex items-center gap-3">
                 <a href="purchase.html" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20">
                   <i data-lucide="external-link" class="w-4 h-4"></i> Open Purchase Portal
                 </a>
-                <button type="button" onclick="restoreVerifiedOrders()" class="px-5 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all flex items-center gap-2 shadow-lg">
-                  <i data-lucide="rotate-ccw" class="w-4 h-4 text-emerald-400"></i> Restore Purchase Orders
-                </button>
               </div>
             </div>
           `;

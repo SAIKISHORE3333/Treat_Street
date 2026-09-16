@@ -691,6 +691,8 @@
     }
 
     function isFakeOrder(o) {
+      if (!o) return true;
+      if (o.is_mock === true) return true;
       return false;
     }
 
@@ -698,10 +700,10 @@
       try {
         const stored = localStorage.getItem('ts_orders');
         let list = stored ? JSON.parse(stored) : null;
-        if (!Array.isArray(list) || list.length === 0) {
-          list = (typeof generateInitialSampleOrders === 'function') ? generateInitialSampleOrders() : [];
-          if (list.length > 0) {
-            localStorage.setItem('ts_orders', JSON.stringify(list));
+        if (Array.isArray(list)) {
+          const cleaned = list.filter(o => o && !o.is_mock && !isFakeOrder(o));
+          if (cleaned.length !== list.length) {
+            localStorage.setItem('ts_orders', JSON.stringify(cleaned));
           }
         }
       } catch (e) {}
