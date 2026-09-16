@@ -1458,15 +1458,6 @@ window.tsCatalog = [
     "vatRate": 0
   },
   {
-    "id": 163,
-    "name": "Paterson's Shortbread Fingers 300g",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
     "id": 164,
     "name": "Silver Spoon British Icing Sugar 3kg",
     "category": "Sugar Icing & Speciality",
@@ -1656,15 +1647,6 @@ window.tsCatalog = [
     "vatRate": 0
   },
   {
-    "id": 185,
-    "name": "Koffmann's Potatoes Les Pommes Frites",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
     "id": 186,
     "name": "KTC Crispy Fried Onions 400g",
     "category": "Seasonings & Garlic Catering",
@@ -1818,15 +1800,6 @@ window.tsCatalog = [
     "vatRate": 0
   },
   {
-    "id": 203,
-    "name": "Passion shoot smoothie packet",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
     "id": 204,
     "name": "Melon refresher smoothie packet",
     "category": "Smoothie Packets (Pre-Portioned)",
@@ -1872,15 +1845,6 @@ window.tsCatalog = [
     "vatRate": 0
   },
   {
-    "id": 209,
-    "name": "Cadbury Drinking Hot Chocolate Cocoa Powder 2KG",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
     "id": 210,
     "name": "Coca-Cola Original Taste 330ml Glass Bottle",
     "category": "Mixers & Non-Returnable Bottles",
@@ -1890,75 +1854,12 @@ window.tsCatalog = [
     "vatRate": 0
   },
   {
-    "id": 211,
-    "name": "Diet Coke Cola Glass Bottles",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
-    "id": 212,
-    "name": "Fanta Orange 330ml",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
     "id": 213,
     "name": "Hershey's Cookies 'N' Creme 40g",
     "category": "Chocolate Bars",
     "size": "24 x 40g",
     "supplier": "Bookers",
     "price": 17.69,
-    "vatRate": 0
-  },
-  {
-    "id": 214,
-    "name": "Huel Banana Flavour Ready-to-Drink 500ml",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
-    "id": 215,
-    "name": "J20 Apple & Mango 275ml",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
-    "id": 216,
-    "name": "J20 Apple & Raspberry 275ml",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
-    "id": 217,
-    "name": "J20 Orange & Passion Fruit 275ml",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
-    "id": 218,
-    "name": "Jack Rabbit Signature Malbec Red Wine 75cl",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
     "vatRate": 0
   },
   {
@@ -2061,33 +1962,6 @@ window.tsCatalog = [
     "vatRate": 0
   },
   {
-    "id": 230,
-    "name": "J20 apple and mango",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
-    "id": 231,
-    "name": "J20 orange and passionfruit",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
-    "id": 232,
-    "name": "J20 apple and raspberry",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
     "id": 233,
     "name": "Lemon and elderflower tea",
     "category": "Coffee, Tea & Syrups",
@@ -2187,15 +2061,6 @@ window.tsCatalog = [
     "vatRate": 0
   },
   {
-    "id": 244,
-    "name": "Rumon raisin gelato",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
     "id": 245,
     "name": "Coffee gelato",
     "category": "Gelato, Sorbet & Ice Cream Mixes",
@@ -2255,15 +2120,6 @@ window.tsCatalog = [
     "category": "Gelato, Sorbet & Ice Cream Mixes",
     "size": "2l",
     "supplier": "Airela",
-    "price": 0,
-    "vatRate": 0
-  },
-  {
-    "id": 252,
-    "name": "Smores gelato",
-    "category": "Buns & Breads",
-    "size": "Unit",
-    "supplier": "Costco",
     "price": 0,
     "vatRate": 0
   },
@@ -2475,35 +2331,8 @@ window.tsCatalog = [
     "vatRate": 0
   },
   {
-    "id": 276,
-    "name": "J2O apple and mango",
-    "category": "Beverages",
-    "size": "275ML*12",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 20
-  },
-  {
-    "id": 277,
-    "name": "J2O orange and passionfruit",
-    "category": "Beverages",
-    "size": "275ML*12",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 20
-  },
-  {
-    "id": 278,
-    "name": "J2O apple and raspberry",
-    "category": "Beverages",
-    "size": "275ML*12",
-    "supplier": "Costco",
-    "price": 0,
-    "vatRate": 20
-  },
-  {
     "id": 279,
-    "name": "Pash�n�shoot smoothie packet",
+    "name": "Pash'n'shoot smoothie packet",
     "category": "Smoothie Packets (Pre-Portioned)",
     "size": "30*140 g",
     "supplier": "SouthLincs",
@@ -2512,7 +2341,7 @@ window.tsCatalog = [
   },
   {
     "id": 280,
-    "name": "Rum�n�raisin gelato",
+    "name": "Rum'n'raisin gelato",
     "category": "Gelato, Sorbet & Ice Cream Mixes",
     "size": "2l",
     "supplier": "Airela",
@@ -2521,7 +2350,7 @@ window.tsCatalog = [
   },
   {
     "id": 281,
-    "name": "S�mores gelato",
+    "name": "S'mores gelato",
     "category": "Gelato, Sorbet & Ice Cream Mixes",
     "size": "2l",
     "supplier": "Airela",
