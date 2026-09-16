@@ -1175,11 +1175,6 @@
       return 'item_' + Math.abs(hash);
     }
 
-    const PURGED_DUPLICATE_IDS = new Set([
-      163, 185, 203, 209, 211, 212, 214, 215, 216, 217, 218, 230, 231, 232, 244, 252, 276, 277, 278,
-      '163', '185', '203', '209', '211', '212', '214', '215', '216', '217', '218', '230', '231', '232', '244', '252', '276', '277', '278'
-    ]);
-
     function canonicalItemKey(name) {
       return (name || '').toLowerCase()
         .replace(/[‘’'\"`]/g, '')
@@ -1195,51 +1190,33 @@
 
       const addItem = (rawItem, source) => {
         if (!rawItem) return;
-        if (rawItem.id != null && PURGED_DUPLICATE_IDS.has(rawItem.id)) return;
-        if (rawItem.id != null && PURGED_DUPLICATE_IDS.has(String(rawItem.id))) return;
-        if (rawItem.supplier === 'Costco' && rawItem.category === 'Buns & Breads' && (parseFloat(rawItem.price) || 0) === 0) return;
-
         let name = (rawItem.name || '').trim();
         if (!name) return;
-        if (name.includes('\uFFFD') || name.includes('')) {
-          name = name.replace(/Rum[\uFFFD]n[\uFFFD]raisin/i, "Rum'n'raisin")
-                     .replace(/S[\uFFFD]mores/i, "S'mores")
-                     .replace(/Pash[\uFFFD]n[\uFFFD]shoot/i, "Pash'n'shoot");
-        }
 
-        const normName = name.toLowerCase().trim();
-        const cKey = canonicalItemKey(name);
+        const normName = name.toLowerCase();
         const rawId = rawItem.id != null && rawItem.id !== '' ? String(rawItem.id) : null;
 
         let existingKey = null;
         if (rawId && map.has(rawId)) {
           existingKey = rawId;
-        } else if (nameMap.has(cKey)) {
-          existingKey = nameMap.get(cKey);
-        } else if (nameMap.has(normName)) {
-          existingKey = nameMap.get(normName);
         }
 
         const id = existingKey || rawId || generateCleanItemId(name);
         const existing = existingKey ? map.get(existingKey) : null;
 
-        const rawPrice = parseFloat(rawItem.price !== undefined ? rawItem.price : (existing ? existing.price : 0)) || 0;
-        const finalPrice = rawPrice > 0 ? rawPrice : (existing && existing.price > 0 ? existing.price : 0);
-
         const itemObj = {
           id: id,
-          name: (existing && existing.price > 0 && rawPrice === 0) ? existing.name : name,
-          category: (existing && existing.price > 0 && rawPrice === 0) ? existing.category : (rawItem.category || (existing ? existing.category : 'General')),
-          size: (existing && existing.price > 0 && rawPrice === 0) ? existing.size : (rawItem.size || (existing ? existing.size : 'Unit')),
-          supplier: (existing && existing.price > 0 && rawPrice === 0) ? existing.supplier : (rawItem.supplier || (existing ? existing.supplier : 'Supplier')),
-          price: finalPrice,
+          name: name,
+          category: rawItem.category || (existing ? existing.category : 'General'),
+          size: rawItem.size || (existing ? existing.size : 'Unit'),
+          supplier: rawItem.supplier || (existing ? existing.supplier : 'Supplier'),
+          price: parseFloat(rawItem.price !== undefined ? rawItem.price : (existing ? existing.price : 0)) || 0,
           vatRate: rawItem.vatRate !== undefined ? rawItem.vatRate : (existing && existing.vatRate !== undefined ? existing.vatRate : 0),
           packBreakdown: rawItem.packBreakdown || (existing ? existing.packBreakdown : null),
           source: source
         };
 
         map.set(id, itemObj);
-        nameMap.set(cKey, id);
         nameMap.set(normName, id);
       };
 
@@ -1254,11 +1231,7 @@
         if (shared) {
           const parsed = JSON.parse(shared);
           if (Array.isArray(parsed)) {
-            const cleanedShared = parsed.filter(it => it && !PURGED_DUPLICATE_IDS.has(it.id) && !PURGED_DUPLICATE_IDS.has(String(it.id)) && !(it.supplier === 'Costco' && it.category === 'Buns & Breads' && (parseFloat(it.price) || 0) === 0));
-            cleanedShared.forEach(item => addItem(item, 'shared'));
-            if (cleanedShared.length !== parsed.length) {
-              localStorage.setItem('ts_shared_catalog', JSON.stringify(cleanedShared));
-            }
+            parsed.forEach(item => addItem(item, 'shared'));
           }
         }
       } catch (e) {
@@ -2156,7 +2129,6 @@
       // 1. All genuine catalog ingredients
       (catalogData || []).forEach(item => {
         if (!item || !item.name) return;
-        if (PURGED_DUPLICATE_IDS.has(item.id) || PURGED_DUPLICATE_IDS.has(String(item.id))) return;
         if (item.supplier === 'Costco' && item.category === 'Buns & Breads' && (parseFloat(item.price) || 0) === 0) return;
 
         const strId = String(item.id);
@@ -2168,7 +2140,7 @@
           const existingId = nameToIdMap.get(cKey);
           const existingItem = itemsMap.get(existingId);
           if (existingItem) {
-            existingItem.currentQty = Math.max(existingItem.currentQty, curQty) || (existingItem.currentQty + curQty);
+            existingItem.currentQty = (existingItem.currentQty || 0) + curQty;
             if (item.price > 0 && (!existingItem.price || existingItem.price === 0)) {
               existingItem.price = item.price;
               existingItem.supplier = item.supplier;
