@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Treat Street • Square POS Sales & Modifier Matrix Parser</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --brand-primary: #0f3d2e;
+      --brand-accent: #10b981;
+      --brand-gold: #f59e0b;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    h1, h2, h3, h4, .heading-font {
+      font-family: 'Outfit', sans-serif;
+    }
+    .mono-font {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Ambient Mesh Gradient Background */
+    .ambient-bg {
+      background-color: #071712;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.18) 0px, transparent 45%),
+        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.14) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(5, 150, 105, 0.18) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(15, 61, 46, 0.45) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.035);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    .glass-panel {
+      background: rgba(14, 38, 30, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(52, 211, 153, 0.15);
+    }
+
+    .glass-dock {
+      background: rgba(10, 29, 23, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(52, 211, 153, 0.2);
+    }
+
+    /* Glow Orb Animation */
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      pointer-events: none;
+      opacity: 0.5;
+      animation: pulseGlow 12s ease-in-out infinite alternate;
+    }
+    @keyframes pulseGlow {
+      0% { transform: scale(1) translate(0, 0); opacity: 0.35; }
+      50% { transform: scale(1.15) translate(20px, -20px); opacity: 0.6; }
+      100% { transform: scale(0.95) translate(-20px, 20px); opacity: 0.45; }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(52, 211, 153, 0.3);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(52, 211, 153, 0.6);
+    }
+
+    /* Drag & Drop Pulse */
+    .drag-active {
+      border-color: #10b981 !important;
+      background: rgba(16, 185, 129, 0.12) !important;
+      transform: scale(1.008);
+    }
+
+    /* Tab Active States */
+    .tab-btn-active {
+      background: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.5);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+    }
+    .tab-btn-inactive {
+      background: rgba(255, 255, 255, 0.04);
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .tab-btn-inactive:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+    }
+  </style>
+</head>
+<body class="ambient-bg text-slate-100 min-h-screen flex flex-col justify-between relative overflow-x-hidden selection:bg-emerald-500 selection:text-white">
+
+  <!-- Ambient Glow Orbs -->
+  <div class="glow-orb w-96 h-96 bg-emerald-600/20 top-0 left-10"></div>
+  <div class="glow-orb w-[500px] h-[500px] bg-amber-500/10 top-1/3 right-0"></div>
+  <div class="glow-orb w-96 h-96 bg-teal-600/20 bottom-10 left-1/4"></div>
+
+  <!-- TOP HEADER & NAVIGATION -->
+  <header class="w-full relative z-20 glass-dock sticky top-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3.5">
+        <a href="index.html" class="flex items-center gap-3.5 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-300 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-emerald-500/30 heading-font group-hover:scale-105 transition-transform">
+            TS
+          </div>
+          <div>
+            <h1 class="text-base font-extrabold tracking-wide text-white flex items-center gap-2">
+              TREAT STREET <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">PARSER</span>
+            </h1>
+            <p class="text-[11px] text-emerald-400/80 font-medium">Square POS Sales & Modifier Matrix Engine</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Navigation & Quick Actions -->
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <a href="index.html" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 transition-all">
+          <i data-lucide="layout-grid" class="w-4 h-4 text-emerald-400"></i>
+          <span>Hub</span>
+        </a>
+        <a href="sales_ledger.html" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 transition-all">
+          <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i>
+          <span>Sales Ledger</span>
+        </a>
+        <button id="btn-load-sample" class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 border border-amber-400/40 text-amber-300 text-xs font-bold transition-all shadow-md">
+          <i data-lucide="file-check-2" class="w-4 h-4 text-amber-400"></i>
+          <span>Load Treat Street Sample</span>
+        </button>
+        <button id="btn-clear" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/40 text-xs font-semibold text-slate-400 hover:text-rose-300 transition-all">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span class="hidden md:inline">Reset</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 relative z-10 space-y-6">
+
+    <!-- HERO HEADER -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs font-semibold mb-2">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Zero Missing Line Items • Sub-Item Modifier Decomposition</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white heading-font">
+          Square Sales & <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">Modifier Parsing Terminal</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1">
+          Ingest raw Square detailed item and transaction CSVs. Handles merged modifier strings (e.g. <span class="text-emerald-300 font-mono">Waffle, £9.50, Soft Serve, £0.00</span>), refunds, and outputs an exact Parent-Child Attached Matrix.
+        </p>
+      </div>
+
+      <!-- Action Button Group -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="btn-toggle-paste" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-xs font-semibold text-slate-200 transition-all">
+          <i data-lucide="clipboard-paste" class="w-4 h-4 text-emerald-400"></i>
+          <span>Paste Raw CSV</span>
+        </button>
+        <button id="btn-export-matrix" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/30 transition-all">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Export Matrix (Excel/CSV)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PASTE TEXT AREA DRAWER (Collapsible) -->
+    <div id="paste-drawer" class="hidden glass-card rounded-2xl p-5 border-emerald-500/30 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="file-text" class="w-4 h-4 text-emerald-400"></i>
+          Paste Raw Square CSV / TSV Data Directly
+        </h3>
+        <button id="btn-close-paste" class="text-slate-400 hover:text-white text-xs">Close</button>
+      </div>
+      <textarea id="raw-csv-textarea" rows="6" placeholder="Paste headers and rows from Square export here (comma-separated or tab-separated)..." class="w-full bg-slate-950/70 border border-white/10 rounded-xl p-3 text-xs text-slate-200 font-mono focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"></textarea>
+      <div class="flex justify-end gap-2">
+        <button id="btn-parse-pasted" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs">
+          Process Pasted Data
+        </button>
+      </div>
+    </div>
+
+    <!-- UPLOAD ZONE & HEADER INSPECTION -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      
+      <!-- Drag & Drop Card (2 Cols) -->
+      <div id="drop-zone" class="lg:col-span-2 glass-card rounded-2xl p-6 sm:p-8 border-2 border-dashed border-white/20 hover:border-emerald-400/50 flex flex-col items-center justify-center text-center cursor-pointer transition-all relative group overflow-hidden">
+        <input type="file" id="file-input" accept=".csv,.tsv,.txt" class="hidden" />
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 via-teal-500/20 to-amber-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 mb-3 group-hover:scale-110 group-hover:border-emerald-400 transition-all">
+          <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-base sm:text-lg font-bold text-white heading-font">
+          Drop your Square Export CSV here, or <span class="text-emerald-400 underline decoration-dotted">Browse</span>
+        </h3>
+        <p class="text-xs text-slate-400 mt-1 max-w-md">
+          Supports Square POS Detailed Item Transactions & Item Sales Reports (CSV, TSV, or Tab Delimited).
+        </p>
+
+        <!-- Format hints badges -->
+        <div class="flex flex-wrap items-center justify-center gap-2 mt-4 text-[11px] text-slate-400">
+          <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 font-mono">RFC 4180 Compliant</span>
+          <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 font-mono">Auto-Delimiter Detect</span>
+          <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 font-mono">Multi-Line Quotes Safe</span>
+          <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 font-mono">Modifiers Paired & Unpaired</span>
+        </div>
+      </div>
+
+      <!-- Live Header Inspection & Telemetry Card (1 Col) -->
+      <div class="glass-card rounded-2xl p-5 flex flex-col justify-between border-white/10">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              Header & Schema Inspection
+            </h4>
+            <span id="telemetry-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">Waiting for data</span>
+          </div>
+
+          <!-- Field Checklist -->
+          <div class="space-y-2 text-xs" id="header-checklist">
+            <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
+              <span class="text-slate-300">Base Item Column</span>
+              <span id="field-item" class="text-slate-500 font-mono text-[11px]">Pending</span>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
+              <span class="text-slate-300">Variation / Price Point</span>
+              <span id="field-variation" class="text-slate-500 font-mono text-[11px]">Pending</span>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
+              <span class="text-slate-300">Modifiers Applied</span>
+              <span id="field-modifiers" class="text-slate-500 font-mono text-[11px]">Pending</span>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
+              <span class="text-slate-300">Quantity & Gross Sales</span>
+              <span id="field-qty-sales" class="text-slate-500 font-mono text-[11px]">Pending</span>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
+              <span class="text-slate-300">Event / Transaction Status</span>
+              <span id="field-status" class="text-slate-500 font-mono text-[11px]">Pending</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry footer -->
+        <div class="pt-3 border-t border-white/10 mt-3 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Delimiter: <strong id="telemetry-delimiter" class="text-slate-200 font-mono">-</strong></span>
+          <span>Rows Parsed: <strong id="telemetry-rows" class="text-emerald-400 font-mono">0</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI EXECUTIVE METRICS -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+      
+      <!-- Net Sales -->
+      <div class="glass-card rounded-2xl p-4 border-emerald-500/20">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span>Net Sales (True Cash)</span>
+          <i data-lucide="pound-sterling" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+        <div id="kpi-net-sales" class="text-xl sm:text-2xl font-black text-emerald-400 heading-font">£0.00</div>
+        <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+          <span>Gross: <strong id="kpi-gross-sales" class="text-slate-200">£0.00</strong></span>
+          <span>Disc: <strong id="kpi-discounts" class="text-amber-400">£0.00</strong></span>
+        </div>
+      </div>
+
+      <!-- Total Items Sold -->
+      <div class="glass-card rounded-2xl p-4 border-white/10">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span>Base Items Sold</span>
+          <i data-lucide="package-check" class="w-4 h-4 text-teal-400"></i>
+        </div>
+        <div id="kpi-total-qty" class="text-xl sm:text-2xl font-black text-white heading-font">0</div>
+        <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+          <span>Distinct Dishes: <strong id="kpi-distinct-items" class="text-slate-200">0</strong></span>
+          <span>Refunds: <strong id="kpi-refund-count" class="text-rose-400">0</strong></span>
+        </div>
+      </div>
+
+      <!-- Modifiers Attached -->
+      <div class="glass-card rounded-2xl p-4 border-amber-500/20">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span>Modifiers Attached</span>
+          <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i>
+        </div>
+        <div id="kpi-total-mods" class="text-xl sm:text-2xl font-black text-amber-300 heading-font">0</div>
+        <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+          <span>Distinct Modifiers: <strong id="kpi-distinct-mods" class="text-slate-200">0</strong></span>
+          <span>Mod Rev: <strong id="kpi-mod-rev" class="text-emerald-400">£0.00</strong></span>
+        </div>
+      </div>
+
+      <!-- Attach Ratio -->
+      <div class="glass-card rounded-2xl p-4 border-white/10">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span>Modifier Attach Rate</span>
+          <i data-lucide="pie-chart" class="w-4 h-4 text-cyan-400"></i>
+        </div>
+        <div id="kpi-attach-rate" class="text-xl sm:text-2xl font-black text-cyan-300 heading-font">0%</div>
+        <div class="text-[10px] text-slate-400 mt-1">
+          Avg Mods per Base Item: <strong id="kpi-avg-mods" class="text-slate-200">0.0</strong>
+        </div>
+      </div>
+
+      <!-- Top Modifier -->
+      <div class="glass-card rounded-2xl p-4 border-white/10 col-span-2 sm:col-span-1">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span>Top Chosen Modifier</span>
+          <i data-lucide="award" class="w-4 h-4 text-yellow-400"></i>
+        </div>
+        <div id="kpi-top-modifier" class="text-sm font-bold text-amber-200 truncate heading-font mt-1">None yet</div>
+        <div class="text-[10px] text-slate-400 mt-1">
+          Count: <strong id="kpi-top-mod-count" class="text-emerald-400">0</strong> orders
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS CONTROLLER & SEARCH/FILTER BAR -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+      
+      <!-- Tab Navigation Buttons -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        <button id="tab-btn-matrix" class="tab-btn-active px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="network" class="w-4 h-4"></i>
+          <span>Parent-Child Matrix</span>
+          <span id="badge-matrix-count" class="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-200">0</span>
+        </button>
+        <button id="tab-btn-base-items" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="list-collapse" class="w-4 h-4"></i>
+          <span>Base Items Sales</span>
+        </button>
+        <button id="tab-btn-modifiers" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="puzzle" class="w-4 h-4"></i>
+          <span>Global Modifiers</span>
+        </button>
+        <button id="tab-btn-refunds" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          <span>Refunds & Voids</span>
+          <span id="badge-refund-count" class="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/30 text-rose-200 hidden">0</span>
+        </button>
+        <button id="tab-btn-raw" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="table" class="w-4 h-4"></i>
+          <span>Cleaned Records</span>
+        </button>
+      </div>
+
+      <!-- Filter / Search Tools -->
+      <div class="flex items-center gap-2">
+        <div class="relative flex-1 sm:w-64">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="search-input" placeholder="Search item, variation, modifier..." class="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400" />
+        </div>
+        <select id="category-filter" class="bg-slate-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-400">
+          <option value="ALL">All Categories</option>
+        </select>
+        <button id="btn-expand-all" title="Expand / Collapse all parent rows" class="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300">
+          <i data-lucide="chevrons-up-down" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- TAB 1: PARENT-CHILD ATTACHED MATRIX (PRIMARY REQUEST) -->
+    <!-- ==================================================== -->
+    <div id="view-matrix" class="space-y-3">
+      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+        <p>Showing hierarchical breakdown of each dish and the exact count & attach rate of modifiers applied to it.</p>
+        <button id="btn-copy-matrix-clipboard" class="hover:text-emerald-400 flex items-center gap-1">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Copy Clean TSV for Excel</span>
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                <th class="py-3 px-4 w-12 text-center">Tree</th>
+                <th class="py-3 px-4">Parent Item & Variation</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4 text-center">SKU</th>
+                <th class="py-3 px-4 text-right">Units Sold</th>
+                <th class="py-3 px-4 text-right">Gross Sales</th>
+                <th class="py-3 px-4 text-right">Discounts</th>
+                <th class="py-3 px-4 text-right">Net Sales</th>
+                <th class="py-3 px-4 text-right">Avg Item Price</th>
+                <th class="py-3 px-4 text-center">Modifiers Attached</th>
+              </tr>
+            </thead>
+            <tbody id="matrix-tbody" class="divide-y divide-white/5 text-slate-200">
+              <!-- Dynamically Populated with Parent Rows and Collapsible Child Sub-Tables -->
+              <tr>
+                <td colspan="10" class="py-12 text-center text-slate-400">
+                  <div class="max-w-md mx-auto space-y-2">
+                    <i data-lucide="file-up" class="w-10 h-10 text-emerald-400/40 mx-auto"></i>
+                    <p class="font-bold text-white">No Square Sales Data Loaded</p>
+                    <p class="text-xs text-slate-400">Drop your Square CSV above, or click <span class="text-amber-400 cursor-pointer underline" onclick="document.getElementById('btn-load-sample').click()">Load Treat Street Sample</span> to preview live operations.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- TAB 2: CONSOLIDATED BASE ITEMS SUMMARY TABLE -->
+    <!-- ==================================================== -->
+    <div id="view-base-items" class="hidden space-y-3">
+      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+        <p>Consolidated item totals with zero dropped line items or miscalculated negatives.</p>
+        <button id="btn-export-base-csv" class="hover:text-emerald-400 flex items-center gap-1 font-bold">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Export Items CSV</span>
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                <th class="py-3 px-4">Item Name</th>
+                <th class="py-3 px-4">Variation / Price Point</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4">SKU</th>
+                <th class="py-3 px-4 text-right">Orders</th>
+                <th class="py-3 px-4 text-right">Total Qty</th>
+                <th class="py-3 px-4 text-right">Gross Sales</th>
+                <th class="py-3 px-4 text-right">Discounts</th>
+                <th class="py-3 px-4 text-right">Net Sales</th>
+                <th class="py-3 px-4 text-right">Avg Selling Price</th>
+              </tr>
+            </thead>
+            <tbody id="base-items-tbody" class="divide-y divide-white/5 text-slate-200">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- TAB 3: GLOBAL MODIFIERS FREQUENCY BREAKDOWN -->
+    <!-- ==================================================== -->
+    <div id="view-modifiers" class="hidden space-y-3">
+      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+        <p>Franchise-wide modifier popularity and revenue generation across all base items.</p>
+        <button id="btn-export-mods-csv" class="hover:text-emerald-400 flex items-center gap-1 font-bold">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Export Modifiers CSV</span>
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                <th class="py-3 px-4">Modifier Name</th>
+                <th class="py-3 px-4 text-right">Times Selected</th>
+                <th class="py-3 px-4 text-right">Add-on Unit Price</th>
+                <th class="py-3 px-4 text-right">Total Add-on Revenue</th>
+                <th class="py-3 px-4 text-right">% of All Orders</th>
+                <th class="py-3 px-4">Primary Parent Items Chosen With</th>
+              </tr>
+            </thead>
+            <tbody id="global-mods-tbody" class="divide-y divide-white/5 text-slate-200">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- TAB 4: REFUNDS & DISCREPANCY AUDIT LOG -->
+    <!-- ==================================================== -->
+    <div id="view-refunds" class="hidden space-y-3">
+      <div class="glass-card rounded-2xl p-4 border-rose-500/20 bg-rose-950/10">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-rose-300">Square Refunds, Voids, & Line Discrepancies</h4>
+            <p class="text-xs text-slate-300">
+              Every negative quantity, refund event type, or cancelled order is isolated below so your financial book balances to the exact penny.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                <th class="py-3 px-4">Date & Time</th>
+                <th class="py-3 px-4">Item & Variation</th>
+                <th class="py-3 px-4 text-center">Event Type</th>
+                <th class="py-3 px-4 text-right">Qty</th>
+                <th class="py-3 px-4 text-right">Amount Refunded</th>
+                <th class="py-3 px-4">Transaction / Order ID</th>
+                <th class="py-3 px-4">Notes / Details</th>
+              </tr>
+            </thead>
+            <tbody id="refunds-tbody" class="divide-y divide-white/5 text-slate-200">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- TAB 5: CLEANED NORMALIZED RECORDS TABLE -->
+    <!-- ==================================================== -->
+    <div id="view-raw" class="hidden space-y-3">
+      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+        <p>Complete cleaned line-item ledger with atomic modifier breakdown and sanitized currency values.</p>
+        <button id="btn-export-raw-csv" class="hover:text-emerald-400 flex items-center gap-1 font-bold">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Export Cleaned Rows CSV</span>
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                <th class="py-3 px-4">Date / Time</th>
+                <th class="py-3 px-4">Item</th>
+                <th class="py-3 px-4">Variation</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4 text-right">Qty</th>
+                <th class="py-3 px-4">Clean Modifiers List</th>
+                <th class="py-3 px-4 text-right">Gross</th>
+                <th class="py-3 px-4 text-right">Discounts</th>
+                <th class="py-3 px-4 text-right">Net</th>
+                <th class="py-3 px-4 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="raw-ledger-tbody" class="divide-y divide-white/5 text-slate-200">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="w-full border-t border-white/10 bg-slate-950/60 py-4 mt-8 relative z-10 text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span class="font-semibold text-slate-300">Treat Street Enterprise Sales Architecture</span>
+        <span class="text-slate-600">|</span>
+        <span>Square CSV / TSV Parsing Engine</span>
+      </div>
+      <div>
+        <span>Treat Street Franchise HQ • Zero Inventory Calculation Mode Active</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================================================================= -->
+  <!-- FRONTEND LOGIC & RFC-4180 PARSER SCRIPT -->
+  <!-- ================================================================= -->
+  <script>
+    // State Store
+    let parsedDataset = {
+      delimiter: ',',
+      headers: [],
+      headerMap: {},
+      rawRows: [],
+      cleanRows: [],
+      parentChildMatrix: {},
+      globalModifiers: {},
+      refunds: [],
+      metrics: {
+        totalGross: 0,
+        totalDiscounts: 0,
+        totalNet: 0,
+        totalItemsSold: 0,
+        distinctDishes: 0,
+        totalModifiersAttached: 0,
+        distinctModifiers: 0,
+        totalModifierRevenue: 0,
+        topModifier: 'None',
+        topModifierCount: 0,
+        refundCount: 0,
+        refundAmount: 0
+      }
+    };
+
+    let activeTab = 'matrix';
+    let expandedAll = true;
+
+    // Built-in Treat Street Sample POS Report Data
+    const treatStreetSampleData = `Date\tTime\tCategory\tItem\tQty\tPrice Point Name\tSKU\tModifiers Applied\tProduct Sales\tDiscounts\tNet Sales\tTax\tGross Sales\tTransaction ID\tPayment ID\tDevice Name\tNotes\tDetails\tEvent Type\tLocation\tDining Option\tCustomer ID\tCustomer Name\tUnit\tCount\tCommission\tEmployee\tChannel\tCard Brand\tPAN Suffix
+2026-08-31\t17:24:46\tMilkshakes\tGelato Shake\t1.0\tRegular\t367182V\tBubblegum Gelato, Vegan Mint Choc Chip\t£7.00\t-£7.00\t£0.00\t£0.00\t£0.00\tGLRN1\tPAY1\tSquare Register 1350\tNotes\thttps://square\tPayment\tTreat Street\tFor Here\tCUST1\tKyle Major\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t1111
+2026-08-31\t17:24:46\tCandy Bar Shakes\tLuxury White Choc Milkshake\t1.0\tRegular\t656639R\tNo Whipped Cream\t£6.00\t£0.00\t£6.00\t£0.00\t£6.00\tGLRN1\tPAY1\tSquare Register 1350\t\thttps://square\tPayment\tTreat Street\tFor Here\tCUST1\tKyle Major\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t1111
+2026-08-31\t17:24:46\tWaffles, Pancakes, Cookie Doughs, Cheesecakes\tBanoffee\t1.0\tRegular\t316502P\tWaffle, £9.50, Salted Caramel Gelato, £0.00\t£11.00\t£0.00\t£11.00\t£0.00\t£11.00\tGLRN1\tPAY1\tSquare Register 1350\twhite choc sauce\thttps://square\tPayment\tTreat Street\tFor Here\tCUST1\tKyle Major\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t1111
+2026-08-31\t17:22:30\tNone\tRagin Cajuns\t1.0\tRegular\tH133205\tNo Side\t£6.50\t£0.00\t£6.50\t£0.00\t£6.50\tTR2\tPAY2\tSquare Terminal 0864\tCajun chicken\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t2222
+2026-08-31\t17:22:30\tGelato & Sorbet Scoops\t1 Scoop\t1.0\tRegular\t8800416\tBubblegum Gelato\t£3.00\t£0.00\t£3.00\t£0.00\t£3.00\tTR2\tPAY2\tSquare Terminal 0864\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t2222
+2026-08-31\t17:22:30\tGelato & Sorbet Scoops\t1 Scoop\t1.0\tRegular\t8800416\tVanilla Gelato\t£3.00\t£0.00\t£3.00\t£0.00\t£3.00\tTR2\tPAY2\tSquare Terminal 0864\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t2222
+2026-08-31\t17:22:30\tSoft Drinks\tStill Water\t3.0\tRegular\t1729046\t\t£9.00\t£0.00\t£9.00\t£0.00\t£9.00\tTR2\tPAY2\tSquare Terminal 0864\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t3\t£0.00\tEllie Gale\tTreat Street\tVisa\t2222
+2026-08-31\t17:22:07\tWaffles, Pancakes, Cookie Doughs, Cheesecakes\tTwist it, Lick it, Dunk it\t1.0\tRegular\t4763263\tPancakes, £9.50, Soft Serve, £0.00, Extra Oreos (+£1.50)\t£11.00\t£0.00\t£11.00\t£0.00\t£11.00\tTR3\tPAY3\tSquare Register 1350\tOreos\thttps://square\tPayment\tTreat Street\t\t\tTom Cowan\tea\t1\t£0.00\t\tTreat Street\tVisa\t8633
+2026-08-31\t17:22:07\tGelato & Sorbet Scoops\t1 Scoop\t1.0\tRegular\t8800416\tVanilla Gelato\t£3.00\t£0.00\t£3.00\t£0.00\t£3.00\tTR3\tPAY3\tSquare Register 1350\t\thttps://square\tPayment\tTreat Street\t\t\tTom Cowan\tea\t1\t£0.00\t\tTreat Street\tVisa\t8633
+2026-08-31\t17:22:07\tSmoothies\tAvo go go\t1.0\tRegular\t2956861\tNo Extra\t£6.00\t£0.00\t£6.00\t£0.00\t£6.00\tTR3\tPAY3\tSquare Register 1350\tAvocado\thttps://square\tPayment\tTreat Street\t\t\tTom Cowan\tea\t1\t£0.00\t\tTreat Street\tVisa\t8633
+2026-08-31\t17:21:08\tCreate Your Own\tChocolate Chip Cookie Dough\t1.0\tRegular\t261948N\tSoft Serve\t£8.00\t£0.00\t£8.00\t£0.00\t£8.00\tTR4\tPAY4\tSquare Register 1350\tCookie dough\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tEllie Gale\tTreat Street\tMasterCard\t3344
+2026-08-31\t17:21:08\tCreate Your Own\tChocolate Chip Cookie Dough\t1.0\tRegular\t261948N\tChurros Gelato (+£0.95)\t£8.95\t£0.00\t£8.95\t£0.00\t£8.95\tTR4\tPAY4\tSquare Register 1350\tChurros\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tEllie Gale\tTreat Street\tMasterCard\t3344
+2026-08-31\t17:17:53\tSundaes\tLick it\t1.0\tRegular\tL806898\tNo Whipped Cream\t£11.00\t£0.00\t£11.00\t£0.00\t£11.00\tTR5\tPAY5\tSquare Terminal 0864\tOreo\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tKajus Sabaliauskas\tTreat Street\tVisa\t9763
+2026-08-31\t17:11:54\tToday's Specials\tViral Dubai Chocolate - Kunafa\t1.0\tRegular\t7937896\tCroffle, Raspberry Sorbet\t£14.25\t£0.00\t£14.25\t£0.00\t£14.25\tTR6\tPAY6\tSquare Terminal 0864\tExtra tray\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tKajus Sabaliauskas\tTreat Street\tMasterCard\t6769
+2026-08-31\t17:11:54\tWaffles, Pancakes, Cookie Doughs, Cheesecakes\tStrawberry Field\t1.0\tRegular\t662644W\tCookie dough, Oreo\t£11.00\t£0.00\t£11.00\t£0.00\t£11.00\tTR6\tPAY6\tSquare Terminal 0864\tStrawberries\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tKajus Sabaliauskas\tTreat Street\tMasterCard\t6769
+2026-08-31\t17:11:54\tGelato & Sorbet Scoops\t1 Scoop\t1.0\tRegular\t8800416\tOreo Gelato\t£3.00\t£0.00\t£3.00\t£0.00\t£3.00\tTR6\tPAY6\tSquare Terminal 0864\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tKajus Sabaliauskas\tTreat Street\tMasterCard\t6769
+2026-08-31\t17:07:51\tWaffles, Pancakes, Cookie Doughs, Cheesecakes\tBiscofia\t1.0\tRegular\t518589X\tLiege Waffle\t£11.50\t£0.00\t£11.50\t£0.00\t£11.50\tTR7\tPAY7\tSquare Terminal 0864\tExtra sauces\thttps://square\tPayment\tTreat Street\tFor Here\t\tZak Chaleif\tea\t1\t£0.00\tKajus Sabaliauskas\tTreat Street\tVisa\t7088
+2026-08-31\t17:06:13\tPremium Shakes\tOreo Milkshake\t1.0\tRegular\tL491010\tWhipped Cream\t£7.20\t£0.00\t£7.20\t£0.00\t£7.20\tTR8\tPAY8\tSquare Register 1350\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t1836
+2026-08-31\t17:06:13\tMilkshakes\tGelato Shake\t1.0\tRegular\t367182V\tVanilla Gelato, Vanilla Gelato\t£7.70\t£0.00\t£7.70\t£0.00\t£7.70\tTR8\tPAY8\tSquare Register 1350\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t1836
+2026-08-31\t17:06:13\tMilkshakes\tGelato Shake\t1.0\tRegular\t367182V\tStrawberry Gelato, Vanilla Gelato\t£7.70\t£0.00\t£7.70\t£0.00\t£7.70\tTR8\tPAY8\tSquare Register 1350\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t1836
+2026-08-31\t17:06:13\tWaffles, Pancakes, Cookie Doughs, Cheesecakes\tEL Fudgee\t1.0\tRegular\tY650451\tCheesecake, Whipped Cream\t£10.00\t£0.00\t£10.00\t£0.00\t£10.00\tTR8\tPAY8\tSquare Register 1350\tBrownie\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tEllie Gale\tTreat Street\tVisa\t1836
+2026-08-31\t17:02:57\tNone\tRed Wedding\t1.0\tRegular\t934238R\t\t£7.00\t-£1.40\t£5.60\t£0.00\t£5.60\tTR9\tPAY9\tSquare Terminal 0864\tHoney buffalo\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tKajus Sabaliauskas\tTreat Street\tMasterCard\t7237
+2026-08-31\t17:02:57\tFully Funked Fries\tPapi Chulo\t1.0\tRegular\t4953168\tNo Extra\t£6.00\t-£1.20\t£4.80\t£0.00\t£4.80\tTR9\tPAY9\tSquare Terminal 0864\tCajun fries\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tKajus Sabaliauskas\tTreat Street\tMasterCard\t7237
+2026-08-31\t17:01:08\tWaffles, Pancakes, Cookie Doughs, Cheesecakes\tBiscofia\t1.0\tRegular\t518589X\tCroffle, No Side\t£11.50\t£0.00\t£11.50\t£0.00\t£11.50\tTR10\tPAY10\tSquare Terminal 0864\tBiscoff\thttps://square\tPayment\tTreat Street\t\t\tHassan Mukhtar\tea\t1\t£0.00\t\tTreat Street\tMasterCard\t8945
+2026-08-31\t16:00:53\tBurgers\tLouisiana\t2.0\tRegular\tK199704\tBrioche Bun, Plain Fries\t£26.00\t-£5.20\t£20.80\t£0.00\t£20.80\tTR11\tPAY11\tSquare Register 1350\tBurger\thttps://square\tPayment\tTreat Street\tFor Here\t\tTate Hodgson\tea\t2\t£0.00\tTate Hodgson\tTreat Street\tVisa\t3567
+2026-08-31\t15:54:44\tNone\t5£ Darts for 30 Minutes\t-2.0\tRegular\t556902Y\t\t-£10.00\t£0.00\t-£10.00\t£0.00\t-£10.00\tTR12\tPAY12\tSquare Terminal 0864\tCancelled Order\thttps://square\tRefund\tTreat Street\t\t\t\t\tea\t-2\t£0.00\t\tTreat Street\t\t
+2026-08-31\t15:49:47\tNone\t5£ Darts for 30 Minutes\t2.0\tRegular\t556902Y\t\t£10.00\t£0.00\t£10.00\t£0.00\t£10.00\tTR13\tPAY13\tSquare Terminal 0864\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t2\t£0.00\tTate Hodgson\tTreat Street\t\t
+2026-08-31\t13:14:15\tToday's Specials\tViral Dubai Chocolate - Kunafa\t1.0\tRegular\t7937896\tCroffle, Raspberry Sorbet\t£14.25\t£0.00\t£14.25\t£0.00\t£14.25\tTR14\tPAY14\tSquare Register 1350\tKunafa\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tNatalia Shakir\tTreat Street\tVisa\t5892
+2026-08-31\t13:14:15\tChick n Waffles\tUncle G\t1.0\tRegular\t1361598\tPlain Fries\t£14.50\t£0.00\t£14.50\t£0.00\t£14.50\tTR14\tPAY14\tSquare Register 1350\tTandoori\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tNatalia Shakir\tTreat Street\tVisa\t5892
+2026-08-31\t13:14:15\tChick n Waffles\tOG\t1.0\tRegular\t5111244\tCajun Spiced Fries\t£14.00\t£0.00\t£14.00\t£0.00\t£14.00\tTR14\tPAY14\tSquare Register 1350\tMaple syrup\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tNatalia Shakir\tTreat Street\tVisa\t5892
+2026-08-31\t13:14:15\tWaffles, Pancakes, Cookie Doughs, Cheesecakes\tUncomplicated\t1.0\tRegular\t1633611\tWaffle, Soft Serve\t£9.50\t£0.00\t£9.50\t£0.00\t£9.50\tTR14\tPAY14\tSquare Register 1350\tMaple\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tNatalia Shakir\tTreat Street\tVisa\t5892
+2026-08-31\t13:14:15\tWaffles, Pancakes, Cookie Doughs, Cheesecakes\tBanoffee\t1.0\tRegular\t316502P\tWaffle, Soft Serve\t£11.00\t£0.00\t£11.00\t£0.00\t£11.00\tTR14\tPAY14\tSquare Register 1350\tBanana\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tNatalia Shakir\tTreat Street\tVisa\t5892
+2026-08-31\t13:14:15\tSoft Drinks\tCoca Cola\t3.0\tRegular\t587102C\t\t£9.00\t£0.00\t£9.00\t£0.00\t£9.00\tTR14\tPAY14\tSquare Register 1350\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t3\t£0.00\tNatalia Shakir\tTreat Street\tVisa\t5892
+2026-08-31\t13:14:15\tSoft Drinks\tFanta Orange\t1.0\tRegular\tE467987\t\t£3.00\t£0.00\t£3.00\t£0.00\t£3.00\tTR14\tPAY14\tSquare Register 1350\t\thttps://square\tPayment\tTreat Street\tFor Here\t\t\tea\t1\t£0.00\tNatalia Shakir\tTreat Street\tVisa\t5892`;
+
+    // Initialize Icons
+    lucide.createIcons();
+
+    // -------------------------------------------------------------
+    // RFC 4180 COMPLIANT STREAMING CSV / TSV PARSER
+    // -------------------------------------------------------------
+    function parseRFC4180(text) {
+      if (!text || !text.trim()) return { headers: [], rows: [], delimiter: ',' };
+
+      // Normalize escaped tabs if pasted literally
+      let cleanText = text;
+      if (!cleanText.includes('\t') && cleanText.includes('\\t')) {
+        cleanText = cleanText.replace(/\\t/g, '\t');
+      }
+
+      // Auto-detect delimiter
+      const firstLineEnd = cleanText.indexOf('\n');
+      const firstLine = firstLineEnd !== -1 ? cleanText.substring(0, firstLineEnd) : cleanText;
+      let delimiter = ',';
+      const tabCount = (firstLine.match(/\t/g) || []).length;
+      const commaCount = (firstLine.match(/,/g) || []).length;
+      const semiCount = (firstLine.match(/;/g) || []).length;
+      if (tabCount > commaCount && tabCount > semiCount) {
+        delimiter = '\t';
+      } else if (semiCount > commaCount && semiCount > tabCount) {
+        delimiter = ';';
+      }
+
+      const rows = [];
+      let currentRow = [];
+      let currentVal = '';
+      let inQuotes = false;
+      let i = 0;
+      const len = cleanText.length;
+
+      while (i < len) {
+        const char = cleanText[i];
+        const nextChar = i + 1 < len ? cleanText[i + 1] : '';
+
+        if (inQuotes) {
+          if (char === '"') {
+            if (nextChar === '"') {
+              // Escaped double quote
+              currentVal += '"';
+              i += 2;
+              continue;
+            } else {
+              // End of quoted field
+              inQuotes = false;
+              i++;
+              continue;
+            }
+          } else {
+            currentVal += char;
+            i++;
+            continue;
+          }
+        } else {
+          if (char === '"') {
+            inQuotes = true;
+            i++;
+            continue;
+          } else if (char === delimiter) {
+            currentRow.push(currentVal.trim());
+            currentVal = '';
+            i++;
+            continue;
+          } else if (char === '\r') {
+            if (nextChar === '\n') {
+              i++;
+            }
+            currentRow.push(currentVal.trim());
+            currentVal = '';
+            rows.push(currentRow);
+            currentRow = [];
+            i++;
+            continue;
+          } else if (char === '\n') {
+            currentRow.push(currentVal.trim());
+            currentVal = '';
+            rows.push(currentRow);
+            currentRow = [];
+            i++;
+            continue;
+          } else {
+            currentVal += char;
+            i++;
+            continue;
+          }
+        }
+      }
+
+      if (currentVal.length > 0 || currentRow.length > 0) {
+        currentRow.push(currentVal.trim());
+        rows.push(currentRow);
+      }
+
+      if (rows.length === 0) return { headers: [], rows: [], delimiter };
+
+      const headers = rows[0].map(h => h.replace(/^["']|["']$/g, '').trim());
+      const dataRows = rows.slice(1).filter(r => r.length > 1 || (r.length === 1 && r[0] !== ''));
+
+      return { delimiter, headers, rows: dataRows };
+    }
+
+    // Currency Sanitizer (handles £, $, €, negative signs, parenthetical negatives)
+    function sanitizeCurrency(val) {
+      if (typeof val === 'number') return val;
+      if (!val) return 0;
+      let str = String(val).trim();
+      let negative = false;
+      if (str.startsWith('-') || str.includes('(')) negative = true;
+      str = str.replace(/[£$€,\(\)]/g, '').replace(/-/g, '').trim();
+      const num = parseFloat(str);
+      if (isNaN(num)) return 0;
+      return negative ? -num : num;
+    }
+
+    // Number Sanitizer
+    function sanitizeNumber(val, defaultVal = 0) {
+      if (typeof val === 'number') return val;
+      if (!val) return defaultVal;
+      const num = parseFloat(String(val).replace(/,/g, '').trim());
+      return isNaN(num) ? defaultVal : num;
+    }
+
+    // -------------------------------------------------------------
+    // MODIFIERS PARSING ENGINE (Handles Merged String Pairs & Comma Lists)
+    // -------------------------------------------------------------
+    function parseSquareModifiers(modStr) {
+      if (!modStr || !modStr.trim()) return [];
+      const raw = modStr.trim();
+
+      // Case 1: Pairs like "Waffle, £9.50, Soft Serve, £0.00, No Extras, £0.00"
+      const tokens = raw.split(',').map(t => t.trim()).filter(Boolean);
+      const currencyRegex = /^[£$€]\s*-?\d+(\.\d+)?$/;
+      const results = [];
+
+      let hasPricesInTokens = false;
+      for (let t = 1; t < tokens.length; t += 2) {
+        if (currencyRegex.test(tokens[t])) {
+          hasPricesInTokens = true;
+          break;
+        }
+      }
+
+      if (hasPricesInTokens) {
+        let idx = 0;
+        while (idx < tokens.length) {
+          const name = tokens[idx];
+          let price = 0;
+          if (idx + 1 < tokens.length && currencyRegex.test(tokens[idx + 1])) {
+            price = sanitizeCurrency(tokens[idx + 1]);
+            idx += 2;
+          } else {
+            idx += 1;
+          }
+          if (name) {
+            results.push({ name, price });
+          }
+        }
+        return results;
+      }
+
+      // Case 2: Comma list with optional parenthetical prices e.g. "Croffle, Raspberry Sorbet (+£1.50)"
+      tokens.forEach(tok => {
+        let name = tok;
+        let price = 0;
+        const parenMatch = tok.match(/^(.*?)\s*\(\s*([+\-–—]?\s*[£$€]?\s*[+\-–—]?\s*\d+(?:\.\d+)?)\s*\)$/i);
+        if (parenMatch) {
+          name = parenMatch[1].trim();
+          price = sanitizeCurrency(parenMatch[2]);
+        }
+        if (name) {
+          results.push({ name, price });
+        }
+      });
+
+      return results;
+    }
+
+    // -------------------------------------------------------------
+    // DATASET COMPILER & NORMALIZER
+    // -------------------------------------------------------------
+    function processSquareData(rawText) {
+      const parsed = parseRFC4180(rawText);
+      if (!parsed.headers || parsed.headers.length === 0) {
+        alert('Could not detect valid CSV/TSV headers. Please check the file format.');
+        return;
+      }
+
+      // Build case-insensitive header mapping
+      const headerMap = {};
+      parsed.headers.forEach((h, i) => {
+        headerMap[h.toLowerCase().trim()] = i;
+      });
+
+      function getCol(row, candidates, fallback = '') {
+        for (const c of candidates) {
+          const idx = headerMap[c.toLowerCase()];
+          if (idx !== undefined && row[idx] !== undefined) {
+            return row[idx];
+          }
+        }
+        return fallback;
+      }
+
+      // Validate Expected Headers
+      const hasItem = ['item', 'item name', 'items', 'product'].some(k => headerMap[k] !== undefined);
+      const hasVariation = ['price point name', 'variation', 'item variation', 'option'].some(k => headerMap[k] !== undefined);
+      const hasMods = ['modifiers applied', 'modifiers', 'item modifiers', 'modifiers added'].some(k => headerMap[k] !== undefined);
+      const hasQty = ['qty', 'quantity', 'count'].some(k => headerMap[k] !== undefined);
+      const hasStatus = ['event type', 'transaction status', 'status', 'type'].some(k => headerMap[k] !== undefined);
+
+      updateHeaderTelemetry(hasItem, hasVariation, hasMods, hasQty, hasStatus, parsed.delimiter, parsed.rows.length);
+
+      // Reset Datastores
+      const cleanRows = [];
+      const parentMatrix = {};
+      const globalMods = {};
+      const refunds = [];
+
+      let sumGross = 0;
+      let sumDiscounts = 0;
+      let sumNet = 0;
+      let sumTotalItemsSold = 0;
+      let sumModifiersAttached = 0;
+      let sumModRevenue = 0;
+
+      parsed.rows.forEach((row, rowIndex) => {
+        // Extract Core Fields with resilient fallbacks
+        const item = getCol(row, ['item', 'item name', 'items', 'product'], 'Unknown Item').trim();
+        const variation = getCol(row, ['price point name', 'variation', 'item variation', 'option'], 'Regular').trim();
+        const category = getCol(row, ['category', 'item category'], 'General').trim() || 'General';
+        const sku = getCol(row, ['sku', 'item sku'], '').trim();
+        const qty = sanitizeNumber(getCol(row, ['qty', 'quantity', 'count'], '1'), 1);
+        
+        let grossSales = sanitizeCurrency(getCol(row, ['gross sales', 'product sales', 'gross'], '0'));
+        const discounts = sanitizeCurrency(getCol(row, ['discounts', 'discount amount'], '0'));
+        let netSales = sanitizeCurrency(getCol(row, ['net sales', 'net'], ''));
+        
+        // If net sales is missing, deduce from gross + discounts
+        if (netSales === 0 && grossSales !== 0) {
+          netSales = grossSales + discounts;
+        }
+
+        const date = getCol(row, ['date'], '');
+        const time = getCol(row, ['time'], '');
+        const eventType = getCol(row, ['event type', 'transaction status', 'status'], 'Payment').trim();
+        const transId = getCol(row, ['transaction id', 'payment id', 'order id'], `Row-${rowIndex + 1}`);
+        const notes = getCol(row, ['notes', 'details'], '');
+        const modRaw = getCol(row, ['modifiers applied', 'modifiers', 'item modifiers'], '');
+
+        const isRefund = eventType.toLowerCase().includes('refund') || qty < 0 || grossSales < 0;
+
+        // Parse individual modifiers
+        const parsedMods = parseSquareModifiers(modRaw);
+
+        const record = {
+          rowIndex: rowIndex + 1,
+          date,
+          time,
+          category,
+          item,
+          variation,
+          sku,
+          qty,
+          grossSales,
+          discounts,
+          netSales,
+          eventType,
+          isRefund,
+          transId,
+          notes,
+          rawModifiers: modRaw,
+          modifiers: parsedMods
+        };
+
+        cleanRows.push(record);
+
+        if (isRefund) {
+          refunds.push(record);
+        }
+
+        // Totals
+        sumGross += grossSales;
+        sumDiscounts += discounts;
+        sumNet += netSales;
+        sumTotalItemsSold += qty;
+
+        // Parent-Child Matrix Grouping Key
+        const parentKey = `${item}:::${variation}`;
+        if (!parentMatrix[parentKey]) {
+          parentMatrix[parentKey] = {
+            item,
+            variation,
+            category,
+            sku,
+            orderCount: 0,
+            totalQty: 0,
+            grossSales: 0,
+            discounts: 0,
+            netSales: 0,
+            refundQty: 0,
+            modifiers: {} // modName -> { name, count, unitPrice, totalRevenue }
+          };
+        }
+
+        const parent = parentMatrix[parentKey];
+        parent.orderCount += 1;
+        parent.totalQty += qty;
+        parent.grossSales += grossSales;
+        parent.discounts += discounts;
+        parent.netSales += netSales;
+        if (isRefund) {
+          parent.refundQty += Math.abs(qty);
+        }
+
+        // Process Modifiers Attachment
+        if (parsedMods.length > 0) {
+          const effectiveMultiplier = qty > 0 ? qty : 1;
+          parsedMods.forEach(m => {
+            // Parent level
+            if (!parent.modifiers[m.name]) {
+              parent.modifiers[m.name] = {
+                name: m.name,
+                count: 0,
+                unitPrice: m.price,
+                totalRevenue: 0
+              };
+            }
+            parent.modifiers[m.name].count += effectiveMultiplier;
+            parent.modifiers[m.name].totalRevenue += (m.price * effectiveMultiplier);
+
+            // Global level
+            if (!globalMods[m.name]) {
+              globalMods[m.name] = {
+                name: m.name,
+                count: 0,
+                unitPrice: m.price,
+                totalRevenue: 0,
+                parentItems: {}
+              };
+            }
+            globalMods[m.name].count += effectiveMultiplier;
+            globalMods[m.name].totalRevenue += (m.price * effectiveMultiplier);
+            globalMods[m.name].parentItems[item] = (globalMods[m.name].parentItems[item] || 0) + effectiveMultiplier;
+
+            sumModifiersAttached += effectiveMultiplier;
+            sumModRevenue += (m.price * effectiveMultiplier);
+          });
+        }
+      });
+
+      // Find top modifier
+      let topModName = 'None';
+      let topModCount = 0;
+      Object.values(globalMods).forEach(g => {
+        if (g.count > topModCount) {
+          topModCount = g.count;
+          topModName = g.name;
+        }
+      });
+
+      const distinctDishes = Object.keys(parentMatrix).length;
+      const distinctModifiers = Object.keys(globalMods).length;
+      const avgModsPerItem = sumTotalItemsSold > 0 ? (sumModifiersAttached / sumTotalItemsSold).toFixed(2) : '0.0';
+      const attachRate = sumTotalItemsSold > 0 ? Math.min(100, ((sumModifiersAttached / sumTotalItemsSold) * 100)).toFixed(1) : '0';
+
+      // Save to Dataset
+      parsedDataset = {
+        delimiter: parsed.delimiter,
+        headers: parsed.headers,
+        headerMap,
+        rawRows: parsed.rows,
+        cleanRows,
+        parentChildMatrix: parentMatrix,
+        globalModifiers: globalMods,
+        refunds,
+        metrics: {
+          totalGross: sumGross,
+          totalDiscounts: sumDiscounts,
+          totalNet: sumNet,
+          totalItemsSold: sumTotalItemsSold,
+          distinctDishes,
+          totalModifiersAttached: sumModifiersAttached,
+          distinctModifiers,
+          totalModifierRevenue: sumModRevenue,
+          topModifier: topModName,
+          topModifierCount: topModCount,
+          avgModsPerItem,
+          attachRate,
+          refundCount: refunds.length
+        }
+      };
+
+      // Populate Filter Categories
+      populateCategoryFilter();
+
+      // Render UI
+      renderKPIs();
+      renderAllViews();
+    }
+
+    // -------------------------------------------------------------
+    // TELEMETRY & HEADER INSPECTION DISPLAY
+    // -------------------------------------------------------------
+    function updateHeaderTelemetry(item, variation, mods, qty, status, delimiter, rowCount) {
+      const setField = (id, valid, label) => {
+        const el = document.getElementById(id);
+        if (valid) {
+          el.className = 'text-emerald-400 font-bold font-mono text-[11px] flex items-center gap-1';
+          el.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Validated';
+        } else {
+          el.className = 'text-amber-400 font-mono text-[11px] flex items-center gap-1';
+          el.innerHTML = '<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Fallback used';
+        }
+      };
+
+      setField('field-item', item);
+      setField('field-variation', variation);
+      setField('field-modifiers', mods);
+      setField('field-qty-sales', qty);
+      setField('field-status', status);
+
+      document.getElementById('telemetry-delimiter').textContent = delimiter === '\t' ? 'TAB (\\t)' : delimiter === ';' ? 'SEMICOLON (;)' : 'COMMA (,)';
+      document.getElementById('telemetry-rows').textContent = rowCount.toLocaleString();
+
+      const badge = document.getElementById('telemetry-badge');
+      badge.textContent = 'Active • 100% Parsed';
+      badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30';
+
+      lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // KPI RENDERER
+    // -------------------------------------------------------------
+    function renderKPIs() {
+      const m = parsedDataset.metrics;
+      document.getElementById('kpi-net-sales').textContent = `£${m.totalNet.toFixed(2)}`;
+      document.getElementById('kpi-gross-sales').textContent = `£${m.totalGross.toFixed(2)}`;
+      document.getElementById('kpi-discounts').textContent = `£${m.totalDiscounts.toFixed(2)}`;
+      
+      document.getElementById('kpi-total-qty').textContent = m.totalItemsSold.toLocaleString();
+      document.getElementById('kpi-distinct-items').textContent = m.distinctDishes;
+      document.getElementById('kpi-refund-count').textContent = m.refundCount;
+
+      document.getElementById('kpi-total-mods').textContent = m.totalModifiersAttached.toLocaleString();
+      document.getElementById('kpi-distinct-mods').textContent = m.distinctModifiers;
+      document.getElementById('kpi-mod-rev').textContent = `£${m.totalModifierRevenue.toFixed(2)}`;
+
+      document.getElementById('kpi-attach-rate').textContent = `${m.attachRate}%`;
+      document.getElementById('kpi-avg-mods').textContent = m.avgModsPerItem;
+
+      document.getElementById('kpi-top-modifier').textContent = m.topModifier;
+      document.getElementById('kpi-top-mod-count').textContent = m.topModifierCount;
+
+      document.getElementById('badge-matrix-count').textContent = m.distinctDishes;
+      const refBadge = document.getElementById('badge-refund-count');
+      if (m.refundCount > 0) {
+        refBadge.textContent = m.refundCount;
+        refBadge.classList.remove('hidden');
+      } else {
+        refBadge.classList.add('hidden');
+      }
+    }
+
+    // Populate Category Dropdown
+    function populateCategoryFilter() {
+      const select = document.getElementById('category-filter');
+      const cats = new Set();
+      Object.values(parsedDataset.parentChildMatrix).forEach(p => {
+        if (p.category) cats.add(p.category);
+      });
+
+      select.innerHTML = '<option value="ALL">All Categories</option>';
+      Array.from(cats).sort().forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        select.appendChild(opt);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // VIEW 1: PARENT-CHILD ATTACHED MATRIX RENDERER
+    // -------------------------------------------------------------
+    function renderParentChildMatrix() {
+      const tbody = document.getElementById('matrix-tbody');
+      const searchQuery = (document.getElementById('search-input').value || '').toLowerCase().trim();
+      const selectedCategory = document.getElementById('category-filter').value;
+
+      const items = Object.values(parsedDataset.parentChildMatrix);
+      if (items.length === 0) return;
+
+      tbody.innerHTML = '';
+
+      items.forEach((p, idx) => {
+        // Filter Checks
+        if (selectedCategory !== 'ALL' && p.category !== selectedCategory) return;
+        
+        const matchesItem = p.item.toLowerCase().includes(searchQuery) || p.variation.toLowerCase().includes(searchQuery) || p.category.toLowerCase().includes(searchQuery);
+        const childMods = Object.values(p.modifiers);
+        const matchesModifier = childMods.some(m => m.name.toLowerCase().includes(searchQuery));
+
+        if (searchQuery && !matchesItem && !matchesModifier) return;
+
+        const avgPrice = p.totalQty > 0 ? (p.netSales / p.totalQty).toFixed(2) : '0.00';
+        const totalModsForThisItem = childMods.reduce((sum, m) => sum + m.count, 0);
+        const hasChildren = childMods.length > 0;
+        const rowId = `parent-row-${idx}`;
+        const childId = `child-table-${idx}`;
+
+        // Parent Row HTML
+        const trParent = document.createElement('tr');
+        trParent.className = 'hover:bg-emerald-950/20 transition-colors border-b border-white/5 font-medium cursor-pointer group';
+        trParent.id = rowId;
+        trParent.onclick = () => toggleChildRow(childId);
+
+        trParent.innerHTML = `
+          <td class="py-3 px-4 text-center">
+            ${hasChildren ? `
+              <button class="w-6 h-6 rounded-md bg-white/5 group-hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center transition-all">
+                <i data-lucide="chevron-down" id="icon-${childId}" class="w-4 h-4 transition-transform ${expandedAll ? '' : '-rotate-90'}"></i>
+              </button>
+            ` : `
+              <span class="text-slate-600 font-mono text-[10px]">•</span>
+            `}
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-white group-hover:text-emerald-300 transition-colors text-xs sm:text-sm heading-font">${escapeHtml(p.item)}</span>
+              <span class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-slate-300 font-mono">${escapeHtml(p.variation)}</span>
+            </div>
+          </td>
+          <td class="py-3 px-4">
+            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-semibold">${escapeHtml(p.category)}</span>
+          </td>
+          <td class="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">${escapeHtml(p.sku || '-')}</td>
+          <td class="py-3 px-4 text-right font-bold text-white font-mono">${p.totalQty}</td>
+          <td class="py-3 px-4 text-right font-mono text-slate-300">£${p.grossSales.toFixed(2)}</td>
+          <td class="py-3 px-4 text-right font-mono ${p.discounts < 0 ? 'text-amber-400' : 'text-slate-400'}">£${p.discounts.toFixed(2)}</td>
+          <td class="py-3 px-4 text-right font-bold font-mono text-emerald-400">£${p.netSales.toFixed(2)}</td>
+          <td class="py-3 px-4 text-right font-mono text-slate-300">£${avgPrice}</td>
+          <td class="py-3 px-4 text-center">
+            ${hasChildren ? `
+              <span class="px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-300 font-bold text-[11px] inline-flex items-center gap-1">
+                <i data-lucide="layers" class="w-3 h-3 text-amber-400"></i>
+                ${childMods.length} types (${totalModsForThisItem} total)
+              </span>
+            ` : `
+              <span class="text-slate-500 text-[11px] italic">None</span>
+            `}
+          </td>
+        `;
+        tbody.appendChild(trParent);
+
+        // Child Nested Sub-Table Row
+        if (hasChildren) {
+          const trChild = document.createElement('tr');
+          trChild.id = childId;
+          trChild.className = expandedAll ? 'bg-slate-950/40 border-b border-white/5' : 'hidden bg-slate-950/40 border-b border-white/5';
+
+          let childRowsHtml = '';
+          childMods.sort((a, b) => b.count - a.count).forEach(m => {
+            const attachPct = p.totalQty > 0 ? ((m.count / p.totalQty) * 100).toFixed(1) : '0';
+            childRowsHtml += `
+              <tr class="hover:bg-emerald-500/5 transition-colors border-b border-white/5 text-[11px]">
+                <td class="py-2 px-3 text-center text-slate-500 font-mono">└─</td>
+                <td class="py-2 px-3 font-semibold text-amber-200 flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  ${escapeHtml(m.name)}
+                </td>
+                <td class="py-2 px-3 text-right font-mono text-slate-300 font-bold">${m.count}x</td>
+                <td class="py-2 px-3 text-right font-mono text-cyan-300">${attachPct}%</td>
+                <td class="py-2 px-3 text-right font-mono text-slate-400">£${m.unitPrice.toFixed(2)}</td>
+                <td class="py-2 px-3 text-right font-mono text-emerald-400 font-semibold">£${m.totalRevenue.toFixed(2)}</td>
+              </tr>
+            `;
+          });
+
+          trChild.innerHTML = `
+            <td colspan="10" class="py-3 px-6 sm:px-12 bg-emerald-950/15">
+              <div class="rounded-xl border border-white/10 bg-slate-900/80 p-3 shadow-inner">
+                <div class="flex items-center justify-between pb-2 mb-2 border-b border-white/10 text-[11px]">
+                  <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                    <i data-lucide="git-branch" class="w-3.5 h-3.5"></i>
+                    Attached Modifiers for "${escapeHtml(p.item)}"
+                  </span>
+                  <span class="text-slate-400">Attach Rate = (Modifier Chosen Count ÷ Parent Base Units Sold)</span>
+                </div>
+                <table class="w-full text-left">
+                  <thead>
+                    <tr class="text-slate-400 uppercase text-[10px] tracking-wider border-b border-white/10">
+                      <th class="py-1 px-3 w-8 text-center"></th>
+                      <th class="py-1 px-3">Attached Modifier Name</th>
+                      <th class="py-1 px-3 text-right">Times Ordered</th>
+                      <th class="py-1 px-3 text-right">Attach Rate (%)</th>
+                      <th class="py-1 px-3 text-right">Add-On Unit Price</th>
+                      <th class="py-1 px-3 text-right">Modifier Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${childRowsHtml}
+                  </tbody>
+                </table>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(trChild);
+        }
+      });
+
+      lucide.createIcons();
+    }
+
+    function toggleChildRow(childId) {
+      const el = document.getElementById(childId);
+      const icon = document.getElementById(`icon-${childId}`);
+      if (!el) return;
+      if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        if (icon) icon.classList.remove('-rotate-90');
+      } else {
+        el.classList.add('hidden');
+        if (icon) icon.classList.add('-rotate-90');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // VIEW 2: BASE ITEMS TABLE RENDERER
+    // -------------------------------------------------------------
+    function renderBaseItemsTable() {
+      const tbody = document.getElementById('base-items-tbody');
+      const searchQuery = (document.getElementById('search-input').value || '').toLowerCase().trim();
+      const selectedCategory = document.getElementById('category-filter').value;
+
+      const items = Object.values(parsedDataset.parentChildMatrix);
+      tbody.innerHTML = '';
+
+      items.sort((a, b) => b.netSales - a.netSales).forEach(p => {
+        if (selectedCategory !== 'ALL' && p.category !== selectedCategory) return;
+        if (searchQuery && !p.item.toLowerCase().includes(searchQuery) && !p.variation.toLowerCase().includes(searchQuery)) return;
+
+        const avg = p.totalQty > 0 ? (p.netSales / p.totalQty).toFixed(2) : '0.00';
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-white/5 transition-colors border-b border-white/5 font-medium';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold text-white heading-font">${escapeHtml(p.item)}</td>
+          <td class="py-3 px-4 text-slate-300 font-mono">${escapeHtml(p.variation)}</td>
+          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-semibold">${escapeHtml(p.category)}</span></td>
+          <td class="py-3 px-4 font-mono text-slate-400">${escapeHtml(p.sku || '-')}</td>
+          <td class="py-3 px-4 text-right font-mono text-slate-300">${p.orderCount}</td>
+          <td class="py-3 px-4 text-right font-bold font-mono text-white">${p.totalQty}</td>
+          <td class="py-3 px-4 text-right font-mono text-slate-300">£${p.grossSales.toFixed(2)}</td>
+          <td class="py-3 px-4 text-right font-mono ${p.discounts < 0 ? 'text-amber-400' : 'text-slate-400'}">£${p.discounts.toFixed(2)}</td>
+          <td class="py-3 px-4 text-right font-bold font-mono text-emerald-400">£${p.netSales.toFixed(2)}</td>
+          <td class="py-3 px-4 text-right font-mono text-slate-300">£${avg}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // VIEW 3: GLOBAL MODIFIERS RENDERER
+    // -------------------------------------------------------------
+    function renderGlobalModifiersTable() {
+      const tbody = document.getElementById('global-mods-tbody');
+      const searchQuery = (document.getElementById('search-input').value || '').toLowerCase().trim();
+
+      const mods = Object.values(parsedDataset.globalModifiers);
+      tbody.innerHTML = '';
+
+      const totalBaseQty = parsedDataset.metrics.totalItemsSold || 1;
+
+      mods.sort((a, b) => b.count - a.count).forEach(m => {
+        if (searchQuery && !m.name.toLowerCase().includes(searchQuery)) return;
+
+        const globalPct = ((m.count / totalBaseQty) * 100).toFixed(1);
+        const topParents = Object.entries(m.parentItems).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k} (${v}x)`).join(', ');
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-white/5 transition-colors border-b border-white/5 font-medium';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold text-amber-300 heading-font">${escapeHtml(m.name)}</td>
+          <td class="py-3 px-4 text-right font-bold font-mono text-white">${m.count}</td>
+          <td class="py-3 px-4 text-right font-mono text-slate-300">£${m.unitPrice.toFixed(2)}</td>
+          <td class="py-3 px-4 text-right font-bold font-mono text-emerald-400">£${m.totalRevenue.toFixed(2)}</td>
+          <td class="py-3 px-4 text-right font-mono text-cyan-300">${globalPct}%</td>
+          <td class="py-3 px-4 text-slate-300 text-xs truncate max-w-xs" title="${escapeHtml(topParents)}">${escapeHtml(topParents || 'All')}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // VIEW 4: REFUNDS & DISCREPANCY AUDIT RENDERER
+    // -------------------------------------------------------------
+    function renderRefundsTable() {
+      const tbody = document.getElementById('refunds-tbody');
+      tbody.innerHTML = '';
+
+      if (parsedDataset.refunds.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-8 text-center text-slate-400">
+              <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-400/60 mx-auto mb-2"></i>
+              <p class="font-bold text-emerald-300">Zero Refunds or Discrepancies Detected</p>
+              <p class="text-xs text-slate-500">Every single line item in this export processed without negative cancellations.</p>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      parsedDataset.refunds.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-rose-950/20 transition-colors border-b border-white/5 font-medium';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono text-slate-400">${escapeHtml(r.date)} ${escapeHtml(r.time)}</td>
+          <td class="py-3 px-4 font-bold text-white">${escapeHtml(r.item)} <span class="text-slate-400 text-xs font-normal">(${escapeHtml(r.variation)})</span></td>
+          <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold">${escapeHtml(r.eventType)}</span></td>
+          <td class="py-3 px-4 text-right font-mono font-bold text-rose-400">${r.qty}</td>
+          <td class="py-3 px-4 text-right font-mono font-bold text-rose-400">£${r.netSales.toFixed(2)}</td>
+          <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">${escapeHtml(r.transId)}</td>
+          <td class="py-3 px-4 text-slate-300 text-xs">${escapeHtml(r.notes || 'Cancelled / Voided Order')}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // VIEW 5: CLEANED RAW LEDGER RENDERER
+    // -------------------------------------------------------------
+    function renderRawLedgerTable() {
+      const tbody = document.getElementById('raw-ledger-tbody');
+      const searchQuery = (document.getElementById('search-input').value || '').toLowerCase().trim();
+      tbody.innerHTML = '';
+
+      parsedDataset.cleanRows.slice(0, 150).forEach(r => {
+        if (searchQuery && !r.item.toLowerCase().includes(searchQuery) && !r.rawModifiers.toLowerCase().includes(searchQuery)) return;
+
+        const modDisplay = r.modifiers.length > 0 
+          ? r.modifiers.map(m => `<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px]">${escapeHtml(m.name)}${m.price > 0 ? ` (£${m.price.toFixed(2)})` : ''}</span>`).join(' ')
+          : '<span class="text-slate-600">-</span>';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-white/5 transition-colors border-b border-white/5 font-medium text-xs';
+        tr.innerHTML = `
+          <td class="py-2.5 px-4 font-mono text-slate-400 text-[11px]">${escapeHtml(r.date)} ${escapeHtml(r.time)}</td>
+          <td class="py-2.5 px-4 font-bold text-white">${escapeHtml(r.item)}</td>
+          <td class="py-2.5 px-4 text-slate-300">${escapeHtml(r.variation)}</td>
+          <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded-full bg-white/5 text-slate-300 text-[10px]">${escapeHtml(r.category)}</span></td>
+          <td class="py-2.5 px-4 text-right font-mono font-bold ${r.qty < 0 ? 'text-rose-400' : 'text-white'}">${r.qty}</td>
+          <td class="py-2.5 px-4 max-w-xs">${modDisplay}</td>
+          <td class="py-2.5 px-4 text-right font-mono text-slate-300">£${r.grossSales.toFixed(2)}</td>
+          <td class="py-2.5 px-4 text-right font-mono ${r.discounts < 0 ? 'text-amber-400' : 'text-slate-400'}">£${r.discounts.toFixed(2)}</td>
+          <td class="py-2.5 px-4 text-right font-mono font-bold ${r.netSales < 0 ? 'text-rose-400' : 'text-emerald-400'}">£${r.netSales.toFixed(2)}</td>
+          <td class="py-2.5 px-4 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] ${r.isRefund ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'} font-semibold">${escapeHtml(r.eventType)}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderAllViews() {
+      renderParentChildMatrix();
+      renderBaseItemsTable();
+      renderGlobalModifiersTable();
+      renderRefundsTable();
+      renderRawLedgerTable();
+    }
+
+    // -------------------------------------------------------------
+    // EXPORT UTILITIES (CSV & EXCEL FRIENDLY)
+    // -------------------------------------------------------------
+    function downloadCSV(csvContent, filename) {
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function exportParentChildMatrixCSV() {
+      const items = Object.values(parsedDataset.parentChildMatrix);
+      if (items.length === 0) return alert('No data to export.');
+
+      const headers = ['Record Type', 'Category', 'Base Item', 'Variation', 'SKU', 'Units Sold', 'Gross Sales', 'Discounts', 'Net Sales', 'Attached Modifier Name', 'Times Ordered', 'Attach Rate %', 'Modifier Unit Price', 'Modifier Revenue'];
+      const rows = [headers.join(',')];
+
+      items.forEach(p => {
+        // Parent line
+        rows.push([
+          'PARENT_ITEM',
+          `"${p.category.replace(/"/g, '""')}"`,
+          `"${p.item.replace(/"/g, '""')}"`,
+          `"${p.variation.replace(/"/g, '""')}"`,
+          `"${(p.sku || '').replace(/"/g, '""')}"`,
+          p.totalQty,
+          p.grossSales.toFixed(2),
+          p.discounts.toFixed(2),
+          p.netSales.toFixed(2),
+          '""',
+          '""',
+          '""',
+          '""',
+          '""'
+        ].join(','));
+
+        // Child modifiers lines
+        Object.values(p.modifiers).forEach(m => {
+          const attachPct = p.totalQty > 0 ? ((m.count / p.totalQty) * 100).toFixed(1) : '0';
+          rows.push([
+            'ATTACHED_MODIFIER',
+            `"${p.category.replace(/"/g, '""')}"`,
+            `"${p.item.replace(/"/g, '""')}"`,
+            `"${p.variation.replace(/"/g, '""')}"`,
+            '""',
+            '""',
+            '""',
+            '""',
+            '""',
+            `"${m.name.replace(/"/g, '""')}"`,
+            m.count,
+            `${attachPct}%`,
+            m.unitPrice.toFixed(2),
+            m.totalRevenue.toFixed(2)
+          ].join(','));
+        });
+      });
+
+      downloadCSV(rows.join('\r\n'), `TreatStreet_Parent_Child_Sales_Matrix_${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+
+    function exportBaseItemsCSV() {
+      const items = Object.values(parsedDataset.parentChildMatrix);
+      if (items.length === 0) return alert('No data to export.');
+
+      const headers = ['Category', 'Item Name', 'Variation', 'SKU', 'Orders', 'Total Units Sold', 'Gross Sales', 'Discounts', 'Net Sales', 'Avg Selling Price'];
+      const rows = [headers.join(',')];
+
+      items.forEach(p => {
+        const avg = p.totalQty > 0 ? (p.netSales / p.totalQty).toFixed(2) : '0.00';
+        rows.push([
+          `"${p.category.replace(/"/g, '""')}"`,
+          `"${p.item.replace(/"/g, '""')}"`,
+          `"${p.variation.replace(/"/g, '""')}"`,
+          `"${(p.sku || '').replace(/"/g, '""')}"`,
+          p.orderCount,
+          p.totalQty,
+          p.grossSales.toFixed(2),
+          p.discounts.toFixed(2),
+          p.netSales.toFixed(2),
+          avg
+        ].join(','));
+      });
+
+      downloadCSV(rows.join('\r\n'), `TreatStreet_Base_Items_Summary_${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+
+    function exportGlobalModifiersCSV() {
+      const mods = Object.values(parsedDataset.globalModifiers);
+      if (mods.length === 0) return alert('No data to export.');
+
+      const totalBaseQty = parsedDataset.metrics.totalItemsSold || 1;
+      const headers = ['Modifier Name', 'Total Times Selected', 'Add-on Unit Price', 'Total Modifier Revenue', '% Attach Across Franchise', 'Associated Parent Items'];
+      const rows = [headers.join(',')];
+
+      mods.forEach(m => {
+        const pct = ((m.count / totalBaseQty) * 100).toFixed(1);
+        const topParents = Object.entries(m.parentItems).map(([k, v]) => `${k} (${v})`).join('; ');
+        rows.push([
+          `"${m.name.replace(/"/g, '""')}"`,
+          m.count,
+          m.unitPrice.toFixed(2),
+          m.totalRevenue.toFixed(2),
+          `${pct}%`,
+          `"${topParents.replace(/"/g, '""')}"`
+        ].join(','));
+      });
+
+      downloadCSV(rows.join('\r\n'), `TreatStreet_Global_Modifiers_Summary_${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+
+    function exportCleanRawLedgerCSV() {
+      if (parsedDataset.cleanRows.length === 0) return alert('No data to export.');
+
+      const headers = ['Date', 'Time', 'Item', 'Variation', 'Category', 'SKU', 'Qty', 'Clean Modifiers Array', 'Gross Sales', 'Discounts', 'Net Sales', 'Event Type', 'Transaction ID', 'Notes'];
+      const rows = [headers.join(',')];
+
+      parsedDataset.cleanRows.forEach(r => {
+        const modStr = r.modifiers.map(m => m.name + (m.price > 0 ? ` (£${m.price.toFixed(2)})` : '')).join('; ');
+        rows.push([
+          `"${r.date}"`,
+          `"${r.time}"`,
+          `"${r.item.replace(/"/g, '""')}"`,
+          `"${r.variation.replace(/"/g, '""')}"`,
+          `"${r.category.replace(/"/g, '""')}"`,
+          `"${(r.sku || '').replace(/"/g, '""')}"`,
+          r.qty,
+          `"${modStr.replace(/"/g, '""')}"`,
+          r.grossSales.toFixed(2),
+          r.discounts.toFixed(2),
+          r.netSales.toFixed(2),
+          `"${r.eventType}"`,
+          `"${r.transId}"`,
+          `"${(r.notes || '').replace(/"/g, '""')}"`
+        ].join(','));
+      });
+
+      downloadCSV(rows.join('\r\n'), `TreatStreet_Cleaned_Transactions_${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+
+    // Copy TSV to Clipboard for Excel
+    function copyMatrixToClipboard() {
+      const items = Object.values(parsedDataset.parentChildMatrix);
+      if (items.length === 0) return alert('No data to copy.');
+
+      const lines = [];
+      lines.push(['Parent / Modifier', 'Category', 'Units Sold', 'Attach Rate', 'Gross Sales', 'Net Sales', 'Modifier Revenue'].join('\t'));
+
+      items.forEach(p => {
+        lines.push([`${p.item} (${p.variation})`, p.category, p.totalQty, '100%', `£${p.grossSales.toFixed(2)}`, `£${p.netSales.toFixed(2)}`, '£0.00'].join('\t'));
+        Object.values(p.modifiers).forEach(m => {
+          const attachPct = p.totalQty > 0 ? ((m.count / p.totalQty) * 100).toFixed(1) : '0';
+          lines.push([`  └─ ${m.name}`, '', m.count, `${attachPct}%`, '', '', `£${m.totalRevenue.toFixed(2)}`].join('\t'));
+        });
+      });
+
+      navigator.clipboard.writeText(lines.join('\n')).then(() => {
+        alert('Copied Parent-Child Matrix to clipboard! Paste directly into Microsoft Excel or Google Sheets.');
+      }).catch(err => {
+        console.error('Clipboard copy failed:', err);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // -------------------------------------------------------------
+    // EVENT LISTENERS & UI WIRING
+    // -------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+      const dropZone = document.getElementById('drop-zone');
+      const fileInput = document.getElementById('file-input');
+
+      // Drag & Drop
+      dropZone.addEventListener('click', () => fileInput.click());
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-active');
+      });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-active'));
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-active');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
+      });
+
+      function handleFile(file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          processSquareData(evt.target.result);
+        };
+        reader.readAsText(file);
+      }
+
+      // Sample Data Button
+      document.getElementById('btn-load-sample').addEventListener('click', () => {
+        processSquareData(treatStreetSampleData);
+      });
+
+      // Clear Button
+      document.getElementById('btn-clear').addEventListener('click', () => {
+        location.reload();
+      });
+
+      // Paste Drawer Toggle
+      const pasteDrawer = document.getElementById('paste-drawer');
+      document.getElementById('btn-toggle-paste').addEventListener('click', () => {
+        pasteDrawer.classList.toggle('hidden');
+      });
+      document.getElementById('btn-close-paste').addEventListener('click', () => {
+        pasteDrawer.classList.add('hidden');
+      });
+      document.getElementById('btn-parse-pasted').addEventListener('click', () => {
+        const text = document.getElementById('raw-csv-textarea').value;
+        if (!text || !text.trim()) return alert('Please paste some CSV data first.');
+        processSquareData(text);
+        pasteDrawer.classList.add('hidden');
+      });
+
+      // Expand / Collapse All
+      document.getElementById('btn-expand-all').addEventListener('click', () => {
+        expandedAll = !expandedAll;
+        const subTables = document.querySelectorAll('[id^="child-table-"]');
+        const icons = document.querySelectorAll('[id^="icon-child-table-"]');
+        subTables.forEach(t => {
+          if (expandedAll) t.classList.remove('hidden');
+          else t.classList.add('hidden');
+        });
+        icons.forEach(ic => {
+          if (expandedAll) ic.classList.remove('-rotate-90');
+          else ic.classList.add('-rotate-90');
+        });
+      });
+
+      // Search & Filters
+      document.getElementById('search-input').addEventListener('input', () => {
+        renderAllViews();
+      });
+      document.getElementById('category-filter').addEventListener('change', () => {
+        renderAllViews();
+      });
+
+      // Export Buttons
+      document.getElementById('btn-export-matrix').addEventListener('click', exportParentChildMatrixCSV);
+      document.getElementById('btn-export-base-csv').addEventListener('click', exportBaseItemsCSV);
+      document.getElementById('btn-export-mods-csv').addEventListener('click', exportGlobalModifiersCSV);
+      document.getElementById('btn-export-raw-csv').addEventListener('click', exportCleanRawLedgerCSV);
+      document.getElementById('btn-copy-matrix-clipboard').addEventListener('click', copyMatrixToClipboard);
+
+      // Tab Switching
+      const tabs = [
+        { id: 'matrix', btn: 'tab-btn-matrix', view: 'view-matrix' },
+        { id: 'base-items', btn: 'tab-btn-base-items', view: 'view-base-items' },
+        { id: 'modifiers', btn: 'tab-btn-modifiers', view: 'view-modifiers' },
+        { id: 'refunds', btn: 'tab-btn-refunds', view: 'view-refunds' },
+        { id: 'raw', btn: 'tab-btn-raw', view: 'view-raw' }
+      ];
+
+      tabs.forEach(t => {
+        const btn = document.getElementById(t.btn);
+        btn.addEventListener('click', () => {
+          tabs.forEach(other => {
+            const obtn = document.getElementById(other.btn);
+            const oview = document.getElementById(other.view);
+            if (other.id === t.id) {
+              obtn.className = 'tab-btn-active px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 whitespace-nowrap';
+              oview.classList.remove('hidden');
+            } else {
+              obtn.className = 'tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap';
+              oview.classList.add('hidden');
+            }
+          });
+        });
+      });
+
+      // Pre-load sample data on first visit for instant WOW experience
+      processSquareData(treatStreetSampleData);
+    });
+  </script>
+</body>
+</html>
