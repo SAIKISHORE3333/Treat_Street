@@ -113,6 +113,25 @@
       background: rgba(255, 255, 255, 0.08);
       color: #e2e8f0;
     }
+
+    /* Category Pill Active State */
+    .pill-active {
+      background: rgba(16, 185, 129, 0.25) !important;
+      color: #34d399 !important;
+      border-color: rgba(52, 211, 153, 0.5) !important;
+      font-weight: 700 !important;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+    }
+    .pill-inactive {
+      background: rgba(255, 255, 255, 0.04);
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .pill-inactive:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
   </style>
 </head>
 <body class="ambient-bg text-slate-100 min-h-screen flex flex-col justify-between relative overflow-x-hidden selection:bg-emerald-500 selection:text-white">
@@ -171,13 +190,13 @@
       <div>
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs font-semibold mb-2">
           <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i>
-          <span>Zero Missing Line Items • Sub-Item Modifier Decomposition</span>
+          <span>Executive Summary & Modifier Decomposition Terminal</span>
         </div>
         <h2 class="text-2xl sm:text-3xl font-extrabold text-white heading-font">
-          Square Sales & <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">Modifier Parsing Terminal</span>
+          Square Sales & <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">Modifier Intelligence Hub</span>
         </h2>
         <p class="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1">
-          Ingest raw Square detailed item and transaction CSVs. Handles merged modifier strings (e.g. <span class="text-emerald-300 font-mono">Waffle, £9.50, Soft Serve, £0.00</span>), refunds, and outputs an exact Parent-Child Attached Matrix.
+          High-level executive quick insights, demand forecasting, and sub-item modifier decomposition with zero missing items.
         </p>
       </div>
 
@@ -215,12 +234,12 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
       
       <!-- Drag & Drop Card (2 Cols) -->
-      <div id="drop-zone" class="lg:col-span-2 glass-card rounded-2xl p-6 sm:p-8 border-2 border-dashed border-white/20 hover:border-emerald-400/50 flex flex-col items-center justify-center text-center cursor-pointer transition-all relative group overflow-hidden">
+      <div id="drop-zone" class="lg:col-span-2 glass-card rounded-2xl p-6 sm:p-7 border-2 border-dashed border-white/20 hover:border-emerald-400/50 flex flex-col items-center justify-center text-center cursor-pointer transition-all relative group overflow-hidden">
         <input type="file" id="file-input" accept=".csv,.tsv,.txt" class="hidden" />
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 via-teal-500/20 to-amber-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 mb-3 group-hover:scale-110 group-hover:border-emerald-400 transition-all">
-          <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 via-teal-500/20 to-amber-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 mb-2.5 group-hover:scale-110 group-hover:border-emerald-400 transition-all">
+          <i data-lucide="upload-cloud" class="w-7 h-7"></i>
         </div>
-        <h3 class="text-base sm:text-lg font-bold text-white heading-font">
+        <h3 class="text-base font-bold text-white heading-font">
           Drop your Square Export CSV here, or <span class="text-emerald-400 underline decoration-dotted">Browse</span>
         </h3>
         <p class="text-xs text-slate-400 mt-1 max-w-md">
@@ -228,33 +247,33 @@
         </p>
 
         <!-- Format hints badges -->
-        <div class="flex flex-wrap items-center justify-center gap-2 mt-4 text-[11px] text-slate-400">
-          <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 font-mono">RFC 4180 Compliant</span>
-          <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 font-mono">Auto-Delimiter Detect</span>
-          <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 font-mono">Multi-Line Quotes Safe</span>
-          <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 font-mono">Modifiers Paired & Unpaired</span>
+        <div class="flex flex-wrap items-center justify-center gap-2 mt-3 text-[10px] text-slate-400">
+          <span class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 font-mono">RFC 4180 Streaming</span>
+          <span class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 font-mono">Auto-Delimiter</span>
+          <span class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 font-mono">Multi-Line Quotes</span>
+          <span class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 font-mono">Zero Missing Items</span>
         </div>
       </div>
 
       <!-- Live Header Inspection & Telemetry Card (1 Col) -->
       <div class="glass-card rounded-2xl p-5 flex flex-col justify-between border-white/10">
         <div>
-          <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center justify-between mb-2.5">
             <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
               <i data-lucide="shield-check" class="w-4 h-4"></i>
-              Header & Schema Inspection
+              Schema Telemetry
             </h4>
             <span id="telemetry-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">Waiting for data</span>
           </div>
 
           <!-- Field Checklist -->
-          <div class="space-y-2 text-xs" id="header-checklist">
+          <div class="space-y-1.5 text-xs" id="header-checklist">
             <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
               <span class="text-slate-300">Base Item Column</span>
               <span id="field-item" class="text-slate-500 font-mono text-[11px]">Pending</span>
             </div>
             <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
-              <span class="text-slate-300">Variation / Price Point</span>
+              <span class="text-slate-300">Variation / Option</span>
               <span id="field-variation" class="text-slate-500 font-mono text-[11px]">Pending</span>
             </div>
             <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
@@ -262,325 +281,496 @@
               <span id="field-modifiers" class="text-slate-500 font-mono text-[11px]">Pending</span>
             </div>
             <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
-              <span class="text-slate-300">Quantity & Gross Sales</span>
+              <span class="text-slate-300">Quantity & Revenue</span>
               <span id="field-qty-sales" class="text-slate-500 font-mono text-[11px]">Pending</span>
             </div>
             <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
-              <span class="text-slate-300">Event / Transaction Status</span>
+              <span class="text-slate-300">Event / Refunds</span>
               <span id="field-status" class="text-slate-500 font-mono text-[11px]">Pending</span>
             </div>
           </div>
         </div>
 
         <!-- Telemetry footer -->
-        <div class="pt-3 border-t border-white/10 mt-3 text-[11px] text-slate-400 flex items-center justify-between">
+        <div class="pt-2.5 border-t border-white/10 mt-2.5 text-[11px] text-slate-400 flex items-center justify-between">
           <span>Delimiter: <strong id="telemetry-delimiter" class="text-slate-200 font-mono">-</strong></span>
           <span>Rows Parsed: <strong id="telemetry-rows" class="text-emerald-400 font-mono">0</strong></span>
         </div>
       </div>
     </div>
 
-    <!-- KPI EXECUTIVE METRICS -->
-    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+    <!-- ==================================================== -->
+    <!-- 1. TOP KPI SUMMARY CARDS (HORIZONTAL STRIP AT TOP) -->
+    <!-- ==================================================== -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
       
-      <!-- Net Sales -->
-      <div class="glass-card rounded-2xl p-4 border-emerald-500/20">
+      <!-- Card 1: Gross & Net Sales -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 border-emerald-500/20 bg-gradient-to-br from-emerald-950/20 to-slate-900/60 relative overflow-hidden">
         <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-          <span>Net Sales (True Cash)</span>
-          <i data-lucide="pound-sterling" class="w-4 h-4 text-emerald-400"></i>
+          <span class="font-semibold text-slate-300">Gross & Net Sales</span>
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <i data-lucide="pound-sterling" class="w-4 h-4"></i>
+          </div>
         </div>
-        <div id="kpi-net-sales" class="text-xl sm:text-2xl font-black text-emerald-400 heading-font">£0.00</div>
-        <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
-          <span>Gross: <strong id="kpi-gross-sales" class="text-slate-200">£0.00</strong></span>
-          <span>Disc: <strong id="kpi-discounts" class="text-amber-400">£0.00</strong></span>
+        <div class="flex items-baseline gap-2 mt-1">
+          <span id="kpi-net-sales" class="text-2xl sm:text-3xl font-black text-emerald-400 heading-font">£0.00</span>
+          <span class="text-[10px] text-emerald-300 font-bold uppercase tracking-wider">Net Cash</span>
+        </div>
+        <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between border-t border-white/5 pt-2">
+          <span>Gross: <strong id="kpi-gross-sales" class="text-slate-200 font-mono">£0.00</strong></span>
+          <span>Discounts: <strong id="kpi-discounts" class="text-amber-400 font-mono">£0.00</strong></span>
         </div>
       </div>
 
-      <!-- Total Items Sold -->
-      <div class="glass-card rounded-2xl p-4 border-white/10">
+      <!-- Card 2: Total Items Sold -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 border-white/10 bg-gradient-to-br from-teal-950/20 to-slate-900/60 relative overflow-hidden">
         <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-          <span>Base Items Sold</span>
-          <i data-lucide="package-check" class="w-4 h-4 text-teal-400"></i>
+          <span class="font-semibold text-slate-300">Total Items Sold</span>
+          <div class="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center">
+            <i data-lucide="package-check" class="w-4 h-4"></i>
+          </div>
         </div>
-        <div id="kpi-total-qty" class="text-xl sm:text-2xl font-black text-white heading-font">0</div>
-        <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
-          <span>Distinct Dishes: <strong id="kpi-distinct-items" class="text-slate-200">0</strong></span>
-          <span>Refunds: <strong id="kpi-refund-count" class="text-rose-400">0</strong></span>
+        <div class="flex items-baseline gap-2 mt-1">
+          <span id="kpi-total-qty" class="text-2xl sm:text-3xl font-black text-white heading-font">0</span>
+          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Units</span>
+        </div>
+        <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between border-t border-white/5 pt-2">
+          <span>Distinct Dishes: <strong id="kpi-distinct-items" class="text-teal-300 font-mono">0</strong></span>
+          <span>Avg Selling Price: <strong id="kpi-avg-selling-price" class="text-slate-200 font-mono">£0.00</strong></span>
         </div>
       </div>
 
-      <!-- Modifiers Attached -->
-      <div class="glass-card rounded-2xl p-4 border-amber-500/20">
+      <!-- Card 3: Total Modifiers / Add-ons Sold -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 border-amber-500/20 bg-gradient-to-br from-amber-950/20 to-slate-900/60 relative overflow-hidden">
         <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-          <span>Modifiers Attached</span>
-          <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i>
+          <span class="font-semibold text-slate-300">Modifiers & Add-ons</span>
+          <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+          </div>
         </div>
-        <div id="kpi-total-mods" class="text-xl sm:text-2xl font-black text-amber-300 heading-font">0</div>
-        <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
-          <span>Distinct Modifiers: <strong id="kpi-distinct-mods" class="text-slate-200">0</strong></span>
-          <span>Mod Rev: <strong id="kpi-mod-rev" class="text-emerald-400">£0.00</strong></span>
+        <div class="flex items-baseline gap-2 mt-1">
+          <span id="kpi-total-mods" class="text-2xl sm:text-3xl font-black text-amber-300 heading-font">0</span>
+          <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Attachments</span>
+        </div>
+        <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between border-t border-white/5 pt-2">
+          <span>Distinct Types: <strong id="kpi-distinct-mods" class="text-amber-200 font-mono">0</strong></span>
+          <span>Attach Rate: <strong id="kpi-attach-rate" class="text-cyan-300 font-mono">0%</strong></span>
         </div>
       </div>
 
-      <!-- Attach Ratio -->
-      <div class="glass-card rounded-2xl p-4 border-white/10">
+      <!-- Card 4: Total Refunded / Discrepancy Amount & Count -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 border-rose-500/20 bg-gradient-to-br from-rose-950/20 to-slate-900/60 relative overflow-hidden">
         <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-          <span>Modifier Attach Rate</span>
-          <i data-lucide="pie-chart" class="w-4 h-4 text-cyan-400"></i>
+          <span class="font-semibold text-slate-300">Refunds & Discrepancies</span>
+          <div class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+          </div>
         </div>
-        <div id="kpi-attach-rate" class="text-xl sm:text-2xl font-black text-cyan-300 heading-font">0%</div>
-        <div class="text-[10px] text-slate-400 mt-1">
-          Avg Mods per Base Item: <strong id="kpi-avg-mods" class="text-slate-200">0.0</strong>
+        <div class="flex items-baseline gap-2 mt-1">
+          <span id="kpi-refund-amount" class="text-2xl sm:text-3xl font-black text-rose-400 heading-font">£0.00</span>
+          <span class="text-[10px] text-rose-300 font-bold uppercase tracking-wider">Voided</span>
+        </div>
+        <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between border-t border-white/5 pt-2">
+          <span>Orders Affected: <strong id="kpi-refund-count" class="text-rose-300 font-mono">0</strong></span>
+          <span>Status: <strong id="kpi-audit-status" class="text-emerald-400 font-semibold">Reconciled</strong></span>
         </div>
       </div>
 
-      <!-- Top Modifier -->
-      <div class="glass-card rounded-2xl p-4 border-white/10 col-span-2 sm:col-span-1">
-        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-          <span>Top Chosen Modifier</span>
-          <i data-lucide="award" class="w-4 h-4 text-yellow-400"></i>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- 2. QUICK INSIGHTS & AGGREGATION WIDGETS DASHBOARD -->
+    <!-- ==================================================== -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between border-b border-white/10 pb-2">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+          <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider heading-font">
+            Executive Summary & Quick Insights
+          </h3>
+          <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 font-bold border border-emerald-500/20">Live Intelligence</span>
         </div>
-        <div id="kpi-top-modifier" class="text-sm font-bold text-amber-200 truncate heading-font mt-1">None yet</div>
-        <div class="text-[10px] text-slate-400 mt-1">
-          Count: <strong id="kpi-top-mod-count" class="text-emerald-400">0</strong> orders
+        <span class="text-[11px] text-slate-400 hidden sm:inline">Instant velocity tracking, modifier attach distribution & kitchen ingredient impact</span>
+      </div>
+
+      <!-- 4-Column Responsive Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Widget 1: Top 5 Best-Selling Base Items -->
+        <div class="glass-card rounded-2xl p-4 sm:p-5 border-emerald-500/20 flex flex-col justify-between hover:border-emerald-400/40 transition-all">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="trophy" class="w-4 h-4 text-emerald-400"></i>
+                Top 5 Base Dishes
+              </h4>
+              <span class="text-[10px] text-slate-400 font-mono">By Units</span>
+            </div>
+            <div id="widget-top-items" class="space-y-2.5">
+              <!-- Dynamically populated -->
+              <p class="text-xs text-slate-500 italic py-4 text-center">Loading item sales...</p>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Volume Leader: <strong id="widget-top-item-name" class="text-emerald-300 truncate max-w-[120px] inline-block align-bottom">-</strong></span>
+            <span id="widget-top-item-share" class="text-slate-200 font-bold font-mono">0%</span>
+          </div>
+        </div>
+
+        <!-- Widget 2: Top 5 Most-Selected Modifiers -->
+        <div class="glass-card rounded-2xl p-4 sm:p-5 border-amber-500/20 flex flex-col justify-between hover:border-amber-400/40 transition-all">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i>
+                Top 5 Modifiers Chosen
+              </h4>
+              <span class="text-[10px] text-slate-400 font-mono">Frequency</span>
+            </div>
+            <div id="widget-top-modifiers" class="space-y-2.5">
+              <!-- Dynamically populated -->
+              <p class="text-xs text-slate-500 italic py-4 text-center">Loading modifiers...</p>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Primary Add-On: <strong id="widget-top-mod-name" class="text-amber-300 truncate max-w-[120px] inline-block align-bottom">-</strong></span>
+            <span id="widget-top-mod-count" class="text-slate-200 font-bold font-mono">0x</span>
+          </div>
+        </div>
+
+        <!-- Widget 3: Top 5 SOP Raw Ingredient Demand -->
+        <div class="glass-card rounded-2xl p-4 sm:p-5 border-teal-500/20 flex flex-col justify-between hover:border-teal-400/40 transition-all">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="chef-hat" class="w-4 h-4 text-teal-400"></i>
+                Top 5 SOP Ingredients
+              </h4>
+              <span class="text-[10px] text-slate-400 font-mono">Kitchen Depletion</span>
+            </div>
+            <div id="widget-ingredient-demand" class="space-y-2.5">
+              <!-- Dynamically populated -->
+              <p class="text-xs text-slate-500 italic py-4 text-center">Calculating demand...</p>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Kitchen Stock Impact: <strong class="text-teal-300">Synchronized</strong></span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-teal-500/20 text-teal-200 font-mono">Auto SOP</span>
+          </div>
+        </div>
+
+        <!-- Widget 4: Category Breakdown Chart / Progress Bars -->
+        <div class="glass-card rounded-2xl p-4 sm:p-5 border-cyan-500/20 flex flex-col justify-between hover:border-cyan-400/40 transition-all">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-cyan-400"></i>
+                Category Breakdown
+              </h4>
+              <span class="text-[10px] text-slate-400 font-mono">Sales Velocity</span>
+            </div>
+            <div id="widget-category-breakdown" class="space-y-2.5">
+              <!-- Dynamically populated -->
+              <p class="text-xs text-slate-500 italic py-4 text-center">Loading categories...</p>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Leading Section: <strong id="widget-top-category-name" class="text-cyan-300 truncate max-w-[120px] inline-block align-bottom">-</strong></span>
+            <span id="widget-top-category-share" class="text-slate-200 font-bold font-mono">0%</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- 3. INTERACTIVE FILTERING & SEARCH CONTROLS -->
+    <!-- ==================================================== -->
+    <div class="glass-card rounded-2xl p-3.5 sm:p-4 border-white/10 space-y-3">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        
+        <!-- Category Filter Pill Buttons -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0" id="category-pills-container">
+          <button onclick="selectCategoryPill('ALL')" class="pill-active px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap">
+            All Categories
+          </button>
+        </div>
+
+        <!-- Search Bar & Threshold Controls -->
+        <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          <!-- Live Instant Search Bar -->
+          <div class="relative w-full sm:w-64">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="search-input" placeholder="Search dish, variation, SKU, modifier..." class="w-full bg-slate-950/80 border border-white/15 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition-colors" />
+            <button id="btn-clear-search" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">✕</button>
+          </div>
+
+          <!-- Threshold Toggle Switch (> 0 Sales Only) -->
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none bg-white/5 hover:bg-white/10 px-3 py-2 rounded-xl border border-white/10 transition-all">
+            <input type="checkbox" id="threshold-toggle" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+            <span class="font-medium text-slate-200">Sales &gt; 0 Only</span>
+          </label>
+
+          <!-- Reset Filter Button -->
+          <button id="btn-reset-filters" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-slate-400"></i>
+            <span>Reset</span>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- TABS CONTROLLER & SEARCH/FILTER BAR -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+    <!-- ==================================================== -->
+    <!-- 4. CLEAN COLLAPSIBLE ACCORDION TABLE DESIGN -->
+    <!-- ==================================================== -->
+    <div class="space-y-3">
       
-      <!-- Tab Navigation Buttons -->
-      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-        <button id="tab-btn-matrix" class="tab-btn-active px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 whitespace-nowrap">
-          <i data-lucide="network" class="w-4 h-4"></i>
-          <span>Parent-Child Matrix</span>
-          <span id="badge-matrix-count" class="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-200">0</span>
-        </button>
-        <button id="tab-btn-base-items" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
-          <i data-lucide="list-collapse" class="w-4 h-4"></i>
-          <span>Base Items Sales</span>
-        </button>
-        <button id="tab-btn-modifiers" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
-          <i data-lucide="puzzle" class="w-4 h-4"></i>
-          <span>Global Modifiers</span>
-        </button>
-        <button id="tab-btn-refunds" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
-          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-          <span>Refunds & Voids</span>
-          <span id="badge-refund-count" class="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/30 text-rose-200 hidden">0</span>
-        </button>
-        <button id="tab-btn-raw" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
-          <i data-lucide="table" class="w-4 h-4"></i>
-          <span>Cleaned Records</span>
-        </button>
-      </div>
-
-      <!-- Filter / Search Tools -->
-      <div class="flex items-center gap-2">
-        <div class="relative flex-1 sm:w-64">
-          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input type="text" id="search-input" placeholder="Search item, variation, modifier..." class="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400" />
-        </div>
-        <select id="category-filter" class="bg-slate-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-400">
-          <option value="ALL">All Categories</option>
-        </select>
-        <button id="btn-expand-all" title="Expand / Collapse all parent rows" class="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300">
-          <i data-lucide="chevrons-up-down" class="w-4 h-4"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- ==================================================== -->
-    <!-- TAB 1: PARENT-CHILD ATTACHED MATRIX (PRIMARY REQUEST) -->
-    <!-- ==================================================== -->
-    <div id="view-matrix" class="space-y-3">
-      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
-        <p>Showing hierarchical breakdown of each dish and the exact count & attach rate of modifiers applied to it.</p>
-        <button id="btn-copy-matrix-clipboard" class="hover:text-emerald-400 flex items-center gap-1">
-          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-          <span>Copy Clean TSV for Excel</span>
-        </button>
-      </div>
-
-      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
-                <th class="py-3 px-4 w-12 text-center">Tree</th>
-                <th class="py-3 px-4">Parent Item & Variation</th>
-                <th class="py-3 px-4">Category</th>
-                <th class="py-3 px-4 text-center">SKU</th>
-                <th class="py-3 px-4 text-right">Units Sold</th>
-                <th class="py-3 px-4 text-right">Gross Sales</th>
-                <th class="py-3 px-4 text-right">Discounts</th>
-                <th class="py-3 px-4 text-right">Net Sales</th>
-                <th class="py-3 px-4 text-right">Avg Item Price</th>
-                <th class="py-3 px-4 text-center">Modifiers Attached</th>
-              </tr>
-            </thead>
-            <tbody id="matrix-tbody" class="divide-y divide-white/5 text-slate-200">
-              <!-- Dynamically Populated with Parent Rows and Collapsible Child Sub-Tables -->
-              <tr>
-                <td colspan="10" class="py-12 text-center text-slate-400">
-                  <div class="max-w-md mx-auto space-y-2">
-                    <i data-lucide="file-up" class="w-10 h-10 text-emerald-400/40 mx-auto"></i>
-                    <p class="font-bold text-white">No Square Sales Data Loaded</p>
-                    <p class="text-xs text-slate-400">Drop your Square CSV above, or click <span class="text-amber-400 cursor-pointer underline" onclick="document.getElementById('btn-load-sample').click()">Load Treat Street Sample</span> to preview live operations.</p>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================================================== -->
-    <!-- TAB 2: CONSOLIDATED BASE ITEMS SUMMARY TABLE -->
-    <!-- ==================================================== -->
-    <div id="view-base-items" class="hidden space-y-3">
-      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
-        <p>Consolidated item totals with zero dropped line items or miscalculated negatives.</p>
-        <button id="btn-export-base-csv" class="hover:text-emerald-400 flex items-center gap-1 font-bold">
-          <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          <span>Export Items CSV</span>
-        </button>
-      </div>
-
-      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
-                <th class="py-3 px-4">Item Name</th>
-                <th class="py-3 px-4">Variation / Price Point</th>
-                <th class="py-3 px-4">Category</th>
-                <th class="py-3 px-4">SKU</th>
-                <th class="py-3 px-4 text-right">Orders</th>
-                <th class="py-3 px-4 text-right">Total Qty</th>
-                <th class="py-3 px-4 text-right">Gross Sales</th>
-                <th class="py-3 px-4 text-right">Discounts</th>
-                <th class="py-3 px-4 text-right">Net Sales</th>
-                <th class="py-3 px-4 text-right">Avg Selling Price</th>
-              </tr>
-            </thead>
-            <tbody id="base-items-tbody" class="divide-y divide-white/5 text-slate-200">
-              <!-- Dynamically Populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================================================== -->
-    <!-- TAB 3: GLOBAL MODIFIERS FREQUENCY BREAKDOWN -->
-    <!-- ==================================================== -->
-    <div id="view-modifiers" class="hidden space-y-3">
-      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
-        <p>Franchise-wide modifier popularity and revenue generation across all base items.</p>
-        <button id="btn-export-mods-csv" class="hover:text-emerald-400 flex items-center gap-1 font-bold">
-          <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          <span>Export Modifiers CSV</span>
-        </button>
-      </div>
-
-      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
-                <th class="py-3 px-4">Modifier Name</th>
-                <th class="py-3 px-4 text-right">Times Selected</th>
-                <th class="py-3 px-4 text-right">Add-on Unit Price</th>
-                <th class="py-3 px-4 text-right">Total Add-on Revenue</th>
-                <th class="py-3 px-4 text-right">% of All Orders</th>
-                <th class="py-3 px-4">Primary Parent Items Chosen With</th>
-              </tr>
-            </thead>
-            <tbody id="global-mods-tbody" class="divide-y divide-white/5 text-slate-200">
-              <!-- Dynamically Populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================================================== -->
-    <!-- TAB 4: REFUNDS & DISCREPANCY AUDIT LOG -->
-    <!-- ==================================================== -->
-    <div id="view-refunds" class="hidden space-y-3">
-      <div class="glass-card rounded-2xl p-4 border-rose-500/20 bg-rose-950/10">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
-            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+      <!-- Collapsible Accordion Header Banner -->
+      <div id="ledger-accordion-header" class="glass-card rounded-2xl p-4 sm:p-5 border-emerald-500/20 hover:border-emerald-400/40 cursor-pointer transition-all flex items-center justify-between group bg-slate-900/60 shadow-lg">
+        <div class="flex items-center gap-3.5">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 text-emerald-400 border border-emerald-400/30 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <i data-lucide="table-2" class="w-5 h-5"></i>
           </div>
           <div>
-            <h4 class="text-sm font-bold text-rose-300">Square Refunds, Voids, & Line Discrepancies</h4>
-            <p class="text-xs text-slate-300">
-              Every negative quantity, refund event type, or cancelled order is isolated below so your financial book balances to the exact penny.
+            <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2.5 heading-font">
+              Detailed Sales Ledger & Audit Trail
+              <span id="badge-ledger-count" class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30">0 Items</span>
+            </h3>
+            <p class="text-xs text-slate-400">
+              Granular Parent-Child breakdown, atomic line items & audit trail. Click to <span id="accordion-action-text" class="text-emerald-400 font-bold">collapse view</span>.
             </p>
           </div>
         </div>
-      </div>
 
-      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
-                <th class="py-3 px-4">Date & Time</th>
-                <th class="py-3 px-4">Item & Variation</th>
-                <th class="py-3 px-4 text-center">Event Type</th>
-                <th class="py-3 px-4 text-right">Qty</th>
-                <th class="py-3 px-4 text-right">Amount Refunded</th>
-                <th class="py-3 px-4">Transaction / Order ID</th>
-                <th class="py-3 px-4">Notes / Details</th>
-              </tr>
-            </thead>
-            <tbody id="refunds-tbody" class="divide-y divide-white/5 text-slate-200">
-              <!-- Dynamically Populated -->
-            </tbody>
-          </table>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <button id="btn-expand-all" onclick="event.stopPropagation(); toggleBulkModifiers();" title="Expand / Collapse all parent rows" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-all">
+            <i data-lucide="chevrons-up-down" class="w-4 h-4 text-emerald-400"></i>
+            <span id="btn-expand-all-text">Expand All Modifiers</span>
+          </button>
+          <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 transition-colors">
+            <i data-lucide="chevron-down" id="ledger-accordion-icon" class="w-5 h-5 transition-transform duration-300"></i>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ==================================================== -->
-    <!-- TAB 5: CLEANED NORMALIZED RECORDS TABLE -->
-    <!-- ==================================================== -->
-    <div id="view-raw" class="hidden space-y-3">
-      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
-        <p>Complete cleaned line-item ledger with atomic modifier breakdown and sanitized currency values.</p>
-        <button id="btn-export-raw-csv" class="hover:text-emerald-400 flex items-center gap-1 font-bold">
-          <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          <span>Export Cleaned Rows CSV</span>
-        </button>
-      </div>
+      <!-- Accordion Collapsible Body (Contains Tabs & Ledger Tables) -->
+      <div id="ledger-accordion-body" class="space-y-4 transition-all duration-300">
+        
+        <!-- Tab Navigation Buttons -->
+        <div class="flex items-center justify-between border-b border-white/10 pb-2">
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            <button id="tab-btn-matrix" class="tab-btn-active px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 whitespace-nowrap">
+              <i data-lucide="network" class="w-4 h-4"></i>
+              <span>Parent-Child Matrix</span>
+              <span id="badge-matrix-count" class="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-200">0</span>
+            </button>
+            <button id="tab-btn-base-items" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
+              <i data-lucide="list-collapse" class="w-4 h-4"></i>
+              <span>Base Items Sales</span>
+            </button>
+            <button id="tab-btn-modifiers" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
+              <i data-lucide="puzzle" class="w-4 h-4"></i>
+              <span>Global Modifiers</span>
+            </button>
+            <button id="tab-btn-refunds" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>Refunds & Voids</span>
+              <span id="badge-refund-count" class="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/30 text-rose-200 hidden">0</span>
+            </button>
+            <button id="tab-btn-raw" class="tab-btn-inactive px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 whitespace-nowrap">
+              <i data-lucide="table" class="w-4 h-4"></i>
+              <span>Cleaned Records</span>
+            </button>
+          </div>
 
-      <div class="glass-card rounded-2xl overflow-hidden border-white/10">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
-                <th class="py-3 px-4">Date / Time</th>
-                <th class="py-3 px-4">Item</th>
-                <th class="py-3 px-4">Variation</th>
-                <th class="py-3 px-4">Category</th>
-                <th class="py-3 px-4 text-right">Qty</th>
-                <th class="py-3 px-4">Clean Modifiers List</th>
-                <th class="py-3 px-4 text-right">Gross</th>
-                <th class="py-3 px-4 text-right">Discounts</th>
-                <th class="py-3 px-4 text-right">Net</th>
-                <th class="py-3 px-4 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody id="raw-ledger-tbody" class="divide-y divide-white/5 text-slate-200">
-              <!-- Dynamically Populated -->
-            </tbody>
-          </table>
+          <div class="hidden sm:flex items-center gap-2">
+            <button id="btn-copy-matrix-clipboard" class="text-xs text-slate-400 hover:text-emerald-400 flex items-center gap-1 font-semibold transition-colors">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>Copy TSV for Excel</span>
+            </button>
+          </div>
         </div>
+
+        <!-- ==================================================== -->
+        <!-- TAB 1: PARENT-CHILD ATTACHED MATRIX (PRIMARY REQUEST) -->
+        <!-- ==================================================== -->
+        <div id="view-matrix" class="space-y-3">
+          <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                    <th class="py-3 px-4 w-12 text-center">Tree</th>
+                    <th class="py-3 px-4">Parent Dish & Variation</th>
+                    <th class="py-3 px-4">Category</th>
+                    <th class="py-3 px-4 text-center">SKU</th>
+                    <th class="py-3 px-4 text-right">Units Sold</th>
+                    <th class="py-3 px-4 text-right">Gross Sales</th>
+                    <th class="py-3 px-4 text-right">Discounts</th>
+                    <th class="py-3 px-4 text-right">Net Sales</th>
+                    <th class="py-3 px-4 text-right">Avg Item Price</th>
+                    <th class="py-3 px-4 text-center">Modifiers Attached</th>
+                  </tr>
+                </thead>
+                <tbody id="matrix-tbody" class="divide-y divide-white/5 text-slate-200">
+                  <tr>
+                    <td colspan="10" class="py-12 text-center text-slate-400">
+                      <div class="max-w-md mx-auto space-y-2">
+                        <i data-lucide="file-up" class="w-10 h-10 text-emerald-400/40 mx-auto"></i>
+                        <p class="font-bold text-white">No Square Sales Data Loaded</p>
+                        <p class="text-xs text-slate-400">Drop your Square CSV above, or click <span class="text-amber-400 cursor-pointer underline" onclick="document.getElementById('btn-load-sample').click()">Load Treat Street Sample</span>.</p>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- TAB 2: CONSOLIDATED BASE ITEMS SUMMARY TABLE -->
+        <!-- ==================================================== -->
+        <div id="view-base-items" class="hidden space-y-3">
+          <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+            <p>Consolidated item totals with zero dropped line items or miscalculated negatives.</p>
+            <button id="btn-export-base-csv" class="hover:text-emerald-400 flex items-center gap-1 font-bold">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Export Items CSV</span>
+            </button>
+          </div>
+
+          <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                    <th class="py-3 px-4">Item Name</th>
+                    <th class="py-3 px-4">Variation / Price Point</th>
+                    <th class="py-3 px-4">Category</th>
+                    <th class="py-3 px-4">SKU</th>
+                    <th class="py-3 px-4 text-right">Orders</th>
+                    <th class="py-3 px-4 text-right">Total Qty</th>
+                    <th class="py-3 px-4 text-right">Gross Sales</th>
+                    <th class="py-3 px-4 text-right">Discounts</th>
+                    <th class="py-3 px-4 text-right">Net Sales</th>
+                    <th class="py-3 px-4 text-right">Avg Selling Price</th>
+                  </tr>
+                </thead>
+                <tbody id="base-items-tbody" class="divide-y divide-white/5 text-slate-200">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- TAB 3: GLOBAL MODIFIERS FREQUENCY BREAKDOWN -->
+        <!-- ==================================================== -->
+        <div id="view-modifiers" class="hidden space-y-3">
+          <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+            <p>Franchise-wide modifier popularity and revenue generation across all base items.</p>
+            <button id="btn-export-mods-csv" class="hover:text-emerald-400 flex items-center gap-1 font-bold">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Export Modifiers CSV</span>
+            </button>
+          </div>
+
+          <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                    <th class="py-3 px-4">Modifier Name</th>
+                    <th class="py-3 px-4 text-right">Times Selected</th>
+                    <th class="py-3 px-4 text-right">Add-on Unit Price</th>
+                    <th class="py-3 px-4 text-right">Total Add-on Revenue</th>
+                    <th class="py-3 px-4 text-right">% of All Orders</th>
+                    <th class="py-3 px-4">Primary Parent Items Chosen With</th>
+                  </tr>
+                </thead>
+                <tbody id="global-mods-tbody" class="divide-y divide-white/5 text-slate-200">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- TAB 4: REFUNDS & DISCREPANCY AUDIT LOG -->
+        <!-- ==================================================== -->
+        <div id="view-refunds" class="hidden space-y-3">
+          <div class="glass-card rounded-2xl p-4 border-rose-500/20 bg-rose-950/10">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold text-rose-300">Square Refunds, Voids, & Line Discrepancies</h4>
+                <p class="text-xs text-slate-300">
+                  Every negative quantity, refund event type, or cancelled order is isolated below so your financial book balances to the exact penny.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                    <th class="py-3 px-4">Date & Time</th>
+                    <th class="py-3 px-4">Item & Variation</th>
+                    <th class="py-3 px-4 text-center">Event Type</th>
+                    <th class="py-3 px-4 text-right">Qty</th>
+                    <th class="py-3 px-4 text-right">Amount Refunded</th>
+                    <th class="py-3 px-4">Transaction / Order ID</th>
+                    <th class="py-3 px-4">Notes / Details</th>
+                  </tr>
+                </thead>
+                <tbody id="refunds-tbody" class="divide-y divide-white/5 text-slate-200">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- TAB 5: CLEANED NORMALIZED RECORDS TABLE -->
+        <!-- ==================================================== -->
+        <div id="view-raw" class="hidden space-y-3">
+          <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+            <p>Complete cleaned line-item ledger with atomic modifier breakdown and sanitized currency values.</p>
+            <button id="btn-export-raw-csv" class="hover:text-emerald-400 flex items-center gap-1 font-bold">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Export Cleaned Rows CSV</span>
+            </button>
+          </div>
+
+          <div class="glass-card rounded-2xl overflow-hidden border-white/10">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-white/5 border-b border-white/10 text-slate-300 uppercase tracking-wider text-[11px] font-bold">
+                    <th class="py-3 px-4">Date / Time</th>
+                    <th class="py-3 px-4">Item</th>
+                    <th class="py-3 px-4">Variation</th>
+                    <th class="py-3 px-4">Category</th>
+                    <th class="py-3 px-4 text-right">Qty</th>
+                    <th class="py-3 px-4">Clean Modifiers List</th>
+                    <th class="py-3 px-4 text-right">Gross</th>
+                    <th class="py-3 px-4 text-right">Discounts</th>
+                    <th class="py-3 px-4 text-right">Net</th>
+                    <th class="py-3 px-4 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="raw-ledger-tbody" class="divide-y divide-white/5 text-slate-200">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -593,7 +783,7 @@
         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
         <span class="font-semibold text-slate-300">Treat Street Enterprise Sales Architecture</span>
         <span class="text-slate-600">|</span>
-        <span>Square CSV / TSV Parsing Engine</span>
+        <span>Executive Quick Insights & Modifier Matrix Engine</span>
       </div>
       <div>
         <span>Treat Street Franchise HQ • Zero Inventory Calculation Mode Active</span>
@@ -627,12 +817,16 @@
         topModifier: 'None',
         topModifierCount: 0,
         refundCount: 0,
-        refundAmount: 0
+        refundAmount: 0,
+        avgSellingPrice: 0,
+        attachRate: 0
       }
     };
 
     let activeTab = 'matrix';
-    let expandedAll = true;
+    let expandedAll = false; // Collapsed by default as requested!
+    let activeCategoryPill = 'ALL';
+    let isLedgerAccordionOpen = true;
 
     // Built-in Treat Street Sample POS Report Data
     const treatStreetSampleData = `Date\tTime\tCategory\tItem\tQty\tPrice Point Name\tSKU\tModifiers Applied\tProduct Sales\tDiscounts\tNet Sales\tTax\tGross Sales\tTransaction ID\tPayment ID\tDevice Name\tNotes\tDetails\tEvent Type\tLocation\tDining Option\tCustomer ID\tCustomer Name\tUnit\tCount\tCommission\tEmployee\tChannel\tCard Brand\tPAN Suffix
@@ -713,12 +907,10 @@
         if (inQuotes) {
           if (char === '"') {
             if (nextChar === '"') {
-              // Escaped double quote
               currentVal += '"';
               i += 2;
               continue;
             } else {
-              // End of quoted field
               inQuotes = false;
               i++;
               continue;
@@ -899,6 +1091,7 @@
       let sumTotalItemsSold = 0;
       let sumModifiersAttached = 0;
       let sumModRevenue = 0;
+      let sumRefundAmount = 0;
 
       parsed.rows.forEach((row, rowIndex) => {
         // Extract Core Fields with resilient fallbacks
@@ -953,6 +1146,7 @@
 
         if (isRefund) {
           refunds.push(record);
+          sumRefundAmount += Math.abs(netSales || grossSales);
         }
 
         // Totals
@@ -1037,6 +1231,7 @@
 
       const distinctDishes = Object.keys(parentMatrix).length;
       const distinctModifiers = Object.keys(globalMods).length;
+      const avgSellingPrice = sumTotalItemsSold > 0 ? (sumNet / sumTotalItemsSold).toFixed(2) : '0.00';
       const avgModsPerItem = sumTotalItemsSold > 0 ? (sumModifiersAttached / sumTotalItemsSold).toFixed(2) : '0.0';
       const attachRate = sumTotalItemsSold > 0 ? Math.min(100, ((sumModifiersAttached / sumTotalItemsSold) * 100)).toFixed(1) : '0';
 
@@ -1061,25 +1256,28 @@
           totalModifierRevenue: sumModRevenue,
           topModifier: topModName,
           topModifierCount: topModCount,
+          avgSellingPrice,
           avgModsPerItem,
           attachRate,
-          refundCount: refunds.length
+          refundCount: refunds.length,
+          refundAmount: sumRefundAmount
         }
       };
 
-      // Populate Filter Categories
-      populateCategoryFilter();
+      // Populate Category Filter Pills
+      renderCategoryPills();
 
-      // Render UI
+      // Render All Views & Dashboards
       renderKPIs();
+      renderExecutiveDashboard();
       renderAllViews();
     }
 
     // -------------------------------------------------------------
-    // TELEMETRY & HEADER INSPECTION DISPLAY
+    // TELEMETRY & SCHEMA INSPECTION DISPLAY
     // -------------------------------------------------------------
     function updateHeaderTelemetry(item, variation, mods, qty, status, delimiter, rowCount) {
-      const setField = (id, valid, label) => {
+      const setField = (id, valid) => {
         const el = document.getElementById(id);
         if (valid) {
           el.className = 'text-emerald-400 font-bold font-mono text-[11px] flex items-center gap-1';
@@ -1107,7 +1305,7 @@
     }
 
     // -------------------------------------------------------------
-    // KPI RENDERER
+    // 1. TOP KPI SUMMARY STRIP RENDERER
     // -------------------------------------------------------------
     function renderKPIs() {
       const m = parsedDataset.metrics;
@@ -1117,19 +1315,20 @@
       
       document.getElementById('kpi-total-qty').textContent = m.totalItemsSold.toLocaleString();
       document.getElementById('kpi-distinct-items').textContent = m.distinctDishes;
-      document.getElementById('kpi-refund-count').textContent = m.refundCount;
+      document.getElementById('kpi-avg-selling-price').textContent = `£${m.avgSellingPrice}`;
 
       document.getElementById('kpi-total-mods').textContent = m.totalModifiersAttached.toLocaleString();
       document.getElementById('kpi-distinct-mods').textContent = m.distinctModifiers;
-      document.getElementById('kpi-mod-rev').textContent = `£${m.totalModifierRevenue.toFixed(2)}`;
-
       document.getElementById('kpi-attach-rate').textContent = `${m.attachRate}%`;
-      document.getElementById('kpi-avg-mods').textContent = m.avgModsPerItem;
 
-      document.getElementById('kpi-top-modifier').textContent = m.topModifier;
-      document.getElementById('kpi-top-mod-count').textContent = m.topModifierCount;
+      document.getElementById('kpi-refund-amount').textContent = `£${m.refundAmount.toFixed(2)}`;
+      document.getElementById('kpi-refund-count').textContent = m.refundCount;
+      document.getElementById('kpi-audit-status').textContent = m.refundCount > 0 ? 'Audited' : 'Clean';
+      document.getElementById('kpi-audit-status').className = m.refundCount > 0 ? 'text-rose-400 font-semibold font-mono' : 'text-emerald-400 font-semibold';
 
       document.getElementById('badge-matrix-count').textContent = m.distinctDishes;
+      document.getElementById('badge-ledger-count').textContent = `${m.distinctDishes} Base Dishes`;
+
       const refBadge = document.getElementById('badge-refund-count');
       if (m.refundCount > 0) {
         refBadge.textContent = m.refundCount;
@@ -1139,21 +1338,306 @@
       }
     }
 
-    // Populate Category Dropdown
-    function populateCategoryFilter() {
-      const select = document.getElementById('category-filter');
+    // -------------------------------------------------------------
+    // 2. QUICK INSIGHTS & AGGREGATION WIDGETS
+    // -------------------------------------------------------------
+    function calculateSopIngredientDemand(cleanRows) {
+      // Treat Street SOP recipe impacts
+      const ingredients = {
+        'Comelle Soft Serve Ice Cream Mix': { qty: 0, unit: 'Liters', icon: 'ice-cream' },
+        'Frozen Waffles / Waffle Dough': { qty: 0, unit: 'Units', icon: 'cookie' },
+        'All Butter Croissants (Croffles)': { qty: 0, unit: 'Units', icon: 'sparkles' },
+        'Müller Müllerlicious Whole Milk': { qty: 0, unit: 'Liters', icon: 'cup-soda' },
+        'Artisan Gelato Scoops': { qty: 0, unit: 'Scoops', icon: 'disc' },
+        'St Pierre Brioche Burger Buns': { qty: 0, unit: 'Buns', icon: 'circle-dot' },
+        'Koffmann Potatoes / French Fries': { qty: 0, unit: 'Portions', icon: 'utensils' },
+        'Cookie Dough Portions': { qty: 0, unit: 'Portions', icon: 'cookie' },
+        'Whipped Cream Mix': { qty: 0, unit: 'Portions', icon: 'cloud' }
+      };
+
+      cleanRows.forEach(row => {
+        if (row.isRefund) return;
+        const itemLower = row.item.toLowerCase();
+        const qty = Math.max(0, row.qty);
+
+        // Dishes
+        if (itemLower.includes('waffle') || itemLower.includes('banoffee') || itemLower.includes('uncomplicated') || itemLower.includes('biscofia')) {
+          ingredients['Frozen Waffles / Waffle Dough'].qty += qty;
+        }
+        if (itemLower.includes('croffle') || itemLower.includes('kunafa') || itemLower.includes('dubai chocolate')) {
+          ingredients['All Butter Croissants (Croffles)'].qty += qty;
+        }
+        if (itemLower.includes('cookie dough')) {
+          ingredients['Cookie Dough Portions'].qty += qty;
+        }
+        if (itemLower.includes('shake') || itemLower.includes('milkshake')) {
+          ingredients['Müller Müllerlicious Whole Milk'].qty += (qty * 0.25); // 250ml milk per shake
+          ingredients['Whipped Cream Mix'].qty += qty;
+        }
+        if (itemLower.includes('burger') || itemLower.includes('louisiana')) {
+          ingredients['St Pierre Brioche Burger Buns'].qty += qty;
+          ingredients['Koffmann Potatoes / French Fries'].qty += qty;
+        }
+        if (itemLower.includes('fries') || itemLower.includes('papi chulo')) {
+          ingredients['Koffmann Potatoes / French Fries'].qty += qty;
+        }
+        if (itemLower.includes('scoop')) {
+          const matchScoop = itemLower.match(/(\d+)\s*scoop/);
+          const scoopCount = matchScoop ? parseInt(matchScoop[1]) : 1;
+          ingredients['Artisan Gelato Scoops'].qty += (qty * scoopCount);
+        }
+
+        // Modifiers
+        row.modifiers.forEach(m => {
+          const modLower = m.name.toLowerCase();
+          const modQty = qty;
+
+          if (modLower.includes('soft serve')) {
+            ingredients['Comelle Soft Serve Ice Cream Mix'].qty += (modQty * 0.12); // ~120ml per soft serve
+          }
+          if (modLower.includes('waffle') || modLower.includes('liege waffle')) {
+            ingredients['Frozen Waffles / Waffle Dough'].qty += modQty;
+          }
+          if (modLower.includes('croffle')) {
+            ingredients['All Butter Croissants (Croffles)'].qty += modQty;
+          }
+          if (modLower.includes('gelato') || modLower.includes('sorbet')) {
+            ingredients['Artisan Gelato Scoops'].qty += modQty;
+          }
+          if (modLower.includes('whipped cream')) {
+            ingredients['Whipped Cream Mix'].qty += modQty;
+          }
+          if (modLower.includes('brioche bun')) {
+            ingredients['St Pierre Brioche Burger Buns'].qty += modQty;
+          }
+          if (modLower.includes('fries')) {
+            ingredients['Koffmann Potatoes / French Fries'].qty += modQty;
+          }
+        });
+      });
+
+      return Object.entries(ingredients)
+        .filter(([_, data]) => data.qty > 0)
+        .sort((a, b) => b[1].qty - a[1].qty)
+        .slice(0, 5)
+        .map(([name, data]) => ({
+          name,
+          qty: data.unit === 'Liters' ? data.qty.toFixed(1) : Math.round(data.qty),
+          unit: data.unit,
+          icon: data.icon
+        }));
+    }
+
+    function renderExecutiveDashboard() {
+      const totalBaseQty = parsedDataset.metrics.totalItemsSold || 1;
+      const totalNetRev = parsedDataset.metrics.totalNet || 1;
+
+      // 1. Top 5 Base Items
+      const topItemsContainer = document.getElementById('widget-top-items');
+      const sortedItems = Object.values(parsedDataset.parentChildMatrix)
+        .filter(p => p.totalQty > 0)
+        .sort((a, b) => b.totalQty - a.totalQty)
+        .slice(0, 5);
+
+      if (sortedItems.length > 0) {
+        document.getElementById('widget-top-item-name').textContent = sortedItems[0].item;
+        document.getElementById('widget-top-item-share').textContent = `${((sortedItems[0].totalQty / totalBaseQty) * 100).toFixed(0)}% vol`;
+
+        const maxItemQty = sortedItems[0].totalQty || 1;
+        topItemsContainer.innerHTML = sortedItems.map((p, idx) => {
+          const pct = ((p.totalQty / totalBaseQty) * 100).toFixed(1);
+          const barWidth = Math.min(100, Math.round((p.totalQty / maxItemQty) * 100));
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-1.5 truncate max-w-[170px]">
+                  <span class="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-amber-400/20 text-amber-300' : 'bg-white/5 text-slate-400'}">#${idx + 1}</span>
+                  <span class="font-bold text-white truncate" title="${escapeHtml(p.item)}">${escapeHtml(p.item)}</span>
+                </div>
+                <div class="text-right font-mono text-[11px]">
+                  <span class="font-bold text-emerald-400">${p.totalQty}</span>
+                  <span class="text-slate-400 text-[10px]">(${pct}%)</span>
+                </div>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400" style="width: ${barWidth}%;"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        topItemsContainer.innerHTML = '<p class="text-xs text-slate-500 italic py-2 text-center">No sales registered</p>';
+      }
+
+      // 2. Top 5 Most-Selected Modifiers
+      const topModsContainer = document.getElementById('widget-top-modifiers');
+      const sortedMods = Object.values(parsedDataset.globalModifiers)
+        .filter(m => m.count > 0)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      if (sortedMods.length > 0) {
+        document.getElementById('widget-top-mod-name').textContent = sortedMods[0].name;
+        document.getElementById('widget-top-mod-count').textContent = `${sortedMods[0].count}x`;
+
+        const maxModCount = sortedMods[0].count || 1;
+        topModsContainer.innerHTML = sortedMods.map((m, idx) => {
+          const attachPct = ((m.count / totalBaseQty) * 100).toFixed(0);
+          const barWidth = Math.min(100, Math.round((m.count / maxModCount) * 100));
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-1.5 truncate max-w-[170px]">
+                  <span class="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-amber-400/20 text-amber-300' : 'bg-white/5 text-slate-400'}">#${idx + 1}</span>
+                  <span class="font-bold text-amber-200 truncate" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
+                </div>
+                <div class="text-right font-mono text-[11px]">
+                  <span class="font-bold text-amber-300">${m.count}x</span>
+                  <span class="text-slate-400 text-[10px]">(${attachPct}%)</span>
+                </div>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                <div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400" style="width: ${barWidth}%;"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        topModsContainer.innerHTML = '<p class="text-xs text-slate-500 italic py-2 text-center">No modifiers chosen</p>';
+      }
+
+      // 3. Top 5 SOP Raw Ingredient Demand
+      const demandContainer = document.getElementById('widget-ingredient-demand');
+      const topIngredients = calculateSopIngredientDemand(parsedDataset.cleanRows);
+
+      if (topIngredients.length > 0) {
+        demandContainer.innerHTML = topIngredients.map((ing, idx) => {
+          return `
+            <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:border-teal-500/20 transition-all text-xs">
+              <div class="flex items-center gap-2 truncate max-w-[180px]">
+                <div class="w-6 h-6 rounded-md bg-teal-500/15 text-teal-300 flex items-center justify-center shrink-0">
+                  <i data-lucide="${ing.icon || 'box'}" class="w-3.5 h-3.5"></i>
+                </div>
+                <span class="font-semibold text-slate-200 truncate text-[11px]" title="${escapeHtml(ing.name)}">${escapeHtml(ing.name)}</span>
+              </div>
+              <div class="text-right font-mono text-[11px]">
+                <strong class="text-teal-300 font-bold">${ing.qty}</strong>
+                <span class="text-slate-400 text-[10px]">${ing.unit}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        demandContainer.innerHTML = '<p class="text-xs text-slate-500 italic py-2 text-center">No ingredient usage</p>';
+      }
+
+      // 4. Category Breakdown
+      const catContainer = document.getElementById('widget-category-breakdown');
+      const categoryMap = {};
+      Object.values(parsedDataset.parentChildMatrix).forEach(p => {
+        const cat = p.category || 'General';
+        if (!categoryMap[cat]) categoryMap[cat] = { name: cat, qty: 0, revenue: 0 };
+        categoryMap[cat].qty += p.totalQty;
+        categoryMap[cat].revenue += p.netSales;
+      });
+
+      const sortedCategories = Object.values(categoryMap).sort((a, b) => b.qty - a.qty).slice(0, 5);
+      if (sortedCategories.length > 0) {
+        document.getElementById('widget-top-category-name').textContent = sortedCategories[0].name;
+        document.getElementById('widget-top-category-share').textContent = `${((sortedCategories[0].qty / totalBaseQty) * 100).toFixed(0)}%`;
+
+        const maxCatQty = sortedCategories[0].qty || 1;
+        catContainer.innerHTML = sortedCategories.map(c => {
+          const catPct = ((c.qty / totalBaseQty) * 100).toFixed(0);
+          const barWidth = Math.min(100, Math.round((c.qty / maxCatQty) * 100));
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-slate-200 truncate max-w-[160px]" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+                <div class="text-right font-mono text-[11px]">
+                  <span class="font-bold text-cyan-300">${c.qty} sold</span>
+                  <span class="text-slate-400 text-[10px]">(£${c.revenue.toFixed(0)})</span>
+                </div>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                <div class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-teal-400" style="width: ${barWidth}%;"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        catContainer.innerHTML = '<p class="text-xs text-slate-500 italic py-2 text-center">No categories</p>';
+      }
+
+      lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // 3. INTERACTIVE CATEGORY PILLS & FILTER CONTROLS
+    // -------------------------------------------------------------
+    function renderCategoryPills() {
+      const container = document.getElementById('category-pills-container');
       const cats = new Set();
       Object.values(parsedDataset.parentChildMatrix).forEach(p => {
         if (p.category) cats.add(p.category);
       });
 
-      select.innerHTML = '<option value="ALL">All Categories</option>';
-      Array.from(cats).sort().forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        select.appendChild(opt);
+      const catList = ['ALL', ...Array.from(cats).sort()];
+      container.innerHTML = catList.map(c => {
+        const label = c === 'ALL' ? 'All Categories' : c;
+        const isActive = activeCategoryPill === c;
+        return `
+          <button onclick="selectCategoryPill('${escapeHtml(c)}')" class="${isActive ? 'pill-active' : 'pill-inactive'} px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap">
+            ${escapeHtml(label)}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectCategoryPill(category) {
+      activeCategoryPill = category;
+      renderCategoryPills();
+      renderAllViews();
+    }
+
+    // -------------------------------------------------------------
+    // 4. CLEAN COLLAPSIBLE ACCORDION DESIGN
+    // -------------------------------------------------------------
+    function toggleLedgerAccordion() {
+      isLedgerAccordionOpen = !isLedgerAccordionOpen;
+      const body = document.getElementById('ledger-accordion-body');
+      const icon = document.getElementById('ledger-accordion-icon');
+      const actionText = document.getElementById('accordion-action-text');
+
+      if (isLedgerAccordionOpen) {
+        body.classList.remove('hidden');
+        icon.classList.remove('-rotate-90');
+        actionText.textContent = 'collapse view';
+      } else {
+        body.classList.add('hidden');
+        icon.classList.add('-rotate-90');
+        actionText.textContent = 'expand view';
+      }
+    }
+
+    function toggleBulkModifiers() {
+      expandedAll = !expandedAll;
+      const subTables = document.querySelectorAll('[id^="child-table-"]');
+      const icons = document.querySelectorAll('[id^="icon-child-table-"]');
+      const btnText = document.getElementById('btn-expand-all-text');
+
+      subTables.forEach(t => {
+        if (expandedAll) t.classList.remove('hidden');
+        else t.classList.add('hidden');
       });
+      icons.forEach(ic => {
+        if (expandedAll) ic.classList.remove('-rotate-90');
+        else ic.classList.add('-rotate-90');
+      });
+
+      if (btnText) {
+        btnText.textContent = expandedAll ? 'Collapse All Modifiers' : 'Expand All Modifiers';
+      }
     }
 
     // -------------------------------------------------------------
@@ -1162,28 +1646,38 @@
     function renderParentChildMatrix() {
       const tbody = document.getElementById('matrix-tbody');
       const searchQuery = (document.getElementById('search-input').value || '').toLowerCase().trim();
-      const selectedCategory = document.getElementById('category-filter').value;
+      const hideZeroSales = document.getElementById('threshold-toggle').checked;
 
       const items = Object.values(parsedDataset.parentChildMatrix);
       if (items.length === 0) return;
 
       tbody.innerHTML = '';
+      let visibleCount = 0;
 
       items.forEach((p, idx) => {
         // Filter Checks
-        if (selectedCategory !== 'ALL' && p.category !== selectedCategory) return;
+        if (activeCategoryPill !== 'ALL' && p.category !== activeCategoryPill) return;
+        if (hideZeroSales && p.totalQty <= 0) return;
         
-        const matchesItem = p.item.toLowerCase().includes(searchQuery) || p.variation.toLowerCase().includes(searchQuery) || p.category.toLowerCase().includes(searchQuery);
+        const matchesItem = p.item.toLowerCase().includes(searchQuery) || p.variation.toLowerCase().includes(searchQuery) || p.category.toLowerCase().includes(searchQuery) || (p.sku && p.sku.toLowerCase().includes(searchQuery));
         const childMods = Object.values(p.modifiers);
         const matchesModifier = childMods.some(m => m.name.toLowerCase().includes(searchQuery));
 
         if (searchQuery && !matchesItem && !matchesModifier) return;
 
+        visibleCount++;
         const avgPrice = p.totalQty > 0 ? (p.netSales / p.totalQty).toFixed(2) : '0.00';
         const totalModsForThisItem = childMods.reduce((sum, m) => sum + m.count, 0);
         const hasChildren = childMods.length > 0;
         const rowId = `parent-row-${idx}`;
         const childId = `child-table-${idx}`;
+
+        // Volume styling
+        const volumeBadge = p.totalQty >= 5 
+          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+          : p.totalQty >= 2 
+            ? 'bg-teal-500/20 text-teal-300 border-teal-500/30' 
+            : 'bg-white/5 text-slate-300 border-white/10';
 
         // Parent Row HTML
         const trParent = document.createElement('tr');
@@ -1211,14 +1705,16 @@
             <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-semibold">${escapeHtml(p.category)}</span>
           </td>
           <td class="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">${escapeHtml(p.sku || '-')}</td>
-          <td class="py-3 px-4 text-right font-bold text-white font-mono">${p.totalQty}</td>
+          <td class="py-3 px-4 text-right">
+            <span class="px-2 py-0.5 rounded-md border text-xs font-bold font-mono ${volumeBadge}">${p.totalQty}</span>
+          </td>
           <td class="py-3 px-4 text-right font-mono text-slate-300">£${p.grossSales.toFixed(2)}</td>
           <td class="py-3 px-4 text-right font-mono ${p.discounts < 0 ? 'text-amber-400' : 'text-slate-400'}">£${p.discounts.toFixed(2)}</td>
           <td class="py-3 px-4 text-right font-bold font-mono text-emerald-400">£${p.netSales.toFixed(2)}</td>
           <td class="py-3 px-4 text-right font-mono text-slate-300">£${avgPrice}</td>
           <td class="py-3 px-4 text-center">
             ${hasChildren ? `
-              <span class="px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-300 font-bold text-[11px] inline-flex items-center gap-1">
+              <span class="px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-300 font-bold text-[11px] inline-flex items-center gap-1 group-hover:border-amber-400 transition-all">
                 <i data-lucide="layers" class="w-3 h-3 text-amber-400"></i>
                 ${childMods.length} types (${totalModsForThisItem} total)
               </span>
@@ -1229,7 +1725,7 @@
         `;
         tbody.appendChild(trParent);
 
-        // Child Nested Sub-Table Row
+        // Child Nested Sub-Table Row (Accordion)
         if (hasChildren) {
           const trChild = document.createElement('tr');
           trChild.id = childId;
@@ -1285,6 +1781,7 @@
         }
       });
 
+      document.getElementById('badge-ledger-count').textContent = `${visibleCount} Dishes`;
       lucide.createIcons();
     }
 
@@ -1307,13 +1804,14 @@
     function renderBaseItemsTable() {
       const tbody = document.getElementById('base-items-tbody');
       const searchQuery = (document.getElementById('search-input').value || '').toLowerCase().trim();
-      const selectedCategory = document.getElementById('category-filter').value;
+      const hideZeroSales = document.getElementById('threshold-toggle').checked;
 
       const items = Object.values(parsedDataset.parentChildMatrix);
       tbody.innerHTML = '';
 
       items.sort((a, b) => b.netSales - a.netSales).forEach(p => {
-        if (selectedCategory !== 'ALL' && p.category !== selectedCategory) return;
+        if (activeCategoryPill !== 'ALL' && p.category !== activeCategoryPill) return;
+        if (hideZeroSales && p.totalQty <= 0) return;
         if (searchQuery && !p.item.toLowerCase().includes(searchQuery) && !p.variation.toLowerCase().includes(searchQuery)) return;
 
         const avg = p.totalQty > 0 ? (p.netSales / p.totalQty).toFixed(2) : '0.00';
@@ -1341,6 +1839,7 @@
     function renderGlobalModifiersTable() {
       const tbody = document.getElementById('global-mods-tbody');
       const searchQuery = (document.getElementById('search-input').value || '').toLowerCase().trim();
+      const hideZeroSales = document.getElementById('threshold-toggle').checked;
 
       const mods = Object.values(parsedDataset.globalModifiers);
       tbody.innerHTML = '';
@@ -1348,6 +1847,7 @@
       const totalBaseQty = parsedDataset.metrics.totalItemsSold || 1;
 
       mods.sort((a, b) => b.count - a.count).forEach(m => {
+        if (hideZeroSales && m.count <= 0) return;
         if (searchQuery && !m.name.toLowerCase().includes(searchQuery)) return;
 
         const globalPct = ((m.count / totalBaseQty) * 100).toFixed(1);
@@ -1410,9 +1910,12 @@
     function renderRawLedgerTable() {
       const tbody = document.getElementById('raw-ledger-tbody');
       const searchQuery = (document.getElementById('search-input').value || '').toLowerCase().trim();
+      const hideZeroSales = document.getElementById('threshold-toggle').checked;
       tbody.innerHTML = '';
 
       parsedDataset.cleanRows.slice(0, 150).forEach(r => {
+        if (activeCategoryPill !== 'ALL' && r.category !== activeCategoryPill) return;
+        if (hideZeroSales && r.qty === 0) return;
         if (searchQuery && !r.item.toLowerCase().includes(searchQuery) && !r.rawModifiers.toLowerCase().includes(searchQuery)) return;
 
         const modDisplay = r.modifiers.length > 0 
@@ -1667,6 +2170,11 @@
         location.reload();
       });
 
+      // Accordion Header Click
+      document.getElementById('ledger-accordion-header').addEventListener('click', () => {
+        toggleLedgerAccordion();
+      });
+
       // Paste Drawer Toggle
       const pasteDrawer = document.getElementById('paste-drawer');
       document.getElementById('btn-toggle-paste').addEventListener('click', () => {
@@ -1682,26 +2190,35 @@
         pasteDrawer.classList.add('hidden');
       });
 
-      // Expand / Collapse All
-      document.getElementById('btn-expand-all').addEventListener('click', () => {
-        expandedAll = !expandedAll;
-        const subTables = document.querySelectorAll('[id^="child-table-"]');
-        const icons = document.querySelectorAll('[id^="icon-child-table-"]');
-        subTables.forEach(t => {
-          if (expandedAll) t.classList.remove('hidden');
-          else t.classList.add('hidden');
-        });
-        icons.forEach(ic => {
-          if (expandedAll) ic.classList.remove('-rotate-90');
-          else ic.classList.add('-rotate-90');
-        });
-      });
-
       // Search & Filters
-      document.getElementById('search-input').addEventListener('input', () => {
+      const searchInput = document.getElementById('search-input');
+      const clearSearchBtn = document.getElementById('btn-clear-search');
+
+      searchInput.addEventListener('input', () => {
+        if (searchInput.value.trim().length > 0) {
+          clearSearchBtn.classList.remove('hidden');
+        } else {
+          clearSearchBtn.classList.add('hidden');
+        }
         renderAllViews();
       });
-      document.getElementById('category-filter').addEventListener('change', () => {
+
+      clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        clearSearchBtn.classList.add('hidden');
+        renderAllViews();
+      });
+
+      document.getElementById('threshold-toggle').addEventListener('change', () => {
+        renderAllViews();
+      });
+
+      document.getElementById('btn-reset-filters').addEventListener('click', () => {
+        searchInput.value = '';
+        clearSearchBtn.classList.add('hidden');
+        document.getElementById('threshold-toggle').checked = true;
+        activeCategoryPill = 'ALL';
+        renderCategoryPills();
         renderAllViews();
       });
 
@@ -1738,7 +2255,7 @@
         });
       });
 
-      // Pre-load sample data on first visit for instant WOW experience
+      // Pre-load sample data on first visit
       processSquareData(treatStreetSampleData);
     });
   </script>
