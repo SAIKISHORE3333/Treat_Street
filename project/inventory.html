@@ -10,6 +10,7 @@
   <script src="catalog.js"></script>
   <script src="default_orders.js"></script>
   <script src="recipe_matcher.js"></script>
+  <script src="sales_depletion_controller.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2475,20 +2476,63 @@
         }
       }
 
-      const depletionItems = RecipeMatcher.calculateDepletion(currentConsolidated.matrix, catalogData);
-      const stockLevels = getStockLevels();
+      // TWO-STREAM IN-STORE & OMNICHANNEL SALES DEPLETION
+      let twoStreamResult = null;
+      let depletionItems = [];
 
-      let deductedCount = 0;
-      depletionItems.forEach(dep => {
-        const match = catalogData.find(c => c.name.toLowerCase().trim() === dep.ingredient_name.toLowerCase().trim());
-        if (match) {
-          const current = stockLevels[match.id] !== undefined ? parseFloat(stockLevels[match.id]) : 0;
-          stockLevels[match.id] = Math.max(0, parseFloat((current - dep.quantity).toFixed(2)));
-          deductedCount++;
+      if (window.SalesDepletionController) {
+        let activeProdLogs = [];
+        try {
+          const rawProd = localStorage.getItem('ts_production_logs');
+          if (rawProd) activeProdLogs = JSON.parse(rawProd);
+        } catch (e) {}
+
+        let subRecs = [];
+        try {
+          const rawRecs = localStorage.getItem('recipeSOPs');
+          if (rawRecs) subRecs = JSON.parse(rawRecs);
+        } catch (e) {}
+
+        let minStockLevels = {};
+        try {
+          const rawMins = localStorage.getItem('ts_min_stock_levels');
+          if (rawMins) minStockLevels = JSON.parse(rawMins);
+        } catch (e) {}
+
+        twoStreamResult = SalesDepletionController.processTwoStreamDepletion(currentConsolidated.matrix, {
+          catalog: catalogData,
+          stockLevels: getStockLevels(),
+          productionLogs: activeProdLogs,
+          minStockLevels: minStockLevels,
+          subRecipes: subRecs
+        });
+
+        saveStockLevels(twoStreamResult.updatedStockLevels);
+        if (twoStreamResult.updatedProductionLogs) {
+          localStorage.setItem('ts_production_logs', JSON.stringify(twoStreamResult.updatedProductionLogs));
         }
-      });
 
-      saveStockLevels(stockLevels);
+        depletionItems = twoStreamResult.directDeductions.map(d => ({
+          ingredient_name: d.name,
+          quantity: d.quantityDeducted,
+          unit: 'units'
+        }));
+      } else {
+        depletionItems = RecipeMatcher.calculateDepletion(currentConsolidated.matrix, catalogData);
+        const stockLevels = getStockLevels();
+
+        let deductedCount = 0;
+        depletionItems.forEach(dep => {
+          const match = catalogData.find(c => c.name.toLowerCase().trim() === dep.ingredient_name.toLowerCase().trim());
+          if (match) {
+            const current = stockLevels[match.id] !== undefined ? parseFloat(stockLevels[match.id]) : 0;
+            stockLevels[match.id] = Math.max(0, parseFloat((current - dep.quantity).toFixed(2)));
+            deductedCount++;
+          }
+        });
+
+        saveStockLevels(stockLevels);
+      }
 
       const batchCode = 'DEP-' + Date.now();
       const platforms = Object.keys(currentConsolidated.platformCounts).filter(p => currentConsolidated.platformCounts[p] > 0);
@@ -2518,8 +2562,24 @@
         timestamp: new Date().toISOString()
       });
 
+      // Automatically trigger DOM re-rendering & valuation recalculation
       renderStockGrid();
-      alert(`✅ Consolidated Depletion Executed!\n\nSuccessfully deducted ingredients for ${currentConsolidated.grandTotalUnits} dishes across ${platforms.join(', ')}.\nTheoretical stock pot levels have been updated.`);
+      if (typeof calculateStockValuation === 'function') calculateStockValuation();
+      if (typeof updateAuditMetrics === 'function') updateAuditMetrics();
+      if (typeof updateInvBatchBadge === 'function') updateInvBatchBadge();
+
+      let alertMsg = `✅ In-Store & Omnichannel Depletion Executed!\n\nSuccessfully processed ${currentConsolidated.grandTotalUnits} units across ${platforms.join(', ')}.`;
+      if (twoStreamResult) {
+        alertMsg += `\n\n• Stream 1 (Direct Retail/Drinks): ${twoStreamResult.summary.directPotsUpdated} stock pots updated in live monitor`;
+        alertMsg += `\n• Stream 2 (Kitchen Production): ${twoStreamResult.summary.batchesUpdated} batched dishes deducted via FIFO`;
+        if (twoStreamResult.summary.alarmsCount > 0) {
+          alertMsg += `\n• ⚠️ Reorder Alarms: ${twoStreamResult.summary.alarmsCount} stock pots fell below minimum threshold`;
+        }
+        if (twoStreamResult.summary.shortagesCount > 0) {
+          alertMsg += `\n• ⚠️ Kitchen Prep Warnings: ${twoStreamResult.summary.shortagesCount} dishes exceeded active logged batches`;
+        }
+      }
+      alert(alertMsg);
     }
 
     function exportMasterCSV() {
@@ -4602,6 +4662,22 @@
 
     init();
     updateInvBatchBadge();
+
+    // Cross-tab real-time event listeners
+    window.addEventListener('treat_street:depletion_processed', () => {
+      renderStockGrid();
+      if (typeof calculateStockValuation === 'function') calculateStockValuation();
+      if (typeof updateAuditMetrics === 'function') updateAuditMetrics();
+      if (typeof updateInvBatchBadge === 'function') updateInvBatchBadge();
+    });
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'ts_stock_levels' || e.key === 'ts_production_logs') {
+        renderStockGrid();
+        if (typeof calculateStockValuation === 'function') calculateStockValuation();
+        if (typeof updateAuditMetrics === 'function') updateAuditMetrics();
+        if (typeof updateInvBatchBadge === 'function') updateInvBatchBadge();
+      }
+    });
 
     // Keyboard support for passcode modal
     const passInput = document.getElementById('admin-passcode-input');
