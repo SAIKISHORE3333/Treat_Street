@@ -25,6 +25,8 @@
 }(typeof self !== 'undefined' ? self : this, function() {
   'use strict';
 
+  console.log(">>> Sales Depletion Controller v2.4 Loaded Successfully <<<");
+
   const STORAGE_KEYS = {
     STOCK_LEVELS: 'ts_stock_levels',
     PRODUCTION_LOGS: 'ts_production_logs',

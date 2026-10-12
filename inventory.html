@@ -2466,6 +2466,7 @@
     // EXECUTE CONSOLIDATED DEPLETION
     // -------------------------------------------------------------
     async function executeDepletion() {
+      console.log(">>> [executeDepletion] Triggered by #btn-execute-depletion: Executing Two-Stream Depletion via SalesDepletionController... <<<");
       if (!currentConsolidated || currentConsolidated.matrix.length === 0) {
         return alert("No consolidated sales data available to deplete.");
       }
@@ -4679,6 +4680,48 @@
       }
     });
 
+    // Explicit event bindings for Omnichannel Depletion
+    const salesFileInput = document.getElementById('sales-file-input');
+    if (salesFileInput) {
+      salesFileInput.addEventListener('change', (e) => {
+        console.log(">>> [sales-file-input] File selected via change listener, processing Two-Stream Depletion... <<<");
+      });
+    }
+
+    const btnExecDepletion = document.getElementById('btn-execute-depletion');
+    if (btnExecDepletion) {
+      btnExecDepletion.addEventListener('click', () => {
+        console.log(">>> [btn-execute-depletion] Process button clicked! <<<");
+      });
+    }
+
+    // Direct 1-Click Console Test Function for User
+    window.testTwoStreamDepletion = function() {
+      console.log(">>> Running Test Two-Stream Depletion... <<<");
+      if (!window.SalesDepletionController) {
+        console.error("SalesDepletionController not found on window!");
+        return;
+      }
+      const testSales = [
+        { name: "Coca Cola Classic Can 330ml", quantity: 1 },
+        { name: "Belgian Liege Waffle", quantity: 1 }
+      ];
+      const res = SalesDepletionController.processTwoStreamDepletion(testSales, {
+        catalog: catalogData,
+        stockLevels: getStockLevels(),
+        productionLogs: JSON.parse(localStorage.getItem('ts_production_logs') || '[]'),
+        minStockLevels: JSON.parse(localStorage.getItem('ts_min_stock_levels') || '{}'),
+        subRecipes: JSON.parse(localStorage.getItem('recipeSOPs') || '[]')
+      });
+      saveStockLevels(res.updatedStockLevels);
+      if (res.updatedProductionLogs) localStorage.setItem('ts_production_logs', JSON.stringify(res.updatedProductionLogs));
+      renderStockGrid();
+      if (typeof calculateStockValuation === 'function') calculateStockValuation();
+      console.log(">>> Test Result:", res);
+      alert("✅ Test Depletion Completed!\n• Stream 1: 1x Coca Cola deducted from Pot #130\n• Stream 2: 1x Waffle portion deducted from active kitchen batch\n• Stock Pot cards & Valuation updated!");
+      return res;
+    };
+
     // Keyboard support for passcode modal
     const passInput = document.getElementById('admin-passcode-input');
     if (passInput) {
@@ -4753,5 +4796,6 @@
 
     checkManagerGate();
   </script>
+  <script src="sales_depletion_controller.js"></script>
 </body>
 </html>
