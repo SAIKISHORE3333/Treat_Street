@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="catalog.js"></script>
+  <script src="sales_depletion_controller.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -959,6 +960,9 @@
           if (Array.isArray(parsed)) {
             // Strip any mock sample batches so production batches are never interpreted or fabricated
             const realLogs = parsed.filter(l => l && l.log_id !== 'BATCH-260914-101' && l.log_id !== 'BATCH-260915-204');
+            if (window.SalesDepletionController && typeof window.SalesDepletionController.healAndNormalizeBatches === 'function') {
+              return window.SalesDepletionController.healAndNormalizeBatches(realLogs);
+            }
             if (realLogs.length !== parsed.length) {
               saveProductionLogs(realLogs);
             }
@@ -1372,16 +1376,30 @@
 
       saveStockLevels(stockLevels);
 
-      // 2. Create Production Record
+      // 2. Create Production Record (Active Batch Entity)
+      let initialPortions = 0;
+      if (window.SalesDepletionController) {
+        initialPortions = window.SalesDepletionController.parseYieldPortions(currentSelectedRecipe.yield, batchQty);
+      } else {
+        initialPortions = Math.round(10 * batchQty);
+      }
+      if (initialPortions <= 0) initialPortions = Math.round(10 * batchQty);
+
       const newBatchLog = {
+        batch_id: batchCode,
         log_id: batchCode,
         branch_id: branch,
+        prep_id: currentSelectedRecipe.id,
         recipe_id: currentSelectedRecipe.id,
         recipe_name: currentSelectedRecipe.title,
-        recipe_type: currentSelectedRecipe.recipeType || 'Main Recipe',
+        recipe_type: currentSelectedRecipe.recipeType || 'Sub-Recipe',
         batches_produced: batchQty,
         yield_output: `${batchQty}x [${currentSelectedRecipe.yield || '1 Batch'}]`,
+        initial_yield_portions: initialPortions,
+        remaining_portions: initialPortions,
+        status: 'Active',
         prep_date: prepDate,
+        production_date: prepDate,
         use_by_date: useByDate,
         staff_name: staff,
         core_temp: temp ? `${temp} °C` : 'N/A',
@@ -1390,12 +1408,17 @@
         inventory_depleted: true,
         depleted_at: new Date().toISOString(),
         deducted_ingredients: deductedIngredients,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        created_at: new Date().toISOString()
       };
 
       const history = getProductionLogs();
       history.unshift(newBatchLog);
       saveProductionLogs(history);
+
+      if (window.SalesDepletionController) {
+        window.SalesDepletionController.notifyStateChange({ type: 'BATCH_CREATED', batch: newBatchLog });
+      }
 
       // 3. Supabase Sync
       if (supabaseClient) {
@@ -1763,35 +1786,84 @@
       container.innerHTML = filtered.map(log => {
         const isExpired = new Date(log.use_by_date) < new Date();
         const isSub = log.recipe_type === 'Sub-Recipe';
-        const isDepleted = log.inventory_depleted !== false;
+        const isDepletedStock = log.inventory_depleted !== false;
         const details = getBatchPortionDetails(log);
         const ingCount = details.length;
         const ingSummary = details.slice(0, 3).map(d => `${d.name.split(' ')[0]}: ${d.portion_per_batch}`).join(', ');
 
+        // Two-Stream Portion Calculation
+        const initialPortions = parseFloat(log.initial_yield_portions) || (parseFloat(log.batches_produced) * 10) || 10;
+        const remainingPortions = log.remaining_portions !== undefined ? parseFloat(log.remaining_portions) : initialPortions;
+        const isDepleted = remainingPortions === 0 || log.status === 'Depleted';
+        const isOverrun = remainingPortions < 0;
+
+        let pct = 0;
+        if (initialPortions > 0) {
+          pct = Math.round((remainingPortions / initialPortions) * 100);
+        }
+        const progressWidth = Math.max(0, Math.min(100, pct));
+
+        let statusColorClass = 'text-emerald-400';
+        let barColorClass = 'bg-gradient-to-r from-emerald-500 to-teal-400';
+        let batchStatusBadge = '';
+
+        if (isOverrun) {
+          statusColorClass = 'text-rose-400';
+          barColorClass = 'bg-gradient-to-r from-rose-600 to-red-500 animate-pulse';
+          batchStatusBadge = `
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1">
+              <i data-lucide="alert-octagon" class="w-2.5 h-2.5"></i> Unlogged Overrun (${remainingPortions} Portions)
+            </span>
+          `;
+        } else if (isDepleted) {
+          statusColorClass = 'text-slate-400';
+          barColorClass = 'bg-slate-600';
+          batchStatusBadge = `
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-500/20 text-slate-300 border border-slate-500/30 flex items-center gap-1">
+              <i data-lucide="check-check" class="w-2.5 h-2.5 text-slate-400"></i> Depleted (0 Remaining)
+            </span>
+          `;
+        } else if (isExpired) {
+          statusColorClass = 'text-red-400';
+          barColorClass = 'bg-red-500';
+          batchStatusBadge = `
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-500/20 text-red-300 border border-red-500/30 flex items-center gap-1">
+              <i data-lucide="alert-triangle" class="w-2.5 h-2.5"></i> Expired
+            </span>
+          `;
+        } else {
+          const isLow = pct <= 30;
+          statusColorClass = isLow ? 'text-amber-400' : 'text-emerald-400';
+          barColorClass = isLow ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-emerald-500 to-teal-400';
+          batchStatusBadge = `
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+              <i data-lucide="shield-check" class="w-2.5 h-2.5"></i> Active (${remainingPortions} Portions)
+            </span>
+          `;
+        }
+
         return `
           <div onclick="openBatchPortionDetailModal('${log.log_id}')" class="glass-panel p-4 sm:p-5 rounded-2xl border border-white/10 hover:border-amber-400/50 hover:bg-white/[0.05] transition-all cursor-pointer flex flex-col gap-3.5 group shadow-lg">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div class="space-y-1">
+              <div class="space-y-1 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="font-mono font-black text-amber-400 text-sm group-hover:text-amber-300 transition-colors">${log.log_id}</span>
                   <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
                     isSub ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  }">${log.recipe_type || 'Main Recipe'}</span>
+                  }">${log.recipe_type || 'Sub-Recipe'}</span>
+                  ${batchStatusBadge}
                   <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                    isExpired ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                  }">${isExpired ? 'Expired' : 'Fresh & Active'}</span>
-                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                    isDepleted ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1'
+                    isDepletedStock ? 'bg-emerald-500/10 text-emerald-300/80 border border-emerald-500/20 flex items-center gap-1' : 'bg-amber-500/10 text-amber-300/80 border border-amber-500/20 flex items-center gap-1'
                   }">
-                    <i data-lucide="${isDepleted ? 'check-circle-2' : 'alert-triangle'}" class="w-2.5 h-2.5"></i>
-                    ${isDepleted ? 'Stock Depleted' : 'Stock Not Depleted'}
+                    <i data-lucide="${isDepletedStock ? 'check-circle-2' : 'alert-triangle'}" class="w-2.5 h-2.5"></i>
+                    ${isDepletedStock ? 'Raw Stock Deducted' : 'Raw Stock Pending'}
                   </span>
                 </div>
                 <h4 class="font-bold text-white text-sm sm:text-base heading-font group-hover:text-amber-300 transition-colors">${log.recipe_name}</h4>
                 <p class="text-xs text-slate-300">
                   <strong class="text-amber-300">${log.batches_produced} Batches</strong> (${log.yield_output}) • Prepared by <strong class="text-white">${log.staff_name}</strong> on ${log.prep_date}
                 </p>
-                <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 pt-1">
+                <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 pt-0.5">
                   <span>Use By: <strong class="${isExpired ? 'text-red-400' : 'text-amber-300'}">${log.use_by_date}</strong></span>
                   <span>Temp: <strong class="text-white">${log.core_temp || 'N/A'}</strong></span>
                   <span>Storage: <strong class="text-slate-300">${log.storage_condition || 'Refrigerated'}</strong></span>
@@ -1812,8 +1884,39 @@
               </div>
             </div>
 
+            <!-- MANDATORY PROGRESS BAR: Remaining Portions / Total Yield -->
+            <div class="p-3 rounded-2xl bg-black/40 border border-white/10 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full ${isOverrun ? 'bg-rose-400 animate-ping' : (isDepleted ? 'bg-slate-500' : 'bg-emerald-400')}"></span>
+                  <span class="text-slate-300 font-semibold text-xs">Batch Portions:</span>
+                  <span class="font-black heading-font text-sm ${statusColorClass}">
+                    ${remainingPortions} / ${initialPortions} portions remaining
+                  </span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">FIFO Stream 2</span>
+                  <span class="font-bold font-mono text-xs ${statusColorClass}">
+                    ${isOverrun ? 'OVERRUN' : pct + '%'}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Animated Progress Bar Container -->
+              <div class="w-full h-2.5 rounded-full bg-white/10 overflow-hidden relative shadow-inner">
+                <div class="h-full rounded-full transition-all duration-500 ${barColorClass}" style="width: ${progressWidth}%;"></div>
+              </div>
+
+              <div class="flex items-center justify-between text-[10px] text-slate-400">
+                <span>Production Batch ID: <strong class="text-slate-200 font-mono">${log.batch_id || log.log_id}</strong></span>
+                <span class="${isOverrun ? 'text-rose-300 font-bold' : (isDepleted ? 'text-slate-400' : 'text-emerald-300')}">
+                  ${isOverrun ? '⚠️ Shortage: Exceeded logged kitchen batches' : (isDepleted ? '✓ Fully depleted via POS sales' : '✓ Active for POS automated sales depletion')}
+                </span>
+              </div>
+            </div>
+
             <!-- Clickable Portion Preview Strip -->
-            <div class="pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="pt-1 border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
               <div class="flex items-center gap-1.5 text-slate-300 text-[11px]">
                 <i data-lucide="layers" class="w-3.5 h-3.5 text-amber-400"></i>
                 <span><strong>${ingCount} Ingredients Used:</strong> <span class="text-slate-400">${ingSummary}${ingCount > 3 ? '...' : ''}</span></span>
@@ -2024,6 +2127,18 @@
     }
 
     init();
+
+    // Synchronize state across open windows and tabs
+    window.addEventListener('treat_street:depletion_processed', () => {
+      renderBatchHistory();
+      updateBatchHistoryBadge();
+    });
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'ts_production_logs' || e.key === 'ts_stock_levels') {
+        renderBatchHistory();
+        updateBatchHistoryBadge();
+      }
+    });
   </script>
 
   <!-- MANAGER ACCESS GATE MODAL -->
