@@ -141,7 +141,7 @@
       // Kitchen prep dish keywords (items prepared from batches)
       const batchedKeywords = [
         'waffle', 'cookie dough', 'brownie', 'chicken', 'mac', 'cheese', 'skillet',
-        'sauce', 'crepe', 'pancake', 'dough', 'batter', 'marinade', 'crispy'
+        'sauce', 'crepe', 'pancake', 'dough', 'batter', 'marinade', 'crispy', 'chutney', 'sando', 'marinated'
       ];
       if (batchedKeywords.some(kw => norm.includes(kw))) {
         return true;
@@ -176,7 +176,12 @@
         { kw: 'fanta orange', catalogMatch: 'Fanta Orange' },
         { kw: 'fanta lemon', catalogMatch: 'Fanta Lemon' },
         { kw: 'sprite', catalogMatch: 'Sprite Zero' },
+        { kw: '7up tropical', catalogMatch: '7up Tropical' },
         { kw: '7up', catalogMatch: '7UP Free' },
+        { kw: 'croissant', catalogMatch: 'All butter croissant' },
+        { kw: 'almond flour', catalogMatch: 'Almond Flour' },
+        { kw: 'ambassador', catalogMatch: 'Ambassador gelato' },
+        { kw: 'mozzarella', catalogMatch: 'ASDA Grated Mozzarella 250g' },
         { kw: 'water still', catalogMatch: 'Highland Spring Still Water' },
         { kw: 'water sparkling', catalogMatch: 'Highland Spring Sparkling Water' },
         { kw: 'san pellegrino', catalogMatch: 'San Pellegrino' },

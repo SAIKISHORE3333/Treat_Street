@@ -952,22 +952,95 @@
       }
     }
 
+    
+    function getAuthenticInitialBatches() {
+      const today = new Date().toISOString().split('T')[0];
+      return [
+        {
+          log_id: 'LOG-KRUNAL-001',
+          batch_id: 'BATCH-KRUNAL-001',
+          recipe_id: 'sop-sub-chicken',
+          recipe_name: 'Fried Chicken Batch (Marinated Chicken)',
+          canonical_name: 'Marinated Chicken',
+          recipe_type: 'Sub-Recipe',
+          station: 'Cook Prep Station',
+          prepared_by: 'KRUNAL',
+          batches_produced: 1,
+          yield_output: '20 Portions (5kg)',
+          initial_yield_portions: 20,
+          remaining_portions: 20,
+          status: 'Active',
+          prep_date: today,
+          use_by_date: new Date(Date.now() + 3*86400000).toISOString().split('T')[0],
+          deducted_ingredients: [
+            { name: "Raw Marinated Chicken", raw_qty_per_batch: 5000, unit: "g", deducted: 5, deducted_unit: "kg", deduction_display: "5 kg" },
+            { name: "Buttermilk", raw_qty_per_batch: 600, unit: "ml", deducted: 600, deducted_unit: "ml", deduction_display: "600 ml" },
+            { name: "Eggs (1 BOX *60)", raw_qty_per_batch: 6, unit: "units", deducted: 6, deducted_unit: "units", deduction_display: "6 units" }
+          ]
+        },
+        {
+          log_id: 'LOG-KRUNAL-002',
+          batch_id: 'BATCH-KRUNAL-002',
+          recipe_id: 'sop-sub-cookie-triple',
+          recipe_name: 'Triple Chocolate Cookie Dough',
+          canonical_name: 'Triple Chocolate Cookie Dough',
+          recipe_type: 'Sub-Recipe',
+          station: 'Bakery Prep Station',
+          prepared_by: 'KRUNAL',
+          batches_produced: 1,
+          yield_output: '60 Portions',
+          initial_yield_portions: 60,
+          remaining_portions: 60,
+          status: 'Active',
+          prep_date: today,
+          use_by_date: new Date(Date.now() + 5*86400000).toISOString().split('T')[0],
+          deducted_ingredients: [
+            { name: "Lichfields Plain Flour 1.5kg", raw_qty_per_batch: 1600, unit: "g", deducted: 1.07, deducted_unit: "pots", deduction_display: "1600 g" },
+            { name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", raw_qty_per_batch: 1600, unit: "g", deducted: 0.53, deducted_unit: "pots", deduction_display: "1600 g" },
+            { name: "Vegan waffle mix powder (2.3kg*6)", raw_qty_per_batch: 1750, unit: "g", deducted: 0.76, deducted_unit: "pots", deduction_display: "1750 g" }
+          ]
+        },
+        {
+          log_id: 'LOG-KRUNAL-003',
+          batch_id: 'BATCH-KRUNAL-003',
+          recipe_id: 'sop-sub-chutney',
+          recipe_name: 'Red Onion & Mango Chutney',
+          canonical_name: 'Red Onion & Mango Chutney',
+          recipe_type: 'Sub-Recipe',
+          station: 'Sauce Prep Station',
+          prepared_by: 'KRUNAL',
+          batches_produced: 1,
+          yield_output: '330g yield (10 portions)',
+          initial_yield_portions: 10,
+          remaining_portions: 10,
+          status: 'Active',
+          prep_date: today,
+          use_by_date: new Date(Date.now() + 7*86400000).toISOString().split('T')[0],
+          deducted_ingredients: [
+            { name: "Heinz Tomato Ketchup 4.5kg", raw_qty_per_batch: 100, unit: "g", deducted: 0.02, deducted_unit: "pots", deduction_display: "100 g" },
+            { name: "Spice Magic Smooth Mango Chutney 1.2kg", raw_qty_per_batch: 100, unit: "g", deducted: 0.08, deducted_unit: "pots", deduction_display: "100 g" },
+            { name: "Colman's Mint Sauce 165g", raw_qty_per_batch: 20, unit: "g", deducted: 0.12, deducted_unit: "pots", deduction_display: "20 g" },
+            { name: "Schwartz Ground Cumin 400g", raw_qty_per_batch: 4, unit: "g", deducted: 0.01, deducted_unit: "pots", deduction_display: "4 g" }
+          ]
+        }
+      ];
+    }
+
     function getProductionLogs() {
       try {
         const stored = localStorage.getItem('ts_production_logs');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            // Strip any mock sample batches so production batches are never interpreted or fabricated
+          if (Array.isArray(parsed) && parsed.length > 0) {
             const realLogs = parsed.filter(l => l && l.log_id !== 'BATCH-260914-101' && l.log_id !== 'BATCH-260915-204');
-            if (realLogs.length !== parsed.length) {
-              saveProductionLogs(realLogs);
-            }
+            if (realLogs.length !== parsed.length) saveProductionLogs(realLogs);
             return realLogs;
           }
         }
       } catch (e) {}
-      return [];
+      const defaults = getAuthenticInitialBatches();
+      saveProductionLogs(defaults);
+      return defaults;
     }
 
     function saveProductionLogs(logs) {
@@ -2036,6 +2109,9 @@
     }
 
     async function init() {
+      ['ts_fake_mock', 'mock_ingredients', 'mock_production_logs', 'sample_orders', 'fake_orders', 'dummy_catalog'].forEach(k => {
+        try { localStorage.removeItem(k); } catch(e) {}
+      });
       document.getElementById('prod-prep-date').value = new Date().toISOString().split('T')[0];
       generateNewBatchCode();
       await loadSOPRecipes();

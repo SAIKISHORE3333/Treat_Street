@@ -1707,7 +1707,9 @@ window.tsCatalog = [
     "size": "4 x 2ltr",
     "supplier": "Bookers",
     "price": 5.85,
-    "vatRate": 0
+    "vatRate": 0,
+    "minStock": 8,
+    "maxStock": 24
   },
   {
     "id": 191,
@@ -1785,10 +1787,12 @@ window.tsCatalog = [
     "id": 199,
     "name": "Apple pie filling",
     "category": "Bakery, Desserts & Breakfast Staples",
-    "size": "2KG",
+    "size": "2kg",
     "supplier": "SouthLincs",
-    "price": 14.5,
-    "vatRate": 0
+    "price": 8.68,
+    "vatRate": 0,
+    "minStock": 2,
+    "maxStock": 5
   },
   {
     "id": 200,
@@ -1812,10 +1816,12 @@ window.tsCatalog = [
     "id": 202,
     "name": "All butter croissant",
     "category": "Bakery, Desserts & Breakfast Staples",
-    "size": "1 Box X 48",
+    "size": "1 Box x 48",
     "supplier": "SouthLincs",
-    "price": 0,
-    "vatRate": 0
+    "price": 26.31,
+    "vatRate": 0,
+    "minStock": 96,
+    "maxStock": 240
   },
   {
     "id": 203,
@@ -1839,10 +1845,12 @@ window.tsCatalog = [
     "id": 205,
     "name": "Avo go go smoothie packet",
     "category": "Smoothie Packets (Pre-Portioned)",
-    "size": "30*140 g",
+    "size": "30 x 140g / 4.2kg",
     "supplier": "SouthLincs",
-    "price": 0,
-    "vatRate": 0
+    "price": 30.51,
+    "vatRate": 0,
+    "minStock": 60,
+    "maxStock": 150
   },
   {
     "id": 206,
@@ -2307,10 +2315,12 @@ window.tsCatalog = [
     "id": 257,
     "name": "Ambassador gelato",
     "category": "Gelato, Sorbet & Ice Cream Mixes",
-    "size": "2l",
+    "size": "2L",
     "supplier": "Airela",
-    "price": 0,
-    "vatRate": 0
+    "price": 16.75,
+    "vatRate": 0,
+    "minStock": 4,
+    "maxStock": 8
   },
   {
     "id": 258,
@@ -2647,12 +2657,14 @@ window.tsCatalog = [
   },
   {
     "id": 295,
-    "name": "Angelito Ice Cream Mix 12x1L",
+    "name": "Angelito Ice Cream Mix",
     "category": "Gelato, Sorbet & Ice Cream Mixes",
-    "size": "12 x 1ltr",
-    "supplier": "Brakes Foodservice",
-    "price": 29.5,
-    "vatRate": 0
+    "size": "12 x 1L",
+    "supplier": "Bookers",
+    "price": 18.99,
+    "vatRate": 0,
+    "minStock": 36,
+    "maxStock": 120
   },
   {
     "id": 296,
@@ -2665,12 +2677,14 @@ window.tsCatalog = [
   },
   {
     "id": 297,
-    "name": "7UP Tropical Can 330ml",
+    "name": "7up Tropical",
     "category": "Beverages",
-    "size": "24 x 330ml",
-    "supplier": "Bookers",
-    "price": 10.49,
-    "vatRate": 0
+    "size": "24 x 355ml / 8.5kg",
+    "supplier": "American Fizz",
+    "price": 11.52,
+    "vatRate": 0,
+    "minStock": 48,
+    "maxStock": 120
   },
   {
     "id": 298,
@@ -2689,5 +2703,49 @@ window.tsCatalog = [
     "supplier": "Bookers",
     "price": 6.99,
     "vatRate": 0
+  },
+  {
+    "id": 300,
+    "name": "Almond Flour",
+    "category": "Dairy, Oils & Baking Essentials",
+    "size": "1kg",
+    "supplier": "Costco",
+    "price": 9.92,
+    "vatRate": 0,
+    "minStock": 2,
+    "maxStock": 5
+  },
+  {
+    "id": 301,
+    "name": "Arla Pro Aerosol Cream",
+    "category": "Dairy, Oils & Baking Essentials",
+    "size": "9 x 500g",
+    "supplier": "Bookers",
+    "price": 33.49,
+    "vatRate": 0,
+    "minStock": 18,
+    "maxStock": 45
+  },
+  {
+    "id": 302,
+    "name": "ASDA Grated Mozzarella 250g",
+    "category": "Dairy, Oils & Baking Essentials",
+    "size": "1kg",
+    "supplier": "ASDA",
+    "price": 9.8,
+    "vatRate": 0,
+    "minStock": 2,
+    "maxStock": 5
+  },
+  {
+    "id": 303,
+    "name": "Colman's Mint Sauce 165g",
+    "category": "Sauces & Condiments",
+    "size": "1 x 165g",
+    "supplier": "Bookers",
+    "price": 1.49,
+    "vatRate": 0,
+    "minStock": 4,
+    "maxStock": 12
   }
 ];
