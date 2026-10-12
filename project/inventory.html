@@ -10,7 +10,7 @@
   <script src="catalog.js"></script>
   <script src="default_orders.js"></script>
   <script src="recipe_matcher.js"></script>
-  <script src="sales_depletion_controller.js"></script>
+  <script src="sales_depletion_controller.js?v=2.4.1"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -216,6 +216,55 @@
             <i data-lucide="sparkles" class="w-4 h-4"></i>
             <span>Open Master Ledger Engine (Sandbox)</span>
           </a>
+        </div>
+      <!-- TWO-STREAM SALES DEPLETION CONTROLLER MODULE CARD -->
+      <div id="sales-depletion-module" class="glass-panel p-6 sm:p-7 rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900/60 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-300 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+              <i data-lucide="zap" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Active Engine v2.4.1
+                </span>
+                <span class="text-xs text-slate-400 font-semibold">Two-Stream In-Store Sales Depletion</span>
+              </div>
+              <h3 class="text-lg sm:text-xl font-black text-white heading-font">
+                In-Store POS & Omnichannel Sales Depletion
+              </h3>
+              <p class="text-xs text-slate-300 max-w-2xl leading-relaxed mt-0.5">
+                Automatically routes sales into <strong class="text-emerald-300">Stream 1: Direct Stock Pots</strong> (drinks, waters, retail goods) and <strong class="text-amber-300">Stream 2: FIFO Kitchen Batches</strong> (waffles, cookie dough, chicken) without touching raw ingredients.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto shrink-0">
+            <button type="button" onclick="window.testTwoStreamDepletion()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs transition-all shadow-lg shadow-amber-500/20 flex items-center gap-1.5">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+              <span>1-Click Test Depletion</span>
+            </button>
+            <button type="button" onclick="document.getElementById('sales-file-input').click()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-1.5">
+              <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
+              <span>Upload POS Report</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5 text-xs text-slate-300">
+          <div class="flex items-center gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span><strong>Stream 1:</strong> Direct Cans & Retail Deductions</span>
+          </div>
+          <div class="flex items-center gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span><strong>Stream 2:</strong> Kitchen Batches FIFO Deduction</span>
+          </div>
+          <div class="flex items-center gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+            <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+            <span><strong>Zero Raw Touch:</strong> Raw stock untouched for batched items</span>
+          </div>
         </div>
       </div>
 
@@ -4796,6 +4845,6 @@
 
     checkManagerGate();
   </script>
-  <script src="sales_depletion_controller.js"></script>
+  <script src="sales_depletion_controller.js?v=2.4.1"></script>
 </body>
 </html>
