@@ -2109,9 +2109,13 @@
     }
 
     async function init() {
-      ['ts_fake_mock', 'mock_ingredients', 'mock_production_logs', 'sample_orders', 'fake_orders', 'dummy_catalog'].forEach(k => {
-        try { localStorage.removeItem(k); } catch(e) {}
-      });
+      const currentDataVer = localStorage.getItem('ts_data_version');
+      if (currentDataVer !== 'v3.1.0_authentic') {
+        ['ts_fake_mock', 'mock_ingredients', 'mock_production_logs', 'sample_orders', 'fake_orders', 'dummy_catalog', 'ts_orders', 'mock_orders'].forEach(k => {
+          try { localStorage.removeItem(k); } catch(e) {}
+        });
+        localStorage.setItem('ts_data_version', 'v3.1.0_authentic');
+      }
       document.getElementById('prod-prep-date').value = new Date().toISOString().split('T')[0];
       generateNewBatchCode();
       await loadSOPRecipes();

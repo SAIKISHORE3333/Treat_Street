@@ -350,6 +350,27 @@
             </tbody>
           </table>
         </div>
+
+        <!-- 3. Batch Exception & Resolution Menu Container -->
+        <div id="square-batch-exceptions-container" class="space-y-4 pt-4 border-t border-amber-500/20 hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-amber-500/10 border border-amber-500/25 px-4 py-3 rounded-2xl">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center shrink-0">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <h4 class="text-xs sm:text-sm font-bold text-amber-300 heading-font">Batch Exception & Resolution Menu</h4>
+                <p class="text-[11px] text-amber-200/80">Unlogged kitchen dishes detected from Square sales export. Resolve discrepancies by creating audited retroactive batches below.</p>
+              </div>
+            </div>
+            <div id="unresolved-exceptions-badge" class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[10px] font-black uppercase tracking-wider text-amber-300 shrink-0">
+              Action Required
+            </div>
+          </div>
+          <div id="square-batch-exceptions-cards" class="space-y-3">
+            <!-- Dynamically populated exception cards -->
+          </div>
+        </div>
       </div>
     </section>
 
@@ -3847,9 +3868,39 @@
     }
 
     async function init() {
-      ['ts_fake_mock', 'mock_ingredients', 'mock_production_logs', 'sample_orders', 'fake_orders', 'dummy_catalog'].forEach(k => {
-        try { localStorage.removeItem(k); } catch(e) {}
-      });
+      // 1. AUTOMATIC CACHE RESET & DATA RESTORATION (Strict authentic v3.1.0 lock)
+      const currentDataVer = localStorage.getItem('ts_data_version');
+      if (currentDataVer !== 'v3.1.0_authentic') {
+        ['ts_stock_levels', 'ts_purchase_orders', 'mock_orders', 'ts_fake_mock', 'mock_ingredients', 'mock_production_logs', 'sample_orders', 'fake_orders', 'dummy_catalog', 'ts_orders', 'ts_shared_catalog'].forEach(k => {
+          try { localStorage.removeItem(k); } catch(e) {}
+        });
+
+        // Restore verified authentic purchase orders from default_orders.js
+        if (typeof restoreTreatStreetDefaultOrders === 'function') {
+          restoreTreatStreetDefaultOrders();
+        } else if (typeof generateInitialSampleOrders === 'function') {
+          const initOrders = generateInitialSampleOrders();
+          localStorage.setItem('ts_orders', JSON.stringify(initOrders));
+        }
+
+        // Restore & lock authentic stock levels from catalog.js
+        const cleanStockLevels = {};
+        if (window.tsCatalog && Array.isArray(window.tsCatalog)) {
+          window.tsCatalog.forEach(c => {
+            if (c && c.id != null) {
+              cleanStockLevels[String(c.id)] = c.current !== undefined ? parseFloat(c.current) : 24.0;
+            }
+          });
+          // Explicit authentic operational baselines
+          if (cleanStockLevels['297'] !== undefined) cleanStockLevels['297'] = 72.0; // 7up Tropical
+          if (cleanStockLevels['298'] !== undefined) cleanStockLevels['298'] = 96.0; // All butter croissant
+          if (cleanStockLevels['301'] !== undefined) cleanStockLevels['301'] = 48.0; // Angelito Ice Cream Mix
+          if (cleanStockLevels['295'] !== undefined) cleanStockLevels['295'] = 3.0;  // ASDA Mozzarella
+          if (cleanStockLevels['299'] !== undefined) cleanStockLevels['299'] = 3.0;  // Almond Flour
+        }
+        localStorage.setItem('ts_stock_levels', JSON.stringify(cleanStockLevels));
+        localStorage.setItem('ts_data_version', 'v3.1.0_authentic');
+      }
       // Sync latest catalog entries from Supabase if online
       if (supabaseClient) {
         try {
@@ -4559,6 +4610,237 @@
       if (window.lucide) lucide.createIcons();
     }
 
+        let currentAuditExceptions = [];
+
+    function renderAuditTableRows() {
+      const tbody = document.getElementById('square-audit-tbody');
+      if (!tbody || !currentAuditPlan || !Array.isArray(currentAuditPlan.auditRows)) return;
+
+      tbody.innerHTML = currentAuditPlan.auditRows.map(r => `
+        <tr class="hover:bg-white/5 transition-colors">
+          <td class="p-3.5 font-bold text-white flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full ${r.stream === 'A' ? 'bg-emerald-400' : (r.isException && !r.isReconciled ? 'bg-amber-400' : 'bg-emerald-400')} shrink-0"></span>
+            ${r.itemName}
+          </td>
+          <td class="p-3.5 text-center">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+              r.stream === 'A' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+            }">${r.streamLabel}</span>
+          </td>
+          <td class="p-3.5 text-center font-bold text-white">${r.soldQty}</td>
+          <td class="p-3.5 text-slate-200 font-medium">${r.targetDesc}</td>
+          <td class="p-3.5 text-right font-semibold text-slate-300">${r.currentBal}</td>
+          <td class="p-3.5 text-right font-black ${r.stream === 'A' ? 'text-emerald-400' : (r.isException && !r.isReconciled ? 'text-amber-300' : 'text-emerald-400')}">${r.newBal}</td>
+          <td class="p-3.5 text-xs font-semibold">${r.impactBadgeHtml || r.impact}</td>
+        </tr>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderBatchExceptionCards() {
+      const container = document.getElementById('square-batch-exceptions-container');
+      const cardsList = document.getElementById('square-batch-exceptions-cards');
+      const badge = document.getElementById('unresolved-exceptions-badge');
+      if (!container || !cardsList) return;
+
+      if (!currentAuditExceptions || currentAuditExceptions.length === 0) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
+      const unresolvedCount = currentAuditExceptions.filter(e => !e.reconciled).length;
+
+      if (badge) {
+        if (unresolvedCount > 0) {
+          badge.className = 'px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[10px] font-black uppercase tracking-wider text-amber-300 shrink-0';
+          badge.innerText = `${unresolvedCount} Exception${unresolvedCount > 1 ? 's' : ''} Pending`;
+        } else {
+          badge.className = 'px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider text-emerald-300 shrink-0';
+          badge.innerText = '✅ All Exceptions Reconciled';
+        }
+      }
+
+      const defaultDate = (typeof currentSquareDate !== 'undefined' && currentSquareDate) || new Date().toISOString().split('T')[0];
+
+      cardsList.innerHTML = currentAuditExceptions.map((exc, idx) => {
+        if (exc.reconciled) {
+          return `
+            <div class="p-3.5 bg-emerald-950/80 border border-emerald-500/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-lg">
+              <div class="flex items-center gap-2.5 text-emerald-300 font-semibold">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+                <div>
+                  <span class="font-bold text-white">${exc.itemName}</span> (${exc.soldQty} portions) reconciled as <span class="text-amber-300 font-mono font-bold">Batch #${exc.retroBatchId}</span> by <span class="text-white font-bold">${exc.preparedBy}</span>
+                  <span class="text-emerald-400/80 text-[11px] block sm:inline sm:ml-2">(${exc.reason} • ${exc.shift})</span>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider text-emerald-300 shrink-0 self-start sm:self-auto">
+                ✅ Retroactively Audited
+              </span>
+            </div>
+          `;
+        }
+
+        return `
+          <div id="retro-card-${idx}" class="glass-panel p-4 sm:p-5 rounded-2xl bg-[#072d20]/90 border border-amber-500/30 space-y-3.5 shadow-xl transition-all">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black tracking-wider uppercase">
+                  ⚠️ Unlogged Dish Detected
+                </span>
+                <span class="text-sm font-bold text-white heading-font">${exc.itemName}</span>
+                <span class="text-xs text-amber-200 font-semibold">• ${exc.soldQty} Portions Sold • Active Batch Missing</span>
+              </div>
+              <span class="text-[11px] text-slate-300 font-medium">Resolution Required Prior to Final Commit</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs pt-1">
+              <!-- Field 1: Valid Reason -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">Field 1: Valid Reason</label>
+                <select id="retro-reason-${idx}" class="w-full px-3 py-2 bg-[#0c3828] border border-amber-500/30 rounded-xl text-xs font-semibold text-slate-200 outline-none focus:ring-2 focus:ring-amber-500">
+                  <option value="Emergency Service Prep (Unlogged)">Emergency Service Prep (Unlogged)</option>
+                  <option value="Shift Over-Yield from Previous Batch">Shift Over-Yield from Previous Batch</option>
+                  <option value="Off-Book Batch / Training Prep">Off-Book Batch / Training Prep</option>
+                  <option value="Direct Supplier Pre-pack Stock">Direct Supplier Pre-pack Stock</option>
+                  <option value="Damaged / Replacement Plate Re-ring">Damaged / Replacement Plate Re-ring</option>
+                </select>
+              </div>
+
+              <!-- Field 2: Prepared By / Staff Name -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">Field 2: Prepared By</label>
+                <select id="retro-staff-${idx}" onchange="toggleRetroCustomStaff(${idx})" class="w-full px-3 py-2 bg-[#0c3828] border border-amber-500/30 rounded-xl text-xs font-semibold text-slate-200 outline-none focus:ring-2 focus:ring-amber-500">
+                  <option value="Krunal">Krunal</option>
+                  <option value="Sai">Sai</option>
+                  <option value="Chef Dave">Chef Dave</option>
+                  <option value="Kitchen Duty Staff">Kitchen Duty Staff</option>
+                  <option value="custom">Other Staff (Type Name)...</option>
+                </select>
+                <input type="text" id="retro-staff-custom-${idx}" placeholder="Enter staff name..." class="w-full mt-1.5 px-3 py-1.5 bg-[#0c3828] border border-amber-500/30 rounded-xl text-xs text-white outline-none hidden" />
+              </div>
+
+              <!-- Field 3: Prep Date & Shift -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">Field 3: Prep Date & Shift</label>
+                <div class="flex items-center gap-2">
+                  <input type="date" id="retro-date-${idx}" value="${defaultDate}" class="w-1/2 px-2.5 py-2 bg-[#0c3828] border border-amber-500/30 rounded-xl text-xs font-medium text-slate-200 outline-none focus:ring-2 focus:ring-amber-500">
+                  <select id="retro-shift-${idx}" class="w-1/2 px-2 py-2 bg-[#0c3828] border border-amber-500/30 rounded-xl text-xs font-semibold text-slate-200 outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="Morning Prep">Morning Prep</option>
+                    <option value="Evening Prep">Evening Prep</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Field 4: Action Button -->
+              <div class="flex items-end">
+                <button type="button" onclick="reconcileRetroactiveBatch(${idx})" class="w-full px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all">
+                  <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i>
+                  <span>⚡ Reconcile & Create Retroactive Batch Record</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function toggleRetroCustomStaff(idx) {
+      const sel = document.getElementById(`retro-staff-${idx}`);
+      const inp = document.getElementById(`retro-staff-custom-${idx}`);
+      if (sel && inp) {
+        if (sel.value === 'custom') {
+          inp.classList.remove('hidden');
+          inp.focus();
+        } else {
+          inp.classList.add('hidden');
+        }
+      }
+    }
+
+    function reconcileRetroactiveBatch(idx) {
+      if (!currentAuditExceptions || !currentAuditExceptions[idx]) return;
+      const exc = currentAuditExceptions[idx];
+
+      const reasonEl = document.getElementById(`retro-reason-${idx}`);
+      const staffSel = document.getElementById(`retro-staff-${idx}`);
+      const staffInp = document.getElementById(`retro-staff-custom-${idx}`);
+      const dateEl = document.getElementById(`retro-date-${idx}`);
+      const shiftEl = document.getElementById(`retro-shift-${idx}`);
+
+      const reason = reasonEl ? reasonEl.value : 'Emergency Service Prep (Unlogged)';
+      let staff = staffSel ? staffSel.value : 'Krunal';
+      if (staff === 'custom') {
+        staff = (staffInp && staffInp.value.trim()) ? staffInp.value.trim() : 'Kitchen Duty Staff';
+      }
+      const prepDate = dateEl && dateEl.value ? dateEl.value : new Date().toISOString().split('T')[0];
+      const shift = shiftEl ? shiftEl.value : 'Morning Prep';
+
+      const retroId = 'RETRO-' + Date.now();
+      const retroBatch = {
+        batch_id: retroId,
+        log_id: retroId,
+        recipe_name: exc.itemName,
+        dish_name: exc.itemName,
+        initial_yield: exc.soldQty,
+        initial_yield_portions: exc.soldQty,
+        remaining_portions: 0,
+        status: 'Depleted',
+        prepared_by: staff,
+        prep_date: prepDate,
+        shift: shift,
+        reason: reason,
+        compliance: 'Retroactively Audited'
+      };
+
+      // 1. Append to production logs in simulation plan
+      if (currentAuditPlan && Array.isArray(currentAuditPlan.updatedProductionLogs)) {
+        currentAuditPlan.updatedProductionLogs.push(retroBatch);
+      }
+
+      // 2. Also append directly to ts_production_logs in LocalStorage
+      try {
+        let currentLogs = JSON.parse(localStorage.getItem('ts_production_logs') || '[]');
+        currentLogs.push(retroBatch);
+        localStorage.setItem('ts_production_logs', JSON.stringify(currentLogs));
+      } catch(e) {}
+
+      // 3. Mark exception as reconciled
+      exc.reconciled = true;
+      exc.retroBatchId = retroId;
+      exc.preparedBy = staff;
+      exc.reason = reason;
+      exc.shift = shift;
+      exc.prepDate = prepDate;
+
+      // 4. Update the audit row
+      if (currentAuditPlan && currentAuditPlan.auditRows[exc.rowIndex]) {
+        const row = currentAuditPlan.auditRows[exc.rowIndex];
+        row.targetDesc = `Batch #${retroId} (${exc.itemName})`;
+        row.currentBal = `${exc.soldQty.toFixed(1)} portions`;
+        row.newBal = '0.0 portions';
+        row.isReconciled = true;
+        row.impact = '✅ Reconciled (Retroactive Batch Created)';
+        row.impactBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✅ Reconciled (Retroactive Batch Created)</span>`;
+      }
+
+      // 5. Re-render audit table & exception cards
+      renderAuditTableRows();
+      renderBatchExceptionCards();
+
+      // 6. Ensure Confirm & Commit button is ready
+      const commitBtn = document.getElementById('btn-commit-depletion');
+      if (commitBtn) {
+        commitBtn.innerHTML = '<i data-lucide="zap" class="w-4 h-4 fill-current"></i> <span>⚡ Confirm & Commit Depletion to Live Pots</span>';
+        commitBtn.className = 'px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 hover:from-emerald-400 hover:to-cyan-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/25 transition-all flex items-center gap-2 cursor-pointer';
+      }
+
+      showInventoryToast(`✓ Reconciled: Retroactive Batch #${retroId} created for ${exc.itemName}`);
+    }
+
     function generatePreDepletionAudit(items) {
       const auditSection = document.getElementById('square-audit-section');
       const tbody = document.getElementById('square-audit-tbody');
@@ -4615,6 +4897,7 @@
 
       const subRecipes = JSON.parse(localStorage.getItem('recipeSOPs') || '[]');
       const auditRows = [];
+      currentAuditExceptions = [];
       let totalSoldUnits = 0;
       let streamACount = 0;
       let streamBCount = 0;
@@ -4657,8 +4940,10 @@
             currentBal: `${currentBal.toFixed(1)} units`,
             newBal: `${newBal.toFixed(1)} units`,
             impact: `-${item.quantity.toFixed(1)} units theoretical pot drop`,
+            impactBadgeHtml: `<span class="text-slate-300 font-semibold">-${item.quantity.toFixed(1)} units theoretical pot drop</span>`,
             potId,
-            newBalNum: newBal
+            newBalNum: newBal,
+            isException: false
           });
         } else {
           // STREAM B: KITCHEN PRODUCTION BATCHES (FIFO)
@@ -4674,9 +4959,12 @@
           let currentBalStr = '0.0 portions';
           let newBalStr = '0.0 portions';
           let targetDesc = 'Active Batch';
-          let impactStr = `-${item.quantity.toFixed(1)} portions FIFO deducted (0 raw ingredients touched)`;
+          let impactStr = '';
+          let impactBadgeHtml = '';
+          let isException = false;
 
-          if (activeBatches.length > 0) {
+          if (activeBatches.length > 0 && activeBatches[0].remaining_portions >= item.quantity) {
+            // SCENARIO 1: NORMAL ACTIVE BATCH (FIFO)
             const b = activeBatches[0];
             targetDesc = `Batch #${b.log_id || b.batch_id} (${b.recipe_name})`;
             const curPortions = parseFloat(b.remaining_portions || 0);
@@ -4685,11 +4973,24 @@
             b.remaining_portions = afterPortions;
             newBalStr = `${afterPortions.toFixed(1)} portions`;
             if (afterPortions <= 0) b.status = 'Depleted';
+            impactStr = `✅ Validated Active Batch (-${item.quantity.toFixed(1)} portions FIFO)`;
+            impactBadgeHtml = `<span class="text-emerald-300 font-semibold">✅ Validated Active Batch (-${item.quantity.toFixed(1)} portions FIFO)</span>`;
           } else {
-            targetDesc = 'Unlogged Batch';
+            // SCENARIO 2: UNLOGGED DISH DETECTED (No active batch, or shortage)
+            isException = true;
+            targetDesc = '<span class="text-amber-400 font-bold">⚠️ Missing Active Batch</span>';
             currentBalStr = '0.0 portions';
             newBalStr = `-${item.quantity.toFixed(1)} portions (Shortage)`;
-            impactStr = '⚠️ Warning: Sold quantity exceeds logged kitchen batches';
+            impactStr = `⚠️ Unlogged Batch Exception (${item.quantity.toFixed(1)} Portions Sold)`;
+            impactBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">⚠️ Unlogged Batch Exception (${item.quantity.toFixed(1)} Portions Sold)</span>`;
+
+            currentAuditExceptions.push({
+              index: currentAuditExceptions.length,
+              itemName: item.name,
+              soldQty: item.quantity,
+              rowIndex: auditRows.length,
+              reconciled: false
+            });
           }
 
           auditRows.push({
@@ -4700,7 +5001,10 @@
             targetDesc,
             currentBal: currentBalStr,
             newBal: newBalStr,
-            impact: impactStr
+            impact: impactStr,
+            impactBadgeHtml,
+            isException,
+            isReconciled: false
           });
         }
       });
@@ -4722,25 +5026,9 @@
         streamBCount
       };
 
-      // Populate table rows
-      tbody.innerHTML = auditRows.map(r => `
-        <tr class="hover:bg-white/5 transition-colors">
-          <td class="p-3.5 font-bold text-white flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full ${r.stream === 'A' ? 'bg-emerald-400' : 'bg-amber-400'} shrink-0"></span>
-            ${r.itemName}
-          </td>
-          <td class="p-3.5 text-center">
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-              r.stream === 'A' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-            }">${r.streamLabel}</span>
-          </td>
-          <td class="p-3.5 text-center font-bold text-white">${r.soldQty}</td>
-          <td class="p-3.5 text-slate-200 font-medium">${r.targetDesc}</td>
-          <td class="p-3.5 text-right font-semibold text-slate-300">${r.currentBal}</td>
-          <td class="p-3.5 text-right font-black ${r.stream === 'A' ? 'text-emerald-400' : 'text-amber-300'}">${r.newBal}</td>
-          <td class="p-3.5 text-xs font-semibold ${r.impact.includes('Warning') ? 'text-rose-400' : 'text-slate-300'}">${r.impact}</td>
-        </tr>
-      `).join('');
+      // Populate table rows & exception resolution cards
+      renderAuditTableRows();
+      renderBatchExceptionCards();
 
       if (window.lucide) lucide.createIcons();
     }
@@ -4789,6 +5077,10 @@
     window.handleSquareFileSelect = handleSquareFileSelect;
     window.commitTwoStreamDepletion = commitTwoStreamDepletion;
     window.resetSquareUpload = resetSquareUpload;
+    window.reconcileRetroactiveBatch = reconcileRetroactiveBatch;
+    window.toggleRetroCustomStaff = toggleRetroCustomStaff;
+    window.renderAuditTableRows = renderAuditTableRows;
+    window.renderBatchExceptionCards = renderBatchExceptionCards;
 
     function resetSquareUpload() {
       currentSquareSalesData = [];
