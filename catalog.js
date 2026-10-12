@@ -1517,7 +1517,7 @@ window.tsCatalog = [
     "category": "Dairy, Oils & Baking Essentials",
     "size": "3.5kg",
     "supplier": "SouthLincs",
-    "price": 0,
+    "price": 7.8,
     "vatRate": 0
   },
   {
@@ -1625,7 +1625,7 @@ window.tsCatalog = [
     "category": "Dairy, Oils & Baking Essentials",
     "size": "20LTRS",
     "supplier": "Costco",
-    "price": 0,
+    "price": 26.5,
     "vatRate": 0
   },
   {
@@ -1634,7 +1634,7 @@ window.tsCatalog = [
     "category": "Sauces, Condiments & Savory Staples",
     "size": "3KG",
     "supplier": "Costco",
-    "price": 0,
+    "price": 18.99,
     "vatRate": 0
   },
   {
@@ -1643,7 +1643,7 @@ window.tsCatalog = [
     "category": "Sauces, Condiments & Savory Staples",
     "size": "5KG",
     "supplier": "Costco",
-    "price": 0,
+    "price": 14.2,
     "vatRate": 0
   },
   {
@@ -1751,7 +1751,7 @@ window.tsCatalog = [
     "category": "Dairy, Oils & Baking Essentials",
     "size": "500G*12",
     "supplier": "Costco",
-    "price": 0,
+    "price": 28.5,
     "vatRate": 0
   },
   {
@@ -1760,7 +1760,7 @@ window.tsCatalog = [
     "category": "Bakery, Desserts & Breakfast Staples",
     "size": "1.8KG",
     "supplier": "Costco",
-    "price": 0,
+    "price": 12.5,
     "vatRate": 0
   },
   {
@@ -1787,7 +1787,7 @@ window.tsCatalog = [
     "category": "Bakery, Desserts & Breakfast Staples",
     "size": "2KG",
     "supplier": "SouthLincs",
-    "price": 0,
+    "price": 14.5,
     "vatRate": 0
   },
   {
@@ -1796,7 +1796,7 @@ window.tsCatalog = [
     "category": "Bakery, Desserts & Breakfast Staples",
     "size": "2KG",
     "supplier": "SouthLincs",
-    "price": 0,
+    "price": 15.2,
     "vatRate": 0
   },
   {
@@ -2643,6 +2643,51 @@ window.tsCatalog = [
     "size": "1.8KG",
     "supplier": "Costco",
     "price": 8.99,
+    "vatRate": 0
+  },
+  {
+    "id": 295,
+    "name": "Angelito Ice Cream Mix 12x1L",
+    "category": "Gelato, Sorbet & Ice Cream Mixes",
+    "size": "12 x 1ltr",
+    "supplier": "Brakes Foodservice",
+    "price": 29.5,
+    "vatRate": 0
+  },
+  {
+    "id": 296,
+    "name": "ASDA Mozzarella Cheese Grated 1kg",
+    "category": "Dairy, Oils & Baking Essentials",
+    "size": "1 x 1kg",
+    "supplier": "ASDA",
+    "price": 5.75,
+    "vatRate": 0
+  },
+  {
+    "id": 297,
+    "name": "7UP Tropical Can 330ml",
+    "category": "Beverages",
+    "size": "24 x 330ml",
+    "supplier": "Bookers",
+    "price": 10.49,
+    "vatRate": 0
+  },
+  {
+    "id": 298,
+    "name": "Arla Pro High Stability Aerosol Cream 700ml",
+    "category": "Dairy, Oils & Baking Essentials",
+    "size": "6 x 700ml",
+    "supplier": "Bookers",
+    "price": 18.99,
+    "vatRate": 0
+  },
+  {
+    "id": 299,
+    "name": "Lichfields Plain Flour 1.5kg",
+    "category": "Dairy, Oils & Baking Essentials",
+    "size": "6 x 1.5kg",
+    "supplier": "Bookers",
+    "price": 6.99,
     "vatRate": 0
   }
 ];

@@ -178,8 +178,8 @@
       </button>
 
       <button onclick="switchTab('sales-depletion')" id="tab-sales-depletion" class="nav-tab-inactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
-        <i data-lucide="layers" class="w-4 h-4"></i>
-        <span>Omnichannel Sales Depletion</span>
+        <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i>
+        <span>Square POS Depletion</span>
       </button>
 
       <button onclick="switchTab('audit')" id="tab-audit" class="nav-tab-inactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
@@ -193,175 +193,131 @@
       </button>
     </div>
 
-    <!-- ========================================== -->
-    <!-- TAB 3: OMNICHANNEL SALES & DEPLETION -->
+        <!-- ========================================== -->
+    <!-- TAB 3: DEDICATED SQUARE POS SALES DEPLETION -->
     <!-- ========================================== -->
     <section id="section-sales-depletion" class="hidden flex flex-col gap-6">
       
       <!-- Section Header -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h2 class="text-2xl font-bold text-white heading-font flex items-center gap-2.5">
-            <span class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
-              <i data-lucide="layers" class="w-5 h-5"></i>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Dedicated POS Intake
             </span>
-            Omnichannel Sales Depletion & Recipe Matcher
+            <span class="text-xs text-slate-400 font-medium">Square CSV / TSV In-Store Register</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white heading-font flex items-center gap-2.5">
+            <span class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-950/40">
+              <i data-lucide="zap" class="w-5 h-5"></i>
+            </span>
+            Square POS Inventory Depletion
           </h2>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">
-            Drop sales reports from Deliveroo, Just Eat, Uber Eats & In-Store POS. The system standardizes dish names and calculates unified ingredient depletion.
+          <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
+            Consolidate in-store register sales directly into our Two-Stream operational model: <strong class="text-emerald-400">Stream A</strong> directly deducts cold drinks and retail pots, while <strong class="text-amber-400">Stream B</strong> consumes finished portions from active kitchen production batches using FIFO without touching raw ingredients.
           </p>
         </div>
-        <div class="flex items-center gap-2">
-          <a href="sales_ledger.html" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
-            <i data-lucide="sparkles" class="w-4 h-4"></i>
-            <span>Open Master Ledger Engine (Sandbox)</span>
-          </a>
-        </div>
-      <!-- TWO-STREAM SALES DEPLETION CONTROLLER MODULE CARD -->
-      <div id="sales-depletion-module" class="glass-panel p-6 sm:p-7 rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900/60 shadow-xl space-y-4">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div class="flex items-start gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-300 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
-              <i data-lucide="zap" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <div class="flex flex-wrap items-center gap-2 mb-1">
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Active Engine v2.4.1
-                </span>
-                <span class="text-xs text-slate-400 font-semibold">Two-Stream In-Store Sales Depletion</span>
-              </div>
-              <h3 class="text-lg sm:text-xl font-black text-white heading-font">
-                In-Store POS & Omnichannel Sales Depletion
-              </h3>
-              <p class="text-xs text-slate-300 max-w-2xl leading-relaxed mt-0.5">
-                Automatically routes sales into <strong class="text-emerald-300">Stream 1: Direct Stock Pots</strong> (drinks, waters, retail goods) and <strong class="text-amber-300">Stream 2: FIFO Kitchen Batches</strong> (waffles, cookie dough, chicken) without touching raw ingredients.
-              </p>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto shrink-0">
-            <button type="button" onclick="window.testTwoStreamDepletion()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs transition-all shadow-lg shadow-amber-500/20 flex items-center gap-1.5">
-              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
-              <span>1-Click Test Depletion</span>
-            </button>
-            <button type="button" onclick="document.getElementById('sales-file-input').click()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-1.5">
-              <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
-              <span>Upload POS Report</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5 text-xs text-slate-300">
-          <div class="flex items-center gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span><strong>Stream 1:</strong> Direct Cans & Retail Deductions</span>
-          </div>
-          <div class="flex items-center gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-            <span><strong>Stream 2:</strong> Kitchen Batches FIFO Deduction</span>
-          </div>
-          <div class="flex items-center gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-            <span class="w-2 h-2 rounded-full bg-teal-400"></span>
-            <span><strong>Zero Raw Touch:</strong> Raw stock untouched for batched items</span>
-          </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="document.getElementById('square-file-input').click()" class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/10 text-xs font-bold transition-all flex items-center gap-2 shadow-sm">
+            <i data-lucide="file-up" class="w-4 h-4 text-emerald-400"></i> Browse Square File
+          </button>
         </div>
       </div>
 
-      <!-- Multi-File Upload Dropzone -->
-      <div class="glass-panel p-6 rounded-3xl">
-        <div id="dropzone" class="dropzone-box rounded-2xl p-8 sm:p-10 text-center cursor-pointer bg-white/[0.02] hover:bg-white/[0.04] flex flex-col items-center justify-center group">
-          <input type="file" id="sales-file-input" multiple accept=".csv,.txt,.tsv" class="hidden" onchange="handleFileSelect(event)">
+      <!-- HERO CARD: SQUARE POS INVENTORY DEPLETION UPLOAD ZONE -->
+      <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 via-teal-950/30 to-slate-900/60 shadow-xl space-y-6">
+        <div id="square-dropzone" class="dropzone-box rounded-2xl p-8 sm:p-12 text-center cursor-pointer bg-white/[0.02] hover:bg-white/[0.05] border-2 border-dashed border-emerald-500/30 hover:border-emerald-400 transition-all flex flex-col items-center justify-center group relative overflow-hidden">
+          <input type="file" id="square-file-input" accept=".csv,.tsv,.txt" class="hidden" onchange="handleSquareFileSelect(event)">
           
-          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600/30 to-teal-400/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center mb-4 shadow-lg shadow-emerald-950 group-hover:scale-110 transition-transform">
-            <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+          <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-emerald-600/30 to-teal-400/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center mb-4 shadow-xl shadow-emerald-950 group-hover:scale-110 transition-transform">
+            <i data-lucide="upload-cloud" class="w-8 h-8 sm:w-10 sm:h-10"></i>
           </div>
           
-          <h3 class="font-bold text-white text-base sm:text-lg mb-1 heading-font">
-            Drop Delivery & POS Reports Here
+          <h3 class="font-black text-white text-lg sm:text-xl mb-1.5 heading-font">
+            Square POS Sales Report Upload
           </h3>
-          <p class="text-xs text-slate-400 max-w-md mb-5 leading-relaxed">
-            Drag and drop multiple CSV files together (Deliveroo, Just Eat, Uber Eats, and In-Store POS), or click below to browse.
+          <p class="text-xs sm:text-sm text-slate-300 max-w-md mb-6 leading-relaxed">
+            Drag and drop your authentic Square POS register export file here (CSV or TSV), or click below to select.
           </p>
           
-          <button onclick="document.getElementById('sales-file-input').click()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2">
-            <i data-lucide="file-plus" class="w-4 h-4"></i> Browse CSV Files
+          <button type="button" onclick="document.getElementById('square-file-input').click()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-950/40 transition-all flex items-center gap-2 group-hover:shadow-emerald-500/25">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            <span>Upload Square Sales Report</span>
           </button>
         </div>
 
-        <!-- Ingested Files Chip List -->
-        <div id="uploaded-files-container" class="mt-5 hidden">
-          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Ingested Files & Platform Detection:</p>
-          <div id="uploaded-files-chips" class="flex flex-wrap gap-2.5">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Metric KPI Stat Cards -->
-      <div id="consolidation-kpis" class="grid grid-cols-2 sm:grid-cols-4 gap-4 hidden">
-        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Menus Sold</p>
-          <p id="kpi-total-menus" class="text-3xl font-black text-white heading-font">0</p>
-          <p class="text-[11px] text-emerald-400 font-medium mt-1">Across all channels</p>
-        </div>
-
-        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-400"></div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Gross Sales Revenue</p>
-          <p id="kpi-total-revenue" class="text-3xl font-black text-amber-300 heading-font">£0.00</p>
-          <p class="text-[11px] text-slate-400 font-medium mt-1">Reported revenue</p>
-        </div>
-
-        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-400"></div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Top Selling Platform</p>
-          <p id="kpi-top-platform" class="text-base font-bold text-white truncate heading-font mt-1">Analyzing...</p>
-          <p id="kpi-platform-breakdown" class="text-[10px] text-slate-400 truncate mt-1">-</p>
-        </div>
-
-        <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Recipe Resolution</p>
-          <p id="kpi-matched-ratio" class="text-3xl font-black text-emerald-400 heading-font">0 / 0</p>
-          <p id="kpi-unresolved-label" class="text-[11px] text-slate-400 font-medium mt-1">0 unmapped</p>
-        </div>
-      </div>
-
-      <!-- UNRESOLVED ITEMS ALERT BANNER -->
-      <div id="unmapped-alert-box" class="glass-panel border-amber-500/40 bg-amber-500/10 p-5 rounded-3xl hidden">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div class="flex items-start gap-3">
-            <div class="p-2.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <h4 class="text-sm font-bold text-white heading-font">Unmapped Dishes Detected (<span id="unmapped-count-badge">0</span>)</h4>
-              <p class="text-xs text-amber-200/80 mt-0.5">Some items in the sales reports couldn't be matched to standard SOP recipes. Map them now to include in automated ingredient depletion.</p>
-            </div>
-          </div>
-        </div>
-        <div id="unmapped-list" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-
-      <!-- CONSOLIDATED MENU MATRIX TABLE -->
-      <div id="matrix-section" class="glass-panel p-6 rounded-3xl hidden">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
-          <div>
-            <h3 class="text-lg font-bold text-white heading-font flex items-center gap-2">
-              <i data-lucide="table" class="w-4 h-4 text-emerald-400"></i> Consolidated Cross-Platform Sales Matrix
-            </h3>
-            <p class="text-xs text-slate-400">Aggregated breakdown of dishes sold per platform matched to Treat Street SOP recipes.</p>
-          </div>
+        <!-- Ingested File Details Badge -->
+        <div id="square-file-badge" class="hidden p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-200">
           <div class="flex items-center gap-2.5">
-            <button onclick="exportMasterCSV()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 transition-all flex items-center gap-1.5 shadow-sm">
-              <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i> Export Master CSV
-            </button>
-            <button id="btn-execute-depletion" onclick="executeDepletion()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30">
-              <i data-lucide="zap" class="w-4 h-4"></i> Execute Consolidated Depletion
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+            <span class="font-bold text-white" id="square-file-name">Square_Export.csv</span>
+            <span class="text-slate-400">•</span>
+            <span id="square-file-rows" class="text-emerald-300 font-medium">0 transactions parsed</span>
+          </div>
+          <button onclick="resetSquareUpload()" class="text-slate-400 hover:text-rose-400 text-xs font-semibold flex items-center gap-1 transition-colors">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i> Clear File
+          </button>
+        </div>
+      </div>
+
+      <!-- PREVIEW & CONFIRMATION (Shows immediately upon uploading) -->
+      <div id="square-preview-section" class="glass-panel p-6 sm:p-8 rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 to-slate-900/60 shadow-xl space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-lg font-black text-white heading-font flex items-center gap-2">
+              <i data-lucide="sliders" class="w-5 h-5 text-emerald-400"></i>
+              Sales Depletion Preview
+            </h3>
+            <p class="text-xs text-slate-300 mt-0.5">
+              Review consolidated sold items mapped to our Two-Stream stock pots and kitchen batches.
+            </p>
+          </div>
+          <button id="btn-run-two-stream" onclick="runSquareTwoStreamDepletion()" class="w-full sm:w-auto px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 hover:from-emerald-400 hover:to-cyan-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/25 transition-all flex items-center justify-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+            <span>⚡ Run Two-Stream Depletion</span>
+          </button>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Items Sold</p>
+            <p id="sq-metric-total-sold" class="text-3xl font-black text-white heading-font">0</p>
+            <p class="text-[11px] text-emerald-400 font-medium mt-1">Consolidated Square POS units</p>
+          </div>
+
+          <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Direct Stock Deductions (Drinks/Retail)</p>
+            <p id="sq-metric-direct-deductions" class="text-3xl font-black text-teal-300 heading-font">0</p>
+            <p class="text-[11px] text-slate-300 font-medium mt-1">Stream A • Theoretical Stock Pots</p>
+          </div>
+
+          <div class="glass-panel p-5 rounded-2xl relative overflow-hidden bg-white/[0.02]">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-400"></div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Kitchen Batch Deductions</p>
+            <p id="sq-metric-batch-deductions" class="text-3xl font-black text-amber-300 heading-font">0</p>
+            <p class="text-[11px] text-slate-300 font-medium mt-1">Stream B • FIFO Batches (Zero Raw Touch)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEPLETION RESULTS TABLE (Shows upon execution) -->
+      <div id="square-results-section" class="glass-panel p-6 sm:p-8 rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/20 to-slate-900/60 shadow-xl space-y-4 hidden">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-lg font-black text-white heading-font flex items-center gap-2">
+              <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+              Two-Stream Depletion Execution Results
+            </h3>
+            <p id="square-results-subtitle" class="text-xs text-slate-300 mt-0.5">
+              Live stock levels and kitchen batch portions successfully updated.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="exportSquareDepletionCSV()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-200 transition-all flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i> Export Results CSV
             </button>
           </div>
         </div>
@@ -370,31 +326,17 @@
           <table class="w-full text-left border-collapse text-xs sm:text-sm">
             <thead class="sticky top-0 bg-[#0c2e22] z-10">
               <tr class="text-slate-300 border-b border-white/10 text-[11px] font-bold uppercase tracking-wider">
-                <th class="p-3.5">Canonical SOP Recipe</th>
-                <th class="p-3.5 text-center text-teal-400">Deliveroo</th>
-                <th class="p-3.5 text-center text-orange-400">Just Eat</th>
-                <th class="p-3.5 text-center text-emerald-400">Uber Eats</th>
-                <th class="p-3.5 text-center text-indigo-400">In-Store POS</th>
-                <th class="p-3.5 text-right font-black text-white">Total Sold</th>
-                <th class="p-3.5 text-right text-amber-300">Revenue</th>
-                <th class="p-3.5 text-center">Match Source</th>
+                <th class="p-3.5">Item Name</th>
+                <th class="p-3.5 text-center">Square Qty Sold</th>
+                <th class="p-3.5">Depleted From (Pot or Batch ID)</th>
+                <th class="p-3.5 text-right">Remaining Balance</th>
+                <th class="p-3.5 text-center">Status</th>
               </tr>
             </thead>
-            <tbody id="matrix-tbody" class="divide-y divide-white/5">
+            <tbody id="square-results-tbody" class="divide-y divide-white/5">
               <!-- Populated by JS -->
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <!-- DEPLETION PREVIEW SECTION -->
-      <div id="depletion-preview-section" class="glass-panel p-6 rounded-3xl hidden">
-        <h3 class="text-base font-bold text-white heading-font mb-1 flex items-center gap-2">
-          <i data-lucide="package-minus" class="w-4 h-4 text-emerald-400"></i> Raw Ingredient Depletion Breakdown
-        </h3>
-        <p class="text-xs text-slate-400 mb-4">Calculated quantities of raw ingredients to be automatically deducted from your live stock pots:</p>
-        <div id="depletion-ingredients-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <!-- Populated by JS -->
         </div>
       </div>
     </section>
@@ -2286,148 +2228,6 @@
     // -------------------------------------------------------------
     // DRAG AND DROP & CSV PARSER
     // -------------------------------------------------------------
-    const dropzone = document.getElementById('dropzone');
-    if (dropzone) {
-      ['dragenter', 'dragover'].forEach(eventName => {
-        dropzone.addEventListener(eventName, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); }, false);
-      });
-      ['dragleave', 'drop'].forEach(eventName => {
-        dropzone.addEventListener(eventName, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); }, false);
-      });
-      dropzone.addEventListener('drop', (e) => {
-        const files = e.dataTransfer.files;
-        if (files && files.length) processSelectedFiles(Array.from(files));
-      }, false);
-    }
-
-    function handleFileSelect(e) {
-      const files = e.target.files;
-      if (files && files.length) processSelectedFiles(Array.from(files));
-    }
-
-    async function processSelectedFiles(files) {
-      const parsedResults = [];
-      const chipsContainer = document.getElementById('uploaded-files-chips');
-      const filesWrapper = document.getElementById('uploaded-files-container');
-      
-      chipsContainer.innerHTML = '';
-      filesWrapper.classList.remove('hidden');
-
-      for (const file of files) {
-        const text = await file.text();
-        const parsed = RecipeMatcher.parsePlatformCSV(text, file.name);
-        parsedResults.push(parsed);
-
-        // Render Chip
-        const chip = document.createElement('div');
-        chip.className = 'px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl shadow-sm flex items-center gap-2 text-xs';
-        chip.innerHTML = `
-          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
-          <span class="font-bold text-white">${file.name}</span>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-            parsed.platform === 'Deliveroo' ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' :
-            parsed.platform === 'Just Eat' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' :
-            parsed.platform === 'Uber Eats' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-            parsed.platform === 'In-Store POS' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
-            'bg-slate-500/20 text-slate-300 border border-slate-500/30'
-          }">${parsed.platform} (${parsed.items.length} items)</span>
-        `;
-        chipsContainer.appendChild(chip);
-      }
-
-      currentParsedFiles = parsedResults;
-      recalculateConsolidation();
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function recalculateConsolidation() {
-      if (!currentParsedFiles || currentParsedFiles.length === 0) return;
-
-      currentConsolidated = RecipeMatcher.consolidateSalesReports(currentParsedFiles, allSOPRecipes, allAliases);
-      renderConsolidatedView(currentConsolidated);
-    }
-
-    function renderConsolidatedView(res) {
-      document.getElementById('consolidation-kpis').classList.remove('hidden');
-      document.getElementById('matrix-section').classList.remove('hidden');
-      document.getElementById('depletion-preview-section').classList.remove('hidden');
-
-      // KPIs
-      document.getElementById('kpi-total-menus').innerText = res.grandTotalUnits.toLocaleString();
-      document.getElementById('kpi-total-revenue').innerText = `£${res.grandTotalRevenue.toFixed(2)}`;
-
-      const platforms = Object.entries(res.platformCounts).filter(([k, v]) => v > 0);
-      platforms.sort((a, b) => b[1] - a[1]);
-      const topPlat = platforms[0] ? `${platforms[0][0]} (${platforms[0][1]} sold)` : 'None';
-      document.getElementById('kpi-top-platform').innerText = topPlat;
-      document.getElementById('kpi-platform-breakdown').innerText = platforms.map(p => `${p[0]}: ${p[1]}`).join(' | ');
-
-      const totalRecipesCount = res.resolvedCount + res.unresolvedCount;
-      document.getElementById('kpi-matched-ratio').innerText = `${res.resolvedCount} / ${totalRecipesCount}`;
-      document.getElementById('kpi-unresolved-label').innerText = `${res.unresolvedCount} unmapped items`;
-
-      // Unmapped Alert Box
-      const alertBox = document.getElementById('unmapped-alert-box');
-      const unmappedList = document.getElementById('unmapped-list');
-      const badge = document.getElementById('unmapped-count-badge');
-
-      if (res.unresolvedCount > 0) {
-        alertBox.classList.remove('hidden');
-        badge.innerText = res.unresolvedCount;
-        unmappedList.innerHTML = res.unresolved.map(u => `
-          <div class="bg-black/30 p-3 rounded-2xl border border-amber-500/30 flex items-center justify-between gap-2">
-            <div class="overflow-hidden">
-              <p class="text-xs font-bold text-white truncate">${u.raw_name}</p>
-              <p class="text-[10px] text-amber-300/80">${u.platform} • ${u.count} sold</p>
-            </div>
-            <button onclick="openAliasModal('${encodeURIComponent(u.raw_name)}', '${u.platform}')" class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black shrink-0 transition-all flex items-center gap-1">
-              <i data-lucide="link" class="w-3 h-3"></i> Map
-            </button>
-          </div>
-        `).join('');
-      } else {
-        alertBox.classList.add('hidden');
-      }
-
-      // Matrix Table
-      const tbody = document.getElementById('matrix-tbody');
-      tbody.innerHTML = res.matrix.map(m => `
-        <tr class="hover:bg-white/5 transition-colors">
-          <td class="p-3.5 font-bold text-white flex items-center gap-2">
-            <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-            ${m.recipe_name}
-          </td>
-          <td class="p-3.5 text-center text-teal-300 font-medium">${m.deliveroo_qty || '-'}</td>
-          <td class="p-3.5 text-center text-orange-300 font-medium">${m.just_eat_qty || '-'}</td>
-          <td class="p-3.5 text-center text-emerald-300 font-medium">${m.uber_eats_qty || '-'}</td>
-          <td class="p-3.5 text-center text-indigo-300 font-medium">${m.pos_qty || '-'}</td>
-          <td class="p-3.5 text-right font-black text-white">${m.total_qty}</td>
-          <td class="p-3.5 text-right font-bold text-amber-300">£${m.total_revenue.toFixed(2)}</td>
-          <td class="p-3.5 text-center">
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-              m.match_type === 'EXACT' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-            }">${m.match_type}</span>
-          </td>
-        </tr>
-      `).join('');
-
-      // Depletion Preview Grid
-      const depletionItems = RecipeMatcher.calculateDepletion(res.matrix, catalogData);
-      const depGrid = document.getElementById('depletion-ingredients-grid');
-      depGrid.innerHTML = depletionItems.map(d => `
-        <div class="bg-white/5 p-3.5 rounded-2xl border border-white/10 flex items-center justify-between">
-          <div class="overflow-hidden">
-            <p class="text-xs font-bold text-white truncate">${d.ingredient_name}</p>
-            <p class="text-[10px] text-slate-400">Deduction calculated</p>
-          </div>
-          <div class="text-right font-black text-red-400 text-sm">
-            -${d.quantity.toFixed(2)} <span class="text-[10px] font-semibold text-slate-400">${d.unit}</span>
-          </div>
-        </div>
-      `).join('');
-
-      if (window.lucide) lucide.createIcons();
-    }
 
     // -------------------------------------------------------------
     // ALIAS MAPPING MODAL
@@ -2464,7 +2264,6 @@
       
       closeAliasModal();
       renderAliasesTable();
-      recalculateConsolidation();
       alert(`✅ Mapping saved! '${extName}' is now linked to '${recipeName}'.`);
     }
 
@@ -2508,158 +2307,7 @@
         }
       }
       renderAliasesTable();
-      recalculateConsolidation();
-    }
-
-    // -------------------------------------------------------------
-    // EXECUTE CONSOLIDATED DEPLETION
-    // -------------------------------------------------------------
-    async function executeDepletion() {
-      console.log(">>> [executeDepletion] Triggered by #btn-execute-depletion: Executing Two-Stream Depletion via SalesDepletionController... <<<");
-      if (!currentConsolidated || currentConsolidated.matrix.length === 0) {
-        return alert("No consolidated sales data available to deplete.");
       }
-
-      if (currentConsolidated.unresolvedCount > 0) {
-        if (!confirm(`Warning: You have ${currentConsolidated.unresolvedCount} unmapped items that will NOT be depleted. Continue anyway?`)) {
-          return;
-        }
-      }
-
-      // TWO-STREAM IN-STORE & OMNICHANNEL SALES DEPLETION
-      let twoStreamResult = null;
-      let depletionItems = [];
-
-      if (window.SalesDepletionController) {
-        let activeProdLogs = [];
-        try {
-          const rawProd = localStorage.getItem('ts_production_logs');
-          if (rawProd) activeProdLogs = JSON.parse(rawProd);
-        } catch (e) {}
-
-        let subRecs = [];
-        try {
-          const rawRecs = localStorage.getItem('recipeSOPs');
-          if (rawRecs) subRecs = JSON.parse(rawRecs);
-        } catch (e) {}
-
-        let minStockLevels = {};
-        try {
-          const rawMins = localStorage.getItem('ts_min_stock_levels');
-          if (rawMins) minStockLevels = JSON.parse(rawMins);
-        } catch (e) {}
-
-        twoStreamResult = SalesDepletionController.processTwoStreamDepletion(currentConsolidated.matrix, {
-          catalog: catalogData,
-          stockLevels: getStockLevels(),
-          productionLogs: activeProdLogs,
-          minStockLevels: minStockLevels,
-          subRecipes: subRecs
-        });
-
-        saveStockLevels(twoStreamResult.updatedStockLevels);
-        if (twoStreamResult.updatedProductionLogs) {
-          localStorage.setItem('ts_production_logs', JSON.stringify(twoStreamResult.updatedProductionLogs));
-        }
-
-        depletionItems = twoStreamResult.directDeductions.map(d => ({
-          ingredient_name: d.name,
-          quantity: d.quantityDeducted,
-          unit: 'units'
-        }));
-      } else {
-        depletionItems = RecipeMatcher.calculateDepletion(currentConsolidated.matrix, catalogData);
-        const stockLevels = getStockLevels();
-
-        let deductedCount = 0;
-        depletionItems.forEach(dep => {
-          const match = catalogData.find(c => c.name.toLowerCase().trim() === dep.ingredient_name.toLowerCase().trim());
-          if (match) {
-            const current = stockLevels[match.id] !== undefined ? parseFloat(stockLevels[match.id]) : 0;
-            stockLevels[match.id] = Math.max(0, parseFloat((current - dep.quantity).toFixed(2)));
-            deductedCount++;
-          }
-        });
-
-        saveStockLevels(stockLevels);
-      }
-
-      const batchCode = 'DEP-' + Date.now();
-      const platforms = Object.keys(currentConsolidated.platformCounts).filter(p => currentConsolidated.platformCounts[p] > 0);
-
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('sales_depletion_runs').insert({
-            batch_code: batchCode,
-            branch_id: 'MK Stadium HQ',
-            total_menus_sold: currentConsolidated.grandTotalUnits,
-            platforms_included: platforms,
-            breakdown_json: currentConsolidated.matrix,
-            depleted_ingredients_json: depletionItems
-          });
-        } catch (e) {
-          console.warn("Supabase sales depletion log warning:", e);
-        }
-      }
-
-      await triggerAlaiyaWebhook('sales.depletion_completed', {
-        batch_code: batchCode,
-        branch_id: 'MK Stadium HQ',
-        total_menus_sold: currentConsolidated.grandTotalUnits,
-        total_revenue: currentConsolidated.grandTotalRevenue,
-        platforms: platforms,
-        matrix: currentConsolidated.matrix,
-        timestamp: new Date().toISOString()
-      });
-
-      // Automatically trigger DOM re-rendering & valuation recalculation
-      renderStockGrid();
-      if (typeof calculateStockValuation === 'function') calculateStockValuation();
-      if (typeof updateAuditMetrics === 'function') updateAuditMetrics();
-      if (typeof updateInvBatchBadge === 'function') updateInvBatchBadge();
-
-      let alertMsg = `✅ In-Store & Omnichannel Depletion Executed!\n\nSuccessfully processed ${currentConsolidated.grandTotalUnits} units across ${platforms.join(', ')}.`;
-      if (twoStreamResult) {
-        alertMsg += `\n\n• Stream 1 (Direct Retail/Drinks): ${twoStreamResult.summary.directPotsUpdated} stock pots updated in live monitor`;
-        alertMsg += `\n• Stream 2 (Kitchen Production): ${twoStreamResult.summary.batchesUpdated} batched dishes deducted via FIFO`;
-        if (twoStreamResult.summary.alarmsCount > 0) {
-          alertMsg += `\n• ⚠️ Reorder Alarms: ${twoStreamResult.summary.alarmsCount} stock pots fell below minimum threshold`;
-        }
-        if (twoStreamResult.summary.shortagesCount > 0) {
-          alertMsg += `\n• ⚠️ Kitchen Prep Warnings: ${twoStreamResult.summary.shortagesCount} dishes exceeded active logged batches`;
-        }
-      }
-      alert(alertMsg);
-    }
-
-    function exportMasterCSV() {
-      if (!currentConsolidated) return alert("Please upload sales reports first.");
-      const rows = [
-        ['SOP Recipe Name', 'Deliveroo Sold', 'Just Eat Sold', 'Uber Eats Sold', 'In-Store POS Sold', 'Total Units Sold', 'Total Gross Revenue (£)', 'Match Source']
-      ];
-
-      currentConsolidated.matrix.forEach(m => {
-        rows.push([
-          `"${(m.recipe_name || '').replace(/"/g, '""')}"`,
-          m.deliveroo_qty || 0,
-          m.just_eat_qty || 0,
-          m.uber_eats_qty || 0,
-          m.pos_qty || 0,
-          m.total_qty || 0,
-          m.total_revenue.toFixed(2),
-          m.match_type
-        ]);
-      });
-
-      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Omnichannel_Consolidated_Sales_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
 
     // -------------------------------------------------------------
     // LIVE STOCK & AUDIT TABLES
@@ -4711,6 +4359,7 @@
     }
 
     init();
+    initSquareDropzone();
     updateInvBatchBadge();
 
     // Cross-tab real-time event listeners
@@ -4729,47 +4378,8 @@
       }
     });
 
-    // Explicit event bindings for Omnichannel Depletion
-    const salesFileInput = document.getElementById('sales-file-input');
-    if (salesFileInput) {
-      salesFileInput.addEventListener('change', (e) => {
-        console.log(">>> [sales-file-input] File selected via change listener, processing Two-Stream Depletion... <<<");
-      });
-    }
-
-    const btnExecDepletion = document.getElementById('btn-execute-depletion');
-    if (btnExecDepletion) {
-      btnExecDepletion.addEventListener('click', () => {
-        console.log(">>> [btn-execute-depletion] Process button clicked! <<<");
-      });
-    }
-
     // Direct 1-Click Console Test Function for User
-    window.testTwoStreamDepletion = function() {
-      console.log(">>> Running Test Two-Stream Depletion... <<<");
-      if (!window.SalesDepletionController) {
-        console.error("SalesDepletionController not found on window!");
-        return;
-      }
-      const testSales = [
-        { name: "Coca Cola Classic Can 330ml", quantity: 1 },
-        { name: "Belgian Liege Waffle", quantity: 1 }
-      ];
-      const res = SalesDepletionController.processTwoStreamDepletion(testSales, {
-        catalog: catalogData,
-        stockLevels: getStockLevels(),
-        productionLogs: JSON.parse(localStorage.getItem('ts_production_logs') || '[]'),
-        minStockLevels: JSON.parse(localStorage.getItem('ts_min_stock_levels') || '{}'),
-        subRecipes: JSON.parse(localStorage.getItem('recipeSOPs') || '[]')
-      });
-      saveStockLevels(res.updatedStockLevels);
-      if (res.updatedProductionLogs) localStorage.setItem('ts_production_logs', JSON.stringify(res.updatedProductionLogs));
-      renderStockGrid();
-      if (typeof calculateStockValuation === 'function') calculateStockValuation();
-      console.log(">>> Test Result:", res);
-      alert("✅ Test Depletion Completed!\n• Stream 1: 1x Coca Cola deducted from Pot #130\n• Stream 2: 1x Waffle portion deducted from active kitchen batch\n• Stock Pot cards & Valuation updated!");
-      return res;
-    };
+    
 
     // Keyboard support for passcode modal
     const passInput = document.getElementById('admin-passcode-input');
