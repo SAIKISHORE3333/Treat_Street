@@ -11,6 +11,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="default_orders.js"></script>
+  <script src="inventory.js"></script>
   <style>
     .watermark-bg {
       background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -655,6 +656,20 @@
       filterAndRenderAdminOrders();
       updateAdminBadge();
       lucide.createIcons();
+
+      if (typeof fetchSupabaseStoragePurchaseOrders === 'function') {
+        try {
+          await fetchSupabaseStoragePurchaseOrders();
+          const freshStored = localStorage.getItem('ts_orders');
+          if (freshStored) {
+            orders = JSON.parse(freshStored).map(normalizeOrder);
+            filterAndRenderAdminOrders();
+            updateAdminBadge();
+          }
+        } catch(e) {
+          console.warn('Storage fetcher in purchase.html warning:', e);
+        }
+      }
     });
 
     function toggleTaxDisplayMode() {
@@ -1058,8 +1073,11 @@
       parsedOrders = null;
     }
 
-    if (!Array.isArray(parsedOrders)) {
-      orders = [];
+    if (!Array.isArray(parsedOrders) || parsedOrders.length === 0) {
+      const defaults = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
+        ? AUTHENTIC_ORDERS
+        : ((typeof window !== 'undefined' && Array.isArray(window.AUTHENTIC_ORDERS)) ? window.AUTHENTIC_ORDERS : []);
+      orders = defaults.map(normalizeOrder);
     } else {
       orders = parsedOrders.filter(o => o && !o.is_mock && !isFakeOrder(o)).map(normalizeOrder);
     }
