@@ -259,13 +259,51 @@ function restoreTreatStreetDefaultOrders() {
   return { orders: initial, stockLevels: levels };
 }
 
+const AUTHENTIC_ORDERS = Object.freeze(generateInitialSampleOrders().map(o => Object.freeze({
+  ...o,
+  items: Object.freeze((o.items || []).map(i => Object.freeze(i)))
+})));
+
+// Forced Storage Migration: v4.0.0_authentic_locked
+const AUTH_DATA_VERSION = "v4.0.0_authentic_locked";
+function enforceAuthenticDataReset() {
+  if (typeof localStorage === 'undefined') return;
+  if (localStorage.getItem("ts_data_version") !== AUTH_DATA_VERSION) {
+    const keysToPurge = [
+      "ts_stock_levels",
+      "ts_purchase_orders",
+      "mock_orders",
+      "ts_orders",
+      "mock_ingredients",
+      "ts_fake_mock"
+    ];
+    keysToPurge.forEach(k => {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+
+    const catalogToSeed = (typeof AUTHENTIC_CATALOG !== 'undefined') ? AUTHENTIC_CATALOG : (typeof window !== 'undefined' && window.AUTHENTIC_CATALOG ? window.AUTHENTIC_CATALOG : []);
+    localStorage.setItem("ts_stock_levels", JSON.stringify(catalogToSeed));
+    localStorage.setItem("ts_purchase_orders", JSON.stringify(AUTHENTIC_ORDERS));
+    localStorage.setItem("ts_orders", JSON.stringify(AUTHENTIC_ORDERS));
+    localStorage.setItem("ts_data_version", AUTH_DATA_VERSION);
+    console.log(">>> [SECURITY]: Purged legacy mock data and locked authentic datasets. <<<");
+  }
+}
+
 if (typeof window !== 'undefined') {
+  window.AUTHENTIC_ORDERS = AUTHENTIC_ORDERS;
+  window.AUTH_DATA_VERSION = AUTH_DATA_VERSION;
+  window.enforceAuthenticDataReset = enforceAuthenticDataReset;
   window.generateInitialSampleOrders = generateInitialSampleOrders;
   window.restoreTreatStreetDefaultOrders = restoreTreatStreetDefaultOrders;
+  enforceAuthenticDataReset();
 }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    AUTH_DATA_VERSION,
+    AUTHENTIC_ORDERS,
+    enforceAuthenticDataReset,
     generateInitialSampleOrders,
     restoreTreatStreetDefaultOrders
   };

@@ -1,4 +1,8 @@
-window.tsCatalog = [
+/**
+ * Treat Street - Authentic Operational Wholesale Catalog
+ * IMMUTABLE PRODUCTION ASSET - LOCKED WITH Object.freeze
+ */
+const AUTHENTIC_CATALOG = Object.freeze([
   {
     "id": 1,
     "name": "Betty Crocker Indulgent Chocolate Fudge Icing 400g",
@@ -1845,7 +1849,7 @@ window.tsCatalog = [
     "id": 205,
     "name": "Avo go go smoothie packet",
     "category": "Smoothie Packets (Pre-Portioned)",
-    "size": "30 x 140g / 4.2kg",
+    "size": "30 x 140g",
     "supplier": "SouthLincs",
     "price": 30.51,
     "vatRate": 0,
@@ -2679,7 +2683,7 @@ window.tsCatalog = [
     "id": 297,
     "name": "7up Tropical",
     "category": "Beverages",
-    "size": "24 x 355ml / 8.5kg",
+    "size": "24 x 355ml",
     "supplier": "American Fizz",
     "price": 11.52,
     "vatRate": 0,
@@ -2732,7 +2736,7 @@ window.tsCatalog = [
     "category": "Dairy, Oils & Baking Essentials",
     "size": "1kg",
     "supplier": "ASDA",
-    "price": 9.8,
+    "price": 9.80,
     "vatRate": 0,
     "minStock": 2,
     "maxStock": 5
@@ -2748,4 +2752,16 @@ window.tsCatalog = [
     "minStock": 4,
     "maxStock": 12
   }
-];
+].map(item => Object.freeze(item)));
+
+if (typeof window !== 'undefined') {
+  window.AUTHENTIC_CATALOG = AUTHENTIC_CATALOG;
+  window.tsCatalog = AUTHENTIC_CATALOG;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    AUTHENTIC_CATALOG,
+    tsCatalog: AUTHENTIC_CATALOG
+  };
+}

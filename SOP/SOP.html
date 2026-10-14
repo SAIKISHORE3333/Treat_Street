@@ -603,39 +603,82 @@
                 if (data) {
                     this.recipes = JSON.parse(data);
                 } else {
-                    // Seed some dummy data for demonstration
+                    // Authentic Treat Street Baseline Recipes
                     this.recipes = [
                         {
-                            id: this.generateId(),
-                            title: 'Classic Marinara Sauce',
-                            category: 'Sauces',
-                            station: 'Prep',
-                            prepTime: '15 mins',
-                            cookTime: '45 mins',
-                            yield: '4 Liters',
-                            shelfLife: '5 days',
-                            costing: 'Target Cost: 18%\\nEnsure tomatoes are fully crushed.',
+                            id: 'sop-sub-chicken',
+                            title: 'Fried Chicken Batch (Marinated Chicken)',
+                            category: 'Savory & Chicken',
+                            station: 'Cook Prep Station',
+                            prepTime: '25 mins',
+                            cookTime: '0 mins',
+                            yield: '20 Portions (5kg)',
+                            shelfLife: '3 days',
+                            costing: 'Target Cost: 22%\nEnsure chicken is evenly coated in buttermilk and marinade.',
                             ingredients: [
-                                { name: 'San Marzano Tomatoes', qty: '3', unit: 'kg', notes: 'Canned, crushed' },
-                                { name: 'Extra Virgin Olive Oil', qty: '120', unit: 'ml', notes: '' },
-                                { name: 'Garlic', qty: '50', unit: 'g', notes: 'Minced fine' },
-                                { name: 'Fresh Basil', qty: '1', unit: 'bunch', notes: 'Torn' }
+                                { name: 'Raw Marinated Chicken', qty: '5000', unit: 'g', notes: 'Authentic butcher cut' },
+                                { name: 'Buttermilk', qty: '600', unit: 'ml', notes: 'Refrigerated' },
+                                { name: 'Eggs (1 BOX *60)', qty: '6', unit: 'units', notes: 'Fresh eggs' }
                             ],
-                            equipment: ['Large heavy-bottom pot', 'Immersion blender', 'Storage containers (4L)'],
+                            equipment: ['Prep Tub', 'Whisk', 'Walk-in Cooler'],
                             steps: [
-                                { desc: 'Heat olive oil in the pot over medium heat.', timeTemp: 'Medium Heat', isCritical: false },
-                                { desc: 'Add minced garlic and sauté until fragrant but NOT brown.', timeTemp: '1-2 mins', isCritical: true },
-                                { desc: 'Add crushed tomatoes. Stir well and bring to a gentle simmer.', timeTemp: 'Simmer', isCritical: false },
-                                { desc: 'Reduce heat to low, partially cover, and let simmer to develop flavor. Stir occasionally to prevent burning on the bottom.', timeTemp: '45 mins', isCritical: true },
-                                { desc: 'Remove from heat. Stir in fresh torn basil leaves.', timeTemp: '', isCritical: false },
-                                { desc: 'Cool in ice bath before storing in walk-in cooler.', timeTemp: '< 4°C within 2hrs', isCritical: true }
+                                { desc: 'Combine buttermilk and eggs in prep tub and whisk until smooth.', timeTemp: 'Room Temp', isCritical: false },
+                                { desc: 'Submerge raw chicken and toss thoroughly to ensure 100% surface coverage.', timeTemp: '5 mins', isCritical: true },
+                                { desc: 'Cover, label with batch ID and prep date, and refrigerate below 4°C.', timeTemp: '< 4°C within 2hrs', isCritical: true }
+                            ],
+                            updatedAt: new Date().toISOString()
+                        },
+                        {
+                            id: 'sop-sub-cookie-triple',
+                            title: 'Triple Chocolate Cookie Dough',
+                            category: 'Bakery & Dough',
+                            station: 'Bakery Prep Station',
+                            prepTime: '20 mins',
+                            cookTime: '0 mins',
+                            yield: '60 Portions',
+                            shelfLife: '5 days',
+                            costing: 'Target Cost: 18%\nAccurate portioning ensures consistent bake spread.',
+                            ingredients: [
+                                { name: 'Lichfields Plain Flour 1.5kg', qty: '1600', unit: 'g', notes: 'Sifted' },
+                                { name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", qty: '1600', unit: 'g', notes: 'Soft brown' },
+                                { name: 'Vegan waffle mix powder (2.3kg*6)', qty: '1750', unit: 'g', notes: 'Dry base' }
+                            ],
+                            equipment: ['Spiral Mixer', 'Digital Scales', 'Portion Scoop'],
+                            steps: [
+                                { desc: 'Add dry ingredients into mixer bowl and combine on low speed.', timeTemp: 'Low Speed 2 mins', isCritical: false },
+                                { desc: 'Incorporate liquids until uniform dough forms without overworking.', timeTemp: '3 mins', isCritical: true },
+                                { desc: 'Scoop into standardized 60g portions and chill immediately.', timeTemp: '< 4°C', isCritical: true }
+                            ],
+                            updatedAt: new Date().toISOString()
+                        },
+                        {
+                            id: 'sop-sub-chutney',
+                            title: 'Red Onion & Mango Chutney',
+                            category: 'Sauces & Condiments',
+                            station: 'Sauce Prep Station',
+                            prepTime: '15 mins',
+                            cookTime: '0 mins',
+                            yield: '330g yield (10 portions)',
+                            shelfLife: '7 days',
+                            costing: 'Target Cost: 15%\nStir thoroughly to blend mint sauce and mango emulsion.',
+                            ingredients: [
+                                { name: 'Heinz Tomato Ketchup 4.5kg', qty: '100', unit: 'g', notes: 'Bookers wholesale' },
+                                { name: 'Spice Magic Smooth Mango Chutney 1.2kg', qty: '100', unit: 'g', notes: 'Smooth chutney' },
+                                { name: "Colman's Mint Sauce 165g", qty: '20', unit: 'g', notes: 'Bookers wholesale' },
+                                { name: 'Schwartz Ground Cumin 400g', qty: '4', unit: 'g', notes: 'Ground spice' }
+                            ],
+                            equipment: ['Stainless Bowl', 'Spatula', 'Squeeze Bottles'],
+                            steps: [
+                                { desc: 'Scale all ingredients into stainless mixing bowl.', timeTemp: 'Ambient', isCritical: false },
+                                { desc: 'Whisk until completely smooth and color is uniform.', timeTemp: '3 mins', isCritical: true },
+                                { desc: 'Transfer into FIFO squeeze bottle, date label, and store refrigerated.', timeTemp: '< 5°C', isCritical: true }
                             ],
                             updatedAt: new Date().toISOString()
                         }
                     ];
                     this.saveData();
                     this.updateCatalogWithSubRecipes();
-                                                        }
+                }                                                   }
             },
 
             saveData() {

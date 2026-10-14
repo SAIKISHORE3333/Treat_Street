@@ -9,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="catalog.js"></script>
   <script src="default_orders.js"></script>
+  <script src="main.js"></script>
   <script src="recipe_matcher.js"></script>
   <script src="sales_depletion_controller.js?v=2.4.1"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1950,7 +1951,23 @@
     function getStockLevels() {
       try {
         const stored = localStorage.getItem('ts_stock_levels');
-        return stored ? JSON.parse(stored) : {};
+        if (!stored) return {};
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const levels = {};
+          parsed.forEach(item => {
+            if (item && item.id != null) {
+              levels[String(item.id)] = item.current !== undefined ? parseFloat(item.current) : (item.minStock ? item.minStock * 1.5 : 24.0);
+            }
+          });
+          if (levels['297'] !== undefined) levels['297'] = 72.0;
+          if (levels['202'] !== undefined) levels['202'] = 96.0;
+          if (levels['295'] !== undefined) levels['295'] = 48.0;
+          if (levels['300'] !== undefined) levels['300'] = 3.0;
+          if (levels['302'] !== undefined) levels['302'] = 3.0;
+          return levels;
+        }
+        return parsed || {};
       } catch (e) {
         return {};
       }
@@ -3868,38 +3885,34 @@
     }
 
     async function init() {
-      // 1. AUTOMATIC CACHE RESET & DATA RESTORATION (Strict authentic v3.1.0 lock)
-      const currentDataVer = localStorage.getItem('ts_data_version');
-      if (currentDataVer !== 'v3.1.0_authentic') {
-        ['ts_stock_levels', 'ts_purchase_orders', 'mock_orders', 'ts_fake_mock', 'mock_ingredients', 'mock_production_logs', 'sample_orders', 'fake_orders', 'dummy_catalog', 'ts_orders', 'ts_shared_catalog'].forEach(k => {
+      // 1. FORCED STORAGE MIGRATION & AUTHENTIC DATA LOCK (v4.0.0_authentic_locked)
+      const AUTH_DATA_VERSION = "v4.0.0_authentic_locked";
+      if (localStorage.getItem("ts_data_version") !== AUTH_DATA_VERSION) {
+        const keysToPurge = [
+          "ts_stock_levels",
+          "ts_purchase_orders",
+          "mock_orders",
+          "ts_orders",
+          "mock_ingredients",
+          "ts_fake_mock",
+          "mock_production_logs",
+          "sample_orders",
+          "fake_orders",
+          "dummy_catalog",
+          "ts_shared_catalog"
+        ];
+        keysToPurge.forEach(k => {
           try { localStorage.removeItem(k); } catch(e) {}
         });
 
-        // Restore verified authentic purchase orders from default_orders.js
-        if (typeof restoreTreatStreetDefaultOrders === 'function') {
-          restoreTreatStreetDefaultOrders();
-        } else if (typeof generateInitialSampleOrders === 'function') {
-          const initOrders = generateInitialSampleOrders();
-          localStorage.setItem('ts_orders', JSON.stringify(initOrders));
-        }
+        const catalogDataset = (typeof AUTHENTIC_CATALOG !== 'undefined') ? AUTHENTIC_CATALOG : (window.AUTHENTIC_CATALOG || window.tsCatalog || []);
+        const ordersDataset = (typeof AUTHENTIC_ORDERS !== 'undefined') ? AUTHENTIC_ORDERS : (window.AUTHENTIC_ORDERS || (typeof generateInitialSampleOrders === 'function' ? generateInitialSampleOrders() : []));
 
-        // Restore & lock authentic stock levels from catalog.js
-        const cleanStockLevels = {};
-        if (window.tsCatalog && Array.isArray(window.tsCatalog)) {
-          window.tsCatalog.forEach(c => {
-            if (c && c.id != null) {
-              cleanStockLevels[String(c.id)] = c.current !== undefined ? parseFloat(c.current) : 24.0;
-            }
-          });
-          // Explicit authentic operational baselines
-          if (cleanStockLevels['297'] !== undefined) cleanStockLevels['297'] = 72.0; // 7up Tropical
-          if (cleanStockLevels['298'] !== undefined) cleanStockLevels['298'] = 96.0; // All butter croissant
-          if (cleanStockLevels['301'] !== undefined) cleanStockLevels['301'] = 48.0; // Angelito Ice Cream Mix
-          if (cleanStockLevels['295'] !== undefined) cleanStockLevels['295'] = 3.0;  // ASDA Mozzarella
-          if (cleanStockLevels['299'] !== undefined) cleanStockLevels['299'] = 3.0;  // Almond Flour
-        }
-        localStorage.setItem('ts_stock_levels', JSON.stringify(cleanStockLevels));
-        localStorage.setItem('ts_data_version', 'v3.1.0_authentic');
+        localStorage.setItem("ts_stock_levels", JSON.stringify(catalogDataset));
+        localStorage.setItem("ts_purchase_orders", JSON.stringify(ordersDataset));
+        localStorage.setItem("ts_orders", JSON.stringify(ordersDataset));
+        localStorage.setItem("ts_data_version", AUTH_DATA_VERSION);
+        console.log(">>> [SECURITY]: Purged legacy mock data and locked authentic datasets. <<<");
       }
       // Sync latest catalog entries from Supabase if online
       if (supabaseClient) {

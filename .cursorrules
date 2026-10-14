@@ -1,0 +1,15 @@
+# STRICT DATA PROTECTION CONSTRAINTS & ARCHITECTURAL GUARDRAILS
+
+## Core Directives
+1. UNDER NO CIRCUMSTANCES should any tool, prompt, agent, or script invent, generate, mock, or substitute fake inventory items, suppliers, purchase orders, or ingredients.
+2. `catalog.js` and `default_orders.js` are READ-ONLY production assets. Any feature additions must operate on existing data schemas without replacing them with dummy arrays.
+3. If data is required for testing, use ONLY authentic items from the existing verified catalog.
+
+## Baseline Immutability
+- Core wholesale catalog entries are frozen using `Object.freeze()` (`AUTHENTIC_CATALOG`).
+- Core default purchase orders are frozen using `Object.freeze()` (`AUTHENTIC_ORDERS`).
+- Data files are immutable external APIs. Code logic must NEVER contain hardcoded inline product fallbacks.
+
+## Separation of Concerns
+- Future UI/feature requests must touch ONLY logic controllers (e.g., `sales_depletion_controller.js`) or specific UI templates, never the underlying source data arrays.
+- Runtime storage resets are governed by `AUTH_DATA_VERSION` ("v4.0.0_authentic_locked"). Any corrupted or synthetic keys (`ts_fake_mock`, `mock_orders`, etc.) must be purged automatically on initialization.

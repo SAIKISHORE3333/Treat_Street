@@ -533,6 +533,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script src="catalog.js"></script>
+  <script src="main.js"></script>
   <script>
     let isAdminUnlocked = false;
     let currentPage = 1;
@@ -1097,7 +1098,18 @@
     function getStockLevels() {
       try {
         const stored = localStorage.getItem('ts_stock_levels');
-        return stored ? JSON.parse(stored) : {};
+        if (!stored) return {};
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const levels = {};
+          parsed.forEach(item => {
+            if (item && item.id != null) {
+              levels[String(item.id)] = item.current !== undefined ? parseFloat(item.current) : (item.minStock ? item.minStock * 1.5 : 24.0);
+            }
+          });
+          return levels;
+        }
+        return parsed || {};
       } catch (e) {
         return {};
       }
