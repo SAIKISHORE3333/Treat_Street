@@ -1950,24 +1950,39 @@
 
     // Storage helpers
     function getStockLevels() {
+      const fallback = (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined')
+        ? AUTHENTIC_STOCK_LEVELS
+        : (typeof window !== 'undefined' && window.AUTHENTIC_STOCK_LEVELS ? window.AUTHENTIC_STOCK_LEVELS : {});
       try {
         const stored = localStorage.getItem('ts_stock_levels');
-        if (!stored) return (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined') ? AUTHENTIC_STOCK_LEVELS : {};
+        if (!stored) return fallback;
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           const levels = {};
+          let hasPositive = false;
           parsed.forEach(item => {
             if (item && item.id != null) {
-              levels[String(item.id)] = item.current !== undefined ? parseFloat(item.current) : 0;
+              const q = item.current !== undefined ? parseFloat(item.current) : (item.quantity !== undefined ? parseFloat(item.quantity) : 0);
+              levels[String(item.id)] = q;
+              if (q > 0) hasPositive = true;
             }
           });
-          return levels;
+          return hasPositive ? levels : fallback;
         }
-        return parsed || {};
+        if (parsed && typeof parsed === 'object') {
+          const keys = Object.keys(parsed);
+          const hasPositive = keys.some(k => parseFloat(parsed[k]) > 0);
+          if (!hasPositive && Object.keys(fallback).length > 0) {
+            return fallback;
+          }
+          return parsed;
+        }
+        return fallback;
       } catch (e) {
-        return (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined') ? AUTHENTIC_STOCK_LEVELS : {};
+        return fallback;
       }
     }
+    window.renderStockPots = renderStockGrid;
 
     function saveStockLevels(levels) {
       try {
@@ -3897,42 +3912,49 @@
     }
 
     async function init() {
-      // 1. FORCED STORAGE MIGRATION & AUTHENTIC DATA LOCK (v4.0.0_authentic_locked)
-      const AUTH_DATA_VERSION = "v4.0.0_authentic_locked";
+      // 1. FORCED STORAGE MIGRATION & AUTHENTIC DATA LOCK (v6.0.0_authentic_supabase_storage)
+      const AUTH_DATA_VERSION = "v6.0.0_authentic_supabase_storage";
       if (localStorage.getItem("ts_data_version") !== AUTH_DATA_VERSION) {
         const keysToPurge = [
-          "ts_stock_levels",
-          "ts_purchase_orders",
           "mock_orders",
-          "ts_orders",
           "mock_ingredients",
           "ts_fake_mock",
           "mock_production_logs",
           "sample_orders",
           "fake_orders",
-          "dummy_catalog",
-          "ts_shared_catalog"
+          "dummy_catalog"
         ];
         keysToPurge.forEach(k => {
           try { localStorage.removeItem(k); } catch(e) {}
         });
 
-        const catalogDataset = (typeof AUTHENTIC_CATALOG !== 'undefined') ? AUTHENTIC_CATALOG : (window.AUTHENTIC_CATALOG || window.tsCatalog || []);
-        const ordersDataset = (typeof AUTHENTIC_ORDERS !== 'undefined') ? AUTHENTIC_ORDERS : (window.AUTHENTIC_ORDERS || (typeof generateInitialSampleOrders === 'function' ? generateInitialSampleOrders() : []));
+        const stockLevels = (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined')
+          ? AUTHENTIC_STOCK_LEVELS
+          : (typeof window !== 'undefined' && window.AUTHENTIC_STOCK_LEVELS ? window.AUTHENTIC_STOCK_LEVELS : {});
+        localStorage.setItem("ts_stock_levels", JSON.stringify(stockLevels));
 
-        localStorage.setItem("ts_stock_levels", JSON.stringify(catalogDataset));
-        localStorage.setItem("ts_purchase_orders", JSON.stringify(ordersDataset));
-        localStorage.setItem("ts_orders", JSON.stringify(ordersDataset));
+        const existingOrdersRaw = localStorage.getItem("ts_orders");
+        let existingList = [];
+        try { existingList = existingOrdersRaw ? JSON.parse(existingOrdersRaw) : []; } catch(e) {}
+        if (!Array.isArray(existingList) || existingList.length === 0) {
+          const ordersDataset = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
+            ? AUTHENTIC_ORDERS
+            : (typeof window !== 'undefined' && window.AUTHENTIC_ORDERS ? window.AUTHENTIC_ORDERS : []);
+          localStorage.setItem("ts_purchase_orders", JSON.stringify(ordersDataset));
+          localStorage.setItem("ts_orders", JSON.stringify(ordersDataset));
+        }
         localStorage.setItem("ts_data_version", AUTH_DATA_VERSION);
-        console.log(">>> [SECURITY]: Purged legacy mock data and locked authentic datasets. <<<");
       }
-      // Sync latest catalog entries from Supabase if online
-      if (supabaseClient) {
-        try {
-          await syncCatalogFromSupabase();
-        } catch(e) {}
-      }
+
+      // 2. SYNCHRONOUS IMMEDIATE RENDERING FROM AUTHENTIC DATA (INSTANT LOAD)
       catalogData = loadUnifiedCatalog();
+      if (!catalogData || catalogData.length === 0) {
+        const sourceCatalog = (typeof window !== 'undefined' && window.AUTHENTIC_CATALOG)
+          || (typeof AUTHENTIC_CATALOG !== 'undefined' ? AUTHENTIC_CATALOG : null)
+          || (typeof window !== 'undefined' && window.tsCatalog ? window.tsCatalog : null)
+          || [];
+        catalogData = [...sourceCatalog];
+      }
 
       const viewSelect = document.getElementById('stock-view-mode');
       if (viewSelect && currentStockViewMode) {
@@ -3942,11 +3964,42 @@
         updateEditModeUI();
       }
       populateCategories();
-      await loadRecipes();
-      await loadAliases();
       renderStockGrid();
       renderPurchaseOrdersView();
       renderAuditTable();
+
+      // 3. BACKGROUND NON-BLOCKING ASYNC SYNC (NEVER CRASHES OR BLOCKS UI)
+      setTimeout(async () => {
+        if (supabaseClient) {
+          try {
+            await syncCatalogFromSupabase();
+            catalogData = loadUnifiedCatalog();
+            populateCategories();
+            renderStockGrid();
+            renderAuditTable();
+          } catch(e) {
+            console.warn("Background catalog sync error:", e);
+          }
+        }
+        try {
+          await loadRecipes();
+        } catch(e) {
+          console.warn("Background recipes load error:", e);
+        }
+        try {
+          await loadAliases();
+        } catch(e) {
+          console.warn("Background aliases load error:", e);
+        }
+        try {
+          if (typeof fetchSupabaseStoragePurchaseOrders === 'function') {
+            await fetchSupabaseStoragePurchaseOrders();
+            renderPurchaseOrdersView();
+          }
+        } catch(e) {
+          console.warn("Background storage fetch error:", e);
+        }
+      }, 0);
 
       // Check hash route
       if (window.location.hash === '#purchase-orders') {

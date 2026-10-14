@@ -13,9 +13,12 @@ let supabaseClient = null;
 
 function getSupabaseClient() {
   if (supabaseClient) return supabaseClient;
-  if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
+  const supabaseLib = (typeof window !== 'undefined' && window.supabase) 
+    ? window.supabase 
+    : (typeof supabase !== 'undefined' ? supabase : null);
+  if (supabaseLib && typeof supabaseLib.createClient === 'function') {
     try {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       console.log("[Supabase]: Client initialized successfully.");
     } catch (e) {
       console.warn("[Supabase]: Client init error:", e);

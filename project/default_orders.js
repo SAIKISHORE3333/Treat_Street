@@ -4497,6 +4497,14 @@ if (typeof window !== 'undefined') {
   window.restoreTreatStreetDefaultOrders = restoreTreatStreetDefaultOrders;
 }
 
+if (typeof globalThis !== 'undefined') {
+  globalThis.MOCK_DATA_ALLOWED = false;
+  globalThis.AUTHENTIC_ORDERS = AUTHENTIC_ORDERS;
+  globalThis.AUTHENTIC_STOCK_LEVELS = AUTHENTIC_STOCK_LEVELS;
+  globalThis.generateInitialSampleOrders = generateInitialSampleOrders;
+  globalThis.restoreTreatStreetDefaultOrders = restoreTreatStreetDefaultOrders;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     MOCK_DATA_ALLOWED: false,

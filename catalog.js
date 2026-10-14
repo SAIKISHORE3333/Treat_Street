@@ -2758,6 +2758,10 @@ if (typeof window !== 'undefined') {
   window.AUTHENTIC_CATALOG = AUTHENTIC_CATALOG;
   window.tsCatalog = AUTHENTIC_CATALOG;
 }
+if (typeof globalThis !== 'undefined') {
+  globalThis.AUTHENTIC_CATALOG = AUTHENTIC_CATALOG;
+  globalThis.tsCatalog = AUTHENTIC_CATALOG;
+}
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {

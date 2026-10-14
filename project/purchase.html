@@ -618,36 +618,36 @@
 
     // Shared Catalog Logic
     let catalog = [];
-    const localCatalog = localStorage.getItem('ts_shared_catalog');
-    if (localCatalog) {
-      catalog = JSON.parse(localCatalog);
-    } else {
-      catalog = window.tsCatalog ? [...window.tsCatalog] : [];
-      localStorage.setItem('ts_shared_catalog', JSON.stringify(catalog));
+    const staticCatalog = (typeof window !== 'undefined' && window.AUTHENTIC_CATALOG)
+      || (typeof AUTHENTIC_CATALOG !== 'undefined' ? AUTHENTIC_CATALOG : null)
+      || (typeof window !== 'undefined' && window.tsCatalog ? window.tsCatalog : null)
+      || (typeof globalThis !== 'undefined' && globalThis.AUTHENTIC_CATALOG ? globalThis.AUTHENTIC_CATALOG : [])
+      || [];
+    try {
+      const localCatalog = localStorage.getItem('ts_shared_catalog');
+      if (localCatalog) {
+        catalog = JSON.parse(localCatalog);
+      }
+    } catch(e) {}
+    if (!catalog || catalog.length === 0) {
+      catalog = [...staticCatalog];
+      try { localStorage.setItem('ts_shared_catalog', JSON.stringify(catalog)); } catch(e) {}
     }
 
     let suppliersList = [];
 
-    // INITIALIZATION
-    window.addEventListener('DOMContentLoaded', async () => {
-      // Initialize VAT rates for legacy catalog items
-      catalog = catalog.map(item => ({ ...item, vatRate: item.vatRate !== undefined ? item.vatRate : 20 }));
-      initSupabase();
-
-      // Fetch from Supabase
-      if (supabaseClient) {
-        try {
-          const { data, error } = await supabaseClient.from('catalog').select('*').order('id', { ascending: true });
-          if (data && !error && data.length > 0) {
-            catalog = data;
-            console.log('Successfully loaded catalog from Supabase!');
-          } else if (error) {
-            console.error('Supabase fetch error:', error);
-          }
-        } catch(e) {
-          console.error('Supabase fetch exception:', e);
-        }
+    // INITIALIZATION - INSTANT LOAD & DECOUPLED BACKGROUND SYNC
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. SYNCHRONOUS IMMEDIATE RENDERING FROM AUTHENTIC DATA (NO NETWORK DELAY)
+      if (!catalog || catalog.length === 0) {
+        const source = (typeof window !== 'undefined' && window.AUTHENTIC_CATALOG)
+          || (typeof AUTHENTIC_CATALOG !== 'undefined' ? AUTHENTIC_CATALOG : null)
+          || (typeof window !== 'undefined' && window.tsCatalog ? window.tsCatalog : null)
+          || (typeof globalThis !== 'undefined' && globalThis.AUTHENTIC_CATALOG ? globalThis.AUTHENTIC_CATALOG : [])
+          || [];
+        catalog = [...source];
       }
+      catalog = catalog.map(item => ({ ...item, vatRate: item.vatRate !== undefined ? item.vatRate : 0 }));
 
       syncSuppliersList();
       populateSupplierDropdowns();
@@ -655,21 +655,39 @@
       updateCartUI();
       filterAndRenderAdminOrders();
       updateAdminBadge();
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
 
-      if (typeof fetchSupabaseStoragePurchaseOrders === 'function') {
-        try {
-          await fetchSupabaseStoragePurchaseOrders();
-          const freshStored = localStorage.getItem('ts_orders');
-          if (freshStored) {
-            orders = JSON.parse(freshStored).map(normalizeOrder);
-            filterAndRenderAdminOrders();
-            updateAdminBadge();
+      // 2. BACKGROUND NON-BLOCKING SUPABASE SYNC (NEVER BLOCKS THE UI)
+      setTimeout(async () => {
+        initSupabase();
+        if (supabaseClient) {
+          try {
+            const { data, error } = await supabaseClient.from('catalog').select('*').order('id', { ascending: true });
+            if (data && !error && data.length > 0) {
+              catalog = data;
+              syncSuppliersList();
+              populateSupplierDropdowns();
+              filterCatalog();
+            }
+          } catch(e) {
+            console.warn('Background Supabase catalog fetch exception:', e);
           }
-        } catch(e) {
-          console.warn('Storage fetcher in purchase.html warning:', e);
         }
-      }
+
+        if (typeof fetchSupabaseStoragePurchaseOrders === 'function') {
+          try {
+            await fetchSupabaseStoragePurchaseOrders();
+            const freshStored = localStorage.getItem('ts_orders');
+            if (freshStored) {
+              orders = JSON.parse(freshStored).map(normalizeOrder);
+              filterAndRenderAdminOrders();
+              updateAdminBadge();
+            }
+          } catch(e) {
+            console.warn('Background storage fetcher error:', e);
+          }
+        }
+      }, 0);
     });
 
     function toggleTaxDisplayMode() {
