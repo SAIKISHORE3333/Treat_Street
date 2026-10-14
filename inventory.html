@@ -1951,25 +1951,20 @@
     function getStockLevels() {
       try {
         const stored = localStorage.getItem('ts_stock_levels');
-        if (!stored) return {};
+        if (!stored) return (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined') ? AUTHENTIC_STOCK_LEVELS : {};
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           const levels = {};
           parsed.forEach(item => {
             if (item && item.id != null) {
-              levels[String(item.id)] = item.current !== undefined ? parseFloat(item.current) : (item.minStock ? item.minStock * 1.5 : 24.0);
+              levels[String(item.id)] = item.current !== undefined ? parseFloat(item.current) : 0;
             }
           });
-          if (levels['297'] !== undefined) levels['297'] = 72.0;
-          if (levels['202'] !== undefined) levels['202'] = 96.0;
-          if (levels['295'] !== undefined) levels['295'] = 48.0;
-          if (levels['300'] !== undefined) levels['300'] = 3.0;
-          if (levels['302'] !== undefined) levels['302'] = 3.0;
           return levels;
         }
         return parsed || {};
       } catch (e) {
-        return {};
+        return (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined') ? AUTHENTIC_STOCK_LEVELS : {};
       }
     }
 
@@ -4900,12 +4895,6 @@
           }
         ];
         localStorage.setItem('ts_production_logs', JSON.stringify(productionLogs));
-      }
-
-      // Ensure 7up Tropical pot default has healthy balance (72.0)
-      if (stockLevels['297'] === undefined) {
-        stockLevels['297'] = 72.0;
-        saveStockLevels(stockLevels);
       }
 
       const subRecipes = JSON.parse(localStorage.getItem('recipeSOPs') || '[]');

@@ -1,9 +1,9 @@
 /**
  * Treat Street - Core System Entry Script & Storage Migration Guardrail
- * Enforces authentic catalog & purchase order lock (v4.0.0_authentic_locked)
+ * Enforces zero-mock authentic datasets (v5.0.0_zero_mock_original)
  */
 (function() {
-  const AUTH_DATA_VERSION = "v4.0.0_authentic_locked";
+  const AUTH_DATA_VERSION = "v5.0.0_zero_mock_original";
   if (typeof localStorage !== 'undefined' && localStorage.getItem("ts_data_version") !== AUTH_DATA_VERSION) {
     // Flush all corrupted/mock storage keys
     const keysToPurge = [
@@ -12,20 +12,27 @@
       "mock_orders",
       "ts_orders",
       "mock_ingredients",
-      "ts_fake_mock"
+      "ts_fake_mock",
+      "mock_production_logs",
+      "sample_orders",
+      "fake_orders",
+      "dummy_catalog",
+      "ts_shared_catalog"
     ];
     keysToPurge.forEach(k => {
       try { localStorage.removeItem(k); } catch (e) {}
     });
     
-    // Re-seed strictly from restored authentic catalog and default orders
-    const catalogData = (typeof AUTHENTIC_CATALOG !== 'undefined') ? AUTHENTIC_CATALOG : (typeof window !== 'undefined' && window.AUTHENTIC_CATALOG ? window.AUTHENTIC_CATALOG : (window.tsCatalog || []));
-    const ordersData = (typeof AUTHENTIC_ORDERS !== 'undefined') ? AUTHENTIC_ORDERS : (typeof window !== 'undefined' && window.AUTHENTIC_ORDERS ? window.AUTHENTIC_ORDERS : (typeof generateInitialSampleOrders === 'function' ? generateInitialSampleOrders() : []));
+    // Authentic audited stock levels (Milton Keynes Store Physical Audit)
+    const stockLevels = (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined') 
+      ? AUTHENTIC_STOCK_LEVELS 
+      : (typeof window !== 'undefined' && window.AUTHENTIC_STOCK_LEVELS ? window.AUTHENTIC_STOCK_LEVELS : {});
 
-    localStorage.setItem("ts_stock_levels", JSON.stringify(catalogData));
-    localStorage.setItem("ts_purchase_orders", JSON.stringify(ordersData));
-    localStorage.setItem("ts_orders", JSON.stringify(ordersData));
+    // Strictly clean zero-mock orders: no synthetic seed orders
+    localStorage.setItem("ts_stock_levels", JSON.stringify(stockLevels));
+    localStorage.setItem("ts_purchase_orders", JSON.stringify([]));
+    localStorage.setItem("ts_orders", JSON.stringify([]));
     localStorage.setItem("ts_data_version", AUTH_DATA_VERSION);
-    console.log(">>> [SECURITY]: Purged legacy mock data and locked authentic datasets. <<<");
+    console.log(">>> [SECURITY]: Purged all fake purchase orders & synthetic stock levels. Locked authentic datasets (v5.0.0). <<<");
   }
 })();

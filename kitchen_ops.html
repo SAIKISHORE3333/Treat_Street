@@ -2128,11 +2128,11 @@
 
     async function init() {
       const currentDataVer = localStorage.getItem('ts_data_version');
-      if (currentDataVer !== 'v4.0.0_authentic_locked') {
+      if (currentDataVer !== 'v5.0.0_zero_mock_original') {
         ['ts_fake_mock', 'mock_ingredients', 'mock_production_logs', 'sample_orders', 'fake_orders', 'dummy_catalog', 'ts_orders', 'mock_orders'].forEach(k => {
           try { localStorage.removeItem(k); } catch(e) {}
         });
-        localStorage.setItem('ts_data_version', 'v4.0.0_authentic_locked');
+        localStorage.setItem('ts_data_version', 'v5.0.0_zero_mock_original');
       }
       document.getElementById('prod-prep-date').value = new Date().toISOString().split('T')[0];
       generateNewBatchCode();
