@@ -2119,10 +2119,13 @@
     }
 
     function restoreVerifiedOrders() {
+      if (typeof restoreTreatStreetDefaultOrders === 'function') {
+        restoreTreatStreetDefaultOrders();
+      }
       renderPurchaseOrdersView();
       renderStockGrid();
       renderAuditTable();
-      showInventoryToast('Purchase orders refreshed.');
+      showInventoryToast('All original purchase orders & stock pots restored successfully!');
     }
 
     function savePurchaseOrders(orders) {

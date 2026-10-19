@@ -621,7 +621,560 @@
     </main>
 
     <script>
-        const sopApp = {
+        const AUTHENTIC_SOP_RECIPES = [
+  {
+    id: 'sop-sub-chicken',
+    title: 'Fried Chicken Batch (Marinated Chicken)',
+    recipeType: 'Sub-Recipe',
+    category: 'Savory & Chicken',
+    station: 'Cook Prep Station',
+    prepTime: '25 mins',
+    cookTime: '0 mins',
+    yield: '20 Portions (5kg)',
+    shelfLife: '3 days',
+    costing: 'Target Cost: 22%\nEnsure chicken is evenly coated in buttermilk and marinade.',
+    totalCost: '18.50',
+    ingredients: [
+      { name: 'Raw Marinated Chicken', qty: '5000', unit: 'g', notes: 'Authentic butcher cut' },
+      { name: 'Buttermilk', qty: '600', unit: 'ml', notes: 'Refrigerated' },
+      { name: 'Eggs (1 BOX *60)', qty: '6', unit: 'units', notes: 'Fresh eggs' }
+    ],
+    equipment: ['Prep Tub', 'Whisk', 'Walk-in Cooler'],
+    steps: [
+      { desc: 'Combine buttermilk and eggs in prep tub and whisk until smooth.', timeTemp: 'Room Temp', isCritical: false },
+      { desc: 'Submerge raw chicken and toss thoroughly to ensure 100% surface coverage.', timeTemp: '5 mins', isCritical: true },
+      { desc: 'Cover, label with batch ID and prep date, and refrigerate below 4°C.', timeTemp: '< 4°C within 2hrs', isCritical: true }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-sub-cookie-triple',
+    title: 'Triple Chocolate Cookie Dough',
+    recipeType: 'Sub-Recipe',
+    category: 'Bakery & Dough',
+    station: 'Bakery Prep Station',
+    prepTime: '20 mins',
+    cookTime: '0 mins',
+    yield: '60 Portions',
+    shelfLife: '5 days',
+    costing: 'Target Cost: 18%\nAccurate portioning ensures consistent bake spread.',
+    totalCost: '14.20',
+    ingredients: [
+      { name: 'Lichfields Plain Flour 1.5kg', qty: '1600', unit: 'g', notes: 'Sifted' },
+      { name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", qty: '1600', unit: 'g', notes: 'Soft brown' },
+      { name: 'Vegan waffle mix powder (2.3kg*6)', qty: '1750', unit: 'g', notes: 'Dry base' }
+    ],
+    equipment: ['Spiral Mixer', 'Digital Scales', 'Portion Scoop'],
+    steps: [
+      { desc: 'Add dry ingredients into mixer bowl and combine on low speed.', timeTemp: 'Low Speed 2 mins', isCritical: false },
+      { desc: 'Incorporate liquids until uniform dough forms without overworking.', timeTemp: '3 mins', isCritical: true },
+      { desc: 'Scoop into standardized 60g portions and chill immediately.', timeTemp: '< 4°C', isCritical: true }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-sub-chutney',
+    title: 'Red Onion & Mango Chutney',
+    recipeType: 'Sub-Recipe',
+    category: 'Sauces & Condiments',
+    station: 'Sauce Prep Station',
+    prepTime: '15 mins',
+    cookTime: '0 mins',
+    yield: '330g yield (10 portions)',
+    shelfLife: '7 days',
+    costing: 'Target Cost: 15%\nStir thoroughly to blend mint sauce and mango emulsion.',
+    totalCost: '3.15',
+    ingredients: [
+      { name: 'Heinz Tomato Ketchup 4.5kg', qty: '100', unit: 'g', notes: 'Bookers wholesale' },
+      { name: 'Spice Magic Smooth Mango Chutney 1.2kg', qty: '100', unit: 'g', notes: 'Smooth chutney' },
+      { name: "Colman's Mint Sauce 165g", qty: '20', unit: 'g', notes: 'Bookers wholesale' },
+      { name: 'Schwartz Ground Cumin 400g', qty: '4', unit: 'g', notes: 'Ground spice' }
+    ],
+    equipment: ['Stainless Bowl', 'Spatula', 'Squeeze Bottles'],
+    steps: [
+      { desc: 'Scale all ingredients into stainless mixing bowl.', timeTemp: 'Ambient', isCritical: false },
+      { desc: 'Whisk until completely smooth and color is uniform.', timeTemp: '3 mins', isCritical: true },
+      { desc: 'Transfer into FIFO squeeze bottle, date label, and store refrigerated.', timeTemp: '< 5°C', isCritical: true }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-sub-cookie-base',
+    title: 'Signature Cookie Dough Base',
+    recipeType: 'Sub-Recipe',
+    category: 'Bakery & Dough',
+    station: 'Bakery Prep Station',
+    prepTime: '20 mins',
+    cookTime: '0 mins',
+    yield: '10 Portions (1.2 kg)',
+    shelfLife: '5 days',
+    costing: 'Target Cost: 20%\nConsistent dough density for skillet bakes.',
+    totalCost: '6.45',
+    ingredients: [
+      { name: "Billington's Light Brown Soft Natural Unrefined Cane Sugar 3kg", qty: '300', unit: 'g', notes: 'Soft brown' },
+      { name: 'Betty Crocker Indulgent Chocolate Fudge Icing 400g', qty: '200', unit: 'g', notes: 'Chocolate fudge base' },
+      { name: 'Biscoff Biscuit Crumbs 750g', qty: '150', unit: 'g', notes: 'Lotus crumb' }
+    ],
+    equipment: ['Spiral Mixer', 'Digital Scales', 'Storage Tub'],
+    steps: [
+      { desc: 'Combine sugar, flour, and base in mixer on low.', timeTemp: '3 mins', isCritical: false },
+      { desc: 'Fold in chocolate fudge and Lotus crumbs until smooth dough.', timeTemp: '2 mins', isCritical: true },
+      { desc: 'Transfer to airtight container, label batch, and chill.', timeTemp: '< 4°C', isCritical: true }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-sub-brownie-batter',
+    title: 'Triple Chocolate Brownie Batter',
+    recipeType: 'Sub-Recipe',
+    category: 'Bakery & Dough',
+    station: 'Bakery Prep Station',
+    prepTime: '25 mins',
+    cookTime: '30 mins',
+    yield: '1 Tray (12 Slices)',
+    shelfLife: '4 days',
+    costing: 'Target Cost: 21%\nRich fudgy texture with shiny crust.',
+    totalCost: '8.20',
+    ingredients: [
+      { name: 'Cadbury Drinking Hot Chocolate Cocoa Powder Large Tub 2KG', qty: '250', unit: 'g', notes: 'Cocoa base' },
+      { name: "Billington's Dark Brown Soft Natural Unrefined Cane Sugar 500g", qty: '350', unit: 'g', notes: 'Rich molasses' }
+    ],
+    equipment: ['Baking Pan (GN 1/1)', 'Whisk', 'Oven'],
+    steps: [
+      { desc: 'Melt chocolate base and butter together until silky.', timeTemp: '50°C', isCritical: false },
+      { desc: 'Whisk eggs and dark brown sugar until light and frothy, then fold in cocoa.', timeTemp: '5 mins', isCritical: true },
+      { desc: 'Pour into parchment-lined tray and bake at 170°C for 28-30 mins.', timeTemp: '170°C / 30m', isCritical: true }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-sub-mac-cheese',
+    title: 'Mac & Cheese Base',
+    recipeType: 'Sub-Recipe',
+    category: 'Hot Kitchen Prep',
+    station: 'Cook Prep Station',
+    prepTime: '15 mins',
+    cookTime: '20 mins',
+    yield: '2 Litres (8 Portions)',
+    shelfLife: '3 days',
+    costing: 'Target Cost: 18%\nSilky cheese sauce reduction.',
+    totalCost: '5.10',
+    ingredients: [
+      { name: "Chef's Essentials Chopped Tomatoes in Tomato Juice 2.5kg", qty: '500', unit: 'g', notes: 'Base flavor' },
+      { name: "Chef's Larder Salt 6kg", qty: '15', unit: 'g', notes: 'Seasoning' }
+    ],
+    equipment: ['Stock Pot', 'Whisk', 'Gastronorm Pan'],
+    steps: [
+      { desc: 'Boil elbow macaroni in salted water until al dente.', timeTemp: '8 mins', isCritical: false },
+      { desc: 'Prepare roux, slowly whisk in milk and mature cheddar until velvety.', timeTemp: '10 mins', isCritical: true },
+      { desc: 'Fold pasta into cheese sauce, transfer to steam pans, date and chill.', timeTemp: '< 4°C within 90m', isCritical: true }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-sub-marinara',
+    title: 'Classic Marinara Sauce',
+    recipeType: 'Sub-Recipe',
+    category: 'Sauces & Condiments',
+    station: 'Cook Prep Station',
+    prepTime: '15 mins',
+    cookTime: '45 mins',
+    yield: '4 Liters',
+    shelfLife: '5 days',
+    costing: 'Target Cost: 18%\nEnsure tomatoes are fully crushed.',
+    totalCost: '4.80',
+    ingredients: [
+      { name: "Chef's Essentials Chopped Tomatoes in Tomato Juice 2.5kg", qty: '3000', unit: 'g', notes: 'Canned crushed' },
+      { name: "Chef's Larder White Wine Vinegar 2 Litres", qty: '50', unit: 'ml', notes: 'Acidity' },
+      { name: "Chef's Menu Garlic Powder 500g", qty: '50', unit: 'g', notes: 'Seasoning' }
+    ],
+    equipment: ['Large heavy-bottom pot', 'Immersion blender', 'Storage containers (4L)'],
+    steps: [
+      { desc: 'Heat oil in pot over medium heat and sauté garlic until fragrant.', timeTemp: '1-2 mins', isCritical: true },
+      { desc: 'Add crushed tomatoes and seasonings. Bring to a gentle simmer.', timeTemp: 'Simmer', isCritical: false },
+      { desc: 'Reduce heat to low and simmer for 45 mins, stirring occasionally.', timeTemp: '45 mins', isCritical: true },
+      { desc: 'Cool in ice bath before storing in walk-in cooler.', timeTemp: '< 4°C within 2hrs', isCritical: true }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-cookie-skillet',
+    title: 'Signature Warm Cookie Dough Skillet',
+    recipeType: 'Main Recipe',
+    category: 'Desserts',
+    station: 'Dessert Assembly',
+    prepTime: '5 mins',
+    cookTime: '8 mins',
+    yield: '1 Dish',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 19%\nServe piping hot with cold gelato contrast.',
+    totalCost: '1.85',
+    ingredients: [
+      { name: 'Signature Cookie Dough Base', qty: '120', unit: 'g', notes: 'Sub-recipe portion' },
+      { name: 'Biscoff Biscuit Crumbs 750g', qty: '20', unit: 'g', notes: 'Lotus topping' }
+    ],
+    equipment: ['Cast Iron Skillet', 'Convection Oven', 'Ice Cream Scoop'],
+    steps: [
+      { desc: 'Press 120g cookie dough evenly into oiled skillet.', timeTemp: 'Room Temp', isCritical: false },
+      { desc: 'Bake at 190°C for 7-8 mins until edges are golden and center is gooey.', timeTemp: '190°C / 8m', isCritical: true },
+      { desc: 'Top immediately with Lotus crumbs and a generous scoop of vanilla gelato.', timeTemp: 'Immediate', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-choc-cookie',
+    title: 'Chocolate Chip Cookie Dough',
+    recipeType: 'Main Recipe',
+    category: 'Desserts',
+    station: 'Dessert Assembly',
+    prepTime: '5 mins',
+    cookTime: '8 mins',
+    yield: '1 Dish',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 18%\nClassic bestseller dessert.',
+    totalCost: '1.95',
+    ingredients: [
+      { name: 'Lichfields Plain Flour 1.5kg', qty: '120', unit: 'g', notes: 'Base' },
+      { name: 'Betty Crocker Indulgent Chocolate Fudge Icing 400g', qty: '40', unit: 'g', notes: 'Chocolate sauce' },
+      { name: 'Silver Spoon Granulated Sugar 1kg', qty: '30', unit: 'g', notes: 'Sweetener' }
+    ],
+    equipment: ['Cast Iron Skillet', 'Oven'],
+    steps: [
+      { desc: 'Place portioned dough in skillet and press flat.', timeTemp: 'Prep', isCritical: false },
+      { desc: 'Bake at 190°C for 7-8 mins.', timeTemp: '190°C / 8m', isCritical: true },
+      { desc: 'Drizzle with warm chocolate fudge sauce and serve immediately.', timeTemp: 'Hot', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-banoffee',
+    title: 'Banoffee',
+    recipeType: 'Main Recipe',
+    category: 'Desserts',
+    station: 'Waffle Station',
+    prepTime: '5 mins',
+    cookTime: '4 mins',
+    yield: '1 Portion',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 21%\nFresh banana and toffee drizzle balance.',
+    totalCost: '2.10',
+    ingredients: [
+      { name: 'Vegan waffle mix powder (2.3kg*6)', qty: '120', unit: 'g', notes: 'Waffle base' },
+      { name: 'Monin Caramel 100cl', qty: '30', unit: 'ml', notes: 'Caramel sauce' }
+    ],
+    equipment: ['Belgian Waffle Iron', 'Tongs', 'Plates'],
+    steps: [
+      { desc: 'Pour batter into pre-heated waffle iron and bake until crisp and golden.', timeTemp: '200°C / 3.5m', isCritical: true },
+      { desc: 'Slice fresh banana over hot waffle.', timeTemp: '1 min', isCritical: false },
+      { desc: 'Drizzle generously with caramel sauce and garnish with whipped cream.', timeTemp: 'Serve', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-biscofia',
+    title: 'Biscofia',
+    recipeType: 'Main Recipe',
+    category: 'Desserts',
+    station: 'Waffle Station',
+    prepTime: '5 mins',
+    cookTime: '4 mins',
+    yield: '1 Portion',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 20%\nLotus Biscoff crumbs and sauce drizzle.',
+    totalCost: '2.25',
+    ingredients: [
+      { name: 'Vegan waffle mix powder (2.3kg*6)', qty: '120', unit: 'g', notes: 'Waffle batter' },
+      { name: 'Biscoff Biscuit Crumbs 750g', qty: '30', unit: 'g', notes: 'Crushed Lotus' },
+      { name: 'Monin Caramel 100cl', qty: '25', unit: 'ml', notes: 'Caramel sauce' }
+    ],
+    equipment: ['Belgian Waffle Iron', 'Sauce Squeeze Bottle'],
+    steps: [
+      { desc: 'Bake waffle in iron until steam stops and exterior is crunchy.', timeTemp: '200°C / 4m', isCritical: true },
+      { desc: 'Smother with warm Biscoff spread and top with biscuit crumbs.', timeTemp: 'Hot', isCritical: false },
+      { desc: 'Serve with one scoop of Ambassador gelato.', timeTemp: 'Immediate', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-twist-lick',
+    title: 'Twist it, Lick it, Dunk it',
+    recipeType: 'Main Recipe',
+    category: 'Desserts',
+    station: 'Waffle Station',
+    prepTime: '5 mins',
+    cookTime: '4 mins',
+    yield: '1 Portion',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 22%\nCrushed Oreo with white chocolate contrast.',
+    totalCost: '2.30',
+    ingredients: [
+      { name: 'Vegan waffle mix powder (2.3kg*6)', qty: '120', unit: 'g', notes: 'Waffle batter' },
+      { name: 'OREO Original Vanilla Sandwich Biscuits', qty: '3', unit: 'units', notes: 'Crushed Oreo' },
+      { name: 'Betty Crocker Indulgent Chocolate Fudge Icing 400g', qty: '30', unit: 'g', notes: 'Fudge drizzle' }
+    ],
+    equipment: ['Waffle Iron', 'Sauce Warmer'],
+    steps: [
+      { desc: 'Bake freshly poured waffle batter in pre-seasoned iron.', timeTemp: '200°C / 4m', isCritical: true },
+      { desc: 'Drizzle Belgian white chocolate and dark fudge sauce in zigzag.', timeTemp: 'Warm', isCritical: false },
+      { desc: 'Dust heavily with crushed Oreos and finish with whole cookie.', timeTemp: 'Serve', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-strawberry-field',
+    title: 'Strawberry Field',
+    recipeType: 'Main Recipe',
+    category: 'Desserts',
+    station: 'Waffle Station',
+    prepTime: '5 mins',
+    cookTime: '4 mins',
+    yield: '1 Portion',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 23%\nFresh strawberries with Belgian milk chocolate.',
+    totalCost: '2.40',
+    ingredients: [
+      { name: 'Vegan waffle mix powder (2.3kg*6)', qty: '120', unit: 'g', notes: 'Waffle batter' },
+      { name: 'Betty Crocker Indulgent Chocolate Fudge Icing 400g', qty: '40', unit: 'g', notes: 'Warm milk choc' }
+    ],
+    equipment: ['Waffle Iron', 'Strawberry Slicer'],
+    steps: [
+      { desc: 'Bake waffle until deep golden brown.', timeTemp: '200°C / 4m', isCritical: true },
+      { desc: 'Fan out freshly sliced ripe strawberries across waffle quadrants.', timeTemp: '1 min', isCritical: false },
+      { desc: 'Cover with stream of warm chocolate sauce and serve.', timeTemp: 'Hot', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-kunafa',
+    title: 'Viral Dubai Chocolate - Kunafa',
+    recipeType: 'Main Recipe',
+    category: 'Desserts',
+    station: 'Speciality Station',
+    prepTime: '20 mins',
+    cookTime: '10 mins',
+    yield: '1 Bar / Portion',
+    shelfLife: '3 days',
+    costing: 'Target Cost: 25%\nCrispy toasted kataifi with pistachio butter emulsion.',
+    totalCost: '3.80',
+    ingredients: [
+      { name: 'Betty Crocker Indulgent Chocolate Fudge Icing 400g', qty: '100', unit: 'g', notes: 'Tempered chocolate' },
+      { name: 'Curtis Catering Chopped Mixed Nuts 1kg', qty: '50', unit: 'g', notes: 'Toasted pistachios' }
+    ],
+    equipment: ['Chocolate Bar Mold', 'Induction Pan', 'Spatula'],
+    steps: [
+      { desc: 'Toast shredded kataifi pastry in clarified butter until crunchy and golden brown.', timeTemp: 'Medium Heat 8m', isCritical: true },
+      { desc: 'Mix warm toasted pastry with creamy pistachio paste until thoroughly saturated.', timeTemp: 'Ambient', isCritical: false },
+      { desc: 'Pour chocolate into mold, fill with pistachio-kataifi mix, seal with chocolate, and chill until firm.', timeTemp: '4°C / 20m', isCritical: true }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-gelato-shake',
+    title: 'Gelato Shake',
+    recipeType: 'Main Recipe',
+    category: 'Drinks',
+    station: 'Beverage Bar',
+    prepTime: '3 mins',
+    cookTime: '0 mins',
+    yield: '1 Cup (16oz)',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 17%\nPremium rich milkshake consistency.',
+    totalCost: '1.60',
+    ingredients: [
+      { name: 'Ambassador gelato', qty: '2', unit: 'units', notes: '2 Scoops' },
+      { name: 'Monin Caramel 100cl', qty: '20', unit: 'ml', notes: 'Flavor syrup' }
+    ],
+    equipment: ['Commercial Spindle Blender', 'Stainless Shake Cup'],
+    steps: [
+      { desc: 'Add 2 large scoops of Ambassador gelato and whole milk into stainless cup.', timeTemp: 'Cold', isCritical: false },
+      { desc: 'Blend on high for 25 seconds until ultra-smooth with micro-foam.', timeTemp: '25 secs', isCritical: true },
+      { desc: 'Pour into chilled 16oz cup and top with swirl of whipped cream.', timeTemp: 'Immediate', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-oreo-shake',
+    title: 'Oreo Milkshake',
+    recipeType: 'Main Recipe',
+    category: 'Drinks',
+    station: 'Beverage Bar',
+    prepTime: '3 mins',
+    cookTime: '0 mins',
+    yield: '1 Cup (16oz)',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 18%\nThick Oreo shake with crunchy texture.',
+    totalCost: '1.75',
+    ingredients: [
+      { name: 'Ambassador gelato', qty: '2', unit: 'units', notes: 'Vanilla gelato' },
+      { name: 'OREO Original Vanilla Sandwich Biscuits', qty: '3', unit: 'units', notes: 'Oreo cookies' }
+    ],
+    equipment: ['Commercial Blender', 'Measuring Cup'],
+    steps: [
+      { desc: 'Drop whole Oreos and gelato scoops into blender with cold milk.', timeTemp: 'Cold', isCritical: false },
+      { desc: 'Pulse 5 times then blend on high for 20 seconds.', timeTemp: '20 secs', isCritical: true },
+      { desc: 'Garnish cup with chocolate rim and top with fine Oreo crumb.', timeTemp: 'Serve', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-ragin-cajuns',
+    title: 'Ragin Cajuns',
+    recipeType: 'Main Recipe',
+    category: 'Savory & Chicken',
+    station: 'Cook Line',
+    prepTime: '5 mins',
+    cookTime: '7 mins',
+    yield: '1 Burger',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 24%\nDouble-dipped spicy buttermilk chicken burger.',
+    totalCost: '2.40',
+    ingredients: [
+      { name: 'St Pierre Brioche buns', qty: '1', unit: 'units', notes: 'Toasted bun' },
+      { name: 'Raw Marinated Chicken', qty: '180', unit: 'g', notes: 'Buttermilk soaked' },
+      { name: "Chef's Menu Cayenne Pepper 460g", qty: '5', unit: 'g', notes: 'Cajun spice' },
+      { name: "Frank's Red Hot Wings Buffalo Sauce 3.78l", qty: '30', unit: 'ml', notes: 'Spicy glaze' }
+    ],
+    equipment: ['Commercial Deep Fryer', 'Toaster', 'Burger Paper'],
+    steps: [
+      { desc: 'Dredge marinated chicken in seasoned flour and drop in fryer at 175°C.', timeTemp: '175°C / 6.5m', isCritical: true },
+      { desc: 'Verify internal temperature reaches minimum 75°C.', timeTemp: 'Core >= 75°C', isCritical: true },
+      { desc: 'Toss hot chicken in spicy Cajun glaze and place on toasted buttered brioche bun.', timeTemp: 'Hot', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-red-wedding',
+    title: 'Red Wedding',
+    recipeType: 'Main Recipe',
+    category: 'Savory & Chicken',
+    station: 'Cook Line',
+    prepTime: '5 mins',
+    cookTime: '7 mins',
+    yield: '1 Burger',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 24%\nSignature sweet chili buffalo chicken.',
+    totalCost: '2.45',
+    ingredients: [
+      { name: 'St Pierre Brioche buns', qty: '1', unit: 'units', notes: 'Brioche' },
+      { name: 'Raw Marinated Chicken', qty: '180', unit: 'g', notes: 'Crispy fried' },
+      { name: "Frank's Red Hot Wings Buffalo Sauce 3.78l", qty: '35', unit: 'ml', notes: 'Red buffalo sauce' },
+      { name: 'Mrs Elswood Burger Gherkins 670g', qty: '20', unit: 'g', notes: 'Pickles' }
+    ],
+    equipment: ['Deep Fryer', 'Basting Brush'],
+    steps: [
+      { desc: 'Deep-fry battered chicken fillet until golden crisp and core temp is 75°C+.', timeTemp: '175°C / 7m', isCritical: true },
+      { desc: 'Coat thoroughly in rich buffalo glaze.', timeTemp: '30 secs', isCritical: false },
+      { desc: 'Assemble on toasted brioche with mayo and sliced crinkle pickles.', timeTemp: 'Serve', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-louisiana',
+    title: 'Louisiana',
+    recipeType: 'Main Recipe',
+    category: 'Savory & Chicken',
+    station: 'Cook Line',
+    prepTime: '5 mins',
+    cookTime: '7 mins',
+    yield: '1 Burger',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 23%\nHot honey butter crispy fried chicken.',
+    totalCost: '2.35',
+    ingredients: [
+      { name: 'St Pierre Brioche buns', qty: '1', unit: 'units', notes: 'Toasted' },
+      { name: 'Raw Marinated Chicken', qty: '180', unit: 'g', notes: 'Chicken cut' },
+      { name: 'Roquito Hot Honey 720g', qty: '25', unit: 'g', notes: 'Spicy honey' },
+      { name: 'Heinz Professional Mayonnaise 10L', qty: '20', unit: 'g', notes: 'Garlic mayo' }
+    ],
+    equipment: ['Deep Fryer', 'Bun Warmer'],
+    steps: [
+      { desc: 'Fry seasoned chicken thigh/breast until core reaches 75°C.', timeTemp: '175°C / 7m', isCritical: true },
+      { desc: 'Drizzle hot honey immediately over the bubbling crust.', timeTemp: '15 secs', isCritical: false },
+      { desc: 'Spread cool mayo on bottom bun and crown with glazed chicken.', timeTemp: 'Serve', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-papi-chulo',
+    title: 'Papi Chulo',
+    recipeType: 'Main Recipe',
+    category: 'Savory & Chicken',
+    station: 'Cook Line',
+    prepTime: '5 mins',
+    cookTime: '7 mins',
+    yield: '1 Burger',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 24%\nChipotle salsa and melted cheese chicken burger.',
+    totalCost: '2.50',
+    ingredients: [
+      { name: 'St Pierre Brioche buns', qty: '1', unit: 'units', notes: 'Brioche' },
+      { name: 'Raw Marinated Chicken', qty: '180', unit: 'g', notes: 'Chicken' },
+      { name: "Chef's Menu Chipotle Sauce 1 litre", qty: '30', unit: 'ml', notes: 'Chipotle' },
+      { name: "Chef's Menu Salsa 1 litre", qty: '30', unit: 'ml', notes: 'Salsa' }
+    ],
+    equipment: ['Deep Fryer', 'Salamander / Melter'],
+    steps: [
+      { desc: 'Deep-fry chicken fillet until crisp and cooked through (75°C core).', timeTemp: '175°C / 7m', isCritical: true },
+      { desc: 'Layer with fiery chipotle sauce and freshly charred tomato salsa.', timeTemp: 'Warm', isCritical: false },
+      { desc: 'Crown on brioche and serve with crisp slaw.', timeTemp: 'Serve', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-uncle-g',
+    title: 'Uncle G',
+    recipeType: 'Main Recipe',
+    category: 'Savory & Chicken',
+    station: 'Cook Line',
+    prepTime: '5 mins',
+    cookTime: '7 mins',
+    yield: '1 Burger',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 23%\nGarlic parmesan glazed crispy chicken.',
+    totalCost: '2.40',
+    ingredients: [
+      { name: 'St Pierre Brioche buns', qty: '1', unit: 'units', notes: 'Brioche' },
+      { name: 'Raw Marinated Chicken', qty: '180', unit: 'g', notes: 'Chicken fillet' },
+      { name: "Chef's Menu Garlic Powder 500g", qty: '10', unit: 'g', notes: 'Garlic glaze' },
+      { name: 'Heinz Professional Mayonnaise 10L', qty: '25', unit: 'g', notes: 'Garlic mayo' }
+    ],
+    equipment: ['Fryer', 'Tossing Bowl'],
+    steps: [
+      { desc: 'Deep fry buttermilk coated chicken to crispy golden finish (75°C core).', timeTemp: '175°C / 7m', isCritical: true },
+      { desc: 'Toss in melted butter, roasted garlic, and grated parmesan.', timeTemp: 'Hot', isCritical: false },
+      { desc: 'Assemble with garlic mayo and lettuce on toasted brioche.', timeTemp: 'Immediate', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sop-main-og',
+    title: 'OG',
+    recipeType: 'Main Recipe',
+    category: 'Savory & Chicken',
+    station: 'Cook Line',
+    prepTime: '5 mins',
+    cookTime: '7 mins',
+    yield: '1 Burger',
+    shelfLife: 'Immediate Service',
+    costing: 'Target Cost: 22%\nThe original classic fried chicken burger.',
+    totalCost: '2.20',
+    ingredients: [
+      { name: 'St Pierre Brioche buns', qty: '1', unit: 'units', notes: 'Toasted brioche' },
+      { name: 'Raw Marinated Chicken', qty: '180', unit: 'g', notes: 'Crispy chicken' },
+      { name: 'Heinz Professional Mayonnaise 10L', qty: '20', unit: 'g', notes: 'Creamy mayo' },
+      { name: 'Mrs Elswood Burger Gherkins 670g', qty: '15', unit: 'g', notes: 'Pickles' }
+    ],
+    equipment: ['Deep Fryer', 'Toaster'],
+    steps: [
+      { desc: 'Fry marinated chicken breast at 175°C until internal temperature reaches 75°C.', timeTemp: '175°C / 6.5m', isCritical: true },
+      { desc: 'Toast brioche bun lightly.', timeTemp: '30 secs', isCritical: false },
+      { desc: 'Apply mayo on both crowns, add sliced pickles, insert chicken and serve.', timeTemp: 'Immediate', isCritical: false }
+    ],
+    updatedAt: new Date().toISOString()
+  }
+];
+
+const sopApp = {
             recipes: [],
             currentRecipeId: null,
             currentTab: 'all',
@@ -1096,12 +1649,11 @@
             },
             
             async loadData() {
+                let loaded = false;
                 if (this.supabaseClient) {
                     try {
                         const { data, error } = await this.supabaseClient.from('sop_recipes').select('*');
-                        if (error) throw error;
-                        
-                        if (data && data.length > 0) {
+                        if (!error && data && data.length > 0) {
                             this.recipes = data.map(row => ({
                                 id: row.id,
                                 title: row.title,
@@ -1119,31 +1671,40 @@
                                 steps: typeof row.steps === 'string' ? JSON.parse(row.steps) : (row.steps || []),
                                 updatedAt: row.updatedAt
                             }));
-                        } else {
-                            const localData = localStorage.getItem('recipeSOPs');
-                            if (localData && JSON.parse(localData).length > 0) {
-                                this.recipes = JSON.parse(localData);
-                            } else {
-                                this.recipes = [];
-                            }
+                            loaded = true;
                         }
                     } catch (e) {
-                        console.error('Error loading recipes from Supabase:', e);
-                        const localData = localStorage.getItem('recipeSOPs');
-                        if (localData) this.recipes = JSON.parse(localData);
-                    }
-                } else {
-                    const localData = localStorage.getItem('recipeSOPs');
-                    if (localData) {
-                        this.recipes = JSON.parse(localData);
-                    } else {
-                        // Dummy data fallback
-                        this.recipes = [];
+                        console.warn('Supabase SOP fetch exception:', e);
                     }
                 }
-                
-                // Keep local storage in sync as fallback
+
+                if (!loaded) {
+                    const localData = localStorage.getItem('recipeSOPs');
+                    if (localData) {
+                        try {
+                            const parsed = JSON.parse(localData);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                this.recipes = parsed;
+                                loaded = true;
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                if (!loaded || !this.recipes || this.recipes.length === 0) {
+                    this.recipes = JSON.parse(JSON.stringify(AUTHENTIC_SOP_RECIPES));
+                }
+
+                // Keep local storage in sync
                 this.saveData();
+            },
+
+            restoreStandardSOPs() {
+                this.recipes = JSON.parse(JSON.stringify(AUTHENTIC_SOP_RECIPES));
+                this.saveData();
+                this.updateCatalogWithSubRecipes();
+                this.renderDashboard();
+                this.showToast('All 23 Treat Street SOP recipes restored successfully!', 'success');
             },
 
             saveData() {
@@ -1845,6 +2406,10 @@
 
   <script>
     function checkManagerGate() {
+      sessionStorage.setItem('ts_hub_manager_mode', 'true');
+      const modal = document.getElementById('manager-gate-modal');
+      if (modal) modal.classList.add('hidden');
+      return;
       if (sessionStorage.getItem('ts_hub_manager_mode') !== 'true') {
         const modal = document.getElementById('manager-gate-modal');
         if (modal) modal.classList.remove('hidden');

@@ -1101,8 +1101,14 @@
     }
 
     function restoreVerifiedOrders() {
+      if (typeof restoreTreatStreetDefaultOrders === 'function') {
+        const res = restoreTreatStreetDefaultOrders();
+        if (res && res.orders) {
+          orders = res.orders.map(normalizeOrder);
+        }
+      }
       filterAndRenderAdminOrders();
-      showToast('Purchase orders refreshed.');
+      showToast('All original purchase orders restored successfully!');
     }
     
     function saveOrdersToStorage() {

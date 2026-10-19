@@ -4,11 +4,11 @@
  * STRICT GUARDRAILS: Zero mock generation, zero empty array overwrites.
  */
 
-var SUPABASE_URL = window.SUPABASE_URL || 'https://sdlrwosjebiiztclsydu.supabase.co';
-var SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw';
-var SUPABASE_BUCKET = window.SUPABASE_BUCKET || 'purchase-orders';
+var SUPABASE_URL = (typeof window !== 'undefined' && window.SUPABASE_URL) ? window.SUPABASE_URL : 'https://sdlrwosjebiiztclsydu.supabase.co';
+var SUPABASE_ANON_KEY = (typeof window !== 'undefined' && window.SUPABASE_ANON_KEY) ? window.SUPABASE_ANON_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw';
+var SUPABASE_BUCKET = (typeof window !== 'undefined' && window.SUPABASE_BUCKET) ? window.SUPABASE_BUCKET : 'purchase-orders';
 var AUTH_DATA_VERSION = "v6.0.0_authentic_supabase_storage";
-var supabaseClient = window.supabaseClient || null;
+var supabaseClient = (typeof window !== 'undefined' && window.supabaseClient) ? window.supabaseClient : null;
 
 function getSupabaseClient() {
   if (supabaseClient) return supabaseClient;
