@@ -1,14 +1,22 @@
 /**
  * Treat Street - Core System Entry Script & Supabase Storage Integration
  * Restores and synchronizes authentic purchase orders from Supabase Storage bucket 'purchase-orders'.
- * STRICT GUARDRAILS: Zero mock generation, zero empty array overwrites.
+ * STRICT GUARDRAILS: Zero mock generation, zero resurrection of user-deleted orders.
  */
 
 var SUPABASE_URL = (typeof window !== 'undefined' && window.SUPABASE_URL) ? window.SUPABASE_URL : 'https://sdlrwosjebiiztclsydu.supabase.co';
 var SUPABASE_ANON_KEY = (typeof window !== 'undefined' && window.SUPABASE_ANON_KEY) ? window.SUPABASE_ANON_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw';
 var SUPABASE_BUCKET = (typeof window !== 'undefined' && window.SUPABASE_BUCKET) ? window.SUPABASE_BUCKET : 'purchase-orders';
-var AUTH_DATA_VERSION = "v6.2.0_authentic_restored_clean_orders";
+var AUTH_DATA_VERSION = "v7.0.0_permanent_clean_orders";
 var supabaseClient = (typeof window !== 'undefined' && window.supabaseClient) ? window.supabaseClient : null;
+
+const GHOST_REFS = new Set([
+  'TSMK-MULTI-300726-001',
+  'TSMK-MULTI-280726-001',
+  'TSMK-MULTI-270726-017',
+  'TSMK-MULTI-270726-001',
+  'TSMK-MULTI-260726-017'
+]);
 
 function getSupabaseClient() {
   if (supabaseClient) return supabaseClient;
@@ -24,6 +32,20 @@ function getSupabaseClient() {
     }
   }
   return supabaseClient;
+}
+
+function getDeletedOrdersSet() {
+  const deleted = new Set(GHOST_REFS);
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('ts_deleted_orders');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) arr.forEach(r => deleted.add(r));
+      }
+    } catch (e) {}
+  }
+  return deleted;
 }
 
 /**
@@ -76,34 +98,43 @@ async function fetchSupabaseStoragePurchaseOrders() {
     }
   }
 
-  // 3. Load baseline authentic orders manifest
+  // 3. User deleted orders blacklist
+  const deletedSet = getDeletedOrdersSet();
+
+  // 4. Load baseline orders: local storage is the source of truth for user deletions/additions
+  let localOrders = null;
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('ts_orders');
+      if (raw) localOrders = JSON.parse(raw);
+    } catch (e) {}
+  }
+
   const manifestOrders = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
     ? JSON.parse(JSON.stringify(AUTHENTIC_ORDERS))
     : ((typeof window !== 'undefined' && Array.isArray(window.AUTHENTIC_ORDERS))
       ? JSON.parse(JSON.stringify(window.AUTHENTIC_ORDERS))
       : []);
 
-  let localOrders = [];
-  try {
-    const raw = localStorage.getItem('ts_orders');
-    if (raw) localOrders = JSON.parse(raw);
-  } catch (e) {}
-
   const ordersMap = new Map();
-  manifestOrders.forEach(o => {
-    if (o && o.primaryRef && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0)) {
-      ordersMap.set(o.primaryRef, o);
-    }
-  });
-  if (Array.isArray(localOrders)) {
+
+  if (Array.isArray(localOrders) && localOrders.length > 0) {
+    // Retain user's current orders and respect deletions
     localOrders.forEach(o => {
-      if (o && o.primaryRef && !ordersMap.has(o.primaryRef) && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0)) {
+      if (o && o.primaryRef && !deletedSet.has(o.primaryRef) && !deletedSet.has(o.id) && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0)) {
+        ordersMap.set(o.primaryRef, o);
+      }
+    });
+  } else {
+    // Only seed from manifest if local storage is completely empty and no deletions recorded
+    manifestOrders.forEach(o => {
+      if (o && o.primaryRef && !deletedSet.has(o.primaryRef) && !deletedSet.has(o.id) && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0)) {
         ordersMap.set(o.primaryRef, o);
       }
     });
   }
 
-  // 4. Filter authentic PDF orders (filter out connection-test.txt, TSMK-TEST-*, etc.)
+  // 5. Match authentic PDF orders in bucket
   const pdfFiles = files.filter(f => f.name && f.name.endsWith('.pdf') && !f.name.includes('TEST'));
 
   pdfFiles.forEach(f => {
@@ -144,12 +175,12 @@ async function fetchSupabaseStoragePurchaseOrders() {
   });
 
   const finalOrders = Array.from(ordersMap.values()).filter(o => {
-    return o && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0);
+    return o && !deletedSet.has(o.primaryRef) && !deletedSet.has(o.id) && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0);
   });
   // Sort descending by timestamp / primaryRef
   finalOrders.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0) || (b.primaryRef || '').localeCompare(a.primaryRef || ''));
 
-  // 5. CACHE HYDRATION: Sync to localStorage without empty rewrites
+  // 6. CACHE HYDRATION: Sync to localStorage without reviving deleted orders
   if (typeof localStorage !== 'undefined') {
     try {
       localStorage.setItem('ts_orders', JSON.stringify(finalOrders));
@@ -166,64 +197,41 @@ async function fetchSupabaseStoragePurchaseOrders() {
 // Initial bootstrap guardrail on page load
 (function() {
   if (typeof localStorage !== 'undefined') {
-    const currentVersion = localStorage.getItem("ts_data_version");
-    if (currentVersion !== AUTH_DATA_VERSION) {
-      // Clean only corrupted mock keys; NEVER delete genuine purchase orders
-      const keysToPurge = [
-        "mock_orders",
-        "mock_ingredients",
-        "ts_fake_mock",
-        "mock_production_logs",
-        "sample_orders",
-        "fake_orders",
-        "dummy_catalog"
-      ];
-      keysToPurge.forEach(k => {
-        try { localStorage.removeItem(k); } catch (e) {}
-      });
+    const deletedSet = getDeletedOrdersSet();
 
-      // Audited physical stock levels
-      const stockLevels = (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined')
-        ? AUTHENTIC_STOCK_LEVELS
-        : (typeof window !== 'undefined' && window.AUTHENTIC_STOCK_LEVELS ? window.AUTHENTIC_STOCK_LEVELS : {});
-      localStorage.setItem("ts_stock_levels", JSON.stringify(stockLevels));
+    // Clean fake storage keys
+    const keysToPurge = [
+      "mock_orders",
+      "mock_ingredients",
+      "ts_fake_mock",
+      "mock_production_logs",
+      "sample_orders",
+      "fake_orders",
+      "dummy_catalog"
+    ];
+    keysToPurge.forEach(k => {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
 
-      // Purge null/empty purchase orders and ensure only authentic orders exist
-      const existingOrdersRaw = localStorage.getItem("ts_orders");
-      let existingList = [];
-      try { existingList = existingOrdersRaw ? JSON.parse(existingOrdersRaw) : []; } catch (e) {}
+    // Audited physical stock levels
+    const stockLevels = (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined')
+      ? AUTHENTIC_STOCK_LEVELS
+      : (typeof window !== 'undefined' && window.AUTHENTIC_STOCK_LEVELS ? window.AUTHENTIC_STOCK_LEVELS : {});
+    localStorage.setItem("ts_stock_levels", JSON.stringify(stockLevels));
 
-      let validOrders = Array.isArray(existingList)
-        ? existingList.filter(o => o && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0))
-        : [];
-
-      const initialOrders = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-        ? AUTHENTIC_ORDERS.filter(o => o && Array.isArray(o.items) && o.items.length > 0)
-        : [];
-
-      if (validOrders.length === 0) {
-        validOrders = initialOrders;
-      }
-      localStorage.setItem("ts_orders", JSON.stringify(validOrders));
-      localStorage.setItem("ts_purchase_orders", JSON.stringify(validOrders));
-      localStorage.setItem("ts_data_version", AUTH_DATA_VERSION);
-    } else {
-      // Even if version matches, dynamically ensure no null/zero orders exist in storage
+    // Ensure no ghost or deleted orders exist in localStorage
+    ['ts_orders', 'ts_purchase_orders'].forEach(key => {
       try {
-        const existingRaw = localStorage.getItem("ts_orders");
-        if (existingRaw) {
-          const list = JSON.parse(existingRaw);
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list = JSON.parse(raw);
           if (Array.isArray(list)) {
-            const clean = list.filter(o => o && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0));
-            if (clean.length !== list.length) {
-              const toSave = clean.length > 0 ? clean : ((typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS)) ? AUTHENTIC_ORDERS : []);
-              localStorage.setItem("ts_orders", JSON.stringify(toSave));
-              localStorage.setItem("ts_purchase_orders", JSON.stringify(toSave));
-            }
+            const clean = list.filter(o => o && !deletedSet.has(o.primaryRef) && !deletedSet.has(o.id) && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0));
+            localStorage.setItem(key, JSON.stringify(clean));
           }
         }
       } catch (err) {}
-    }
+    });
   }
 
   // Auto-trigger Supabase storage fetch when DOM is ready
@@ -235,9 +243,15 @@ async function fetchSupabaseStoragePurchaseOrders() {
 
     window.addEventListener('DOMContentLoaded', async () => {
       try {
-        await fetchSupabaseStoragePurchaseOrders();
+        const updated = await fetchSupabaseStoragePurchaseOrders();
         if (typeof renderPurchaseOrdersView === 'function') {
           renderPurchaseOrdersView();
+        }
+        if (typeof filterAndRenderAdminOrders === 'function') {
+          if (typeof orders !== 'undefined') {
+            orders = updated.map(o => (typeof normalizeOrder === 'function' ? normalizeOrder(o) : o));
+            filterAndRenderAdminOrders();
+          }
         }
       } catch (err) {
         console.warn("Auto storage fetch error:", err);

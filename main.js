@@ -1,70 +1,93 @@
 /**
  * Treat Street - Core System Entry Script & Storage Migration Guardrail
- * Enforces authentic operational datasets and Supabase Storage synchronization (v6.2.0_authentic_restored_clean_orders)
+ * Enforces authentic operational datasets and Supabase Storage synchronization (v7.0.0_permanent_clean_orders)
  */
 (function() {
-  const AUTH_DATA_VERSION = "v6.2.0_authentic_restored_clean_orders";
+  const AUTH_DATA_VERSION = "v7.0.0_permanent_clean_orders";
+
+  const GHOST_REFS = new Set([
+    'TSMK-MULTI-300726-001',
+    'TSMK-MULTI-280726-001',
+    'TSMK-MULTI-270726-017',
+    'TSMK-MULTI-270726-001',
+    'TSMK-MULTI-260726-017'
+  ]);
+
   if (typeof localStorage !== 'undefined') {
+    // 1. Maintain permanent deletion blacklist
+    let deletedRefs = new Set();
+    try {
+      const rawDel = localStorage.getItem('ts_deleted_orders');
+      let delArr = rawDel ? JSON.parse(rawDel) : [];
+      if (!Array.isArray(delArr)) delArr = [];
+      GHOST_REFS.forEach(r => { if (!delArr.includes(r)) delArr.push(r); });
+      localStorage.setItem('ts_deleted_orders', JSON.stringify(delArr));
+      delArr.forEach(r => deletedRefs.add(r));
+    } catch (e) {}
+
+    const isInvalidOrDeleted = (o) => {
+      if (!o) return true;
+      if (o.is_mock) return true;
+      if (deletedRefs.has(o.primaryRef) || deletedRefs.has(o.id)) return true;
+      if (GHOST_REFS.has(o.primaryRef) || GHOST_REFS.has(o.id)) return true;
+      if (!Array.isArray(o.items) || o.items.length === 0) return true;
+      if ((!o.total || o.total === 0) && (!o.netTotal || o.netTotal === 0)) return true;
+      return false;
+    };
+
+    // 2. Clean fake storage keys
+    const keysToPurge = [
+      "mock_orders",
+      "mock_ingredients",
+      "ts_fake_mock",
+      "mock_production_logs",
+      "sample_orders",
+      "fake_orders",
+      "dummy_catalog"
+    ];
+    keysToPurge.forEach(k => {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+
+    // 3. Purge from both order caches
+    ['ts_orders', 'ts_purchase_orders'].forEach(key => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            const clean = list.filter(o => !isInvalidOrDeleted(o));
+            localStorage.setItem(key, JSON.stringify(clean));
+          }
+        }
+      } catch (e) {}
+    });
+
+    // 4. Initial version migration & baseline sync
     const currentVersion = localStorage.getItem("ts_data_version");
     if (currentVersion !== AUTH_DATA_VERSION) {
-      // Purge fake/mock storage keys
-      const keysToPurge = [
-        "mock_orders",
-        "mock_ingredients",
-        "ts_fake_mock",
-        "mock_production_logs",
-        "sample_orders",
-        "fake_orders",
-        "dummy_catalog"
-      ];
-      keysToPurge.forEach(k => {
-        try { localStorage.removeItem(k); } catch (e) {}
-      });
-
-      // Authentic audited stock levels (Milton Keynes Store Physical Audit)
       const stockLevels = (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined') 
         ? AUTHENTIC_STOCK_LEVELS 
         : (typeof window !== 'undefined' && window.AUTHENTIC_STOCK_LEVELS ? window.AUTHENTIC_STOCK_LEVELS : {});
       localStorage.setItem("ts_stock_levels", JSON.stringify(stockLevels));
 
-      // Hydrate with authentic orders and purge any null/empty orders
-      const existingOrdersRaw = localStorage.getItem("ts_orders");
+      const existingRaw = localStorage.getItem("ts_orders");
       let existingList = [];
-      try { existingList = existingOrdersRaw ? JSON.parse(existingOrdersRaw) : []; } catch (e) {}
+      try { existingList = existingRaw ? JSON.parse(existingRaw) : []; } catch (e) {}
 
-      let cleanedOrders = Array.isArray(existingList)
-        ? existingList.filter(o => o && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0))
-        : [];
-
-      const initialOrders = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-        ? AUTHENTIC_ORDERS.filter(o => o && Array.isArray(o.items) && o.items.length > 0)
-        : [];
+      let cleanedOrders = Array.isArray(existingList) ? existingList.filter(o => !isInvalidOrDeleted(o)) : [];
 
       if (cleanedOrders.length === 0) {
+        const initialOrders = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
+          ? AUTHENTIC_ORDERS.filter(o => !isInvalidOrDeleted(o))
+          : [];
         cleanedOrders = initialOrders;
       }
 
       localStorage.setItem("ts_orders", JSON.stringify(cleanedOrders));
       localStorage.setItem("ts_purchase_orders", JSON.stringify(cleanedOrders));
       localStorage.setItem("ts_data_version", AUTH_DATA_VERSION);
-      console.log(">>> [SECURITY]: Purged null orders and locked authentic purchase orders (v6.2.0). <<<");
-    } else {
-      // Periodic safety check: strip any null/0-item purchase orders from cache
-      try {
-        const raw = localStorage.getItem("ts_orders");
-        if (raw) {
-          const list = JSON.parse(raw);
-          if (Array.isArray(list)) {
-            const clean = list.filter(o => o && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0));
-            if (clean.length !== list.length) {
-              const toSave = clean.length > 0 ? clean : ((typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS)) ? AUTHENTIC_ORDERS : []);
-              localStorage.setItem("ts_orders", JSON.stringify(toSave));
-              localStorage.setItem("ts_purchase_orders", JSON.stringify(toSave));
-            }
-          }
-        }
-      } catch(e) {}
+      console.log(">>> [SECURITY]: Purged ghost orders and secured authentic orders (v7.0.0). <<<");
     }
   }
 })();
-

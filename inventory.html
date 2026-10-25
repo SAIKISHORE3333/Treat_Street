@@ -7,10 +7,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="catalog.js"></script>
-  <script src="default_orders.js"></script>
-  <script src="main.js"></script>
-  <script src="inventory.js"></script>
+  <script src="catalog.js?v=20261025_v7"></script>
+  <script src="default_orders.js?v=20261025_v7"></script>
+  <script src="main.js?v=20261025_v7"></script>
+  <script src="inventory.js?v=20261025_v7"></script>
   <script src="recipe_matcher.js"></script>
   <script src="sales_depletion_controller.js?v=2.4.1"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2086,9 +2086,46 @@
       return o;
     }
 
+    const GHOST_REFS = new Set([
+      'TSMK-MULTI-300726-001',
+      'TSMK-MULTI-280726-001',
+      'TSMK-MULTI-270726-017',
+      'TSMK-MULTI-270726-001',
+      'TSMK-MULTI-260726-017'
+    ]);
+
+    function recordDeletedOrder(ref) {
+      if (!ref) return;
+      try {
+        let deleted = [];
+        const raw = localStorage.getItem('ts_deleted_orders');
+        if (raw) deleted = JSON.parse(raw);
+        if (!Array.isArray(deleted)) deleted = [];
+        if (!deleted.includes(ref)) {
+          deleted.push(ref);
+          localStorage.setItem('ts_deleted_orders', JSON.stringify(deleted));
+        }
+      } catch (e) {}
+    }
+
+    function isOrderDeleted(ref) {
+      if (!ref) return false;
+      if (GHOST_REFS.has(ref)) return true;
+      try {
+        const raw = localStorage.getItem('ts_deleted_orders');
+        if (!raw) return false;
+        const deleted = JSON.parse(raw);
+        return Array.isArray(deleted) && deleted.includes(ref);
+      } catch (e) {
+        return false;
+      }
+    }
+
     function isFakeOrder(o) {
       if (!o) return true;
       if (o.is_mock === true) return true;
+      if (isOrderDeleted(o.primaryRef) || isOrderDeleted(o.id)) return true;
+      if (GHOST_REFS.has(o.primaryRef) || GHOST_REFS.has(o.id)) return true;
       // Filter out null / empty purchase orders
       if (!Array.isArray(o.items) || o.items.length === 0) return true;
       if ((!o.total || o.total === 0) && (!o.netTotal || o.netTotal === 0)) return true;
@@ -2129,6 +2166,10 @@
     }
 
     function restoreVerifiedOrders() {
+      if (!confirm("Are you sure you want to restore all original verified purchase orders and stock levels?")) return;
+      try {
+        localStorage.removeItem('ts_deleted_orders');
+      } catch (e) {}
       if (typeof restoreTreatStreetDefaultOrders === 'function') {
         restoreTreatStreetDefaultOrders();
       }
@@ -3197,11 +3238,11 @@
     }
 
     function deletePurchaseOrderInInventory(primaryRef) {
+      if (!primaryRef) return;
       const orders = getPurchaseOrders();
       const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
-      if (!order) return;
 
-      const hasSyncedItems = (order.items || []).some(i => i.stockSynced);
+      const hasSyncedItems = order && (order.items || []).some(i => i.stockSynced);
       const confirmMsg = hasSyncedItems
         ? `Are you sure you want to delete Purchase Order "${primaryRef}"?\n\n⚠️ Note: Any synced items in this order will have their delivered quantities deducted from live stock pots automatically.`
         : `Are you sure you want to delete Purchase Order "${primaryRef}"?`;
@@ -3209,7 +3250,7 @@
       if (!confirm(confirmMsg)) return;
 
       // Revert any synced stock
-      if (hasSyncedItems) {
+      if (order && hasSyncedItems) {
         const stockLevels = getStockLevels();
         (order.items || []).forEach(item => {
           if (item.stockSynced) {
@@ -3224,11 +3265,16 @@
         saveStockLevels(stockLevels);
       }
 
+      recordDeletedOrder(primaryRef);
+      if (order && order.id && order.id !== primaryRef) {
+        recordDeletedOrder(order.id);
+      }
+
       const updatedOrders = orders.filter(o => o.primaryRef !== primaryRef && o.id !== primaryRef);
       savePurchaseOrders(updatedOrders);
       renderPurchaseOrdersView();
       renderStockGrid();
-      showInventoryToast(`🗑️ Purchase Order "${primaryRef}" deleted.`);
+      showInventoryToast(`🗑️ Purchase Order "${primaryRef}" deleted permanently.`);
     }
 
     // -------------------------------------------------------------

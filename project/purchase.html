@@ -10,8 +10,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="default_orders.js"></script>
-  <script src="inventory.js"></script>
+  <script src="catalog.js?v=20261025_v7"></script>
+  <script src="default_orders.js?v=20261025_v7"></script>
+  <script src="main.js?v=20261025_v7"></script>
+  <script src="inventory.js?v=20261025_v7"></script>
   <style>
     .watermark-bg {
       background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -536,8 +538,6 @@
   <div id="pdf-export-container" class="absolute left-[-9999px] top-[-9999px] w-[800px] pointer-events-none"></div>
 
   <!-- JAVASCRIPT LOGIC -->
-  <script src="catalog.js"></script>
-  <script src="main.js"></script>
   <script>
     let isAdminUnlocked = false;
     let currentPage = 1;
@@ -1080,9 +1080,46 @@
       return o;
     }
 
+    const GHOST_REFS = new Set([
+      'TSMK-MULTI-300726-001',
+      'TSMK-MULTI-280726-001',
+      'TSMK-MULTI-270726-017',
+      'TSMK-MULTI-270726-001',
+      'TSMK-MULTI-260726-017'
+    ]);
+
+    function recordDeletedOrder(ref) {
+      if (!ref) return;
+      try {
+        let deleted = [];
+        const raw = localStorage.getItem('ts_deleted_orders');
+        if (raw) deleted = JSON.parse(raw);
+        if (!Array.isArray(deleted)) deleted = [];
+        if (!deleted.includes(ref)) {
+          deleted.push(ref);
+          localStorage.setItem('ts_deleted_orders', JSON.stringify(deleted));
+        }
+      } catch (e) {}
+    }
+
+    function isOrderDeleted(ref) {
+      if (!ref) return false;
+      if (GHOST_REFS.has(ref)) return true;
+      try {
+        const raw = localStorage.getItem('ts_deleted_orders');
+        if (!raw) return false;
+        const deleted = JSON.parse(raw);
+        return Array.isArray(deleted) && deleted.includes(ref);
+      } catch (e) {
+        return false;
+      }
+    }
+
     function isFakeOrder(o) {
       if (!o) return true;
       if (o.is_mock === true) return true;
+      if (isOrderDeleted(o.primaryRef) || isOrderDeleted(o.id)) return true;
+      if (GHOST_REFS.has(o.primaryRef) || GHOST_REFS.has(o.id)) return true;
       // Filter out null / empty purchase orders
       if (!Array.isArray(o.items) || o.items.length === 0) return true;
       if ((!o.total || o.total === 0) && (!o.netTotal || o.netTotal === 0)) return true;
@@ -1106,7 +1143,7 @@
       saveOrdersToStorage();
     } else {
       orders = parsedOrders.filter(o => o && !isFakeOrder(o)).map(normalizeOrder);
-      if (orders.length === 0 && authDefaults.length > 0) {
+      if (orders.length === 0 && authDefaults.length > 0 && !localStorage.getItem('ts_deleted_orders')) {
         orders = authDefaults.map(normalizeOrder);
       }
       if (orders.length !== parsedOrders.length) {
@@ -1115,6 +1152,11 @@
     }
 
     function restoreVerifiedOrders() {
+      if (!confirm("Are you sure you want to restore all original verified purchase orders?")) return;
+      try {
+        localStorage.removeItem('ts_deleted_orders');
+      } catch (e) {}
+
       if (typeof restoreTreatStreetDefaultOrders === 'function') {
         const res = restoreTreatStreetDefaultOrders();
         if (res && res.orders) {
@@ -1156,6 +1198,7 @@
         }
       });
       localStorage.setItem('ts_orders', JSON.stringify(orders));
+      localStorage.setItem('ts_purchase_orders', JSON.stringify(orders));
     }
 
     // Direct bidirectional sync with Stock & Inventory Control
@@ -1491,10 +1534,10 @@
     }
 
     function deletePurchaseOrder(primaryRef) {
+      if (!primaryRef) return;
       const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
-      if (!order) return;
 
-      const hasSyncedItems = (order.items || []).some(i => i.stockSynced);
+      const hasSyncedItems = order && (order.items || []).some(i => i.stockSynced);
       const confirmMsg = hasSyncedItems
         ? `Are you sure you want to delete Purchase Order "${primaryRef}"?\n\n⚠️ Note: Synced items in this order will have their delivered quantities deducted from live stock pots automatically.`
         : `Are you sure you want to delete Purchase Order "${primaryRef}"?`;
@@ -1502,7 +1545,7 @@
       if (!confirm(confirmMsg)) return;
 
       // Revert any synced stock
-      if (hasSyncedItems) {
+      if (order && hasSyncedItems) {
         const stockLevels = getStockLevels();
         (order.items || []).forEach(item => {
           if (item.stockSynced) {
@@ -1515,11 +1558,17 @@
         saveStockLevels(stockLevels);
       }
 
+      // Record in permanent deletion blacklist so it can never reappear on refresh
+      recordDeletedOrder(primaryRef);
+      if (order && order.id && order.id !== primaryRef) {
+        recordDeletedOrder(order.id);
+      }
+
       orders = orders.filter(o => o.primaryRef !== primaryRef && o.id !== primaryRef);
       saveOrdersToStorage();
       filterAndRenderAdminOrders();
       updateAdminBadge();
-      showToast(`🗑️ Purchase Order "${primaryRef}" deleted successfully.`);
+      showToast(`🗑️ Purchase Order "${primaryRef}" deleted permanently.`);
     }
 
     // ADMIN SORTING & FILTERING LOGIC
