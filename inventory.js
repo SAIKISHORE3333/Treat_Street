@@ -7,7 +7,7 @@
 var SUPABASE_URL = (typeof window !== 'undefined' && window.SUPABASE_URL) ? window.SUPABASE_URL : 'https://sdlrwosjebiiztclsydu.supabase.co';
 var SUPABASE_ANON_KEY = (typeof window !== 'undefined' && window.SUPABASE_ANON_KEY) ? window.SUPABASE_ANON_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbHJ3b3NqZWJpaXp0Y2xzeWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDIzNzYsImV4cCI6MjEwMDIxODM3Nn0.ETNHA-Ku6Sb-cBVQCLk4rKlq1M7_GBu4810KphuOxTw';
 var SUPABASE_BUCKET = (typeof window !== 'undefined' && window.SUPABASE_BUCKET) ? window.SUPABASE_BUCKET : 'purchase-orders';
-var AUTH_DATA_VERSION = "v6.0.0_authentic_supabase_storage";
+var AUTH_DATA_VERSION = "v6.2.0_authentic_restored_clean_orders";
 var supabaseClient = (typeof window !== 'undefined' && window.supabaseClient) ? window.supabaseClient : null;
 
 function getSupabaseClient() {
@@ -91,11 +91,13 @@ async function fetchSupabaseStoragePurchaseOrders() {
 
   const ordersMap = new Map();
   manifestOrders.forEach(o => {
-    if (o && o.primaryRef) ordersMap.set(o.primaryRef, o);
+    if (o && o.primaryRef && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0)) {
+      ordersMap.set(o.primaryRef, o);
+    }
   });
   if (Array.isArray(localOrders)) {
     localOrders.forEach(o => {
-      if (o && o.primaryRef && !ordersMap.has(o.primaryRef)) {
+      if (o && o.primaryRef && !ordersMap.has(o.primaryRef) && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0)) {
         ordersMap.set(o.primaryRef, o);
       }
     });
@@ -138,42 +140,14 @@ async function fetchSupabaseStoragePurchaseOrders() {
           so.updatedAt = f.updated_at || f.created_at;
         }
       });
-    } else {
-      // Historical or dynamically uploaded PO file: map into authentic order entry
-      const prettyDate = ddmmyy.length === 6
-        ? `${ddmmyy.slice(0, 2)}/${ddmmyy.slice(2, 4)}/20${ddmmyy.slice(4, 6)}`
-        : 'Procured';
-      const supplierTitle = supplierRaw.charAt(0) + supplierRaw.slice(1).toLowerCase();
-      const newOrder = {
-        primaryRef: multiRef,
-        ddmmyy: ddmmyy,
-        serial: serial,
-        date: prettyDate,
-        requestedBy: 'Store Manager',
-        targetLocation: 'MILTON KEYNES',
-        netTotal: 0,
-        vatTotal: 0,
-        total: 0,
-        supabaseUrls: { [baseName]: publicUrl },
-        supplierOrders: [
-          {
-            supplier: supplierTitle,
-            poRef: baseName,
-            pdfUrl: publicUrl,
-            fileSize: f.metadata ? f.metadata.size : null,
-            status: 'Received',
-            items: []
-          }
-        ],
-        items: []
-      };
-      ordersMap.set(multiRef, newOrder);
     }
   });
 
-  const finalOrders = Array.from(ordersMap.values());
-  // Sort descending by primaryRef / date
-  finalOrders.sort((a, b) => (b.primaryRef || '').localeCompare(a.primaryRef || ''));
+  const finalOrders = Array.from(ordersMap.values()).filter(o => {
+    return o && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0);
+  });
+  // Sort descending by timestamp / primaryRef
+  finalOrders.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0) || (b.primaryRef || '').localeCompare(a.primaryRef || ''));
 
   // 5. CACHE HYDRATION: Sync to localStorage without empty rewrites
   if (typeof localStorage !== 'undefined') {
@@ -214,19 +188,41 @@ async function fetchSupabaseStoragePurchaseOrders() {
         : (typeof window !== 'undefined' && window.AUTHENTIC_STOCK_LEVELS ? window.AUTHENTIC_STOCK_LEVELS : {});
       localStorage.setItem("ts_stock_levels", JSON.stringify(stockLevels));
 
-      // Hydrate with authentic orders if local storage is missing or empty
+      // Purge null/empty purchase orders and ensure only authentic orders exist
       const existingOrdersRaw = localStorage.getItem("ts_orders");
       let existingList = [];
       try { existingList = existingOrdersRaw ? JSON.parse(existingOrdersRaw) : []; } catch (e) {}
 
-      if (!Array.isArray(existingList) || existingList.length === 0) {
-        const initialOrders = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-          ? AUTHENTIC_ORDERS
-          : [];
-        localStorage.setItem("ts_orders", JSON.stringify(initialOrders));
-        localStorage.setItem("ts_purchase_orders", JSON.stringify(initialOrders));
+      let validOrders = Array.isArray(existingList)
+        ? existingList.filter(o => o && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0))
+        : [];
+
+      const initialOrders = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
+        ? AUTHENTIC_ORDERS.filter(o => o && Array.isArray(o.items) && o.items.length > 0)
+        : [];
+
+      if (validOrders.length === 0) {
+        validOrders = initialOrders;
       }
+      localStorage.setItem("ts_orders", JSON.stringify(validOrders));
+      localStorage.setItem("ts_purchase_orders", JSON.stringify(validOrders));
       localStorage.setItem("ts_data_version", AUTH_DATA_VERSION);
+    } else {
+      // Even if version matches, dynamically ensure no null/zero orders exist in storage
+      try {
+        const existingRaw = localStorage.getItem("ts_orders");
+        if (existingRaw) {
+          const list = JSON.parse(existingRaw);
+          if (Array.isArray(list)) {
+            const clean = list.filter(o => o && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0));
+            if (clean.length !== list.length) {
+              const toSave = clean.length > 0 ? clean : ((typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS)) ? AUTHENTIC_ORDERS : []);
+              localStorage.setItem("ts_orders", JSON.stringify(toSave));
+              localStorage.setItem("ts_purchase_orders", JSON.stringify(toSave));
+            }
+          }
+        }
+      } catch (err) {}
     }
   }
 

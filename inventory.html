@@ -2089,6 +2089,9 @@
     function isFakeOrder(o) {
       if (!o) return true;
       if (o.is_mock === true) return true;
+      // Filter out null / empty purchase orders
+      if (!Array.isArray(o.items) || o.items.length === 0) return true;
+      if ((!o.total || o.total === 0) && (!o.netTotal || o.netTotal === 0)) return true;
       return false;
     }
 
@@ -2101,7 +2104,7 @@
             ? AUTHENTIC_ORDERS
             : ((typeof window !== 'undefined' && Array.isArray(window.AUTHENTIC_ORDERS)) ? window.AUTHENTIC_ORDERS : []);
           if (defaults.length > 0) {
-            list = JSON.parse(JSON.stringify(defaults));
+            list = JSON.parse(JSON.stringify(defaults)).filter(o => o && !isFakeOrder(o));
             try {
               localStorage.setItem('ts_orders', JSON.stringify(list));
               localStorage.setItem('ts_purchase_orders', JSON.stringify(list));
@@ -2110,8 +2113,15 @@
             return [];
           }
         }
-        // Strict Zero-Mock Policy: Filter out any dummy synthetic test fixtures or mock flags
-        list = list.filter(o => o && !o.is_mock && !isFakeOrder(o));
+        // Strict Zero-Mock Policy: Filter out any dummy synthetic test fixtures, null orders, or mock flags
+        const origLen = list.length;
+        list = list.filter(o => o && !isFakeOrder(o));
+        if (list.length !== origLen) {
+          try {
+            localStorage.setItem('ts_orders', JSON.stringify(list));
+            localStorage.setItem('ts_purchase_orders', JSON.stringify(list));
+          } catch(e) {}
+        }
         return list.map(normalizeOrder);
       } catch (e) {
         return [];

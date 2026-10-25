@@ -250,7 +250,10 @@
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
               </button>
 
-              <button onclick="clearOrderHistory()" title="Clear Order History" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ml-auto">
+              <button onclick="restoreVerifiedOrders()" title="Restore Original Purchase Orders" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ml-auto">
+                <i data-lucide="archive-restore" class="w-3.5 h-3.5 text-emerald-700"></i> Restore Original Orders
+              </button>
+              <button onclick="clearOrderHistory()" title="Clear Order History" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear History
               </button>
             </div>
@@ -1080,6 +1083,9 @@
     function isFakeOrder(o) {
       if (!o) return true;
       if (o.is_mock === true) return true;
+      // Filter out null / empty purchase orders
+      if (!Array.isArray(o.items) || o.items.length === 0) return true;
+      if ((!o.total || o.total === 0) && (!o.netTotal || o.netTotal === 0)) return true;
       return false;
     }
 
@@ -1091,24 +1097,40 @@
       parsedOrders = null;
     }
 
+    const authDefaults = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
+      ? AUTHENTIC_ORDERS.filter(o => o && !isFakeOrder(o))
+      : ((typeof window !== 'undefined' && Array.isArray(window.AUTHENTIC_ORDERS)) ? window.AUTHENTIC_ORDERS.filter(o => o && !isFakeOrder(o)) : []);
+
     if (!Array.isArray(parsedOrders) || parsedOrders.length === 0) {
-      const defaults = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-        ? AUTHENTIC_ORDERS
-        : ((typeof window !== 'undefined' && Array.isArray(window.AUTHENTIC_ORDERS)) ? window.AUTHENTIC_ORDERS : []);
-      orders = defaults.map(normalizeOrder);
+      orders = authDefaults.map(normalizeOrder);
+      saveOrdersToStorage();
     } else {
-      orders = parsedOrders.filter(o => o && !o.is_mock && !isFakeOrder(o)).map(normalizeOrder);
+      orders = parsedOrders.filter(o => o && !isFakeOrder(o)).map(normalizeOrder);
+      if (orders.length === 0 && authDefaults.length > 0) {
+        orders = authDefaults.map(normalizeOrder);
+      }
+      if (orders.length !== parsedOrders.length) {
+        saveOrdersToStorage();
+      }
     }
 
     function restoreVerifiedOrders() {
       if (typeof restoreTreatStreetDefaultOrders === 'function') {
         const res = restoreTreatStreetDefaultOrders();
         if (res && res.orders) {
-          orders = res.orders.map(normalizeOrder);
+          orders = res.orders.filter(o => o && !isFakeOrder(o)).map(normalizeOrder);
         }
+      } else {
+        const defaults = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
+          ? AUTHENTIC_ORDERS
+          : [];
+        orders = defaults.filter(o => o && !isFakeOrder(o)).map(normalizeOrder);
       }
+      saveOrdersToStorage();
+      adminCurrentPage = 1;
       filterAndRenderAdminOrders();
-      showToast('All original purchase orders restored successfully!');
+      updateAdminBadge();
+      showToast('✅ All original purchase orders restored successfully!');
     }
     
     function saveOrdersToStorage() {

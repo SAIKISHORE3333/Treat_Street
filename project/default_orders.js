@@ -4731,10 +4731,13 @@ function restoreTreatStreetDefaultOrders() {
     });
   }
 
+  // Filter out any null or 0-item orders; strictly retain authentic orders
+  const validOrders = allOrders.filter(o => o && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0));
+
   if (typeof localStorage !== "undefined") {
     try {
-      localStorage.setItem("ts_orders", JSON.stringify(allOrders));
-      localStorage.setItem("ts_purchase_orders", JSON.stringify(allOrders));
+      localStorage.setItem("ts_orders", JSON.stringify(validOrders));
+      localStorage.setItem("ts_purchase_orders", JSON.stringify(validOrders));
     } catch (e) {
       console.warn("Storage set error:", e);
     }
@@ -4742,7 +4745,7 @@ function restoreTreatStreetDefaultOrders() {
 
   // Build stock levels for received items
   const levels = { ...AUTHENTIC_STOCK_LEVELS };
-  allOrders.forEach(o => {
+  validOrders.forEach(o => {
     (o.items || []).forEach(item => {
       if (item.trackingStatus === "Received" || item.stockSynced) {
         const id = String(item.id);
@@ -4763,13 +4766,13 @@ function restoreTreatStreetDefaultOrders() {
   if (typeof localStorage !== "undefined") {
     try {
       localStorage.setItem("ts_stock_levels", JSON.stringify(levels));
-      localStorage.setItem("ts_data_version", "v6.1.0_authentic_restored");
+      localStorage.setItem("ts_data_version", "v6.2.0_authentic_restored_clean_orders");
     } catch (e) {
       console.warn("Storage set error:", e);
     }
   }
 
-  return { orders: allOrders, stockLevels: levels };
+  return { orders: validOrders, stockLevels: levels };
 }
 
 if (typeof window !== "undefined") {

@@ -755,6 +755,8 @@
     function isFakeOrder(o) {
       if (!o) return true;
       if (o.is_mock === true) return true;
+      if (!Array.isArray(o.items) || o.items.length === 0) return true;
+      if ((!o.total || o.total === 0) && (!o.netTotal || o.netTotal === 0)) return true;
       return false;
     }
 
