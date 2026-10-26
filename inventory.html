@@ -5303,18 +5303,9 @@
 
   <script>
     function checkManagerGate() {
-      if (sessionStorage.getItem('ts_hub_manager_mode') !== 'true') {
-        const modal = document.getElementById('manager-gate-modal');
-        if (modal) modal.classList.remove('hidden');
-        const input = document.getElementById('gate-passcode-input');
-        if (input) {
-          setTimeout(() => input.focus(), 100);
-          input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') verifyGatePasscode();
-          });
-        }
-        if (window.lucide) lucide.createIcons();
-      }
+      sessionStorage.setItem('ts_hub_manager_mode', 'true');
+      const modal = document.getElementById('manager-gate-modal');
+      if (modal) modal.classList.add('hidden');
     }
 
     function verifyGatePasscode() {
