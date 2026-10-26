@@ -115,26 +115,76 @@ async function fetchSupabaseStoragePurchaseOrders() {
     } catch (e) {}
   }
 
-  const manifestOrders = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-    ? JSON.parse(JSON.stringify(AUTHENTIC_ORDERS))
-    : ((typeof window !== 'undefined' && Array.isArray(window.AUTHENTIC_ORDERS))
-      ? JSON.parse(JSON.stringify(window.AUTHENTIC_ORDERS))
-      : []);
-
   const ordersMap = new Map();
 
+  // 4. Fetch directly from connected Supabase 'orders' database table
+  if (client) {
+    try {
+      const { data: dbOrders, error: dbErr } = await client
+        .from('orders')
+        .select('*, order_items(*)')
+        .order('created_at', { ascending: false });
+
+      if (!dbErr && Array.isArray(dbOrders)) {
+        dbOrders.forEach(dbo => {
+          let notesObj = {};
+          if (dbo.notes) {
+            try { notesObj = JSON.parse(dbo.notes); } catch(e) { notesObj = { text: dbo.notes }; }
+          }
+          const d = new Date(dbo.created_at);
+          const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const primaryRef = notesObj.primaryRef || `TSMK-${(dbo.id || '').slice(0, 8).toUpperCase()}`;
+
+          const items = (dbo.order_items || []).map(item => ({
+            id: item.id,
+            name: item.product_name,
+            supplier: item.supplier_name,
+            category: item.category,
+            qty: item.quantity,
+            price: parseFloat(item.unit_price) || 0,
+            vatRate: item.vatRate !== undefined ? item.vatRate : 0,
+            trackingStatus: item.trackingStatus || dbo.status || 'Pending',
+            stockSynced: item.stockSynced || false
+          }));
+
+          const netTotal = notesObj.netTotal !== undefined ? notesObj.netTotal : items.reduce((sum, i) => sum + (i.price * i.qty), 0);
+          const vatTotal = notesObj.vatTotal !== undefined ? notesObj.vatTotal : (parseFloat(dbo.total_cost) - netTotal);
+
+          const ordObj = {
+            id: dbo.id,
+            primaryRef: primaryRef,
+            ddmmyy: notesObj.ddmmyy || '',
+            serial: notesObj.serial || '',
+            timestamp: d.getTime(),
+            date: dateStr,
+            requestedBy: dbo.staff_name || 'Staff',
+            targetLocation: dbo.branch_name || dbo.department || 'Milton Keynes',
+            status: dbo.status || 'Pending',
+            notes: dbo.notes,
+            netTotal: netTotal,
+            vatTotal: vatTotal,
+            total: parseFloat(dbo.total_cost) || (netTotal + vatTotal),
+            items: items,
+            supabaseUrls: notesObj.supabaseUrls || {}
+          };
+
+          if (!deletedSet.has(ordObj.primaryRef) && !deletedSet.has(ordObj.id)) {
+            ordersMap.set(ordObj.primaryRef, ordObj);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("[Supabase Orders Table]: Query exception:", e);
+    }
+  }
+
+  // If local cache has real orders not yet deleted, allow them
   if (Array.isArray(localOrders) && localOrders.length > 0) {
-    // Retain user's current orders and respect deletions
     localOrders.forEach(o => {
       if (o && o.primaryRef && !deletedSet.has(o.primaryRef) && !deletedSet.has(o.id) && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0)) {
-        ordersMap.set(o.primaryRef, o);
-      }
-    });
-  } else {
-    // Only seed from manifest if local storage is completely empty and no deletions recorded
-    manifestOrders.forEach(o => {
-      if (o && o.primaryRef && !deletedSet.has(o.primaryRef) && !deletedSet.has(o.id) && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0)) {
-        ordersMap.set(o.primaryRef, o);
+        if (!ordersMap.has(o.primaryRef)) {
+          ordersMap.set(o.primaryRef, o);
+        }
       }
     });
   }

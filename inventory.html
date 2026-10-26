@@ -2142,18 +2142,7 @@
         const stored = localStorage.getItem('ts_orders');
         let list = stored ? JSON.parse(stored) : null;
         if (!Array.isArray(list) || list.length === 0) {
-          const defaults = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-            ? AUTHENTIC_ORDERS
-            : ((typeof window !== 'undefined' && Array.isArray(window.AUTHENTIC_ORDERS)) ? window.AUTHENTIC_ORDERS : []);
-          if (defaults.length > 0) {
-            list = JSON.parse(JSON.stringify(defaults)).filter(o => o && !isFakeOrder(o));
-            try {
-              localStorage.setItem('ts_orders', JSON.stringify(list));
-              localStorage.setItem('ts_purchase_orders', JSON.stringify(list));
-            } catch(e) {}
-          } else {
-            return [];
-          }
+          return [];
         }
         // Strict Zero-Mock Policy: Filter out any dummy synthetic test fixtures, null orders, or mock flags
         const origLen = list.length;
@@ -2170,18 +2159,17 @@
       }
     }
 
-    function restoreVerifiedOrders() {
-      if (!confirm("Are you sure you want to restore all original verified purchase orders and stock levels?")) return;
+    async function restoreVerifiedOrders() {
       try {
         localStorage.removeItem('ts_deleted_orders');
       } catch (e) {}
-      if (typeof restoreTreatStreetDefaultOrders === 'function') {
-        restoreTreatStreetDefaultOrders();
+      if (typeof fetchSupabaseStoragePurchaseOrders === 'function') {
+        await fetchSupabaseStoragePurchaseOrders();
       }
       renderPurchaseOrdersView();
       renderStockGrid();
       renderAuditTable();
-      showInventoryToast('All original purchase orders & stock pots restored successfully!');
+      showInventoryToast('Refreshed orders directly from Supabase!');
     }
 
     function savePurchaseOrders(orders) {
@@ -4004,12 +3992,9 @@
         const existingOrdersRaw = localStorage.getItem("ts_orders");
         let existingList = [];
         try { existingList = existingOrdersRaw ? JSON.parse(existingOrdersRaw) : []; } catch(e) {}
-        if (!Array.isArray(existingList) || existingList.length === 0) {
-          const ordersDataset = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-            ? AUTHENTIC_ORDERS
-            : (typeof window !== 'undefined' && window.AUTHENTIC_ORDERS ? window.AUTHENTIC_ORDERS : []);
-          localStorage.setItem("ts_purchase_orders", JSON.stringify(ordersDataset));
-          localStorage.setItem("ts_orders", JSON.stringify(ordersDataset));
+        if (!Array.isArray(existingList)) {
+          localStorage.setItem("ts_purchase_orders", JSON.stringify([]));
+          localStorage.setItem("ts_orders", JSON.stringify([]));
         }
         localStorage.setItem("ts_data_version", AUTH_DATA_VERSION);
       }

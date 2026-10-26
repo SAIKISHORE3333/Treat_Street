@@ -1,9 +1,9 @@
 /**
  * Treat Street - Core System Entry Script & Storage Migration Guardrail
- * Enforces authentic operational datasets and Supabase Storage synchronization (v7.0.0_permanent_clean_orders)
+ * Enforces zero mock data and strict Supabase database integrity (v8.0.0_strict_supabase_no_mock)
  */
 (function() {
-  const AUTH_DATA_VERSION = "v7.0.0_permanent_clean_orders";
+  const AUTH_DATA_VERSION = "v8.0.0_strict_supabase_no_mock";
 
   const GHOST_REFS = new Set([
     'TSMK-MULTI-300726-001',
@@ -49,7 +49,7 @@
       try { localStorage.removeItem(k); } catch (e) {}
     });
 
-    // 3. Purge from both order caches
+    // 3. Purge mock orders from caches
     ['ts_orders', 'ts_purchase_orders'].forEach(key => {
       try {
         const raw = localStorage.getItem(key);
@@ -63,7 +63,7 @@
       } catch (e) {}
     });
 
-    // 4. Initial version migration & baseline sync
+    // 4. Version migration & stock pot baseline
     const currentVersion = localStorage.getItem("ts_data_version");
     if (currentVersion !== AUTH_DATA_VERSION) {
       const stockLevels = (typeof AUTHENTIC_STOCK_LEVELS !== 'undefined') 
@@ -77,17 +77,11 @@
 
       let cleanedOrders = Array.isArray(existingList) ? existingList.filter(o => !isInvalidOrDeleted(o)) : [];
 
-      if (cleanedOrders.length === 0) {
-        const initialOrders = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-          ? AUTHENTIC_ORDERS.filter(o => !isInvalidOrDeleted(o))
-          : [];
-        cleanedOrders = initialOrders;
-      }
-
+      // STRICT ZERO-MOCK: If empty, do NOT seed fake fallback orders
       localStorage.setItem("ts_orders", JSON.stringify(cleanedOrders));
       localStorage.setItem("ts_purchase_orders", JSON.stringify(cleanedOrders));
       localStorage.setItem("ts_data_version", AUTH_DATA_VERSION);
-      console.log(">>> [SECURITY]: Purged ghost orders and secured authentic orders (v7.0.0). <<<");
+      console.log(">>> [SECURITY]: Purged all synthetic mock data; strict Supabase mode active (v8.0.0). <<<");
     }
   }
 })();

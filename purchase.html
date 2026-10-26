@@ -252,8 +252,8 @@
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
               </button>
 
-              <button onclick="restoreVerifiedOrders()" title="Restore Original Purchase Orders" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ml-auto">
-                <i data-lucide="archive-restore" class="w-3.5 h-3.5 text-emerald-700"></i> Restore Original Orders
+              <button onclick="fetchPurchaseOrdersFromSupabase()" title="Fetch Real Orders from Supabase" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ml-auto">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-700"></i> Fetch from Supabase
               </button>
               <button onclick="clearOrderHistory()" title="Clear Order History" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear History
@@ -660,9 +660,11 @@
       updateAdminBadge();
       if (window.lucide) lucide.createIcons();
 
-      // 2. BACKGROUND NON-BLOCKING SUPABASE SYNC (NEVER BLOCKS THE UI)
+      // 2. STRICT SUPABASE DATABASE INTEGRATION - DIRECT QUERY
+      initSupabase();
+      fetchPurchaseOrdersFromSupabase();
+
       setTimeout(async () => {
-        initSupabase();
         if (supabaseClient) {
           try {
             const { data, error } = await supabaseClient.from('catalog').select('*').order('id', { ascending: true });
@@ -674,20 +676,6 @@
             }
           } catch(e) {
             console.warn('Background Supabase catalog fetch exception:', e);
-          }
-        }
-
-        if (typeof fetchSupabaseStoragePurchaseOrders === 'function') {
-          try {
-            await fetchSupabaseStoragePurchaseOrders();
-            const freshStored = localStorage.getItem('ts_orders');
-            if (freshStored) {
-              orders = JSON.parse(freshStored).map(normalizeOrder);
-              filterAndRenderAdminOrders();
-              updateAdminBadge();
-            }
-          } catch(e) {
-            console.warn('Background storage fetcher error:', e);
           }
         }
       }, 0);
@@ -1129,53 +1117,118 @@
       return false;
     }
 
-    let storedOrders = localStorage.getItem('ts_orders');
-    let parsedOrders = null;
-    try {
-      parsedOrders = storedOrders ? JSON.parse(storedOrders) : null;
-    } catch (e) {
-      parsedOrders = null;
-    }
+    let isOrdersLoading = false;
+    let dbOrdersError = null;
 
-    const authDefaults = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-      ? AUTHENTIC_ORDERS.filter(o => o && !isFakeOrder(o))
-      : ((typeof window !== 'undefined' && Array.isArray(window.AUTHENTIC_ORDERS)) ? window.AUTHENTIC_ORDERS.filter(o => o && !isFakeOrder(o)) : []);
-
-    if (!Array.isArray(parsedOrders) || parsedOrders.length === 0) {
-      orders = authDefaults.map(normalizeOrder);
-      saveOrdersToStorage();
-    } else {
-      orders = parsedOrders.filter(o => o && !isFakeOrder(o)).map(normalizeOrder);
-      if (orders.length === 0 && authDefaults.length > 0) {
-        orders = authDefaults.map(normalizeOrder);
+    async function fetchPurchaseOrdersFromSupabase() {
+      initSupabase();
+      if (!supabaseClient) {
+        dbOrdersError = "Supabase client is not connected.";
+        orders = [];
+        filteredAdminOrders = [];
+        renderAdminOrders();
+        updateAdminBadge();
+        return;
       }
-      if (orders.length !== parsedOrders.length) {
-        saveOrdersToStorage();
-      }
-    }
 
-    function restoreVerifiedOrders() {
-      if (!confirm("Are you sure you want to restore all original verified purchase orders?")) return;
+      isOrdersLoading = true;
+      dbOrdersError = null;
+      renderAdminOrders();
+
       try {
-        localStorage.removeItem('ts_deleted_orders');
-      } catch (e) {}
+        const { data, error } = await supabaseClient
+          .from('orders')
+          .select('*, order_items(*)')
+          .order('created_at', { ascending: false });
 
-      if (typeof restoreTreatStreetDefaultOrders === 'function') {
-        const res = restoreTreatStreetDefaultOrders();
-        if (res && res.orders) {
-          orders = res.orders.filter(o => o && !isFakeOrder(o)).map(normalizeOrder);
+        isOrdersLoading = false;
+
+        if (error) {
+          console.error('[Supabase Query Error]:', error);
+          dbOrdersError = error.message;
+          orders = [];
+          filteredAdminOrders = [];
+          renderAdminOrders();
+          updateAdminBadge();
+          return;
         }
-      } else {
-        const defaults = (typeof AUTHENTIC_ORDERS !== 'undefined' && Array.isArray(AUTHENTIC_ORDERS))
-          ? AUTHENTIC_ORDERS
-          : [];
-        orders = defaults.filter(o => o && !isFakeOrder(o)).map(normalizeOrder);
+
+        if (!data || data.length === 0) {
+          orders = [];
+          filteredAdminOrders = [];
+          try {
+            localStorage.setItem('ts_orders', JSON.stringify([]));
+            localStorage.setItem('ts_purchase_orders', JSON.stringify([]));
+          } catch(e) {}
+          renderAdminOrders();
+          updateAdminBadge();
+          return;
+        }
+
+        orders = data.map(dbOrder => {
+          let notesObj = {};
+          if (dbOrder.notes) {
+            try { notesObj = JSON.parse(dbOrder.notes); } catch (e) { notesObj = { text: dbOrder.notes }; }
+          }
+          const d = new Date(dbOrder.created_at);
+          const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const primaryRef = notesObj.primaryRef || `TSMK-${(dbOrder.id || '').slice(0, 8).toUpperCase()}`;
+
+          const items = (dbOrder.order_items || []).map(item => ({
+            id: item.id,
+            name: item.product_name,
+            supplier: item.supplier_name,
+            category: item.category,
+            qty: item.quantity,
+            price: parseFloat(item.unit_price) || 0,
+            vatRate: item.vatRate !== undefined ? item.vatRate : 0,
+            trackingStatus: item.trackingStatus || dbOrder.status || 'Pending',
+            stockSynced: item.stockSynced || false
+          }));
+
+          const netTotal = notesObj.netTotal !== undefined ? notesObj.netTotal : items.reduce((sum, i) => sum + (i.price * i.qty), 0);
+          const vatTotal = notesObj.vatTotal !== undefined ? notesObj.vatTotal : (parseFloat(dbOrder.total_cost) - netTotal);
+
+          return normalizeOrder({
+            id: dbOrder.id,
+            primaryRef: primaryRef,
+            ddmmyy: notesObj.ddmmyy || '',
+            serial: notesObj.serial || '',
+            timestamp: d.getTime(),
+            date: dateStr,
+            requestedBy: dbOrder.staff_name || 'Staff',
+            targetLocation: dbOrder.branch_name || dbOrder.department || 'Milton Keynes',
+            status: dbOrder.status || 'Pending',
+            notes: dbOrder.notes,
+            netTotal: netTotal,
+            vatTotal: vatTotal,
+            total: parseFloat(dbOrder.total_cost) || (netTotal + vatTotal),
+            items: items,
+            supabaseUrls: notesObj.supabaseUrls || {}
+          });
+        });
+
+        try {
+          localStorage.setItem('ts_orders', JSON.stringify(orders));
+          localStorage.setItem('ts_purchase_orders', JSON.stringify(orders));
+        } catch(e) {}
+
+        filterAndRenderAdminOrders();
+        updateAdminBadge();
+      } catch (err) {
+        isOrdersLoading = false;
+        console.error('[Supabase Fetch Exception]:', err);
+        dbOrdersError = err.message || 'Database error occurred';
+        orders = [];
+        filteredAdminOrders = [];
+        renderAdminOrders();
+        updateAdminBadge();
       }
-      saveOrdersToStorage();
-      adminCurrentPage = 1;
-      filterAndRenderAdminOrders();
-      updateAdminBadge();
-      showToast('✅ All original purchase orders restored successfully!');
+    }
+
+    async function restoreVerifiedOrders() {
+      await fetchPurchaseOrdersFromSupabase();
+      showToast('✅ Fetched authentic purchase orders from Supabase.');
     }
     
     function saveOrdersToStorage() {
@@ -1282,46 +1335,99 @@
         vatTotal = manualVatOverride;
         overriddenVat = true;
       }
-      
-      const newOrder = {
-        primaryRef: primaryRef,
-        ddmmyy: ddmmyy,
-        serial: serial,
-        timestamp: Date.now(),
-        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        requestedBy: requesterName,
-        targetLocation: targetLocation,
-        items: cart.map(i => ({ ...i, trackingStatus: 'Pending', stockSynced: false, vatRate: i.vatRate !== undefined ? i.vatRate : 0 })),
-        netTotal: netTotal,
-        vatTotal: vatTotal,
-        overriddenVat: overriddenVat,
-        total: netTotal + vatTotal, // Gross Total
-        supabaseUrls: {}
-      };
 
-      orders.unshift(newOrder);
-      saveOrdersToStorage();
-
-      // Clear override state
-      manualVatOverride = null;
-
-      // Automatically generate PDFs for each supplier and upload to Supabase bucket
-      const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
-      for (const supplier of uniqueSuppliers) {
-        await uploadPOToSupabaseBucket(newOrder.primaryRef, supplier);
+      initSupabase();
+      if (!supabaseClient) {
+        alert("Cannot submit order: Supabase client is not connected.");
+        return;
       }
 
-      cart = [];
-      updateCartUI();
-      adminCurrentPage = 1;
-      filterAndRenderAdminOrders();
-      updateAdminBadge();
+      const submitBtn = document.querySelector('#order-details-modal button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Inserting into Supabase...";
+      }
 
-      document.getElementById('order-user-name').value = '';
-      document.getElementById('order-user-branch').value = '';
-      closeOrderDetailsModal();
+      try {
+        const notesPayload = JSON.stringify({
+          primaryRef: primaryRef,
+          ddmmyy: ddmmyy,
+          serial: serial,
+          netTotal: netTotal,
+          vatTotal: vatTotal,
+          overriddenVat: overriddenVat,
+          supabaseUrls: {}
+        });
 
-      alert(`Order submitted successfully! ${uniqueSuppliers.length} Purchase Order(s) generated and stored.`);
+        // 1. Direct INSERT into Supabase 'orders' table
+        const { data: dbOrder, error: orderErr } = await supabaseClient
+          .from('orders')
+          .insert({
+            staff_name: requesterName,
+            department: targetLocation || 'General',
+            branch_name: targetLocation,
+            notes: notesPayload,
+            total_cost: netTotal + vatTotal,
+            status: 'Pending'
+          })
+          .select()
+          .single();
+
+        if (orderErr || !dbOrder) {
+          throw new Error(orderErr ? orderErr.message : 'Failed to insert purchase order into Supabase database');
+        }
+
+        // 2. Direct INSERT into Supabase 'order_items' table
+        const lineItems = cart.map(i => ({
+          order_id: dbOrder.id,
+          product_name: i.name,
+          supplier_name: i.supplier || 'Unknown',
+          category: i.category || 'General',
+          quantity: parseInt(i.qty) || 1,
+          unit_price: parseFloat(i.price) || 0
+        }));
+
+        const { error: itemsErr } = await supabaseClient
+          .from('order_items')
+          .insert(lineItems);
+
+        if (itemsErr) {
+          console.warn("Order items insertion warning:", itemsErr);
+        }
+
+        // 3. Clear cart & state
+        manualVatOverride = null;
+        const uniqueSuppliers = [...new Set(cart.map(i => i.supplier))];
+
+        // 4. Generate PDFs & upload to Supabase bucket
+        for (const supplier of uniqueSuppliers) {
+          try {
+            await uploadPOToSupabaseBucket(primaryRef, supplier);
+          } catch (upErr) {
+            console.warn("PDF upload warning:", upErr);
+          }
+        }
+
+        cart = [];
+        updateCartUI();
+
+        // 5. Strictly query Supabase and render from real database response
+        await fetchPurchaseOrdersFromSupabase();
+
+        document.getElementById('order-user-name').value = '';
+        document.getElementById('order-user-branch').value = '';
+        closeOrderDetailsModal();
+
+        alert(`Purchase order created successfully! Real record inserted into Supabase table 'orders' (Ref: ${primaryRef}).`);
+      } catch (err) {
+        console.error("Order submission failed:", err);
+        alert(`Database Error: ${err.message}`);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Confirm & Send Purchase Orders";
+        }
+      }
     }
 
     function updateItemTrackingStatus(primaryRef, itemId, newStatus) {
@@ -1536,7 +1642,7 @@
       showToast(`✅ Received PO for ${supplierName}: ${itemsCount} items synced to Stock & Inventory Control!`);
     }
 
-    function deletePurchaseOrder(primaryRef) {
+    async function deletePurchaseOrder(primaryRef) {
       if (!primaryRef) return;
       const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
 
@@ -1567,10 +1673,17 @@
         recordDeletedOrder(order.id);
       }
 
-      orders = orders.filter(o => o.primaryRef !== primaryRef && o.id !== primaryRef);
-      saveOrdersToStorage();
-      filterAndRenderAdminOrders();
-      updateAdminBadge();
+      // Delete directly from Supabase
+      if (order && order.id && supabaseClient) {
+        try {
+          const { error } = await supabaseClient.from('orders').delete().eq('id', order.id);
+          if (error) console.warn("Supabase delete warning:", error);
+        } catch(e) {
+          console.warn("Supabase delete exception:", e);
+        }
+      }
+
+      await fetchPurchaseOrdersFromSupabase();
       showToast(`🗑️ Purchase Order "${primaryRef}" deleted permanently.`);
     }
 
@@ -1645,11 +1758,27 @@
 
       if (!container) return;
 
+      if (dbOrdersError) {
+        container.innerHTML = `<div class="p-6 my-4 bg-red-50 border border-red-200 rounded-xl text-center text-red-700 font-semibold text-sm">Database Error: ${dbOrdersError}</div>`;
+        if (countLabel) countLabel.textContent = `Error loading orders`;
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+        return;
+      }
+
+      if (isOrdersLoading) {
+        container.innerHTML = `<div class="py-12 text-center text-slate-500 text-sm flex items-center justify-center gap-2"><i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Loading purchase orders from Supabase...</div>`;
+        if (countLabel) countLabel.textContent = `Loading...`;
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+        return;
+      }
+
       if (!filteredAdminOrders || filteredAdminOrders.length === 0) {
         if (orders.length === 0) {
-          container.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">No orders created yet.</p>`;
+          container.innerHTML = `<p class="text-sm text-slate-400 text-center py-10 font-medium">No purchase orders found</p>`;
         } else {
-          container.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">No orders matching your filter criteria.</p>`;
+          container.innerHTML = `<p class="text-sm text-slate-400 text-center py-10 font-medium">No orders matching your filter criteria.</p>`;
         }
         if (countLabel) countLabel.textContent = `Showing 0 orders`;
         if (prevBtn) prevBtn.disabled = true;
