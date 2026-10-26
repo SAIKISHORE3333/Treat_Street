@@ -7,10 +7,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="catalog.js?v=20261025_v7"></script>
-  <script src="default_orders.js?v=20261025_v7"></script>
-  <script src="main.js?v=20261025_v7"></script>
-  <script src="inventory.js?v=20261025_v7"></script>
+  <script src="catalog.js?v=20261026_v8"></script>
+  <script src="default_orders.js?v=20261026_v8"></script>
+  <script src="main.js?v=20261026_v8"></script>
+  <script src="inventory.js?v=20261026_v8"></script>
   <script src="recipe_matcher.js"></script>
   <script src="sales_depletion_controller.js?v=2.4.1"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1181,7 +1181,9 @@
   </footer>
 
   <script>
-    lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
 
     // Supabase Setup
     var SUPABASE_URL = window.SUPABASE_URL || 'https://sdlrwosjebiiztclsydu.supabase.co';
@@ -2086,13 +2088,16 @@
       return o;
     }
 
-    const GHOST_REFS = new Set([
-      'TSMK-MULTI-300726-001',
-      'TSMK-MULTI-280726-001',
-      'TSMK-MULTI-270726-017',
-      'TSMK-MULTI-270726-001',
-      'TSMK-MULTI-260726-017'
-    ]);
+    var GHOST_REFS = (typeof window !== 'undefined' && window.GHOST_REFS)
+      ? window.GHOST_REFS
+      : new Set([
+          'TSMK-MULTI-300726-001',
+          'TSMK-MULTI-280726-001',
+          'TSMK-MULTI-270726-017',
+          'TSMK-MULTI-270726-001',
+          'TSMK-MULTI-260726-017'
+        ]);
+    if (typeof window !== 'undefined') window.GHOST_REFS = GHOST_REFS;
 
     function recordDeletedOrder(ref) {
       if (!ref) return;
@@ -3971,9 +3976,13 @@
     }
 
     async function init() {
-      // 1. FORCED STORAGE MIGRATION & AUTHENTIC DATA LOCK (v6.0.0_authentic_supabase_storage)
-      const AUTH_DATA_VERSION = "v6.0.0_authentic_supabase_storage";
-      if (localStorage.getItem("ts_data_version") !== AUTH_DATA_VERSION) {
+      // 1. FORCED STORAGE MIGRATION & AUTHENTIC DATA LOCK (v7.0.0_permanent_clean_orders)
+      const AUTH_DATA_VERSION = "v7.0.0_permanent_clean_orders";
+      const currentStockRaw = localStorage.getItem("ts_stock_levels");
+      let currentStockMap = {};
+      try { currentStockMap = currentStockRaw ? JSON.parse(currentStockRaw) : {}; } catch(e) {}
+
+      if (localStorage.getItem("ts_data_version") !== AUTH_DATA_VERSION || !currentStockMap || Object.keys(currentStockMap).length === 0) {
         const keysToPurge = [
           "mock_orders",
           "mock_ingredients",

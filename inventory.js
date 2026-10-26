@@ -10,13 +10,18 @@ var SUPABASE_BUCKET = (typeof window !== 'undefined' && window.SUPABASE_BUCKET) 
 var AUTH_DATA_VERSION = "v7.0.0_permanent_clean_orders";
 var supabaseClient = (typeof window !== 'undefined' && window.supabaseClient) ? window.supabaseClient : null;
 
-const GHOST_REFS = new Set([
-  'TSMK-MULTI-300726-001',
-  'TSMK-MULTI-280726-001',
-  'TSMK-MULTI-270726-017',
-  'TSMK-MULTI-270726-001',
-  'TSMK-MULTI-260726-017'
-]);
+var GHOST_REFS = (typeof window !== 'undefined' && window.GHOST_REFS)
+  ? window.GHOST_REFS
+  : new Set([
+      'TSMK-MULTI-300726-001',
+      'TSMK-MULTI-280726-001',
+      'TSMK-MULTI-270726-017',
+      'TSMK-MULTI-270726-001',
+      'TSMK-MULTI-260726-017'
+    ]);
+if (typeof window !== 'undefined') {
+  window.GHOST_REFS = GHOST_REFS;
+}
 
 function getSupabaseClient() {
   if (supabaseClient) return supabaseClient;
