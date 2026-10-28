@@ -10,15 +10,7 @@ var SUPABASE_BUCKET = (typeof window !== 'undefined' && window.SUPABASE_BUCKET) 
 var AUTH_DATA_VERSION = "v7.0.0_permanent_clean_orders";
 var supabaseClient = (typeof window !== 'undefined' && window.supabaseClient) ? window.supabaseClient : null;
 
-var GHOST_REFS = (typeof window !== 'undefined' && window.GHOST_REFS)
-  ? window.GHOST_REFS
-  : new Set([
-      'TSMK-MULTI-300726-001',
-      'TSMK-MULTI-280726-001',
-      'TSMK-MULTI-270726-017',
-      'TSMK-MULTI-270726-001',
-      'TSMK-MULTI-260726-017'
-    ]);
+var GHOST_REFS = new Set();
 if (typeof window !== 'undefined') {
   window.GHOST_REFS = GHOST_REFS;
 }
@@ -106,87 +98,87 @@ async function fetchSupabaseStoragePurchaseOrders() {
   // 3. User deleted orders blacklist
   const deletedSet = getDeletedOrdersSet();
 
-  // 4. Load baseline orders: local storage is the source of truth for user deletions/additions
-  let localOrders = null;
-  if (typeof localStorage !== 'undefined') {
-    try {
-      const raw = localStorage.getItem('ts_orders');
-      if (raw) localOrders = JSON.parse(raw);
-    } catch (e) {}
-  }
-
   const ordersMap = new Map();
 
-  // 4. Fetch directly from connected Supabase 'orders' database table
+  // 4. Fetch directly from connected Supabase database table ('purchase_orders' with fallback to 'orders')
   if (client) {
     try {
-      const { data: dbOrders, error: dbErr } = await client
-        .from('orders')
-        .select('*, order_items(*)')
-        .order('created_at', { ascending: false });
+      console.log("[Supabase inventory.js]: Fetching purchase orders via supabase.from('purchase_orders').select('*')...");
+      let { data: dbOrders, error: dbErr } = await client.from('purchase_orders').select('*');
+      console.log('[Supabase inventory.js purchase_orders data]:', dbOrders);
+      console.log('[Supabase inventory.js purchase_orders error]:', dbErr);
+
+      if (dbErr && (dbErr.code === 'PGRST205' || (dbErr.message && dbErr.message.includes('purchase_orders')))) {
+        console.log("[Supabase inventory.js]: 'purchase_orders' table not found, querying 'orders' table...");
+        const ordersRes = await client
+          .from('orders')
+          .select('*, order_items(*)')
+          .order('created_at', { ascending: false });
+        console.log('[Supabase inventory.js orders data]:', ordersRes.data);
+        console.log('[Supabase inventory.js orders error]:', ordersRes.error);
+        if (!ordersRes.error) {
+          dbOrders = ordersRes.data;
+          dbErr = null;
+        } else {
+          dbErr = ordersRes.error;
+        }
+      }
 
       if (!dbErr && Array.isArray(dbOrders)) {
         dbOrders.forEach(dbo => {
           let notesObj = {};
-          if (dbo.notes) {
+          if (typeof dbo.notes === 'string') {
             try { notesObj = JSON.parse(dbo.notes); } catch(e) { notesObj = { text: dbo.notes }; }
+          } else if (typeof dbo.notes === 'object' && dbo.notes !== null) {
+            notesObj = dbo.notes;
           }
-          const d = new Date(dbo.created_at);
-          const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const primaryRef = notesObj.primaryRef || `TSMK-${(dbo.id || '').slice(0, 8).toUpperCase()}`;
 
-          const items = (dbo.order_items || []).map(item => ({
-            id: item.id,
-            name: item.product_name,
-            supplier: item.supplier_name,
-            category: item.category,
-            qty: item.quantity,
-            price: parseFloat(item.unit_price) || 0,
+          const d = dbo.created_at ? new Date(dbo.created_at) : (dbo.timestamp ? new Date(dbo.timestamp) : new Date());
+          const dateStr = dbo.date || (d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+          const primaryRef = dbo.primaryRef || dbo.primary_ref || dbo.po_number || notesObj.primaryRef || `TSMK-${(dbo.id || '').slice(0, 8).toUpperCase()}`;
+
+          const rawItems = Array.isArray(dbo.order_items) ? dbo.order_items : (Array.isArray(dbo.items) ? dbo.items : []);
+          const items = rawItems.map(item => ({
+            id: item.id || item.product_id || item.product_name || 'ITEM',
+            name: item.product_name || item.name || 'Unnamed Item',
+            supplier: item.supplier_name || item.supplier || 'Standard Supplier',
+            category: item.category || 'General',
+            qty: parseFloat(item.quantity !== undefined ? item.quantity : item.qty) || 1,
+            price: parseFloat(item.unit_price !== undefined ? item.unit_price : item.price) || 0,
             vatRate: item.vatRate !== undefined ? item.vatRate : 0,
             trackingStatus: item.trackingStatus || dbo.status || 'Pending',
             stockSynced: item.stockSynced || false
           }));
 
-          const netTotal = notesObj.netTotal !== undefined ? notesObj.netTotal : items.reduce((sum, i) => sum + (i.price * i.qty), 0);
-          const vatTotal = notesObj.vatTotal !== undefined ? notesObj.vatTotal : (parseFloat(dbo.total_cost) - netTotal);
+          const netTotal = dbo.net_total !== undefined ? parseFloat(dbo.net_total) : (notesObj.netTotal !== undefined ? parseFloat(notesObj.netTotal) : items.reduce((sum, i) => sum + (i.price * i.qty), 0));
+          const totalVal = parseFloat(dbo.total_cost !== undefined ? dbo.total_cost : (dbo.total !== undefined ? dbo.total : 0));
+          const vatTotal = dbo.vat_total !== undefined ? parseFloat(dbo.vat_total) : (notesObj.vatTotal !== undefined ? parseFloat(notesObj.vatTotal) : (totalVal > netTotal ? totalVal - netTotal : 0));
+          const finalTotal = totalVal > 0 ? totalVal : (netTotal + vatTotal);
 
           const ordObj = {
             id: dbo.id,
             primaryRef: primaryRef,
-            ddmmyy: notesObj.ddmmyy || '',
-            serial: notesObj.serial || '',
+            ddmmyy: dbo.ddmmyy || notesObj.ddmmyy || '',
+            serial: dbo.serial || notesObj.serial || '',
             timestamp: d.getTime(),
             date: dateStr,
-            requestedBy: dbo.staff_name || 'Staff',
-            targetLocation: dbo.branch_name || dbo.department || 'Milton Keynes',
+            requestedBy: dbo.staff_name || dbo.requested_by || dbo.requestedBy || 'Staff',
+            targetLocation: dbo.branch_name || dbo.target_location || dbo.department || dbo.targetLocation || 'Milton Keynes',
             status: dbo.status || 'Pending',
             notes: dbo.notes,
             netTotal: netTotal,
             vatTotal: vatTotal,
-            total: parseFloat(dbo.total_cost) || (netTotal + vatTotal),
+            total: finalTotal,
             items: items,
-            supabaseUrls: notesObj.supabaseUrls || {}
+            supabaseUrls: dbo.supabase_urls || notesObj.supabaseUrls || {}
           };
 
-          if (!deletedSet.has(ordObj.primaryRef) && !deletedSet.has(ordObj.id)) {
-            ordersMap.set(ordObj.primaryRef, ordObj);
-          }
+          ordersMap.set(ordObj.primaryRef, ordObj);
         });
       }
     } catch (e) {
       console.warn("[Supabase Orders Table]: Query exception:", e);
     }
-  }
-
-  // If local cache has real orders not yet deleted, allow them
-  if (Array.isArray(localOrders) && localOrders.length > 0) {
-    localOrders.forEach(o => {
-      if (o && o.primaryRef && !deletedSet.has(o.primaryRef) && !deletedSet.has(o.id) && !o.is_mock && Array.isArray(o.items) && o.items.length > 0 && (o.total > 0 || o.netTotal > 0)) {
-        if (!ordersMap.has(o.primaryRef)) {
-          ordersMap.set(o.primaryRef, o);
-        }
-      }
-    });
   }
 
   // 5. Match authentic PDF orders in bucket

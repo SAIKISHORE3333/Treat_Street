@@ -5,13 +5,7 @@
 (function() {
   const AUTH_DATA_VERSION = "v8.0.0_strict_supabase_no_mock";
 
-  const GHOST_REFS = new Set([
-    'TSMK-MULTI-300726-001',
-    'TSMK-MULTI-280726-001',
-    'TSMK-MULTI-270726-017',
-    'TSMK-MULTI-270726-001',
-    'TSMK-MULTI-260726-017'
-  ]);
+  const GHOST_REFS = new Set();
 
   if (typeof localStorage !== 'undefined') {
     // 1. Maintain permanent deletion blacklist

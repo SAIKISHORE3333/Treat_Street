@@ -1068,15 +1068,8 @@
       return o;
     }
 
-    var GHOST_REFS = (typeof window !== 'undefined' && window.GHOST_REFS)
-      ? window.GHOST_REFS
-      : new Set([
-          'TSMK-MULTI-300726-001',
-          'TSMK-MULTI-280726-001',
-          'TSMK-MULTI-270726-017',
-          'TSMK-MULTI-270726-001',
-          'TSMK-MULTI-260726-017'
-        ]);
+    // Zero hardcoded POs - purely Supabase backed
+    var GHOST_REFS = new Set();
     if (typeof window !== 'undefined') window.GHOST_REFS = GHOST_REFS;
 
     function recordDeletedOrder(ref) {
@@ -1095,7 +1088,6 @@
 
     function isOrderDeleted(ref) {
       if (!ref) return false;
-      if (GHOST_REFS.has(ref)) return true;
       try {
         const raw = localStorage.getItem('ts_deleted_orders');
         if (!raw) return false;
@@ -1109,15 +1101,10 @@
     function isFakeOrder(o) {
       if (!o) return true;
       if (o.is_mock === true) return true;
-      if (isOrderDeleted(o.primaryRef) || isOrderDeleted(o.id)) return true;
-      if (GHOST_REFS.has(o.primaryRef) || GHOST_REFS.has(o.id)) return true;
-      // Filter out null / empty purchase orders
-      if (!Array.isArray(o.items) || o.items.length === 0) return true;
-      if ((!o.total || o.total === 0) && (!o.netTotal || o.netTotal === 0)) return true;
       return false;
     }
 
-    let isOrdersLoading = false;
+    let isOrdersLoading = true;
     let dbOrdersError = null;
 
     async function fetchPurchaseOrdersFromSupabase() {
@@ -1126,6 +1113,7 @@
         dbOrdersError = "Supabase client is not connected.";
         orders = [];
         filteredAdminOrders = [];
+        isOrdersLoading = false;
         renderAdminOrders();
         updateAdminBadge();
         return;
@@ -1136,16 +1124,34 @@
       renderAdminOrders();
 
       try {
-        const { data, error } = await supabaseClient
-          .from('orders')
-          .select('*, order_items(*)')
-          .order('created_at', { ascending: false });
+        // 1. Direct query to 'purchase_orders' table as required by system policy
+        console.log("[Supabase]: Fetching purchase orders via supabase.from('purchase_orders').select('*')...");
+        let { data, error } = await supabaseClient.from('purchase_orders').select('*');
+        console.log('[Supabase purchase_orders data]:', data);
+        console.log('[Supabase purchase_orders error]:', error);
+
+        // Fallback to 'orders' table if 'purchase_orders' is not found in schema cache
+        if (error && (error.code === 'PGRST205' || (error.message && error.message.includes('purchase_orders')))) {
+          console.log("[Supabase]: 'purchase_orders' table not found, querying 'orders' table with line items...");
+          const ordersQuery = await supabaseClient
+            .from('orders')
+            .select('*, order_items(*)')
+            .order('created_at', { ascending: false });
+          console.log('[Supabase orders data]:', ordersQuery.data);
+          console.log('[Supabase orders error]:', ordersQuery.error);
+          if (!ordersQuery.error) {
+            data = ordersQuery.data;
+            error = null;
+          } else {
+            error = ordersQuery.error;
+          }
+        }
 
         isOrdersLoading = false;
 
         if (error) {
           console.error('[Supabase Query Error]:', error);
-          dbOrdersError = error.message;
+          dbOrdersError = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
           orders = [];
           filteredAdminOrders = [];
           renderAdminOrders();
@@ -1167,44 +1173,50 @@
 
         orders = data.map(dbOrder => {
           let notesObj = {};
-          if (dbOrder.notes) {
+          if (typeof dbOrder.notes === 'string') {
             try { notesObj = JSON.parse(dbOrder.notes); } catch (e) { notesObj = { text: dbOrder.notes }; }
+          } else if (typeof dbOrder.notes === 'object' && dbOrder.notes !== null) {
+            notesObj = dbOrder.notes;
           }
-          const d = new Date(dbOrder.created_at);
-          const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const primaryRef = notesObj.primaryRef || `TSMK-${(dbOrder.id || '').slice(0, 8).toUpperCase()}`;
 
-          const items = (dbOrder.order_items || []).map(item => ({
-            id: item.id,
-            name: item.product_name,
-            supplier: item.supplier_name,
-            category: item.category,
-            qty: item.quantity,
-            price: parseFloat(item.unit_price) || 0,
+          const d = dbOrder.created_at ? new Date(dbOrder.created_at) : (dbOrder.timestamp ? new Date(dbOrder.timestamp) : new Date());
+          const dateStr = dbOrder.date || (d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+          const primaryRef = dbOrder.primaryRef || dbOrder.primary_ref || dbOrder.po_number || notesObj.primaryRef || `TSMK-${(dbOrder.id || '').slice(0, 8).toUpperCase()}`;
+
+          const rawItems = Array.isArray(dbOrder.order_items) ? dbOrder.order_items : (Array.isArray(dbOrder.items) ? dbOrder.items : []);
+          const items = rawItems.map(item => ({
+            id: item.id || item.product_id || item.product_name || 'ITEM',
+            name: item.product_name || item.name || 'Unnamed Item',
+            supplier: item.supplier_name || item.supplier || 'Standard Supplier',
+            category: item.category || 'General',
+            qty: parseFloat(item.quantity !== undefined ? item.quantity : item.qty) || 1,
+            price: parseFloat(item.unit_price !== undefined ? item.unit_price : item.price) || 0,
             vatRate: item.vatRate !== undefined ? item.vatRate : 0,
             trackingStatus: item.trackingStatus || dbOrder.status || 'Pending',
             stockSynced: item.stockSynced || false
           }));
 
-          const netTotal = notesObj.netTotal !== undefined ? notesObj.netTotal : items.reduce((sum, i) => sum + (i.price * i.qty), 0);
-          const vatTotal = notesObj.vatTotal !== undefined ? notesObj.vatTotal : (parseFloat(dbOrder.total_cost) - netTotal);
+          const netTotal = dbOrder.net_total !== undefined ? parseFloat(dbOrder.net_total) : (notesObj.netTotal !== undefined ? parseFloat(notesObj.netTotal) : items.reduce((sum, i) => sum + (i.price * i.qty), 0));
+          const totalVal = parseFloat(dbOrder.total_cost !== undefined ? dbOrder.total_cost : (dbOrder.total !== undefined ? dbOrder.total : 0));
+          const vatTotal = dbOrder.vat_total !== undefined ? parseFloat(dbOrder.vat_total) : (notesObj.vatTotal !== undefined ? parseFloat(notesObj.vatTotal) : (totalVal > netTotal ? totalVal - netTotal : 0));
+          const finalTotal = totalVal > 0 ? totalVal : (netTotal + vatTotal);
 
           return normalizeOrder({
             id: dbOrder.id,
             primaryRef: primaryRef,
-            ddmmyy: notesObj.ddmmyy || '',
-            serial: notesObj.serial || '',
+            ddmmyy: dbOrder.ddmmyy || notesObj.ddmmyy || '',
+            serial: dbOrder.serial || notesObj.serial || '',
             timestamp: d.getTime(),
             date: dateStr,
-            requestedBy: dbOrder.staff_name || 'Staff',
-            targetLocation: dbOrder.branch_name || dbOrder.department || 'Milton Keynes',
+            requestedBy: dbOrder.staff_name || dbOrder.requested_by || dbOrder.requestedBy || 'Staff',
+            targetLocation: dbOrder.branch_name || dbOrder.target_location || dbOrder.department || dbOrder.targetLocation || 'Milton Keynes',
             status: dbOrder.status || 'Pending',
             notes: dbOrder.notes,
             netTotal: netTotal,
             vatTotal: vatTotal,
-            total: parseFloat(dbOrder.total_cost) || (netTotal + vatTotal),
+            total: finalTotal,
             items: items,
-            supabaseUrls: notesObj.supabaseUrls || {}
+            supabaseUrls: dbOrder.supabase_urls || notesObj.supabaseUrls || {}
           });
         });
 
@@ -1645,6 +1657,7 @@
     async function deletePurchaseOrder(primaryRef) {
       if (!primaryRef) return;
       const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
+      const orderId = (order && order.id) ? order.id : primaryRef;
 
       const hasSyncedItems = order && (order.items || []).some(i => i.stockSynced);
       const confirmMsg = hasSyncedItems
@@ -1673,18 +1686,35 @@
         recordDeletedOrder(order.id);
       }
 
-      // Delete directly from Supabase
-      if (order && order.id && supabaseClient) {
+      // Step 3: Send real DELETE query to Supabase:
+      // await supabase.from('purchase_orders').delete().eq('id', orderId);
+      if (supabaseClient) {
         try {
-          const { error } = await supabaseClient.from('orders').delete().eq('id', order.id);
-          if (error) console.warn("Supabase delete warning:", error);
+          console.log(`[Supabase]: Sending DELETE query for order ID "${orderId}"...`);
+          let { error } = await supabaseClient.from('purchase_orders').delete().eq('id', orderId);
+          console.log('[Supabase purchase_orders delete error]:', error);
+          if (error && (error.code === 'PGRST205' || (error.message && error.message.includes('purchase_orders')))) {
+            console.log('[Supabase]: "purchase_orders" not found, falling back to delete from "orders"...');
+            const altDel = await supabaseClient.from('orders').delete().eq('id', orderId);
+            error = altDel.error;
+            console.log('[Supabase orders delete error]:', error);
+          }
+
+          if (error) {
+            console.error('[Supabase Delete Error]:', error);
+            alert(`Database deletion failed: ${error.message}\nThe purchase order was not deleted.`);
+            return;
+          }
         } catch(e) {
-          console.warn("Supabase delete exception:", e);
+          console.error('[Supabase Delete Exception]:', e);
+          alert(`Database deletion failed: ${e.message}\nThe purchase order was not deleted.`);
+          return;
         }
       }
 
+      // Step 3: Only remove it from the UI after confirming deletion from Supabase, or refetch the table data
       await fetchPurchaseOrdersFromSupabase();
-      showToast(`🗑️ Purchase Order "${primaryRef}" deleted permanently.`);
+      showToast(`🗑️ Purchase Order "${primaryRef}" deleted permanently from Supabase.`);
     }
 
     // ADMIN SORTING & FILTERING LOGIC
@@ -1759,10 +1789,24 @@
       if (!container) return;
 
       if (dbOrdersError) {
-        container.innerHTML = `<div class="p-6 my-4 bg-red-50 border border-red-200 rounded-xl text-center text-red-700 font-semibold text-sm">Database Error: ${dbOrdersError}</div>`;
-        if (countLabel) countLabel.textContent = `Error loading orders`;
+        container.innerHTML = `
+          <div class="p-6 my-4 bg-red-50 border border-red-300 rounded-xl text-center space-y-2">
+            <div class="flex items-center justify-center gap-2 text-red-700 font-bold text-sm">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+              <span>Database / RLS Query Error</span>
+            </div>
+            <p class="text-xs text-red-600 font-mono bg-red-100/60 p-2.5 rounded-lg border border-red-200 inline-block max-w-full break-words">
+              ${escapeHtmlPurchase(dbOrdersError)}
+            </p>
+            <p class="text-xs text-slate-500">
+              No mock fallback is permitted. Please ensure your Supabase database table and RLS policies grant read access to the anon key.
+            </p>
+          </div>
+        `;
+        if (countLabel) countLabel.textContent = `Database error`;
         if (prevBtn) prevBtn.disabled = true;
         if (nextBtn) nextBtn.disabled = true;
+        if (window.lucide) lucide.createIcons();
         return;
       }
 

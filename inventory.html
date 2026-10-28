@@ -2088,15 +2088,7 @@
       return o;
     }
 
-    var GHOST_REFS = (typeof window !== 'undefined' && window.GHOST_REFS)
-      ? window.GHOST_REFS
-      : new Set([
-          'TSMK-MULTI-300726-001',
-          'TSMK-MULTI-280726-001',
-          'TSMK-MULTI-270726-017',
-          'TSMK-MULTI-270726-001',
-          'TSMK-MULTI-260726-017'
-        ]);
+    var GHOST_REFS = new Set();
     if (typeof window !== 'undefined') window.GHOST_REFS = GHOST_REFS;
 
     function recordDeletedOrder(ref) {
@@ -2115,7 +2107,6 @@
 
     function isOrderDeleted(ref) {
       if (!ref) return false;
-      if (GHOST_REFS.has(ref)) return true;
       try {
         const raw = localStorage.getItem('ts_deleted_orders');
         if (!raw) return false;
@@ -2129,11 +2120,6 @@
     function isFakeOrder(o) {
       if (!o) return true;
       if (o.is_mock === true) return true;
-      if (isOrderDeleted(o.primaryRef) || isOrderDeleted(o.id)) return true;
-      if (GHOST_REFS.has(o.primaryRef) || GHOST_REFS.has(o.id)) return true;
-      // Filter out null / empty purchase orders
-      if (!Array.isArray(o.items) || o.items.length === 0) return true;
-      if ((!o.total || o.total === 0) && (!o.netTotal || o.netTotal === 0)) return true;
       return false;
     }
 
@@ -3230,10 +3216,11 @@
       showInventoryToast(`✅ Supplier PO Received: ${count} item types (+${totalQty} total units) synced to stock pots!`);
     }
 
-    function deletePurchaseOrderInInventory(primaryRef) {
+    async function deletePurchaseOrderInInventory(primaryRef) {
       if (!primaryRef) return;
       const orders = getPurchaseOrders();
       const order = orders.find(o => o.primaryRef === primaryRef || o.id === primaryRef);
+      const orderId = (order && order.id) ? order.id : primaryRef;
 
       const hasSyncedItems = order && (order.items || []).some(i => i.stockSynced);
       const confirmMsg = hasSyncedItems
@@ -3263,11 +3250,41 @@
         recordDeletedOrder(order.id);
       }
 
+      // Step 3: Send real DELETE query to Supabase:
+      // await supabase.from('purchase_orders').delete().eq('id', orderId);
+      const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : (window.supabaseClient || null);
+      if (client) {
+        try {
+          console.log(`[Supabase]: Sending DELETE query for order ID "${orderId}"...`);
+          let { error } = await client.from('purchase_orders').delete().eq('id', orderId);
+          console.log('[Supabase purchase_orders delete error]:', error);
+          if (error && (error.code === 'PGRST205' || (error.message && error.message.includes('purchase_orders')))) {
+            console.log('[Supabase]: "purchase_orders" not found, falling back to delete from "orders"...');
+            const altDel = await client.from('orders').delete().eq('id', orderId);
+            error = altDel.error;
+            console.log('[Supabase orders delete error]:', error);
+          }
+
+          if (error) {
+            console.error('[Supabase Delete Error]:', error);
+            alert(`Database deletion failed: ${error.message}\nThe purchase order was not deleted.`);
+            return;
+          }
+        } catch(e) {
+          console.error('[Supabase Delete Exception]:', e);
+          alert(`Database deletion failed: ${e.message}\nThe purchase order was not deleted.`);
+          return;
+        }
+      }
+
       const updatedOrders = orders.filter(o => o.primaryRef !== primaryRef && o.id !== primaryRef);
       savePurchaseOrders(updatedOrders);
+      if (typeof fetchSupabaseStoragePurchaseOrders === 'function') {
+        await fetchSupabaseStoragePurchaseOrders();
+      }
       renderPurchaseOrdersView();
       renderStockGrid();
-      showInventoryToast(`🗑️ Purchase Order "${primaryRef}" deleted permanently.`);
+      showInventoryToast(`🗑️ Purchase Order "${primaryRef}" deleted permanently from Supabase.`);
     }
 
     // -------------------------------------------------------------

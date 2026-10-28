@@ -70,8 +70,12 @@ const AUTHENTIC_STOCK_LEVELS = Object.freeze({
 });
 
 // All fake, synthetic sample orders and static fallback mock arrays have been completely purged.
+// Step 1: Remove initial mock fallback completely. Default initial state must be an empty array [].
 const ORIGINAL_16_ORDERS = Object.freeze([]);
 const AUTHENTIC_ORDERS = Object.freeze([]);
+const mockPurchaseOrders = Object.freeze([]);
+const defaultOrders = Object.freeze([]);
+const initialOrders = Object.freeze([]);
 
 function restoreTreatStreetDefaultOrders() {
   // Purged fake orders. Does NOT generate or restore synthetic purchase orders.
@@ -91,6 +95,9 @@ if (typeof window !== "undefined") {
   window.MOCK_DATA_ALLOWED = false;
   window.AUTHENTIC_ORDERS = AUTHENTIC_ORDERS;
   window.ORIGINAL_16_ORDERS = ORIGINAL_16_ORDERS;
+  window.mockPurchaseOrders = mockPurchaseOrders;
+  window.defaultOrders = defaultOrders;
+  window.initialOrders = initialOrders;
   window.AUTHENTIC_STOCK_LEVELS = AUTHENTIC_STOCK_LEVELS;
   window.restoreTreatStreetDefaultOrders = restoreTreatStreetDefaultOrders;
 }
@@ -99,6 +106,9 @@ if (typeof globalThis !== "undefined") {
   globalThis.MOCK_DATA_ALLOWED = false;
   globalThis.AUTHENTIC_ORDERS = AUTHENTIC_ORDERS;
   globalThis.ORIGINAL_16_ORDERS = ORIGINAL_16_ORDERS;
+  globalThis.mockPurchaseOrders = mockPurchaseOrders;
+  globalThis.defaultOrders = defaultOrders;
+  globalThis.initialOrders = initialOrders;
   globalThis.AUTHENTIC_STOCK_LEVELS = AUTHENTIC_STOCK_LEVELS;
   globalThis.restoreTreatStreetDefaultOrders = restoreTreatStreetDefaultOrders;
 }
@@ -108,6 +118,9 @@ if (typeof module !== "undefined" && module.exports) {
     MOCK_DATA_ALLOWED: false,
     AUTHENTIC_ORDERS,
     ORIGINAL_16_ORDERS,
+    mockPurchaseOrders,
+    defaultOrders,
+    initialOrders,
     AUTHENTIC_STOCK_LEVELS,
     restoreTreatStreetDefaultOrders
   };
